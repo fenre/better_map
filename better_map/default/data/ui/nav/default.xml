@@ -1,0 +1,12 @@
+<nav search_view="search" color="#4cd9c4">
+    <collection label="Dashboards">
+        <view name="better_map_overview" default="true" />
+        <view name="better_map_fleet_tracking" />
+        <view name="better_map_threat_map" />
+        <view name="better_map_iot_sensor_field" />
+        <view name="better_map_site_availability" />
+    </collection>
+    <collection label="Search">
+        <view name="search" />
+    </collection>
+</nav>

@@ -1,0 +1,49 @@
+<dashboard version="2" theme="dark">
+    <label>Better Map - Site Availability</label>
+    <description>Color-coded site markers with a layer control to toggle between offices, data centres, and PoPs. Powered by the bundled lookup better_map_sample_sites.csv.</description>
+    <definition><![CDATA[
+{
+    "visualizations": {
+        "viz_sites": {
+            "type": "splunk.custom",
+            "options": {
+                "type": "better_map",
+                "name": "better_map",
+                "tileProvider": "openfreemap-positron",
+                "pointRenderer": "markers",
+                "showLayerControl": "true",
+                "palette": "set3"
+            },
+            "dataSources": {
+                "primary": "ds_sites"
+            }
+        }
+    },
+    "dataSources": {
+        "ds_sites": {
+            "type": "ds.search",
+            "options": {
+                "query": "| inputlookup better_map_sample_sites.csv | eval status = case(value > 500, \"critical\", value > 200, \"warning\", true(), \"healthy\") | eval color = case(status=\"critical\", \"#fb8072\", status=\"warning\", \"#fdb462\", true(), \"#8dd3c7\") | eval size = case(category=\"datacenter\", 10, category=\"pop\", 8, true(), 6) | eval layer = category | fields id name lat lon category city country value layer color size status"
+            }
+        }
+    },
+    "defaults": {
+        "dataSources": {
+            "ds.search": {
+                "options": {
+                    "queryParameters": { "earliest": "0", "latest": "" }
+                }
+            }
+        }
+    },
+    "inputs": {},
+    "layout": {
+        "type": "absolute",
+        "options": { "width": 1440, "height": 960, "backgroundColor": "#0b1a2d" },
+        "structure": [
+            { "item": "viz_sites", "type": "block", "position": { "x": 0, "y": 0, "w": 1440, "h": 960 } }
+        ]
+    }
+}
+    ]]></definition>
+</dashboard>

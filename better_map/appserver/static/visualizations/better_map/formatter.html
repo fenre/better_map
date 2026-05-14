@@ -1,0 +1,433 @@
+<!--
+  Better Map - Dashboard Studio / classic formatter form.
+
+  Splunk's custom visualization framework parses this HTML and renders the
+  inputs into the visualization options panel. Each input declares its
+  Splunk option name via the `data-name` attribute; the framework prefixes
+  it with the visualization's property namespace at runtime.
+
+  The form is split into the three Splunk-mandated tabs:
+    1. Data configurations  - what fields drive geometry / time / ids
+    2. Data display         - per-layer rendering choices, scrubber, etc.
+    3. Color and style      - tile provider, palettes, opacity, theming
+
+  Each control has an adjacent help blurb so the picker is self-explanatory.
+  Mirror any changes here in README/savedsearches.conf.spec.
+-->
+
+<div class="splunk-formatter splunk-formatter-tabs better_map-formatter">
+    <ul class="splunk-formatter-tab-list" role="tablist">
+        <li class="splunk-formatter-tab is-active" role="tab" aria-controls="tab-data">Data configurations</li>
+        <li class="splunk-formatter-tab" role="tab" aria-controls="tab-display">Data display</li>
+        <li class="splunk-formatter-tab" role="tab" aria-controls="tab-style">Color and style</li>
+    </ul>
+
+    <!-- ===== Tab 1: Data configurations ===== -->
+    <section id="tab-data" class="splunk-formatter-tab-panel is-active" role="tabpanel">
+        <h3 class="splunk-formatter-heading">Geometry &amp; identifiers</h3>
+
+        <div class="splunk-formatter-row">
+            <label for="bm-latField">Latitude field name</label>
+            <input id="bm-latField" type="text" data-name="latField" placeholder="lat | latitude | y" />
+            <p class="splunk-formatter-help">Auto-detected from common aliases (<code>lat</code>, <code>latitude</code>, <code>y</code>). Override to point at a specific column.</p>
+        </div>
+
+        <div class="splunk-formatter-row">
+            <label for="bm-lonField">Longitude field name</label>
+            <input id="bm-lonField" type="text" data-name="lonField" placeholder="lon | lng | longitude | x" />
+            <p class="splunk-formatter-help">Auto-detected. Override for non-standard column names.</p>
+        </div>
+
+        <div class="splunk-formatter-row">
+            <label for="bm-autoSwap">Auto-correct lat/lon swap</label>
+            <select id="bm-autoSwap" data-name="autoSwap">
+                <option value="false" selected>No (skip and warn)</option>
+                <option value="true">Yes (swap silently)</option>
+            </select>
+            <p class="splunk-formatter-help">When a row's latitude is greater than 90 or longitude greater than 180, the values were almost certainly swapped. Choose how to handle it.</p>
+        </div>
+
+        <div class="splunk-formatter-row">
+            <label for="bm-idField">Identifier field</label>
+            <input id="bm-idField" type="text" data-name="idField" placeholder="id | iso | iso3 | state" />
+            <p class="splunk-formatter-help">Used by drilldown, feature-join, and cross-panel coordination.</p>
+        </div>
+
+        <div class="splunk-formatter-row">
+            <label for="bm-timeField">Time field</label>
+            <input id="bm-timeField" type="text" data-name="timeField" placeholder="_time | timestamp" />
+            <p class="splunk-formatter-help">When present, the time scrubber and comet trail are enabled automatically.</p>
+        </div>
+
+        <div class="splunk-formatter-row">
+            <label for="bm-layerField">Layer field</label>
+            <input id="bm-layerField" type="text" data-name="layerField" placeholder="layer | category" />
+            <p class="splunk-formatter-help">Splits the data into multiple toggleable layers. A floating control widget appears top-right when more than one distinct value is detected.</p>
+        </div>
+
+        <div class="splunk-formatter-row">
+            <label for="bm-pathIdField">Path identifier field</label>
+            <input id="bm-pathIdField" type="text" data-name="pathIdField" placeholder="pathId | track_id | trip_id" />
+            <p class="splunk-formatter-help">Group rows by this field to draw routes. Each group becomes one LineString.</p>
+        </div>
+
+        <h3 class="splunk-formatter-heading">Drilldown &amp; cross-panel</h3>
+        <div class="splunk-formatter-row">
+            <label for="bm-enableDrilldown">Enable drilldown on click</label>
+            <select id="bm-enableDrilldown" data-name="enableDrilldown">
+                <option value="true" selected>Enabled</option>
+                <option value="false">Disabled</option>
+            </select>
+            <p class="splunk-formatter-help">Clicks on a feature publish its properties as <code>FIELD_VALUE_DRILLDOWN</code> tokens.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-enableCrossPanel">Publish camera state</label>
+            <select id="bm-enableCrossPanel" data-name="enableCrossPanel">
+                <option value="true" selected>Enabled</option>
+                <option value="false">Disabled</option>
+            </select>
+            <p class="splunk-formatter-help">Broadcasts pan / zoom / pitch / bearing as <code>better_map.camera.*</code> dashboard tokens. Other panels can mirror the view.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-enablePopups">Enable popups</label>
+            <select id="bm-enablePopups" data-name="enablePopups">
+                <option value="true" selected>Enabled</option>
+                <option value="false">Disabled</option>
+            </select>
+            <p class="splunk-formatter-help">Clicks on a feature open a sanitized popup using the <code>popup</code>, <code>tooltip</code>, or <code>description</code> field. HTML is filtered through DOMPurify with a strict allow-list.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-showPerfHUD">Show performance HUD</label>
+            <select id="bm-showPerfHUD" data-name="showPerfHUD">
+                <option value="false" selected>Disabled</option>
+                <option value="true">Enabled</option>
+            </select>
+            <p class="splunk-formatter-help">Overlay FPS, frame time, layer count, and free WebGL slots in the top-left for benchmarking. Disable in production.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-enableExportShare">Show export &amp; share toolbar</label>
+            <select id="bm-enableExportShare" data-name="enableExportShare">
+                <option value="true" selected>Enabled</option>
+                <option value="false">Disabled</option>
+            </select>
+            <p class="splunk-formatter-help">Adds "PNG" and "Share" buttons in the top-right. PNG downloads <code>better-map.png</code>; Share copies a deep-link with the current camera state.</p>
+        </div>
+
+        <h3 class="splunk-formatter-heading">Accessibility &amp; localization</h3>
+        <div class="splunk-formatter-row">
+            <label for="bm-highContrast">High-contrast mode</label>
+            <select id="bm-highContrast" data-name="highContrast">
+                <option value="false" selected>Disabled</option>
+                <option value="true">Enabled</option>
+            </select>
+            <p class="splunk-formatter-help">Replace translucent backgrounds with solid black/white widget chrome. Helps WCAG AAA contrast for low-vision users.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-labelLanguage">Map label language</label>
+            <select id="bm-labelLanguage" data-name="labelLanguage">
+                <option value="" selected>Default (basemap native)</option>
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
+                <option value="it">Italian</option>
+                <option value="pt">Portuguese</option>
+                <option value="ru">Russian</option>
+                <option value="zh">Chinese</option>
+                <option value="ja">Japanese</option>
+                <option value="ko">Korean</option>
+                <option value="ar">Arabic</option>
+                <option value="hi">Hindi</option>
+            </select>
+            <p class="splunk-formatter-help">Re-points every symbol layer's <code>text-field</code> at <code>name:&lt;lang&gt;</code>, with a fallback to the basemap's native <code>name</code>. Works on OpenFreeMap and other OpenMapTiles-based providers.</p>
+        </div>
+
+        <h3 class="splunk-formatter-heading">Feature join (regions backdrop)</h3>
+        <div class="splunk-formatter-row">
+            <label for="bm-featureJoinPreset">Preset tileset</label>
+            <select id="bm-featureJoinPreset" data-name="featureJoinPreset">
+                <option value="" selected>None</option>
+                <option value="countries">World countries</option>
+                <option value="us-states">US states</option>
+                <option value="admin1">World admin-1 regions</option>
+            </select>
+            <p class="splunk-formatter-help">Requires the matching PMTiles file in <code>appserver/static/visualizations/better_map/presets/</code>. See README "Preset tilesets".</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-featureJoinUrl">Custom tileset URL</label>
+            <input id="bm-featureJoinUrl" type="text" data-name="featureJoinUrl" placeholder="https://... or pmtiles://..." />
+            <p class="splunk-formatter-help">Override the preset with your own vector tile or PMTiles URL.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-featureJoinSourceLayer">Tileset source layer</label>
+            <input id="bm-featureJoinSourceLayer" type="text" data-name="featureJoinSourceLayer" placeholder="countries" />
+            <p class="splunk-formatter-help">Vector source-layer name inside the tileset.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-featureJoinPromoteId">Tileset id property</label>
+            <input id="bm-featureJoinPromoteId" type="text" data-name="featureJoinPromoteId" placeholder="iso_a3" />
+            <p class="splunk-formatter-help">The vector-tile feature property used to match your <code>id</code> field.</p>
+        </div>
+    </section>
+
+    <!-- ===== Tab 2: Data display ===== -->
+    <section id="tab-display" class="splunk-formatter-tab-panel" role="tabpanel">
+        <h3 class="splunk-formatter-heading">Point rendering</h3>
+        <div class="splunk-formatter-row">
+            <label for="bm-pointRenderer">Point renderer</label>
+            <select id="bm-pointRenderer" data-name="pointRenderer">
+                <option value="auto" selected>Auto (markers → clusters → heatmap)</option>
+                <option value="markers">Markers</option>
+                <option value="cluster">Clusters</option>
+                <option value="heatmap">Heatmap</option>
+                <option value="hexbin">H3 hexbin</option>
+            </select>
+            <p class="splunk-formatter-help">Auto switches strategy by feature count: markers under 200, clusters up to 5,000, heatmap above.</p>
+        </div>
+
+        <div class="splunk-formatter-row">
+            <label for="bm-hexbinAutoDegrade">Hexbin: auto-degrade by zoom</label>
+            <select id="bm-hexbinAutoDegrade" data-name="hexbinAutoDegrade">
+                <option value="true" selected>Yes</option>
+                <option value="false">No</option>
+            </select>
+            <p class="splunk-formatter-help">Coarser cells at low zoom, finer at high zoom. Override below to pin a resolution.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-hexbinResolution">Hexbin: explicit H3 resolution</label>
+            <input id="bm-hexbinResolution" type="number" min="0" max="15" data-name="hexbinResolution" placeholder="0..15" />
+            <p class="splunk-formatter-help">Leave blank to use auto-degrade. Typical ranges: 5 (globe), 7 (country), 9 (city), 11 (street).</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-hexbinAggregate">Hexbin: aggregate mode</label>
+            <select id="bm-hexbinAggregate" data-name="hexbinAggregate">
+                <option value="count" selected>Count of points</option>
+                <option value="sum">Sum of value</option>
+                <option value="mean">Mean of value</option>
+            </select>
+            <p class="splunk-formatter-help">Drives the color ramp and the optional 3D height.</p>
+        </div>
+
+        <h3 class="splunk-formatter-heading">3D &amp; choropleth</h3>
+        <div class="splunk-formatter-row">
+            <label for="bm-enable3DExtrusion">Enable 3D extrusion for polygons</label>
+            <select id="bm-enable3DExtrusion" data-name="enable3DExtrusion">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Extrudes Polygon / MultiPolygon features along Z. Pitch and rotate are already enabled by default.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-extrusionHeightField">Extrusion height property</label>
+            <input id="bm-extrusionHeightField" type="text" data-name="extrusionHeightField" placeholder="height" />
+            <p class="splunk-formatter-help">Numeric property to use for extrusion height.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-extrusionScale">Extrusion scale</label>
+            <input id="bm-extrusionScale" type="number" step="0.1" data-name="extrusionScale" placeholder="1" />
+            <p class="splunk-formatter-help">Multiplier applied to height (and base if set). Useful when units are not metres.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-enableChoropleth">Render polygons as choropleth</label>
+            <select id="bm-enableChoropleth" data-name="enableChoropleth">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Colors polygons by a numeric <code>value</code> property using the active palette.</p>
+        </div>
+
+        <h3 class="splunk-formatter-heading">Indoor / image overlay</h3>
+        <div class="splunk-formatter-row">
+            <label for="bm-indoorImageUrl">Floorplan image URL</label>
+            <input id="bm-indoorImageUrl" type="text" data-name="indoorImageUrl" placeholder="https://..." />
+            <p class="splunk-formatter-help">Drops a georeferenced raster over the basemap. Combine with the next field.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-indoorImageCoordinates">Floorplan corner coordinates</label>
+            <input id="bm-indoorImageCoordinates" type="text" data-name="indoorImageCoordinates" placeholder="lng,lat;lng,lat;lng,lat;lng,lat" />
+            <p class="splunk-formatter-help">Top-left, top-right, bottom-right, bottom-left as lng,lat pairs separated by ;</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-indoorOpacity">Floorplan opacity</label>
+            <input id="bm-indoorOpacity" type="number" min="0" max="1" step="0.05" data-name="indoorOpacity" placeholder="0.95" />
+            <p class="splunk-formatter-help">0.0 = fully transparent, 1.0 = fully opaque.</p>
+        </div>
+
+        <h3 class="splunk-formatter-heading">View &amp; interaction</h3>
+        <div class="splunk-formatter-row">
+            <label for="bm-allowPitch">Allow pitch (3D tilt)</label>
+            <select id="bm-allowPitch" data-name="allowPitch">
+                <option value="true" selected>Allow</option>
+                <option value="false">Disallow</option>
+            </select>
+            <p class="splunk-formatter-help">When enabled, users can right-drag to tilt the camera and see 3D extrusions properly.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-allowRotate">Allow rotate</label>
+            <select id="bm-allowRotate" data-name="allowRotate">
+                <option value="true" selected>Allow</option>
+                <option value="false">Disallow</option>
+            </select>
+            <p class="splunk-formatter-help">Right-drag rotates the map around its center.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-lockView">Lock view after first fit</label>
+            <select id="bm-lockView" data-name="lockView">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Stops Better Map from auto-fitting whenever the data changes; preserves user pan/zoom.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-showLayerControl">Show layer control widget</label>
+            <select id="bm-showLayerControl" data-name="showLayerControl">
+                <option value="true" selected>Show when multiple layers</option>
+                <option value="false">Hide</option>
+            </select>
+            <p class="splunk-formatter-help">Top-right floating widget driven by the <code>layer</code> SPL field.</p>
+        </div>
+
+        <h3 class="splunk-formatter-heading">Time scrubber</h3>
+        <div class="splunk-formatter-row">
+            <label for="bm-showTimeScrubber">Show time scrubber</label>
+            <select id="bm-showTimeScrubber" data-name="showTimeScrubber">
+                <option value="true" selected>Show when time field is detected</option>
+                <option value="false">Hide</option>
+            </select>
+            <p class="splunk-formatter-help">Floating bottom bar that scrubs through the data's time range.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-trailWindowMs">Comet trail window (ms)</label>
+            <input id="bm-trailWindowMs" type="number" min="1000" step="1000" data-name="trailWindowMs" placeholder="300000" />
+            <p class="splunk-formatter-help">How long a point stays visible after the scrubber passes it. Default is 5 minutes.</p>
+        </div>
+    </section>
+
+    <!-- ===== Tab 3: Color and style ===== -->
+    <section id="tab-style" class="splunk-formatter-tab-panel" role="tabpanel">
+        <h3 class="splunk-formatter-heading">Tile provider</h3>
+        <div class="splunk-formatter-row">
+            <label for="bm-tileProvider">Tile provider</label>
+            <select id="bm-tileProvider" data-name="tileProvider">
+                <option value="openfreemap-positron" selected>OpenFreeMap Positron (light)</option>
+                <option value="openfreemap-liberty">OpenFreeMap Liberty (default colors)</option>
+                <option value="openfreemap-bright">OpenFreeMap Bright</option>
+                <option value="osm-raster">OpenStreetMap raster (fallback)</option>
+                <option value="maptiler-streets">MapTiler Streets (requires API key)</option>
+                <option value="maptiler-topo">MapTiler Topo (requires API key)</option>
+                <option value="stadia-osm-bright">Stadia OSM Bright (requires API key)</option>
+                <option value="stadia-alidade-smooth">Stadia Alidade Smooth (requires API key)</option>
+                <option value="pmtiles">PMTiles (self-hosted)</option>
+                <option value="custom">Custom style URL</option>
+            </select>
+            <p class="splunk-formatter-help">OpenFreeMap is the default - no key required. See README for hosting your own tiles.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-tileProviderApiKey">API key</label>
+            <input id="bm-tileProviderApiKey" type="text" data-name="tileProviderApiKey" placeholder="(optional)" autocomplete="off" />
+            <p class="splunk-formatter-help">Required for MapTiler / Stadia providers. Stored as a Splunk dashboard option, not as a server-side secret.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-customStyleUrl">Custom style / PMTiles URL</label>
+            <input id="bm-customStyleUrl" type="text" data-name="customStyleUrl" placeholder="https://... or pmtiles://..." />
+            <p class="splunk-formatter-help">Only used when "Custom style URL" or "PMTiles" is selected above.</p>
+        </div>
+
+        <h3 class="splunk-formatter-heading">Palette &amp; opacity</h3>
+        <div class="splunk-formatter-row">
+            <label for="bm-palette">Sequential palette</label>
+            <select id="bm-palette" data-name="palette">
+                <option value="viridis" selected>Viridis (color-blind safe)</option>
+                <option value="rdylbu">RdYlBu (diverging)</option>
+                <option value="set3">Set 3 (categorical)</option>
+            </select>
+            <p class="splunk-formatter-help">Drives heatmap, hexbin, choropleth, and feature-join color ramps.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-markerColor">Marker color</label>
+            <input id="bm-markerColor" type="color" data-name="markerColor" value="#8dd3c7" />
+            <p class="splunk-formatter-help">Default marker color when no per-feature <code>color</code> property is supplied.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-markerOutline">Marker outline color</label>
+            <input id="bm-markerOutline" type="color" data-name="markerOutline" value="#0b1a2d" />
+            <p class="splunk-formatter-help">Outline around point markers.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-pathColor">Path color</label>
+            <input id="bm-pathColor" type="color" data-name="pathColor" value="#fb8072" />
+            <p class="splunk-formatter-help">Default line color for routes / paths.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-pathWidth">Path width</label>
+            <input id="bm-pathWidth" type="number" min="1" step="1" data-name="pathWidth" placeholder="3" />
+            <p class="splunk-formatter-help">Stroke width for paths in pixels.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-pathArrows">Path arrow heads</label>
+            <select id="bm-pathArrows" data-name="pathArrows">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Periodic arrow markers along each path showing direction.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-pathAnimated">Animated ant-path</label>
+            <select id="bm-pathAnimated" data-name="pathAnimated">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Scrolls a dashed pattern along each path to imply motion.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-polygonFill">Polygon fill color</label>
+            <input id="bm-polygonFill" type="color" data-name="polygonFill" value="#80b1d3" />
+            <p class="splunk-formatter-help">Default fill for non-choropleth polygons.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-polygonOpacity">Polygon fill opacity</label>
+            <input id="bm-polygonOpacity" type="number" min="0" max="1" step="0.05" data-name="polygonOpacity" placeholder="0.35" />
+            <p class="splunk-formatter-help">0.0 - 1.0</p>
+        </div>
+
+        <h3 class="splunk-formatter-heading">Heatmap &amp; hexbin</h3>
+        <div class="splunk-formatter-row">
+            <label for="bm-heatmapRadius">Heatmap radius (px at low zoom)</label>
+            <input id="bm-heatmapRadius" type="number" min="2" max="64" data-name="heatmapRadius" placeholder="8" />
+            <p class="splunk-formatter-help">Lower values produce sharper heat density.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-heatmapOpacity">Heatmap opacity</label>
+            <input id="bm-heatmapOpacity" type="number" min="0" max="1" step="0.05" data-name="heatmapOpacity" placeholder="0.85" />
+            <p class="splunk-formatter-help">0.0 - 1.0</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-hexbinOpacity">Hexbin fill opacity</label>
+            <input id="bm-hexbinOpacity" type="number" min="0" max="1" step="0.05" data-name="hexbinOpacity" placeholder="0.55" />
+            <p class="splunk-formatter-help">0.0 - 1.0</p>
+        </div>
+
+        <h3 class="splunk-formatter-heading">Accessibility</h3>
+        <div class="splunk-formatter-row">
+            <label for="bm-highContrast">High contrast mode</label>
+            <select id="bm-highContrast" data-name="highContrast">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Increases contrast on layer outlines, labels, and selection rings.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-mapLabelLanguage">Map label language</label>
+            <select id="bm-mapLabelLanguage" data-name="mapLabelLanguage">
+                <option value="auto" selected>Browser locale</option>
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+                <option value="fr">French</option>
+                <option value="de">German</option>
+                <option value="ja">Japanese</option>
+                <option value="zh">Chinese</option>
+            </select>
+            <p class="splunk-formatter-help">Switches MapLibre label fields to match the chosen language when the tileset supports it.</p>
+        </div>
+    </section>
+</div>

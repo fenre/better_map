@@ -1,0 +1,79 @@
+<dashboard version="2" theme="dark">
+    <label>Better Map - Overview</label>
+    <description>Combined showcase of Better Map's flagship layers and integrations. The left map paints H3 hexbins of incident density; the right map paints colour-coded site markers with a layer-control filter. Both maps coordinate camera state through the better_map.camera.* tokens so dragging one mirrors the view in the other.</description>
+    <definition><![CDATA[
+{
+    "visualizations": {
+        "viz_hex": {
+            "type": "splunk.custom",
+            "options": {
+                "type": "better_map",
+                "name": "better_map",
+                "tileProvider": "openfreemap_positron",
+                "pointRenderer": "hexbin",
+                "hexbinAutoDegrade": "true",
+                "hexbinOpacity": "0.85",
+                "palette": "viridis",
+                "enableDrilldown": "true",
+                "enableCrossPanel": "true",
+                "showLayerControl": "false",
+                "enableExportShare": "true"
+            },
+            "dataSources": {
+                "primary": "ds_incidents"
+            },
+            "title": "Incident density (H3 hexbin)"
+        },
+        "viz_sites": {
+            "type": "splunk.custom",
+            "options": {
+                "type": "better_map",
+                "name": "better_map",
+                "tileProvider": "openfreemap_liberty",
+                "pointRenderer": "markers",
+                "showLayerControl": "true",
+                "enableDrilldown": "true",
+                "enableCrossPanel": "true",
+                "markerColor": "#4cd9c4",
+                "markerOutline": "#0b1a2d",
+                "enableExportShare": "true"
+            },
+            "dataSources": {
+                "primary": "ds_sites"
+            },
+            "title": "Sites by category"
+        }
+    },
+    "dataSources": {
+        "ds_incidents": {
+            "type": "ds.search",
+            "options": {
+                "query": "| makeresults count=2000 | streamstats c | eval baseLat = case(c%4=0, 40.7, c%4=1, 51.5, c%4=2, 37.77, true(), 35.68) | eval baseLon = case(c%4=0, -74.0, c%4=1, -0.13, c%4=2, -122.42, true(), 139.69) | eval lat = baseLat + (random()/2147483647.0 - 0.5) * 4 | eval lon = baseLon + (random()/2147483647.0 - 0.5) * 6 | fields lat lon"
+            }
+        },
+        "ds_sites": {
+            "type": "ds.search",
+            "options": {
+                "query": "| inputlookup better_map_sample_sites.csv | rename layer AS layerName"
+            }
+        }
+    },
+    "defaults": {
+        "dataSources": {
+            "ds.search": {
+                "options": { "queryParameters": { "earliest": "-24h@h", "latest": "now" } }
+            }
+        }
+    },
+    "inputs": {},
+    "layout": {
+        "type": "absolute",
+        "options": { "width": 1920, "height": 1000, "backgroundColor": "#0b1a2d" },
+        "structure": [
+            { "item": "viz_hex",   "type": "block", "position": { "x": 0,    "y": 0,  "w": 960, "h": 1000 } },
+            { "item": "viz_sites", "type": "block", "position": { "x": 960,  "y": 0,  "w": 960, "h": 1000 } }
+        ]
+    }
+}
+    ]]></definition>
+</dashboard>

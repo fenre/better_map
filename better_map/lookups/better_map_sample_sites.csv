@@ -1,0 +1,25 @@
+id,name,lat,lon,category,city,country,value,layer
+SITE-AMS-1,Amsterdam Office,52.3676,4.9041,office,Amsterdam,NL,42,sites
+SITE-LON-1,London Office,51.5074,-0.1278,office,London,GB,67,sites
+SITE-NYC-1,New York Office,40.7128,-74.0060,office,New York,US,118,sites
+SITE-SFO-1,San Francisco Office,37.7749,-122.4194,office,San Francisco,US,95,sites
+SITE-TKY-1,Tokyo Office,35.6762,139.6503,office,Tokyo,JP,73,sites
+SITE-SYD-1,Sydney Office,-33.8688,151.2093,office,Sydney,AU,38,sites
+SITE-FRA-1,Frankfurt Office,50.1109,8.6821,office,Frankfurt,DE,54,sites
+SITE-SIN-1,Singapore Office,1.3521,103.8198,office,Singapore,SG,61,sites
+DC-IAD-1,Ashburn DC,39.0438,-77.4874,datacenter,Ashburn,US,890,sites
+DC-DUB-1,Dublin DC,53.3498,-6.2603,datacenter,Dublin,IE,540,sites
+DC-NRT-1,Tokyo DC,35.6762,139.6503,datacenter,Tokyo,JP,720,sites
+DC-SYD-1,Sydney DC,-33.8688,151.2093,datacenter,Sydney,AU,310,sites
+DC-GRU-1,Sao Paulo DC,-23.5505,-46.6333,datacenter,Sao Paulo,BR,205,sites
+DC-BOM-1,Mumbai DC,19.0760,72.8777,datacenter,Mumbai,IN,420,sites
+DC-CPT-1,Cape Town DC,-33.9249,18.4241,datacenter,Cape Town,ZA,128,sites
+POP-CDG-1,Paris PoP,49.0097,2.5479,pop,Paris,FR,210,sites
+POP-LHR-1,London PoP,51.4700,-0.4543,pop,London,GB,265,sites
+POP-JFK-1,New York PoP,40.6413,-73.7781,pop,New York,US,330,sites
+POP-LAX-1,Los Angeles PoP,33.9416,-118.4085,pop,Los Angeles,US,240,sites
+POP-DFW-1,Dallas PoP,32.8998,-97.0403,pop,Dallas,US,180,sites
+POP-SCL-1,Santiago PoP,-33.3930,-70.7858,pop,Santiago,CL,90,sites
+POP-CGK-1,Jakarta PoP,-6.1256,106.6559,pop,Jakarta,ID,160,sites
+POP-DXB-1,Dubai PoP,25.2528,55.3644,pop,Dubai,AE,210,sites
+POP-EZE-1,Buenos Aires PoP,-34.8222,-58.5358,pop,Buenos Aires,AR,77,sites

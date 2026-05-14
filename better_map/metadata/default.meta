@@ -1,0 +1,26 @@
+#
+# Default permissions for the Better Map app.
+#
+# The mandatory global [] stanza grants all users read access to the app's
+# default knowledge objects. Without this stanza some Splunk versions hide
+# the viz from non-admin users.
+#
+
+[]
+access = read : [ * ], write : [ admin, sc_admin, power ]
+export = system
+
+[visualizations]
+export = system
+
+[views]
+export = system
+
+[nav]
+export = system
+
+[macros]
+export = system
+
+[lookups]
+export = system

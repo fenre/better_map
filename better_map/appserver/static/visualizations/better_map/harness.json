@@ -1,0 +1,49 @@
+{
+  "label": "Better Map",
+  "defaultSize": { "width": 960, "height": 540 },
+  "noDataMessage": "Awaiting telemetry data",
+  "formatter": [
+    {
+      "name": "tileProvider",
+      "label": "Tile provider",
+      "type": "select",
+      "options": [
+        { "v": "openfreemap_liberty", "l": "OpenFreeMap Liberty (default)" },
+        { "v": "openfreemap_positron", "l": "OpenFreeMap Positron" },
+        { "v": "openfreemap_bright", "l": "OpenFreeMap Bright" },
+        { "v": "osm_raster", "l": "OpenStreetMap raster" }
+      ],
+      "default": "openfreemap_liberty"
+    },
+    {
+      "name": "enableClustering",
+      "label": "Clustering",
+      "type": "radio",
+      "options": ["true", "false"],
+      "default": "true"
+    },
+    {
+      "name": "enableHeatmap",
+      "label": "Heatmap",
+      "type": "radio",
+      "options": ["true", "false"],
+      "default": "false"
+    }
+  ],
+  "data": {
+    "mode": "multi_row",
+    "columns": ["_time", "lat", "lon", "label", "weight", "layer"],
+    "sampleRows": [
+      ["2026-05-14T05:50:00Z", "37.7749", "-122.4194", "San Francisco", "1.0", "markers"],
+      ["2026-05-14T05:51:00Z", "40.7128", "-74.0060", "New York", "1.0", "markers"],
+      ["2026-05-14T05:52:00Z", "51.5074", "-0.1278", "London", "0.8", "markers"],
+      ["2026-05-14T05:53:00Z", "35.6895", "139.6917", "Tokyo", "1.2", "markers"],
+      ["2026-05-14T05:54:00Z", "-33.8688", "151.2093", "Sydney", "0.9", "markers"],
+      ["2026-05-14T05:55:00Z", "55.7558", "37.6173", "Moscow", "0.7", "markers"],
+      ["2026-05-14T05:56:00Z", "-23.5505", "-46.6333", "Sao Paulo", "1.1", "markers"],
+      ["2026-05-14T05:57:00Z", "1.3521", "103.8198", "Singapore", "0.6", "markers"],
+      ["2026-05-14T05:58:00Z", "28.6139", "77.2090", "New Delhi", "1.3", "markers"],
+      ["2026-05-14T05:59:00Z", "30.0444", "31.2357", "Cairo", "0.5", "markers"]
+    ]
+  }
+}

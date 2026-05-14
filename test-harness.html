@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Better Map - Local test harness</title>
+<style>
+    :root {
+        color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: #0b1a2d;
+        color: #e6eef9;
+    }
+    header {
+        padding: 12px 16px;
+        background: #102035;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    header h1 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+    header .tag {
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: rgba(76, 217, 196, 0.18);
+        color: #4cd9c4;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+    .layout {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        height: calc(100vh - 49px);
+    }
+    aside {
+        padding: 16px;
+        overflow-y: auto;
+        background: #0e1c2f;
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    aside h2 {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: rgba(255, 255, 255, 0.55);
+        margin: 16px 0 8px;
+    }
+    aside h2:first-child { margin-top: 0; }
+    .field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: 12px;
+    }
+    .field label {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.85);
+    }
+    .field input,
+    .field select {
+        background: #102035;
+        color: #e6eef9;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        padding: 6px 8px;
+        font: inherit;
+    }
+    .radio-row {
+        display: flex;
+        gap: 6px;
+    }
+    .radio-row button {
+        flex: 1;
+        background: #102035;
+        color: #e6eef9;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        padding: 6px 8px;
+        cursor: pointer;
+        font: inherit;
+    }
+    .radio-row button.on {
+        background: #4cd9c4;
+        color: #0b1a2d;
+        border-color: #4cd9c4;
+    }
+    main {
+        position: relative;
+        overflow: hidden;
+        background: #0a1422;
+    }
+    #viz {
+        width: 100%;
+        height: 100%;
+    }
+    footer {
+        position: absolute;
+        bottom: 8px;
+        right: 12px;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.45);
+    }
+</style>
+</head>
+<body>
+    <header>
+        <h1>Better Map</h1>
+        <span class="tag">local harness</span>
+        <span style="font-size: 12px; color: rgba(255,255,255,0.55);">
+            Loads <code>visualization.js</code> directly. Useful for fast iteration without Splunk.
+        </span>
+    </header>
+    <div class="layout">
+        <aside id="controls"></aside>
+        <main>
+            <div id="viz"></div>
+            <footer>Phase 0 stub - MapLibre lifecycle lands in Phase 1.</footer>
+        </main>
+    </div>
+
+    <!--
+      Minimal AMD shim so the AMD bundle (which expects `define([deps], cb)`)
+      can run outside of Splunk's RequireJS environment. We only need to
+      resolve `api/SplunkVisualizationBase` and `api/SplunkVisualizationUtils`
+      with stub implementations that mirror the subset of the API the viz
+      actually uses.
+    -->
+    <script>
+    (function () {
+        'use strict';
+
+        // ---- SplunkVisualizationUtils stub ----------------------------
+        var SVU = {
+            escapeHtml: function (s) {
+                if (s === undefined || s === null) return '';
+                return String(s)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            },
+            makeSafeUrl: function (url) {
+                if (!url) return '';
+                if (/^javascript:/i.test(url)) return '';
+                return url;
+            },
+            getCurrentTheme: function () {
+                return 'dark';
+            },
+            normalizeBoolean: function (v) {
+                if (v === true || v === 1) return true;
+                if (typeof v === 'string') {
+                    var s = v.toLowerCase();
+                    return s === 'true' || s === '1' || s === 'yes';
+                }
+                return false;
+            }
+        };
+
+        // ---- SplunkVisualizationBase stub -----------------------------
+        function extend(proto) {
+            function Ctor(opts) {
+                this.el = (opts && opts.el) || document.createElement('div');
+                if (this.initialize) this.initialize(opts || {});
+            }
+            Ctor.prototype = Object.create(BaseProto);
+            for (var k in proto) {
+                if (Object.prototype.hasOwnProperty.call(proto, k)) {
+                    Ctor.prototype[k] = proto[k];
+                }
+            }
+            return Ctor;
+        }
+
+        var BaseProto = {
+            initialize: function () {},
+            getInitialDataParams: function () {
+                return { outputMode: 'row_major', count: 10000 };
+            },
+            formatData: function (data) { return data; },
+            updateView: function () {},
+            reflow: function () {},
+            destroy: function () {},
+            getPropertyNamespaceInfo: function () {
+                return {
+                    propertyNamespace:
+                        'display.visualizations.custom.better_map.better_map.'
+                };
+            },
+            invalidateUpdateView: function () {
+                if (this._pendingUpdate) return;
+                var self = this;
+                this._pendingUpdate = true;
+                Promise.resolve().then(function () {
+                    self._pendingUpdate = false;
+                    if (self._cachedData !== undefined && self._cachedConfig) {
+                        self.updateView(self._cachedData, self._cachedConfig);
+                    }
+                });
+            },
+            drilldown: function (payload) {
+                console.warn('[harness] drilldown ->', payload);
+            }
+        };
+
+        var SVB = {
+            extend: extend,
+            ROW_MAJOR_OUTPUT_MODE: 'row_major',
+            COLUMN_MAJOR_OUTPUT_MODE: 'column_major',
+            FIELD_VALUE_DRILLDOWN: 'fieldValue',
+            VisualizationError: function VisualizationError(message) {
+                this.name = 'VisualizationError';
+                this.message = message || '';
+                this.stack = new Error(message).stack;
+            }
+        };
+        SVB.VisualizationError.prototype = Object.create(Error.prototype);
+
+        // ---- Tiny AMD loader ------------------------------------------
+        var registry = {
+            'api/SplunkVisualizationBase': SVB,
+            'api/SplunkVisualizationUtils': SVU
+        };
+
+        window.define = function (deps, factory) {
+            var resolved = [];
+            for (var i = 0; i < deps.length; i++) {
+                resolved.push(registry[deps[i]]);
+            }
+            var result = factory.apply(null, resolved);
+            window.__BETTER_MAP_VIZ__ = result;
+        };
+        window.define.amd = { jQuery: false };
+
+        // ---- Boot -----------------------------------------------------
+        function loadJSON(url) {
+            return fetch(url, { cache: 'no-store' }).then(function (r) {
+                if (!r.ok) throw new Error('Failed to load ' + url + ': ' + r.status);
+                return r.json();
+            });
+        }
+
+        function buildData(harness, formValues) {
+            var fields = harness.data.columns.map(function (name) {
+                return { name: name };
+            });
+            return { fields: fields, rows: harness.data.sampleRows };
+        }
+
+        function buildConfig(harness, formValues) {
+            var ns = 'display.visualizations.custom.better_map.better_map.';
+            var cfg = {};
+            harness.formatter.forEach(function (f) {
+                cfg[ns + f.name] = formValues[f.name];
+            });
+            return cfg;
+        }
+
+        function renderControls(harness, onChange) {
+            var aside = document.getElementById('controls');
+            aside.innerHTML = '';
+
+            var fmtHeader = document.createElement('h2');
+            fmtHeader.textContent = 'Formatter settings';
+            aside.appendChild(fmtHeader);
+
+            var values = {};
+
+            harness.formatter.forEach(function (f) {
+                values[f.name] = f.default;
+                var wrap = document.createElement('div');
+                wrap.className = 'field';
+
+                var lab = document.createElement('label');
+                lab.textContent = f.label;
+                wrap.appendChild(lab);
+
+                if (f.type === 'select') {
+                    var sel = document.createElement('select');
+                    f.options.forEach(function (opt) {
+                        var o = document.createElement('option');
+                        if (typeof opt === 'string') {
+                            o.value = opt;
+                            o.textContent = opt;
+                        } else {
+                            o.value = opt.v;
+                            o.textContent = opt.l;
+                        }
+                        if (o.value === f.default) o.selected = true;
+                        sel.appendChild(o);
+                    });
+                    sel.addEventListener('change', function () {
+                        values[f.name] = sel.value;
+                        onChange(values);
+                    });
+                    wrap.appendChild(sel);
+                } else if (f.type === 'radio') {
+                    var row = document.createElement('div');
+                    row.className = 'radio-row';
+                    f.options.forEach(function (opt) {
+                        var b = document.createElement('button');
+                        b.type = 'button';
+                        b.textContent = opt;
+                        if (opt === f.default) b.classList.add('on');
+                        b.addEventListener('click', function () {
+                            values[f.name] = opt;
+                            row.querySelectorAll('button').forEach(function (sib) {
+                                sib.classList.remove('on');
+                            });
+                            b.classList.add('on');
+                            onChange(values);
+                        });
+                        row.appendChild(b);
+                    });
+                    wrap.appendChild(row);
+                } else {
+                    var inp = document.createElement('input');
+                    inp.type = 'text';
+                    inp.value = f.default;
+                    inp.addEventListener('input', function () {
+                        values[f.name] = inp.value;
+                        onChange(values);
+                    });
+                    wrap.appendChild(inp);
+                }
+
+                aside.appendChild(wrap);
+            });
+
+            var info = document.createElement('h2');
+            info.textContent = 'Data sample';
+            aside.appendChild(info);
+
+            var pre = document.createElement('pre');
+            pre.style.fontSize = '11px';
+            pre.style.background = '#0a1422';
+            pre.style.padding = '8px';
+            pre.style.borderRadius = '4px';
+            pre.style.maxHeight = '240px';
+            pre.style.overflow = 'auto';
+            pre.style.color = 'rgba(255,255,255,0.75)';
+            pre.textContent = JSON.stringify(harness.data, null, 2);
+            aside.appendChild(pre);
+
+            return values;
+        }
+
+        var vizDir = 'better_map/appserver/static/visualizations/better_map';
+
+        Promise.all([
+            loadJSON(vizDir + '/harness.json')
+        ]).then(function (out) {
+            var harness = out[0];
+            var values;
+
+            function rerender() {
+                if (!window.__BETTER_MAP_VIZ__) {
+                    console.error('Viz not loaded yet');
+                    return;
+                }
+                var data = buildData(harness, values);
+                var cfg = buildConfig(harness, values);
+                var inst = window.__BETTER_MAP_VIZ__INSTANCE__;
+                if (!inst) {
+                    var el = document.getElementById('viz');
+                    inst = new window.__BETTER_MAP_VIZ__({ el: el });
+                    window.__BETTER_MAP_VIZ__INSTANCE__ = inst;
+                }
+                var formatted = inst.formatData(data, cfg);
+                inst._cachedData = formatted;
+                inst._cachedConfig = cfg;
+                inst.updateView(formatted, cfg);
+            }
+
+            values = renderControls(harness, function () { rerender(); });
+
+            var s = document.createElement('script');
+            s.src = vizDir + '/visualization.js';
+            s.onload = rerender;
+            s.onerror = function () {
+                document.getElementById('viz').textContent =
+                    'Failed to load visualization.js - did you run ./build.sh ?';
+            };
+            document.head.appendChild(s);
+        }).catch(function (err) {
+            document.getElementById('viz').textContent = 'Harness error: ' + err.message;
+            console.error(err);
+        });
+    })();
+    </script>
+</body>
+</html>

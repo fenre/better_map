@@ -1,0 +1,52 @@
+<dashboard version="2" theme="dark">
+    <label>Better Map - Fleet Tracking</label>
+    <description>Live or replay vehicle positions with an animated ant-path, time scrubber, and per-truck color coding. Replace the inline SPL with your fleet index to go live.</description>
+    <definition><![CDATA[
+{
+    "visualizations": {
+        "viz_fleet": {
+            "type": "splunk.custom",
+            "options": {
+                "type": "better_map",
+                "name": "better_map",
+                "tileProvider": "openfreemap-positron",
+                "pointRenderer": "markers",
+                "pathColor": "#4cd9c4",
+                "pathAnimated": true,
+                "pathArrows": true,
+                "showTimeScrubber": "true",
+                "trailWindowMs": "120000"
+            },
+            "dataSources": {
+                "primary": "ds_fleet"
+            }
+        }
+    },
+    "dataSources": {
+        "ds_fleet": {
+            "type": "ds.search",
+            "options": {
+                "query": "| makeresults count=200 | streamstats c | eval pathId = case(c%4=0, \"truck-1\", c%4=1, \"truck-2\", c%4=2, \"truck-3\", true(), \"truck-4\") | eval bearing = (c*4) % 360 | eval baseLat = case(pathId=\"truck-1\", 40.71, pathId=\"truck-2\", 51.5, pathId=\"truck-3\", 37.77, true(), 35.68) | eval baseLon = case(pathId=\"truck-1\", -74.0, pathId=\"truck-2\", -0.13, pathId=\"truck-3\", -122.42, true(), 139.65) | eval offset = c / 200.0 | eval lat = baseLat + (offset * 0.4 * sin(c)) | eval lon = baseLon + (offset * 0.4 * cos(c)) | eval _time = relative_time(now(), \"-2h\") + c * 60 | eval color = case(pathId=\"truck-1\", \"#fb8072\", pathId=\"truck-2\", \"#8dd3c7\", pathId=\"truck-3\", \"#ffffb3\", true(), \"#bebada\") | fields _time pathId lat lon bearing color"
+            }
+        }
+    },
+    "defaults": {
+        "dataSources": {
+            "ds.search": {
+                "options": {
+                    "queryParameters": { "earliest": "-2h@m", "latest": "now" }
+                }
+            }
+        }
+    },
+    "inputs": {},
+    "layout": {
+        "type": "absolute",
+        "options": { "width": 1440, "height": 960, "backgroundColor": "#0b1a2d" },
+        "structure": [
+            { "item": "viz_fleet", "type": "block", "position": { "x": 0, "y": 0, "w": 1440, "h": 960 } }
+        ]
+    }
+}
+    ]]></definition>
+</dashboard>
