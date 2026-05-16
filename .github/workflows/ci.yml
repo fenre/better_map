@@ -1,14 +1,15 @@
 # CI — better_map Splunk custom visualization
 #
-# Scope: ROADMAP §3 G2 foundation + §3 G8 + §7b Q-1 (PR pipeline).
+# Scope: ROADMAP §3 G2 foundation + §3 G8 + §7b Q-1 + §7b Q-2 (PR pipeline).
 # This workflow lints the JS, runs the JS↔CSS contract lint, parses every
 # dashboard XML + its embedded Dashboard Studio JSON definition, builds
-# the webpack production bundle, sanity-checks the build artifacts, and
-# validates incoming PR commit messages against Conventional Commits.
-# It does NOT (yet) run AppInspect, unit tests, the production-bundle
-# console-noise check, or the live dispatch test. Those gates are tracked
-# as v1.7 follow-up commits under ROADMAP §3 G2 and as quality boxes
-# in ROADMAP §7b.
+# the webpack production bundle, runs the production-bundle console-noise
+# check, sanity-checks the build artifacts, and validates incoming PR
+# commit messages against Conventional Commits.
+# It does NOT (yet) run AppInspect, unit tests, the bundle-size budget
+# check, or the live dispatch test. Those gates are tracked as v1.7
+# follow-up commits under ROADMAP §3 G2 and as quality boxes in ROADMAP
+# §7b / §7c-widget.
 
 name: CI
 
@@ -76,6 +77,18 @@ jobs:
 
       - name: Build webpack production bundle
         run: npm run build
+
+      - name: Check production-bundle console noise (Q-2)
+        # Two-layer check: (1) source lint forbids raw console.log/.debug/.info
+        # /.trace/.table/.group/.time/.count/.assert in src/**/*.js and requires
+        # any console.warn/.error to start with `[better_map]`; (2) bundle
+        # sanity asserts the minified visualization.js total console.* call
+        # count stays within budget (defends against a dev-mode bundle or
+        # noisy new dep accidentally shipping). debugHud, errorStates, and
+        # perfHUD are allowlisted as intentional diagnostic surfaces. See
+        # ROADMAP §3 G2 + §7b Q-2.
+        working-directory: ${{ github.workspace }}
+        run: node scripts/check-bundle-console-noise.js
 
       - name: Sanity check build artifacts
         # The webpack build MUST produce a non-empty visualization.js bundle.
