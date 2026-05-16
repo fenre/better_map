@@ -1,0 +1,5 @@
+[]
+access = read : [ * ], write : [ admin ]
+
+[visualizations/esri_map_viz]
+export = system

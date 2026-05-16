@@ -1,0 +1,390 @@
+<form class="splunk-formatter-section" section-label="Data configurations">
+
+    <splunk-control-group label="ESRI Service URL" help="URL to an ESRI MapServer, FeatureServer, or TileServer endpoint">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.serviceUrl" value="">
+        </splunk-text-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Service Type" help="How to render the ESRI service: tile (cached tiles), feature (client-side vectors), dynamic (server-rendered image), or image (raster)">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.serviceType" value="feature">
+            <option value="tile">Tile</option>
+            <option value="feature">Feature</option>
+            <option value="dynamic">Dynamic</option>
+            <option value="image">Image</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Service Layer Opacity" help="Opacity of the ESRI service layer (0.0 = transparent, 1.0 = solid)">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.serviceOpacity" value="1.0">
+        </splunk-text-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Feature Where Clause" help="SQL WHERE clause to filter Feature layers (e.g. STATE_NAME='California'). Only applies to Feature service type.">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.whereClause" value="">
+        </splunk-text-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Use Service Renderer" help="Apply the service-defined symbology (colors, icons) to feature layers. Requires esri-leaflet-renderers.">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.useServiceRenderer" value="false">
+            <option value="true">Enabled</option>
+            <option value="false">Disabled</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Cluster Service Features" help="Cluster point features from the ESRI service layer. Only applies to Feature service type.">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.clusterServiceFeatures" value="false">
+            <option value="true">Enabled</option>
+            <option value="false">Disabled</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Service Layer Popups" help="Enable click-to-identify popups on ESRI service layers. Shows feature attributes from the service when clicking map features.">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.enableServicePopups" value="true">
+            <option value="true">Enabled</option>
+            <option value="false">Disabled</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Spatial Query on Draw" help="When Draw Tools are enabled, drawn shapes will query the Feature service layer and show intersecting features in a results panel. Only applies to Feature service type.">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.enableSpatialQuery" value="false">
+            <option value="true">Enabled</option>
+            <option value="false">Disabled</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Latitude Field" help="SPL field name containing latitude values for point features">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.latField" value="latitude">
+        </splunk-text-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Longitude Field" help="SPL field name containing longitude values for point features">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.lonField" value="longitude">
+        </splunk-text-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Tooltip Field" help="SPL field name for popup/tooltip content. Leave default for auto-generated popups.">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.tooltipField" value="description">
+        </splunk-text-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="GeoJSON Field" help="SPL field containing GeoJSON geometry for lines and polygons">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.geojsonField" value="geojson">
+        </splunk-text-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Time Field" help="SPL field containing epoch timestamps for timeline animation. Defaults to _time.">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.timeField" value="_time">
+        </splunk-text-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Custom Tile URL" help="Custom XYZ tile URL template (e.g. https://tiles.example.com/{z}/{x}/{y}.png). Overrides the basemap setting when set.">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.customTileUrl" value="">
+        </splunk-text-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Esri API Key" help="API key for Esri geocoding service. Required when geocoder is enabled. Get one at developers.arcgis.com.">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.esriApiKey" value="">
+        </splunk-text-input>
+    </splunk-control-group>
+
+</form>
+
+<form class="splunk-formatter-section" section-label="Data display">
+
+    <splunk-control-group label="Basemap" help="Background map tile layer">
+        <splunk-select name="{{VIZ_NAMESPACE}}.basemap" value="esri-dark-gray">
+            <option value="esri-dark-gray">ESRI Dark Gray</option>
+            <option value="esri-light-gray">ESRI Light Gray</option>
+            <option value="esri-streets">ESRI Streets</option>
+            <option value="esri-topo">ESRI Topographic</option>
+            <option value="esri-imagery">ESRI Imagery</option>
+            <option value="esri-nat-geo">ESRI National Geographic</option>
+            <option value="osm">OpenStreetMap</option>
+            <option value="none">None (transparent)</option>
+        </splunk-select>
+    </splunk-control-group>
+
+    <splunk-control-group label="Secondary Basemap (Compare)" help="When set, enables side-by-side comparison with a draggable slider between primary and secondary basemaps.">
+        <splunk-select name="{{VIZ_NAMESPACE}}.secondaryBasemap" value="none">
+            <option value="none">Off</option>
+            <option value="esri-dark-gray">ESRI Dark Gray</option>
+            <option value="esri-light-gray">ESRI Light Gray</option>
+            <option value="esri-streets">ESRI Streets</option>
+            <option value="esri-topo">ESRI Topographic</option>
+            <option value="esri-imagery">ESRI Imagery</option>
+            <option value="esri-nat-geo">ESRI National Geographic</option>
+            <option value="osm">OpenStreetMap</option>
+        </splunk-select>
+    </splunk-control-group>
+
+    <splunk-control-group label="Display Mode" help="How to render search result points: as markers, as a heatmap, or both overlaid">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.displayMode" value="markers">
+            <option value="markers">Markers</option>
+            <option value="heatmap">Heatmap</option>
+            <option value="both">Both</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Center Latitude" help="Initial map center latitude (-90 to 90)">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.centerLat" value="39.8">
+        </splunk-text-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Center Longitude" help="Initial map center longitude (-180 to 180)">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.centerLon" value="-98.5">
+        </splunk-text-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Initial Zoom" help="Starting zoom level (1 = world, 18 = building)">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.initialZoom" value="4">
+        </splunk-text-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Max Zoom" help="Maximum zoom level allowed">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.maxZoom" value="18">
+        </splunk-text-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Min Zoom" help="Minimum zoom level allowed">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.minZoom" value="1">
+        </splunk-text-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Tooltip Mode" help="How feature info is displayed: click opens a popup, hover shows a tooltip, both shows both">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.tooltipMode" value="click">
+            <option value="click">Click</option>
+            <option value="hover">Hover</option>
+            <option value="both">Both</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Drilldown" help="Enable Splunk drilldown when clicking a feature. Passes all SPL fields to the drilldown action.">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.drilldownAction" value="none">
+            <option value="none">Off</option>
+            <option value="all">On</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Zoom Control" help="Show zoom in/out buttons on the map">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.showZoomControl" value="true">
+            <option value="true">Show</option>
+            <option value="false">Hide</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Scale Bar" help="Show distance scale bar on the map">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.showScaleControl" value="false">
+            <option value="true">Show</option>
+            <option value="false">Hide</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Fullscreen Button" help="Show fullscreen toggle button on the map">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.showFullscreen" value="true">
+            <option value="true">Show</option>
+            <option value="false">Hide</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Coordinate Display" help="Show cursor lat/lon coordinates on the map">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.showCoordinates" value="false">
+            <option value="true">Show</option>
+            <option value="false">Hide</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Feature Count" help="Show total feature count badge on the map">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.showFeatureCount" value="false">
+            <option value="true">Show</option>
+            <option value="false">Hide</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Legend" help="Show legend when _legend field is present in search results">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.showLegend" value="true">
+            <option value="true">Show</option>
+            <option value="false">Hide</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Auto-Fit Bounds" help="Automatically zoom and pan to fit all search result features">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.autoFitBounds" value="true">
+            <option value="true">Enabled</option>
+            <option value="false">Disabled</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Marker Clustering" help="Group nearby point markers into clusters that expand on click">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.enableClustering" value="false">
+            <option value="true">Enabled</option>
+            <option value="false">Disabled</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Geocoder Search" help="Show address/place search control on the map. Uses Esri geocoding service (API key recommended).">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.showGeosearch" value="false">
+            <option value="true">Show</option>
+            <option value="false">Hide</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Draw Tools" help="Show polygon, rectangle, line, and marker drawing tools. Drawn shapes trigger drilldown with GeoJSON geometry.">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.showDrawTools" value="false">
+            <option value="true">Show</option>
+            <option value="false">Hide</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Measure Tool" help="Show ruler tool for measuring distances between points on the map">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.showMeasure" value="false">
+            <option value="true">Show</option>
+            <option value="false">Hide</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Minimap" help="Show overview minimap in the corner for navigation context">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.showMinimap" value="false">
+            <option value="true">Show</option>
+            <option value="false">Hide</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Timeline Slider" help="Show time slider for temporal filtering of features. Requires a time field (epoch) in search results.">
+        <splunk-radio-input name="{{VIZ_NAMESPACE}}.showTimeline" value="false">
+            <option value="true">Show</option>
+            <option value="false">Hide</option>
+        </splunk-radio-input>
+    </splunk-control-group>
+
+</form>
+
+<form class="splunk-formatter-section" section-label="Color and style">
+
+    <splunk-control-group label="Default Marker Icon" help="Default icon for point markers (from Esri Calcite icons). Can be overridden per-row with _icon field.">
+        <splunk-select name="{{VIZ_NAMESPACE}}.defaultIcon" value="none">
+            <option value="none">Circle (default)</option>
+            <option value="pin-tear">Pin / Teardrop</option>
+            <option value="star">Star</option>
+            <option value="circle">Filled Circle</option>
+            <option value="square">Square</option>
+            <option value="diamond">Diamond</option>
+            <option value="triangle">Triangle</option>
+            <option value="flag">Flag</option>
+            <option value="person">Person</option>
+            <option value="people">People</option>
+            <option value="building">Building</option>
+            <option value="house">House</option>
+            <option value="school">School</option>
+            <option value="hospital">Hospital</option>
+            <option value="fire-station">Fire Station</option>
+            <option value="place-of-worship">Place of Worship</option>
+            <option value="food">Food / Restaurant</option>
+            <option value="shopping">Shopping</option>
+            <option value="bank">Bank</option>
+            <option value="gas-station">Gas Station</option>
+            <option value="parking">Parking</option>
+            <option value="airplane">Airplane</option>
+            <option value="car">Car</option>
+            <option value="bus">Bus</option>
+            <option value="train">Train</option>
+            <option value="ship">Ship</option>
+            <option value="ambulance">Ambulance</option>
+            <option value="bridge">Bridge</option>
+            <option value="power-plant">Power Plant</option>
+            <option value="dam">Dam</option>
+            <option value="windmill">Wind Turbine</option>
+            <option value="wifi">WiFi / Signal</option>
+            <option value="anchor">Anchor</option>
+            <option value="bell">Bell / Alert</option>
+            <option value="information">Information</option>
+            <option value="biohazard">Biohazard</option>
+            <option value="mining">Mining / Pickaxe</option>
+        </splunk-select>
+    </splunk-control-group>
+
+    <splunk-control-group label="Icon Size" help="Size of icon markers in pixels (12-48). Also applies to _icon and _iconUrl markers.">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.iconSize" value="24">
+        </splunk-text-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Marker Color" help="Default fill color for point markers from search results">
+        <splunk-color-picker name="{{VIZ_NAMESPACE}}.markerColor" type="custom" value="#00A4FD">
+            <splunk-color>#00A4FD</splunk-color>
+            <splunk-color>#06B6D4</splunk-color>
+            <splunk-color>#3B82F6</splunk-color>
+            <splunk-color>#22C55E</splunk-color>
+            <splunk-color>#F59E0B</splunk-color>
+            <splunk-color>#EF4444</splunk-color>
+            <splunk-color>#8B5CF6</splunk-color>
+            <splunk-color>#64748B</splunk-color>
+        </splunk-color-picker>
+    </splunk-control-group>
+
+    <splunk-control-group label="Marker Radius" help="Default radius in pixels for circle markers (1-20). Not used when icon is set.">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.markerRadius" value="6">
+        </splunk-text-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Heatmap Radius" help="Radius of each heatmap point in pixels (10-50). Only used when display mode is Heatmap or Both.">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.heatmapRadius" value="25">
+        </splunk-text-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Heatmap Blur" help="Blur radius for heatmap rendering (5-30). Higher values create smoother gradients.">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.heatmapBlur" value="15">
+        </splunk-text-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Heatmap Max Intensity" help="Maximum intensity value for heatmap normalization. Set to 0 for auto-detection.">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.heatmapMaxIntensity" value="0">
+        </splunk-text-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Line Color" help="Default color for line features from search results">
+        <splunk-color-picker name="{{VIZ_NAMESPACE}}.lineColor" type="custom" value="#00A4FD">
+            <splunk-color>#00A4FD</splunk-color>
+            <splunk-color>#06B6D4</splunk-color>
+            <splunk-color>#3B82F6</splunk-color>
+            <splunk-color>#22C55E</splunk-color>
+            <splunk-color>#F59E0B</splunk-color>
+            <splunk-color>#EF4444</splunk-color>
+            <splunk-color>#8B5CF6</splunk-color>
+            <splunk-color>#64748B</splunk-color>
+        </splunk-color-picker>
+    </splunk-control-group>
+
+    <splunk-control-group label="Line Width" help="Default width in pixels for line features (1-10)">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.lineWidth" value="2">
+        </splunk-text-input>
+    </splunk-control-group>
+
+    <splunk-control-group label="Polygon Fill Color" help="Default fill color for polygon features">
+        <splunk-color-picker name="{{VIZ_NAMESPACE}}.polygonFillColor" type="custom" value="#00A4FD">
+            <splunk-color>#00A4FD</splunk-color>
+            <splunk-color>#06B6D4</splunk-color>
+            <splunk-color>#3B82F6</splunk-color>
+            <splunk-color>#22C55E</splunk-color>
+            <splunk-color>#F59E0B</splunk-color>
+            <splunk-color>#EF4444</splunk-color>
+            <splunk-color>#8B5CF6</splunk-color>
+            <splunk-color>#64748B</splunk-color>
+        </splunk-color-picker>
+    </splunk-control-group>
+
+    <splunk-control-group label="Polygon Stroke Color" help="Default outline color for polygon features">
+        <splunk-color-picker name="{{VIZ_NAMESPACE}}.polygonStrokeColor" type="custom" value="#FFFFFF">
+            <splunk-color>#FFFFFF</splunk-color>
+            <splunk-color>#F8FAFC</splunk-color>
+            <splunk-color>#00A4FD</splunk-color>
+            <splunk-color>#64748B</splunk-color>
+            <splunk-color>#1A1A2E</splunk-color>
+            <splunk-color>#000000</splunk-color>
+        </splunk-color-picker>
+    </splunk-control-group>
+
+    <splunk-control-group label="Polygon Fill Opacity" help="Opacity of polygon fill (0.0 = transparent, 1.0 = solid)">
+        <splunk-text-input name="{{VIZ_NAMESPACE}}.polygonFillOpacity" value="0.3">
+        </splunk-text-input>
+    </splunk-control-group>
+
+</form>

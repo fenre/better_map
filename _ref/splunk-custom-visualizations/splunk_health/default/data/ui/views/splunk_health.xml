@@ -1,0 +1,316 @@
+<dashboard version="2" theme="dark">
+    <label>Splunk Health</label>
+    <description>Glass-themed health monitoring dashboard for Splunk instances</description>
+    <definition><![CDATA[
+{
+    "title": "Splunk Health",
+    "description": "",
+    "inputs": {},
+    "defaults": {
+        "dataSources": {
+            "ds.o11y": {
+                "options": {
+                    "queryParameters": {
+                        "earliest": "$global_time.earliest$",
+                        "latest": "$global_time.latest$"
+                    }
+                }
+            }
+        }
+    },
+    "visualizations": {
+        "viz_forwarder_heatmap": {
+            "dataSources": {
+                "primary": "ds_forwarder_heatmap"
+            },
+            "options": {
+                "splunk_health.forwarder_heatmap.colorTheme": "neon"
+            },
+            "title": "Forwarder Health",
+            "type": "splunk_health.forwarder_heatmap"
+        },
+        "viz_index_storage": {
+            "dataSources": {
+                "primary": "ds_index_storage"
+            },
+            "options": {
+                "splunk_health.index_storage.colorTheme": "neon"
+            },
+            "title": "Index Storage",
+            "type": "splunk_health.index_storage"
+        },
+        "viz_indexing_pipeline": {
+            "dataSources": {
+                "primary": "ds_indexing_pipeline"
+            },
+            "options": {
+                "splunk_health.indexing_pipeline_flow.colorTheme": "neon"
+            },
+            "title": "Indexing Pipeline",
+            "type": "splunk_health.indexing_pipeline_flow"
+        },
+        "viz_license_gauge": {
+            "dataSources": {
+                "primary": "ds_license_gauge"
+            },
+            "options": {
+                "splunk_health.license_gauge.colorTheme": "neon"
+            },
+            "title": "License Usage",
+            "type": "splunk_health.license_gauge"
+        },
+        "viz_resource_gauge": {
+            "dataSources": {
+                "primary": "ds_resource_gauge"
+            },
+            "options": {
+                "splunk_health.resource_gauge.colorTheme": "neon"
+            },
+            "title": "System Resources",
+            "type": "splunk_health.resource_gauge"
+        },
+        "viz_scheduler_health": {
+            "dataSources": {
+                "primary": "ds_scheduler_health"
+            },
+            "options": {
+                "splunk_health.scheduler_health.colorTheme": "neon"
+            },
+            "title": "Scheduler Health",
+            "type": "splunk_health.scheduler_health"
+        },
+        "viz_search_activity": {
+            "dataSources": {
+                "primary": "ds_search_activity"
+            },
+            "options": {
+                "splunk_health.search_activity.colorTheme": "neon"
+            },
+            "title": "Search Activity",
+            "type": "splunk_health.search_activity"
+        },
+        "viz_status_board": {
+            "dataSources": {
+                "primary": "ds_status_board"
+            },
+            "options": {
+                "splunk_health.splunk_status_board.colorTheme": "neon"
+            },
+            "title": "Component Status",
+            "type": "splunk_health.splunk_status_board"
+        }
+    },
+    "dataSources": {
+        "ds_forwarder_heatmap": {
+            "name": "Forwarder Health",
+            "options": {
+                "query": "index=_internal sourcetype=splunkd group=tcpin_connections | stats max(_time) as last_seen, avg(tcp_KBps) as avg_kbps, avg(tcp_eps) as eps by hostname | eval mins_ago=round((now()-last_seen)/60,1) | eval eps=round(eps,1) | rename hostname as host | table host mins_ago eps | appendpipe [| stats count | where count=0 | eval _status=\"Awaiting forwarder data\", host=\"\", mins_ago=0, eps=0]",
+                "queryParameters": {
+                    "earliest": "-5m",
+                    "latest": "now"
+                },
+                "refresh": "60s",
+                "refreshType": "delay"
+            },
+            "type": "ds.search"
+        },
+        "ds_index_storage": {
+            "name": "Index Storage",
+            "options": {
+                "query": "| dbinspect index=* | eval temp=case(state==\"hot\",\"hot\", state==\"warm\",\"warm\", state==\"cold\",\"cold\", 1=1,\"other\") | stats sum(sizeOnDiskMB) as sizeMB by index, temp | eval sizeGB=round(sizeMB/1024,2) | chart sum(sizeGB) as sizeGB by index, temp | rename index as title | eval hotGB=coalesce(hot,0), warmGB=coalesce(warm,0), coldGB=coalesce(cold,0) | eval sizeGB=hotGB+warmGB+coldGB | where sizeGB>0 | join type=outer title [| rest /services/data/indexes | eval maxGB=round(maxTotalDataSizeMB/1024,2) | table title maxGB] | table title sizeGB maxGB hotGB warmGB coldGB | sort -sizeGB | appendpipe [| stats count | where count=0 | eval _status=\"Awaiting index data\", title=\"\", sizeGB=0, maxGB=0, hotGB=0, warmGB=0, coldGB=0]",
+                "queryParameters": {
+                    "earliest": "-1m",
+                    "latest": "now"
+                },
+                "refresh": "60s",
+                "refreshType": "delay"
+            },
+            "type": "ds.search"
+        },
+        "ds_indexing_pipeline": {
+            "name": "Indexing Pipeline",
+            "options": {
+                "query": "index=_internal group=queue name IN (parsingqueue, mergingqueue, typingqueue, indexqueue) | stats avg(current_size_kb) as avg_size, avg(max_size_kb) as capacity by name | eval fill_pct=if(capacity>0, round((avg_size/capacity)*100, 1), 0) | table name fill_pct avg_size capacity | appendpipe [| stats count | where count=0 | eval _status=\"Awaiting pipeline data\", name=\"parsingqueue\", fill_pct=0, avg_size=0, capacity=0]",
+                "queryParameters": {
+                    "earliest": "-5m",
+                    "latest": "now"
+                },
+                "refresh": "60s",
+                "refreshType": "delay"
+            },
+            "type": "ds.search"
+        },
+        "ds_license_gauge": {
+            "name": "License Usage",
+            "options": {
+                "query": "| rest /services/licenser/pools | eval used_gb=round(used_bytes/1024/1024/1024,2) | eval quota_gb=round(effective_quota/1024/1024/1024,2) | stats sum(used_gb) as used_gb, max(quota_gb) as quota_gb | appendpipe [| stats count | where count=0 | eval _status=\"Awaiting license data\", used_gb=0, quota_gb=0]",
+                "queryParameters": {
+                    "earliest": "-1m",
+                    "latest": "now"
+                },
+                "refresh": "60s",
+                "refreshType": "delay"
+            },
+            "type": "ds.search"
+        },
+        "ds_resource_gauge": {
+            "name": "System Resources",
+            "options": {
+                "query": "index=_introspection sourcetype=splunk_resource_usage component=hostwide | stats latest(data.cpu_user_pct) as cpu_user, latest(data.cpu_system_pct) as cpu_sys, latest(data.mem_used) as mem_used, latest(data.mem) as mem_total, latest(data.swap_used) as swap_used, latest(data.swap) as swap_total by host | eval cpu_pct=round(cpu_user+cpu_sys, 1) | eval mem_pct=if(mem_total>0, round((mem_used/mem_total)*100, 1), 0) | eval disk_pct=if(swap_total>0, round((swap_used/swap_total)*100, 1), 0) | head 1 | table cpu_pct mem_pct disk_pct | appendpipe [| stats count | where count=0 | eval _status=\"Awaiting resource data\", cpu_pct=0, mem_pct=0, disk_pct=0]",
+                "queryParameters": {
+                    "earliest": "-1m",
+                    "latest": "now"
+                },
+                "refresh": "60s",
+                "refreshType": "delay"
+            },
+            "type": "ds.search"
+        },
+        "ds_scheduler_health": {
+            "name": "Scheduler Health",
+            "options": {
+                "query": "index=_internal sourcetype=scheduler status=* | stats count as total, count(eval(status=\"skipped\")) as skipped, count(eval(status=\"success\")) as success, avg(run_time) as avg_runtime | eval skip_pct=if(total>0, round((skipped/total)*100,1), 0) | eval success_pct=if(total>0, round((success/total)*100,1), 0) | eval avg_runtime=round(avg_runtime,2) | table skip_pct success_pct avg_runtime total skipped | appendpipe [| stats count | where count=0 | eval _status=\"Awaiting scheduler data\", skip_pct=0, success_pct=0, avg_runtime=0, total=0, skipped=0]",
+                "queryParameters": {
+                    "earliest": "-1m",
+                    "latest": "now"
+                },
+                "refresh": "60s",
+                "refreshType": "delay"
+            },
+            "type": "ds.search"
+        },
+        "ds_search_activity": {
+            "name": "Search Activity",
+            "options": {
+                "query": "| rest /services/server/status/resource-usage/splunk-processes | search search_props.sid=* | eval type=case(search_props.mode==\"historical\",\"scheduled\", search_props.mode==\"historical_fast\",\"scheduled\", search_props.provenance==\"UI:Search\",\"ad-hoc\", 1=1,\"other\") | stats count by type | appendpipe [| stats count | where count=0 | eval _status=\"Awaiting search data\", type=\"\", count=0]",
+                "queryParameters": {
+                    "earliest": "-1m",
+                    "latest": "now"
+                },
+                "refresh": "60s",
+                "refreshType": "delay"
+            },
+            "type": "ds.search"
+        },
+        "ds_status_board": {
+            "name": "Component Status",
+            "options": {
+                "query": "index=_internal sourcetype=splunkd component=* log_level=* | stats count(eval(log_level=\"ERROR\")) as errors, count(eval(log_level=\"WARN\")) as warns by component | eval status=if(errors>0, \"critical\", if(warns>0, \"warning\", \"ok\")) | eval health_score=case(status=\"critical\", 90, status=\"warning\", 60, 1=1, 10) | sort - errors - warns | head 20 | table component status errors warns health_score | appendpipe [| stats count | where count=0 | eval _status=\"Awaiting component data\", component=\"\", status=\"ok\", errors=0, warns=0, health_score=0]",
+                "queryParameters": {
+                    "earliest": "-15m",
+                    "latest": "now"
+                },
+                "refresh": "60s",
+                "refreshType": "delay"
+            },
+            "type": "ds.search"
+        }
+    },
+    "layout": {
+        "layoutDefinitions": {
+            "layout_1": {
+                "options": {
+                    "display": "auto-scale",
+                    "height": 1080,
+                    "width": 1920
+                },
+                "structure": [
+                    {
+                        "item": "viz_status_board",
+                        "position": {
+                            "h": 400,
+                            "w": 1030,
+                            "x": 10,
+                            "y": 10
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_license_gauge",
+                        "position": {
+                            "h": 350,
+                            "w": 560,
+                            "x": 10,
+                            "y": 420
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_resource_gauge",
+                        "position": {
+                            "h": 350,
+                            "w": 460,
+                            "x": 580,
+                            "y": 420
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_indexing_pipeline",
+                        "position": {
+                            "h": 400,
+                            "w": 860,
+                            "x": 1050,
+                            "y": 10
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_forwarder_heatmap",
+                        "position": {
+                            "h": 290,
+                            "w": 810,
+                            "x": 10,
+                            "y": 780
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_search_activity",
+                        "position": {
+                            "h": 350,
+                            "w": 400,
+                            "x": 1050,
+                            "y": 420
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_scheduler_health",
+                        "position": {
+                            "h": 350,
+                            "w": 450,
+                            "x": 1460,
+                            "y": 420
+                        },
+                        "type": "block"
+                    },
+                    {
+                        "item": "viz_index_storage",
+                        "position": {
+                            "h": 290,
+                            "w": 1080,
+                            "x": 830,
+                            "y": 780
+                        },
+                        "type": "block"
+                    }
+                ],
+                "type": "absolute"
+            }
+        },
+        "options": {
+            "showTitleAndDescription": false
+        },
+        "tabs": {
+            "items": [
+                {
+                    "label": "New tab",
+                    "layoutId": "layout_1"
+                }
+            ]
+        }
+    }
+}
+    ]]></definition>
+</dashboard>

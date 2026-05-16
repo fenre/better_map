@@ -1,0 +1,26 @@
+{
+  "label": "Indexing Pipeline Flow",
+  "defaultSize": { "width": 700, "height": 350 },
+  "noDataMessage": "Awaiting pipeline data",
+  "dependencies": [],
+  "fields": [],
+  "formatter": [
+    { "name": "animSpeed", "label": "Animation Speed", "type": "radio", "options": ["slow", "medium", "fast"], "default": "medium" },
+    { "name": "colorTheme", "label": "Colour Theme", "type": "select", "options": ["default", "dark", "neon"], "default": "default" },
+    { "name": "showLabels", "label": "Show Labels", "type": "radio", "options": ["true", "false"], "default": "true" },
+    { "name": "showValues", "label": "Show Values", "type": "radio", "options": ["true", "false"], "default": "true" },
+    { "name": "warningThreshold", "label": "Warning Threshold", "type": "text", "default": "70" },
+    { "name": "criticalThreshold", "label": "Critical Threshold", "type": "text", "default": "85" },
+    { "name": "showGlow", "label": "Show Glow", "type": "radio", "options": ["true", "false"], "default": "true" }
+  ],
+  "data": {
+    "mode": "multi_row",
+    "columns": ["name", "fill_pct", "avg_size", "capacity"],
+    "sampleRows": [
+      ["parsingqueue", "25", "128", "500"],
+      ["mergingqueue", "40", "200", "500"],
+      ["typingqueue", "15", "75", "500"],
+      ["indexqueue", "60", "300", "500"]
+    ]
+  }
+}
