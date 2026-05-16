@@ -64,10 +64,14 @@ function anyField(fields, candidates) {
 
 /**
  * @param {string[]} fields  available field names on the result rows
- * @param {object[]} sample  first few row objects (optional, used for value-based hints)
+ * @param {object[]} _sample first few row objects (reserved for future
+ *                           value-based hints; not yet inspected by the
+ *                           field-only heuristic). Underscore-prefixed to
+ *                           document forward-compat surface without tripping
+ *                           the no-unused-vars lint.
  * @returns {{layerType:string, layerOptions:object, palette:object, dataModel:string}}
  */
-export function detect(fields, sample) {
+export function detect(fields, _sample) {
     const fs = (fields || []).slice();
 
     // --- Authentication ---

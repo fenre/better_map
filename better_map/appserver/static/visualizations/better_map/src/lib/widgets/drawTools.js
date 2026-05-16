@@ -61,7 +61,7 @@ export function createDrawTools(parentEl, opts) {
     let _mode = null; // null | 'point' | 'line' | 'polygon' | 'rectangle' | 'circle'
     let _features = []; // committed
     let _inProgress = null; // { coords, originLngLat }
-    let _toolButtons = {};
+    const _toolButtons = {};
 
     const toolbar = document.createElement('div');
     toolbar.className = TOOLBAR_CLASS;

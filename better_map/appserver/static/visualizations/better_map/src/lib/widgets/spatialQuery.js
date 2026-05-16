@@ -69,7 +69,8 @@ export function createSpatialQuery(parentEl, opts) {
         const km = (circleFeature.properties && circleFeature.properties.radiusKm) || 0;
         // Find the centre as the centroid of the polygon's ring.
         const ring = circleFeature.geometry.coordinates[0];
-        let cx = 0, cy = 0, n = ring.length;
+        const n = ring.length;
+        let cx = 0, cy = 0;
         ring.forEach(function (c) { cx += c[0]; cy += c[1]; });
         cx /= n; cy /= n;
         return [

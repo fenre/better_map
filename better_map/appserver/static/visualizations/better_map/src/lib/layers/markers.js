@@ -36,7 +36,7 @@
  */
 
 import { SET3 } from '../palettes.js';
-import { prefersReducedMotion, shouldSuppressMotion, nowMs } from '../motion.js';
+import { shouldSuppressMotion, nowMs } from '../motion.js';
 
 export const SOURCE_ID = 'better_map_markers_src';
 export const LAYER_PULSE_OUTER = 'better_map_markers_pulse_outer';
