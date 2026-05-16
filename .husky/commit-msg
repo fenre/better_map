@@ -1,0 +1,9 @@
+#!/usr/bin/env sh
+# Husky v9 commit-msg hook — runs commitlint against the just-authored
+# commit message. The first argument from git is the path to the
+# .git/COMMIT_EDITMSG temp file containing the message.
+#
+# Activated automatically by `npm install` at the repo root (the
+# `prepare` script in package.json calls `husky`).
+
+npx --no -- commitlint --edit "$1" --config .commitlintrc.cjs

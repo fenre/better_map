@@ -362,5 +362,5 @@ function cssEscape(s) {
     if (typeof CSS !== 'undefined' && CSS.escape) {
         return CSS.escape(s);
     }
-    return String(s).replace(/([!"#$%&'()*+,./:;<=>?@\[\\\]^`{|}~])/g, '\\$1');
+    return String(s).replace(/([!"#$%&'()*+,./:;<=>?@[\\\]^`{|}~])/g, '\\$1');
 }

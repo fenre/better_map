@@ -1,0 +1,9 @@
+# Webpack bundle output (minified, not source).
+visualization.js
+visualization.js.LICENSE.txt
+
+# Dependencies — never lint vendored code.
+node_modules/
+
+# Build artifacts produced by webpack-dev or webpack production.
+dist/

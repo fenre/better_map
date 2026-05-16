@@ -1,0 +1,20 @@
+{
+  "name": "better-map-repo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Repo-root tooling for better_map (commitlint, husky). The actual viz lives under better_map/appserver/static/visualizations/better_map.",
+  "license": "MIT",
+  "scripts": {
+    "prepare": "husky",
+    "commitlint": "commitlint --edit",
+    "commitlint:last": "commitlint --from HEAD~1 --to HEAD"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0",
+    "husky": "^9.1.6"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

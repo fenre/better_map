@@ -1,0 +1,131 @@
+# CI — better_map Splunk custom visualization
+#
+# Scope: ROADMAP §3 G2 foundation (PR pipeline only).
+# This workflow lints the JS, builds the webpack production bundle, sanity-
+# checks the build artifacts, and validates incoming PR commit messages
+# against Conventional Commits. It does NOT (yet) run AppInspect, unit
+# tests, the G8 JS↔CSS contract lint, the dashboard XML/JSON parse check,
+# the production-bundle console-noise check, or the live dispatch test.
+# Those gates are tracked as v1.7 follow-up commits under ROADMAP §3 G2
+# and §3 G8, and as quality boxes in ROADMAP §7b.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancel superseded runs on the same PR to save Actions minutes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  lint-and-build:
+    name: Lint and build viz bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        # Every script in this job assumes the working dir is the viz package
+        # so we don't have to repeat `cd` in every step. The viz lives several
+        # levels deep so npm caching needs the full path on `cache-dependency-path`.
+        working-directory: better_map/appserver/static/visualizations/better_map
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 18 (matches viz engines.node)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: better_map/appserver/static/visualizations/better_map/package-lock.json
+
+      - name: Install viz dependencies (clean, reproducible)
+        run: npm ci
+
+      - name: Lint (ESLint)
+        run: npm run lint
+
+      - name: Build webpack production bundle
+        run: npm run build
+
+      - name: Sanity check build artifacts
+        # The webpack build MUST produce a non-empty visualization.js bundle.
+        # visualization.css is hand-authored, not generated, so we only check
+        # that the file is present and non-empty. ROADMAP §7c-widget defines
+        # bundle-size budgets; an explicit `size-limit` check lands in a
+        # later v1.7 commit.
+        run: |
+          set -eu
+          js="visualization.js"
+          css="visualization.css"
+          if [ ! -s "$js" ]; then
+            echo "::error file=$js::Build did not produce a non-empty $js"
+            exit 1
+          fi
+          if [ ! -s "$css" ]; then
+            echo "::error file=$css::Missing or empty $css"
+            exit 1
+          fi
+          js_bytes=$(wc -c < "$js")
+          css_bytes=$(wc -c < "$css")
+          echo "visualization.js  = ${js_bytes} bytes"
+          echo "visualization.css = ${css_bytes} bytes"
+
+      - name: Upload built bundle as an artifact
+        # Makes it possible to download a candidate bundle from a PR run
+        # without rebuilding locally. Artifact is kept for 14 days
+        # (GitHub default retention is 90; we keep it short to control
+        # storage).
+        uses: actions/upload-artifact@v4
+        with:
+          name: better_map-bundle-${{ github.sha }}
+          path: |
+            better_map/appserver/static/visualizations/better_map/visualization.js
+            better_map/appserver/static/visualizations/better_map/visualization.css
+          retention-days: 14
+          if-no-files-found: error
+
+  commitlint:
+    name: Validate PR commit messages
+    # Only on pull_request; push events to main are already trusted.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          # commitlint needs the full PR history to lint every commit.
+          fetch-depth: 0
+
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install commitlint
+        # Pinned majors. Conventional config + CLI only; husky is dev-only
+        # and not needed in CI.
+        run: |
+          npm install --no-save --no-audit --no-fund \
+            @commitlint/cli@^19 \
+            @commitlint/config-conventional@^19
+
+      - name: Lint commit messages on the PR range
+        # Lints every commit from the PR base ref to HEAD. Uses the project
+        # config at .commitlintrc.cjs (extends config-conventional).
+        run: |
+          npx --no -- commitlint \
+            --from "${{ github.event.pull_request.base.sha }}" \
+            --to "${{ github.event.pull_request.head.sha }}" \
+            --config .commitlintrc.cjs
