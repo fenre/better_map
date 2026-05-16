@@ -3,6 +3,8 @@
     <description>Diagnostic dashboard that forces the osm_raster tile provider (OpenStreetMap raster, no OpenFreeMap dependency). Use this to verify the Better Map viz renders correctly even when OpenFreeMap is blocked or unreachable. If THIS dashboard renders maps but better_map_overview does not, the issue is OpenFreeMap-specific (browser content blocker, cached 404, corporate DNS). Same test data as the overview dashboard so direct visual comparison is meaningful.</description>
     <definition><![CDATA[
 {
+    "title": "Better Map - OSM Raster Test",
+    "description": "Internal dashboard that exercises the OSM raster tile provider with hex aggregation. Useful for verifying raster source compatibility; not intended as a customer-facing showcase.",
     "visualizations": {
         "viz_osm_hex": {
             "type": "better_map.better_map",
