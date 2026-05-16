@@ -30,7 +30,7 @@ const TICK_PERIOD_MS = 50; // 20 fps — particle systems look fine here
 
 let _grid = null; // { bbox, cols, rows, u, v }
 let _particles = null;
-let _params = { count: 2500, speedMps: 1.0, trailFrames: 0 };
+const _params = { count: 2500, speedMps: 1.0, trailFrames: 0 };
 let _rafId = null;
 let _enabled = true;
 let _defaults = null;

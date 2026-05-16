@@ -536,7 +536,7 @@ export function createDebugHud(container) {
                         continue;
                     }
                     const lyrType = layout.type || '?';
-                    let parts = [shortId + '(' + lyrType + ')'];
+                    const parts = [shortId + '(' + lyrType + ')'];
                     try {
                         const vis = map.getLayoutProperty(lid, 'visibility');
                         if (vis && vis !== 'visible') parts.push('vis=' + vis);

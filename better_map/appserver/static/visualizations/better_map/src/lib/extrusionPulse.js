@@ -16,7 +16,7 @@
  * layer is unmounted.
  */
 
-import { prefersReducedMotion, shouldSuppressMotion, nowMs, scheduleFrame, cancelFrame } from './motion.js';
+import { shouldSuppressMotion, nowMs, scheduleFrame, cancelFrame } from './motion.js';
 
 const DEFAULT_PERIOD_MS = 4000;   // four-second breath cycle
 const DEFAULT_AMPLITUDE = 0.12;   // +/-12% height oscillation

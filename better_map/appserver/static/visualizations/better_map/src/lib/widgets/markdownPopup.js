@@ -152,9 +152,7 @@ export function renderMarkdownSafe(markdownSrc) {
  *   isPinned()                          - bool
  *   destroy()                           - tear down
  */
-export function createMarkdownPopup(parentEl, opts) {
-    const options = opts || {};
-
+export function createMarkdownPopup(parentEl, _opts) {
     const root = document.createElement('div');
     root.className = POPUP_CLASS;
     root.setAttribute('role', 'dialog');

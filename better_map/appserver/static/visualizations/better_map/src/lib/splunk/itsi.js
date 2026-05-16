@@ -105,7 +105,7 @@ function normalize(entries) {
  * Anchors nodes that have lat/lng and lays out the rest around the
  * centroid of the anchored set.
  */
-function layoutNodesWithoutGeo(nodes, edges) {
+function layoutNodesWithoutGeo(nodes, _edges) {
     const anchored = nodes.filter(function (n) { return Number.isFinite(n.lat) && Number.isFinite(n.lng); });
     let cx = 0, cy = 0;
     if (anchored.length) {

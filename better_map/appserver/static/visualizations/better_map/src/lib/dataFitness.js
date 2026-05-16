@@ -643,7 +643,7 @@ function splitGroups(s, depthMin) {
     const out = [];
     let depth = 0;
     let start = 0;
-    let target = typeof depthMin === 'number' ? depthMin - 1 : 0;
+    const target = typeof depthMin === 'number' ? depthMin - 1 : 0;
     for (let i = 0; i < s.length; i++) {
         const ch = s.charAt(i);
         if (ch === '(') depth++;
@@ -722,7 +722,7 @@ function greatCircleArc(srcLon, srcLat, dstLon, dstLat, segments) {
         const py = sa * ay + sb * by;
         const pz = sa * az + sb * bz;
         const lat = Math.asin(pz) * R2D;
-        let lon = Math.atan2(py, px) * R2D;
+        const lon = Math.atan2(py, px) * R2D;
         // Antimeridian split: when consecutive lon values jump by more
         // than 180 degrees the LineString would otherwise draw a flat
         // horizontal segment across the whole map. Insert a discontinuity
