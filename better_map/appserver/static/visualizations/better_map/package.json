@@ -10,6 +10,7 @@
     "lint": "eslint src/",
     "lint:css-contract": "node ../../../../../scripts/lint-js-css-contract.js",
     "lint:console-noise": "node ../../../../../scripts/check-bundle-console-noise.js",
+    "lint:bundle-size": "node ../../../../../scripts/check-bundle-size.js",
     "format": "prettier --write \"src/**/*.{js,css,json}\""
   },
   "dependencies": {
