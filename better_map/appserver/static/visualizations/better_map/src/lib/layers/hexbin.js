@@ -24,11 +24,32 @@
 import { latLngToCell, cellToBoundary } from 'h3-js';
 
 import { sequentialRamp, featureRange, VIRIDIS } from '../palettes.js';
+import {
+    startExtrusionPulse,
+    stopExtrusionPulse,
+    stopAllExtrusionPulsesOnMap,
+    isExtrusionPulseRunning
+} from '../extrusionPulse.js';
 
 export const SOURCE_ID = 'better_map_hexbin_src';
 export const LAYER_FILL = 'better_map_hexbin_fill';
 export const LAYER_OUTLINE = 'better_map_hexbin_outline';
 export const LAYER_EXTRUSION = 'better_map_hexbin_extrusion';
+
+/*
+ * v1.5.2 — BM-CT-1 Control Trio state for hexbin extrusion pulse.
+ *
+ * Mirrors the same pattern used in layers/extrusion.js — see that file
+ * for full rationale. We track the dashboard-author default plus the
+ * LATEST baseHeightExpr / amplitude / period so the on-map control
+ * panel's setPulse(true) call can restart the pulser with the right
+ * inputs without recomputing them from raw H3 data.
+ */
+let _defaults = null;
+let _lastBaseHeightExpr = null;
+let _lastAmplitude = 0.12;
+let _lastPeriodMs = 4000;
+let _lastPhaseOffset = Math.PI / 2;
 
 const DEFAULT_RES_AT_ZOOM = [
     [0, 2],
@@ -99,6 +120,19 @@ export function mount(map, opts) {
 export function update(map, fc, opts) {
     if (!map) return;
     const options = opts || {};
+
+    // v1.5.2 — BM-CT-1: capture dashboard-author defaults on first
+    // update() call. Only the `pulse` boolean is considered "author
+    // intent" — amplitude/period are runtime tunables that the user
+    // can adjust without losing the canonical default.
+    if (_defaults === null) {
+        _defaults = {
+            pulse: !!options.pulse,
+            pulseAmplitude: typeof options.pulseAmplitude === 'number' ? options.pulseAmplitude : 0.12,
+            pulsePeriodMs: typeof options.pulsePeriodMs === 'number' ? options.pulsePeriodMs : 4000
+        };
+    }
+
     const state = map[STATE_PROP];
     if (state) {
         state.rawPoints = fc || { type: 'FeatureCollection', features: [] };
@@ -114,6 +148,7 @@ export function update(map, fc, opts) {
 
 export function unmount(map) {
     if (!map) return;
+    stopAllExtrusionPulsesOnMap(map);
     [LAYER_EXTRUSION, LAYER_OUTLINE, LAYER_FILL].forEach(function (id) {
         if (map.getLayer(id)) map.removeLayer(id);
     });
@@ -209,13 +244,76 @@ function aggregateAndUpdate(map, fc, options) {
     if (options.extrude && map.getLayer(LAYER_EXTRUSION)) {
         const heightProp = options.heightFromMetric ? 'metric' : 'count';
         const scale = options.extrudeScale || autoExtrudeScale(stops, options);
-        map.setPaintProperty(LAYER_EXTRUSION, 'fill-extrusion-color', sequentialRamp('metric', stops, palette));
-        map.setPaintProperty(LAYER_EXTRUSION, 'fill-extrusion-height', [
+        const baseHeightExpr = [
             '*',
             scale,
             ['coalesce', ['get', heightProp], 0]
-        ]);
+        ];
+        map.setPaintProperty(LAYER_EXTRUSION, 'fill-extrusion-color', sequentialRamp('metric', stops, palette));
+        map.setPaintProperty(LAYER_EXTRUSION, 'fill-extrusion-height', baseHeightExpr);
+
+        // v1.5.2 — record the LATEST base height + tunables so the
+        // BM-CT-1 setPulse(map, true) hook can resume the pulser with
+        // the current aggregation rather than a stale one.
+        _lastBaseHeightExpr = baseHeightExpr;
+        _lastAmplitude = typeof options.pulseAmplitude === 'number' ? options.pulseAmplitude : 0.12;
+        _lastPeriodMs = typeof options.pulsePeriodMs === 'number' ? options.pulsePeriodMs : 4000;
+        _lastPhaseOffset = Math.PI / 2;
+
+        // v1.5.1 — optional breathing extrusion. Each hexbin column
+        // gently rises and falls by +/-12% over a 4-second sine wave,
+        // giving an industrial control-room "live readout" feel without
+        // distracting from the underlying metric values. Phase offset
+        // PI/2 stops hexbins from breathing in lock-step with any
+        // building-extrusion layer mounted on the same map.
+        if (options.pulse) {
+            startExtrusionPulse(map, LAYER_EXTRUSION, {
+                baseHeightExpr: baseHeightExpr,
+                amplitude: _lastAmplitude,
+                periodMs: _lastPeriodMs,
+                phaseOffsetRad: _lastPhaseOffset
+            });
+        } else {
+            stopExtrusionPulse(map, LAYER_EXTRUSION);
+        }
     }
+}
+
+// -------------------------------------------------------------------------
+// v1.5.2 — BM-CT-1 Control Trio: setPulse / isPulseEnabled / reset
+//
+// Exposes the hexbin extrusion "breathing pulse" fancy action to the
+// on-map control panel. Distinct from the building-extrusion pulse so
+// the user can toggle each independently. Hexbin pulse only makes
+// sense when the extrusion layer exists — when `extrude` is false on
+// the dashboard the action is registered as a no-op (panel hides it).
+// -------------------------------------------------------------------------
+
+export function setPulse(map, enabled) {
+    if (!map) return;
+    if (enabled) {
+        if (_lastBaseHeightExpr && map.getLayer(LAYER_EXTRUSION)) {
+            startExtrusionPulse(map, LAYER_EXTRUSION, {
+                baseHeightExpr: _lastBaseHeightExpr,
+                amplitude: _lastAmplitude,
+                periodMs: _lastPeriodMs,
+                phaseOffsetRad: _lastPhaseOffset
+            });
+        }
+    } else {
+        stopExtrusionPulse(map, LAYER_EXTRUSION);
+    }
+}
+
+export function isPulseEnabled(map) {
+    if (!map) return false;
+    return isExtrusionPulseRunning(map, LAYER_EXTRUSION);
+}
+
+export function reset(map) {
+    if (!map) return;
+    const wantEnabled = _defaults ? !!_defaults.pulse : false;
+    setPulse(map, wantEnabled);
 }
 
 function ensureExtrusion(map, options) {

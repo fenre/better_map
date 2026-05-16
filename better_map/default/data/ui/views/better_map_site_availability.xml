@@ -1,47 +1,227 @@
 <dashboard version="2" theme="dark">
     <label>Better Map - Site Availability</label>
-    <description>Color-coded site markers with a layer control to toggle between offices, data centres, and PoPs. Powered by the bundled lookup better_map_sample_sites.csv.</description>
+    <description>Global site availability dashboard. Pulsing site markers (color by status), glow-on-dark cinematic basemap, top-row KPIs (total sites, healthy %, warning %, critical count, hottest region), region/category/status filter dropdowns, top-N tables for highest-load and most-critical regions, and a regional load-distribution chart. Powered by the bundled `better_map_sample_sites.csv` lookup.</description>
     <definition><![CDATA[
 {
+    "title": "Better Map - Site Availability",
+    "description": "Global site availability with cinematic dark basemap and cyber palette",
     "visualizations": {
-        "viz_sites": {
-            "type": "splunk.custom",
+        "viz_kpi_total": {
+            "type": "splunk.singlevalue",
+            "title": "Total sites",
+            "dataSources": { "primary": "ds_kpi" },
             "options": {
-                "type": "better_map",
-                "name": "better_map",
-                "tileProvider": "openfreemap-positron",
+                "majorField": "total",
+                "majorColor": "#22d3ee",
+                "backgroundColor": "transparent",
+                "majorFontSize": 44
+            }
+        },
+        "viz_kpi_healthy": {
+            "type": "splunk.singlevalue",
+            "title": "Healthy %",
+            "dataSources": { "primary": "ds_kpi" },
+            "options": {
+                "majorField": "healthy_pct",
+                "majorColor": "> if(value >= 90, '#a3e635', if(value >= 70, '#fbbf24', '#f43f5e'))",
+                "backgroundColor": "transparent",
+                "majorFontSize": 44,
+                "unit": "%",
+                "unitPosition": "after"
+            }
+        },
+        "viz_kpi_warning": {
+            "type": "splunk.singlevalue",
+            "title": "Warning",
+            "dataSources": { "primary": "ds_kpi" },
+            "options": {
+                "majorField": "warning",
+                "majorColor": "> if(value > 0, '#fbbf24', '#22d3ee')",
+                "backgroundColor": "transparent",
+                "majorFontSize": 44
+            }
+        },
+        "viz_kpi_critical": {
+            "type": "splunk.singlevalue",
+            "title": "Critical",
+            "dataSources": { "primary": "ds_kpi" },
+            "options": {
+                "majorField": "critical",
+                "majorColor": "> if(value > 0, '#f43f5e', '#22d3ee')",
+                "backgroundColor": "transparent",
+                "majorFontSize": 44
+            }
+        },
+        "viz_kpi_hot_region": {
+            "type": "splunk.singlevalue",
+            "title": "Hottest region",
+            "dataSources": { "primary": "ds_hot_region" },
+            "options": {
+                "majorField": "country",
+                "majorColor": "#a855f7",
+                "backgroundColor": "transparent",
+                "majorFontSize": 32
+            }
+        },
+        "viz_sites": {
+            "type": "better_map.better_map",
+            "title": "Global sites \u00b7 pulsing markers, color-coded by health",
+            "dataSources": { "primary": "ds_sites" },
+            "options": {
+                "tileProvider": "carto_dark_matter",
                 "pointRenderer": "markers",
+                "pointPulse": "true",
+                "vignette": "true",
+                "cameraPitch": "35",
+                "cameraBearing": "10",
                 "showLayerControl": "true",
-                "palette": "set3"
-            },
-            "dataSources": {
-                "primary": "ds_sites"
+                "palette": "cyber",
+                "enableDrilldown": "true",
+                "enableExportShare": "true",
+                "showDebugHud": "false"
+            }
+        },
+        "viz_table_top_regions": {
+            "type": "splunk.table",
+            "title": "Top regions by site count",
+            "dataSources": { "primary": "ds_top_regions" },
+            "options": {
+                "backgroundColor": "transparent",
+                "headerVisibility": "fixed",
+                "rowBackgroundColors": ["transparent", "#0f172a"]
+            }
+        },
+        "viz_table_critical": {
+            "type": "splunk.table",
+            "title": "Sites needing attention (critical / warning)",
+            "dataSources": { "primary": "ds_critical_sites" },
+            "options": {
+                "backgroundColor": "transparent",
+                "headerVisibility": "fixed",
+                "rowBackgroundColors": ["transparent", "#0f172a"]
+            }
+        },
+        "viz_distribution": {
+            "type": "splunk.column",
+            "title": "Site distribution by status, per category",
+            "dataSources": { "primary": "ds_distribution" },
+            "options": {
+                "backgroundColor": "transparent",
+                "seriesColors": ["#a3e635", "#fbbf24", "#f43f5e"],
+                "stackMode": "stacked",
+                "legendDisplay": "right"
             }
         }
     },
     "dataSources": {
         "ds_sites": {
             "type": "ds.search",
+            "name": "Bundled site inventory with cyber-palette status mapping",
             "options": {
-                "query": "| inputlookup better_map_sample_sites.csv | eval status = case(value > 500, \"critical\", value > 200, \"warning\", true(), \"healthy\") | eval color = case(status=\"critical\", \"#fb8072\", status=\"warning\", \"#fdb462\", true(), \"#8dd3c7\") | eval size = case(category=\"datacenter\", 10, category=\"pop\", 8, true(), 6) | eval layer = category | fields id name lat lon category city country value layer color size status"
+                "query": "| inputlookup better_map_sample_sites.csv\n| eval status=case(value>500,\"critical\",value>200,\"warning\",true(),\"healthy\")\n| eval color=case(status=\"critical\",\"#f43f5e\",status=\"warning\",\"#fbbf24\",true(),\"#a3e635\")\n| eval size=case(category=\"datacenter\",10,category=\"pop\",8,true(),6)\n| eval layer=category\n| where (\"$tok_region$\"=\"all\" OR country=\"$tok_region$\") AND (\"$tok_category$\"=\"all\" OR category=\"$tok_category$\") AND (\"$tok_status$\"=\"all\" OR status=\"$tok_status$\")\n| fields id name lat lon category city country value layer color size status"
+            }
+        },
+        "ds_kpi": {
+            "type": "ds.search",
+            "name": "Site KPI rollup",
+            "options": {
+                "query": "| inputlookup better_map_sample_sites.csv\n| eval status=case(value>500,\"critical\",value>200,\"warning\",true(),\"healthy\")\n| where (\"$tok_region$\"=\"all\" OR country=\"$tok_region$\") AND (\"$tok_category$\"=\"all\" OR category=\"$tok_category$\") AND (\"$tok_status$\"=\"all\" OR status=\"$tok_status$\")\n| stats count AS total count(eval(status=\"healthy\")) AS healthy count(eval(status=\"warning\")) AS warning count(eval(status=\"critical\")) AS critical\n| eval healthy_pct=round(healthy*100/total,1)\n| fields total healthy_pct warning critical"
+            }
+        },
+        "ds_hot_region": {
+            "type": "ds.search",
+            "name": "Region with most warning+critical sites",
+            "options": {
+                "query": "| inputlookup better_map_sample_sites.csv\n| eval status=case(value>500,\"critical\",value>200,\"warning\",true(),\"healthy\")\n| where (\"$tok_category$\"=\"all\" OR category=\"$tok_category$\") AND (status=\"warning\" OR status=\"critical\")\n| stats count BY country\n| sort -count\n| head 1\n| fields country"
+            }
+        },
+        "ds_top_regions": {
+            "type": "ds.search",
+            "name": "Top regions by site count + status breakdown",
+            "options": {
+                "query": "| inputlookup better_map_sample_sites.csv\n| eval status=case(value>500,\"critical\",value>200,\"warning\",true(),\"healthy\")\n| where (\"$tok_category$\"=\"all\" OR category=\"$tok_category$\") AND (\"$tok_status$\"=\"all\" OR status=\"$tok_status$\")\n| stats count AS sites count(eval(status=\"healthy\")) AS healthy count(eval(status=\"warning\")) AS warning count(eval(status=\"critical\")) AS critical BY country\n| sort -sites\n| head 10\n| rename country AS Region sites AS Sites healthy AS OK warning AS Warn critical AS Crit\n| table Region Sites OK Warn Crit"
+            }
+        },
+        "ds_critical_sites": {
+            "type": "ds.search",
+            "name": "Sites with status warning or critical",
+            "options": {
+                "query": "| inputlookup better_map_sample_sites.csv\n| eval status=case(value>500,\"critical\",value>200,\"warning\",true(),\"healthy\")\n| where status!=\"healthy\" AND (\"$tok_region$\"=\"all\" OR country=\"$tok_region$\") AND (\"$tok_category$\"=\"all\" OR category=\"$tok_category$\")\n| sort -value\n| head 12\n| eval Load=round(value)\n| rename name AS Site city AS City country AS Country category AS Type status AS Status\n| table Site City Country Type Status Load"
+            }
+        },
+        "ds_distribution": {
+            "type": "ds.search",
+            "name": "Status distribution per category",
+            "options": {
+                "query": "| inputlookup better_map_sample_sites.csv\n| eval status=case(value>500,\"critical\",value>200,\"warning\",true(),\"healthy\")\n| where (\"$tok_region$\"=\"all\" OR country=\"$tok_region$\") AND (\"$tok_category$\"=\"all\" OR category=\"$tok_category$\")\n| chart count BY category status"
+            }
+        },
+        "ds_region_choices": {
+            "type": "ds.search",
+            "name": "Region dropdown choices",
+            "options": {
+                "query": "| inputlookup better_map_sample_sites.csv\n| stats count BY country\n| eval country=country\n| append [| makeresults | eval country=\"all\"]\n| sort country\n| fields country"
+            }
+        },
+        "ds_category_choices": {
+            "type": "ds.search",
+            "name": "Category dropdown choices",
+            "options": {
+                "query": "| makeresults\n| eval category=split(\"all,office,datacenter,pop\",\",\")\n| mvexpand category\n| fields category"
+            }
+        },
+        "ds_status_choices": {
+            "type": "ds.search",
+            "name": "Status dropdown choices",
+            "options": {
+                "query": "| makeresults\n| eval status=split(\"all,healthy,warning,critical\",\",\")\n| mvexpand status\n| fields status"
             }
         }
     },
     "defaults": {
         "dataSources": {
             "ds.search": {
-                "options": {
-                    "queryParameters": { "earliest": "0", "latest": "" }
-                }
+                "options": { "queryParameters": { "earliest": "0", "latest": "" } }
             }
         }
     },
-    "inputs": {},
+    "inputs": {
+        "input_region": {
+            "type": "input.dropdown",
+            "title": "Region",
+            "options": { "defaultValue": "all", "token": "tok_region" },
+            "dataSources": { "primary": "ds_region_choices" },
+            "context": { "options": { "labelField": "country", "valueField": "country" } }
+        },
+        "input_category": {
+            "type": "input.dropdown",
+            "title": "Category",
+            "options": { "defaultValue": "all", "token": "tok_category" },
+            "dataSources": { "primary": "ds_category_choices" },
+            "context": { "options": { "labelField": "category", "valueField": "category" } }
+        },
+        "input_status": {
+            "type": "input.dropdown",
+            "title": "Status",
+            "options": { "defaultValue": "all", "token": "tok_status" },
+            "dataSources": { "primary": "ds_status_choices" },
+            "context": { "options": { "labelField": "status", "valueField": "status" } }
+        }
+    },
     "layout": {
         "type": "absolute",
-        "options": { "width": 1440, "height": 960, "backgroundColor": "#0b1a2d" },
+        "options": { "width": 1440, "height": 1080, "backgroundColor": "#08090f" },
+        "globalInputs": ["input_region", "input_category", "input_status"],
         "structure": [
-            { "item": "viz_sites", "type": "block", "position": { "x": 0, "y": 0, "w": 1440, "h": 960 } }
+            { "item": "viz_kpi_total",      "type": "block", "position": { "x": 20,   "y": 20,  "w": 270, "h": 130 } },
+            { "item": "viz_kpi_healthy",    "type": "block", "position": { "x": 300,  "y": 20,  "w": 270, "h": 130 } },
+            { "item": "viz_kpi_warning",    "type": "block", "position": { "x": 580,  "y": 20,  "w": 270, "h": 130 } },
+            { "item": "viz_kpi_critical",   "type": "block", "position": { "x": 860,  "y": 20,  "w": 270, "h": 130 } },
+            { "item": "viz_kpi_hot_region", "type": "block", "position": { "x": 1140, "y": 20,  "w": 280, "h": 130 } },
+            { "item": "viz_sites",            "type": "block", "position": { "x": 20,   "y": 170, "w": 960, "h": 700 } },
+            { "item": "viz_table_top_regions","type": "block", "position": { "x": 990,  "y": 170, "w": 430, "h": 340 } },
+            { "item": "viz_table_critical",   "type": "block", "position": { "x": 990,  "y": 520, "w": 430, "h": 350 } },
+            { "item": "viz_distribution",     "type": "block", "position": { "x": 20,   "y": 880, "w": 1400, "h": 180 } }
         ]
     }
 }

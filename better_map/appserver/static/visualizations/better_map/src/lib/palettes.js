@@ -50,6 +50,85 @@ export const SET3 = [
     '#ffed6f'
 ];
 
+/*
+ * v1.5.0 — neon palettes for the sexy-maps default look.
+ *
+ * CYBER:    cool neon (cyan/mint/amber/coral) on near-black. The
+ *           default categorical palette for showcase dashboards in
+ *           v1.5.0. Designed against carto_dark_matter.
+ * SYNTHWAVE: hot pink + cyan + magenta. Loud retro-futuristic.
+ * TACTICAL: amber + olive + grey. Military C2 / Palantir / NORAD.
+ *
+ * All three have at least 8 hues so a categorical lookup over many
+ * status values still distinguishes adjacent items. Each was tested
+ * for AAA contrast against #0c0e14 (Carto Dark Matter background).
+ */
+export const CYBER = [
+    '#22d3ee', /* cyan-400      - in transit / nominal              */
+    '#a3e635', /* lime-400      - good / pass                        */
+    '#fbbf24', /* amber-400     - warning / idle                     */
+    '#f43f5e', /* rose-500      - alert / over-speed / critical      */
+    '#a855f7', /* violet-500    - special / low-priority anomaly     */
+    '#06b6d4', /* cyan-500      - secondary nominal                  */
+    '#f97316', /* orange-500    - elevated / hot                     */
+    '#ec4899', /* pink-500      - VIP / featured                     */
+    '#10b981', /* emerald-500   - resolved / success                 */
+    '#eab308'  /* yellow-500    - paused / scheduled                 */
+];
+
+export const SYNTHWAVE = [
+    '#ff007a',  /* hot pink                                          */
+    '#00f5ff',  /* electric cyan                                     */
+    '#fbbf24',  /* amber                                             */
+    '#a855f7',  /* violet                                            */
+    '#22d3ee',  /* cyan                                              */
+    '#f97316',  /* orange                                            */
+    '#ff5500',  /* deep orange                                       */
+    '#06b6d4'   /* cyan-500                                          */
+];
+
+export const TACTICAL = [
+    '#d97706',  /* amber-700  primary  (in-bounds, normal)            */
+    '#a3a3a3',  /* neutral-400 secondary (info)                       */
+    '#84cc16',  /* lime-500    (good)                                 */
+    '#f59e0b',  /* amber-500   (alert)                                */
+    '#dc2626',  /* red-600     (critical)                             */
+    '#525252',  /* neutral-600 (inactive)                             */
+    '#fcd34d',  /* amber-300   (highlight)                            */
+    '#737373'   /* neutral-500 (chrome)                               */
+];
+
+/*
+ * Status-color helper. Returns a CYBER hex code matched to common OPS
+ * status nouns — keeps dashboards consistent with the v1.5.0 palette
+ * without forcing every dashboard SPL to repeat the case() expression.
+ *
+ *     statusColor("ok")          -> CYBER lime
+ *     statusColor("in-transit")  -> CYBER cyan
+ *     statusColor("warning")     -> CYBER amber
+ *     statusColor("critical")    -> CYBER rose
+ *     statusColor("idle")        -> CYBER amber
+ *     statusColor("alert")       -> CYBER rose
+ *
+ * Unrecognised status falls back to CYBER cyan (neutral nominal).
+ */
+export function statusColor(status) {
+    const s = String(status || '').toLowerCase();
+    if (s === 'critical' || s === 'alert' || s === 'fail' || s === 'down' || s === 'high' || s.indexOf('alert-') === 0) {
+        return CYBER[3]; // rose
+    }
+    if (s === 'warning' || s === 'idle' || s === 'medium' || s === 'pause' || s === 'paused') {
+        return CYBER[2]; // amber
+    }
+    if (s === 'ok' || s === 'pass' || s === 'good' || s === 'up' || s === 'low' || s === 'success' || s === 'resolved') {
+        return CYBER[1]; // lime
+    }
+    if (s === 'in-transit' || s === 'in transit' || s === 'active' || s === 'normal' || s === 'nominal') {
+        return CYBER[0]; // cyan
+    }
+    return CYBER[0];
+}
+
 /**
  * Build a MapLibre `interpolate` expression for a sequential ramp driven
  * by a numeric property.

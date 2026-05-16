@@ -1,32 +1,46 @@
 <dashboard version="2" theme="dark">
     <label>Better Map - Fleet Tracking</label>
-    <description>Live or replay vehicle positions with an animated ant-path, time scrubber, and per-truck color coding. Replace the inline SPL with your fleet index to go live.</description>
+    <description>Live or replay vehicle positions with an animated ant-path, time scrubber, side-panel truck list, and per-truck color coding (status: in-transit / idle / alert-speed). Filter by truck or status; click a truck on the map for a popup with driver, depot, cargo, and current speed.</description>
     <definition><![CDATA[
 {
-    "visualizations": {
-        "viz_fleet": {
-            "type": "splunk.custom",
+    "title": "Fleet Tracking",
+    "description": "Live fleet positions with animated trails and per-truck KPIs",
+    "inputs": {
+        "input_global_time": {
+            "type": "input.timerange",
+            "title": "Time range",
             "options": {
-                "type": "better_map",
-                "name": "better_map",
-                "tileProvider": "openfreemap-positron",
-                "pointRenderer": "markers",
-                "pathColor": "#4cd9c4",
-                "pathAnimated": true,
-                "pathArrows": true,
-                "showTimeScrubber": "true",
-                "trailWindowMs": "120000"
-            },
-            "dataSources": {
-                "primary": "ds_fleet"
+                "token": "global_time",
+                "defaultValue": "-2h@m,now"
             }
-        }
-    },
-    "dataSources": {
-        "ds_fleet": {
-            "type": "ds.search",
+        },
+        "input_truck": {
+            "type": "input.dropdown",
+            "title": "Truck",
             "options": {
-                "query": "| makeresults count=200 | streamstats c | eval pathId = case(c%4=0, \"truck-1\", c%4=1, \"truck-2\", c%4=2, \"truck-3\", true(), \"truck-4\") | eval bearing = (c*4) % 360 | eval baseLat = case(pathId=\"truck-1\", 40.71, pathId=\"truck-2\", 51.5, pathId=\"truck-3\", 37.77, true(), 35.68) | eval baseLon = case(pathId=\"truck-1\", -74.0, pathId=\"truck-2\", -0.13, pathId=\"truck-3\", -122.42, true(), 139.65) | eval offset = c / 200.0 | eval lat = baseLat + (offset * 0.4 * sin(c)) | eval lon = baseLon + (offset * 0.4 * cos(c)) | eval _time = relative_time(now(), \"-2h\") + c * 60 | eval color = case(pathId=\"truck-1\", \"#fb8072\", pathId=\"truck-2\", \"#8dd3c7\", pathId=\"truck-3\", \"#ffffb3\", true(), \"#bebada\") | fields _time pathId lat lon bearing color"
+                "items": [
+                    { "label": "All trucks", "value": "*" },
+                    { "label": "TRUCK-101 (NYC)", "value": "TRUCK-101" },
+                    { "label": "TRUCK-202 (London)", "value": "TRUCK-202" },
+                    { "label": "TRUCK-303 (San Francisco)", "value": "TRUCK-303" },
+                    { "label": "TRUCK-404 (Tokyo)", "value": "TRUCK-404" }
+                ],
+                "defaultValue": "*",
+                "token": "f_truck"
+            }
+        },
+        "input_status": {
+            "type": "input.dropdown",
+            "title": "Status",
+            "options": {
+                "items": [
+                    { "label": "Any status", "value": "*" },
+                    { "label": "In transit", "value": "in-transit" },
+                    { "label": "Idle", "value": "idle" },
+                    { "label": "Alert (over-speed)", "value": "alert-speed" }
+                ],
+                "defaultValue": "*",
+                "token": "f_status"
             }
         }
     },
@@ -34,19 +48,179 @@
         "dataSources": {
             "ds.search": {
                 "options": {
-                    "queryParameters": { "earliest": "-2h@m", "latest": "now" }
+                    "queryParameters": {
+                        "earliest": "$global_time.earliest$",
+                        "latest": "$global_time.latest$"
+                    }
+                }
+            }
+        },
+        "visualizations": {
+            "splunk.singlevalue": {
+                "options": {
+                    "backgroundColor": "transparent",
+                    "majorFontSize": 44,
+                    "unitFontSize": 18
+                }
+            },
+            "splunk.area": {
+                "options": {
+                    "backgroundColor": "transparent",
+                    "seriesColors": ["#22d3ee", "#a3e635", "#fbbf24", "#f43f5e"],
+                    "stackMode": "unstacked",
+                    "legendDisplay": "right"
+                }
+            },
+            "splunk.table": {
+                "options": {
+                    "backgroundColor": "transparent",
+                    "headerVisibility": "fixed"
                 }
             }
         }
     },
-    "inputs": {},
+    "dataSources": {
+        "ds_base": {
+            "type": "ds.search",
+            "name": "Simulated 4-truck fleet replay (200 GPS pings; trails span the past 2 hours across NYC / London / SF / Tokyo)",
+            "options": {
+                "query": "| makeresults count=200\n| streamstats c\n| eval truck_id = case(c%4=0, \"TRUCK-101\", c%4=1, \"TRUCK-202\", c%4=2, \"TRUCK-303\", true(), \"TRUCK-404\")\n| eval driver = case(truck_id=\"TRUCK-101\", \"M. Rodriguez\", truck_id=\"TRUCK-202\", \"S. Patel\", truck_id=\"TRUCK-303\", \"J. Chen\", true(), \"K. Tanaka\")\n| eval depot = case(truck_id=\"TRUCK-101\", \"NYC-Brooklyn\", truck_id=\"TRUCK-202\", \"LON-Heathrow\", truck_id=\"TRUCK-303\", \"SFO-Oakland\", true(), \"TYO-Narita\")\n| eval cargo = case(truck_id=\"TRUCK-101\", \"Refrigerated produce\", truck_id=\"TRUCK-202\", \"Industrial parts\", truck_id=\"TRUCK-303\", \"Electronics\", true(), \"Pharmaceuticals\")\n| eval pathId = truck_id\n| eval bearing = (c*4) % 360\n| eval baseLat = case(truck_id=\"TRUCK-101\", 40.71, truck_id=\"TRUCK-202\", 51.5, truck_id=\"TRUCK-303\", 37.77, true(), 35.68)\n| eval baseLon = case(truck_id=\"TRUCK-101\", -74.0, truck_id=\"TRUCK-202\", -0.13, truck_id=\"TRUCK-303\", -122.42, true(), 139.65)\n| eval offset = c / 200.0\n| eval lat = baseLat + (offset * 8 * sin(c/4.0))\n| eval lon = baseLon + (offset * 12 * cos(c/4.0))\n| eval _time = now() - (200 - c) * 36\n| eval speed_kph = round(60 + 30 * sin(c/8.0) + 10*cos(c/3.0), 1)\n| eval status = case(speed_kph < 5, \"idle\", speed_kph > 95, \"alert-speed\", true(), \"in-transit\")\n| eval color = case(status=\"idle\", \"#fbbf24\", status=\"alert-speed\", \"#f43f5e\", true(), \"#22d3ee\")\n| eval popup = \"<b>\" . truck_id . \"</b><br>Driver: \" . driver . \"<br>Depot: \" . depot . \"<br>Cargo: \" . cargo . \"<br>Status: \" . status . \"<br>Speed: \" . speed_kph . \" km/h<br>Bearing: \" . bearing . \"&deg;\"\n| where (truck_id=\"$f_truck$\" OR \"$f_truck$\"=\"*\")\n| where (status=\"$f_status$\" OR \"$f_status$\"=\"*\")\n| fields _time pathId truck_id driver depot cargo bearing speed_kph status color popup lat lon"
+            }
+        },
+        "ds_kpi": {
+            "type": "ds.chain",
+            "name": "KPI rollup: 1 row, 5 columns (active_trucks / in_transit / idle / alerts / avg_speed)",
+            "options": {
+                "extend": "ds_base",
+                "query": "| stats count(eval(status=\"in-transit\")) AS kpi_in_transit count(eval(status=\"idle\")) AS kpi_idle count(eval(status=\"alert-speed\")) AS kpi_alerts dc(truck_id) AS kpi_active_trucks avg(speed_kph) AS kpi_avg_speed\n| eval kpi_avg_speed = round(kpi_avg_speed, 1)"
+            }
+        },
+        "ds_table": {
+            "type": "ds.chain",
+            "name": "Per-truck rollup for the side panel (status / speed / driver / depot / last update / pings)",
+            "options": {
+                "extend": "ds_base",
+                "query": "| stats latest(status) AS Status latest(speed_kph) AS Speed latest(driver) AS Driver latest(depot) AS Depot latest(_time) AS last_update_epoch count AS Pings BY truck_id\n| eval LastUpdate = strftime(last_update_epoch, \"%H:%M:%S\")\n| sort -Status truck_id\n| rename truck_id AS Truck\n| table Truck Status Speed Driver Depot LastUpdate Pings"
+            }
+        },
+        "ds_spark": {
+            "type": "ds.chain",
+            "name": "Speed over time, per truck (for the bottom timechart)",
+            "options": {
+                "extend": "ds_base",
+                "query": "| timechart span=1m avg(speed_kph) AS speed BY truck_id"
+            }
+        }
+    },
+    "visualizations": {
+        "viz_kpi_active": {
+            "type": "splunk.singlevalue",
+            "title": "Active trucks",
+            "dataSources": { "primary": "ds_kpi" },
+            "options": {
+                "majorField": "kpi_active_trucks",
+                "majorColor": "#22d3ee",
+                "shouldUseThousandSeparators": true
+            }
+        },
+        "viz_kpi_in_transit": {
+            "type": "splunk.singlevalue",
+            "title": "In transit (pings)",
+            "dataSources": { "primary": "ds_kpi" },
+            "options": {
+                "majorField": "kpi_in_transit",
+                "majorColor": "#a3e635"
+            }
+        },
+        "viz_kpi_idle": {
+            "type": "splunk.singlevalue",
+            "title": "Idle (pings)",
+            "dataSources": { "primary": "ds_kpi" },
+            "options": {
+                "majorField": "kpi_idle",
+                "majorColor": "> if(value > 0, '#fbbf24', '#22d3ee')"
+            }
+        },
+        "viz_kpi_alerts": {
+            "type": "splunk.singlevalue",
+            "title": "Over-speed alerts (pings)",
+            "dataSources": { "primary": "ds_kpi" },
+            "options": {
+                "majorField": "kpi_alerts",
+                "majorColor": "> if(value > 0, '#f43f5e', '#22d3ee')"
+            }
+        },
+        "viz_kpi_avg_speed": {
+            "type": "splunk.singlevalue",
+            "title": "Average speed",
+            "dataSources": { "primary": "ds_kpi" },
+            "options": {
+                "majorField": "kpi_avg_speed",
+                "unit": "km/h",
+                "unitPosition": "after",
+                "majorColor": "> if(value > 95, '#f43f5e', if(value < 30, '#fbbf24', '#a3e635'))"
+            }
+        },
+        "viz_fleet": {
+            "type": "better_map.better_map",
+            "title": "Fleet trails — glowing animated paths on a cinematic dark basemap",
+            "dataSources": { "primary": "ds_base" },
+            "options": {
+                "tileProvider": "carto_dark_matter",
+                "pointRenderer": "markers",
+                "pathColor": "#22d3ee",
+                "pathAnimated": "true",
+                "pathArrows": "true",
+                "pathGlow": "true",
+                "pointPulse": "true",
+                "vignette": "true",
+                "cameraPitch": "35",
+                "cameraBearing": "10",
+                "showTimeScrubber": "true",
+                "showDebugHud": "false",
+                "enableDrilldown": "true",
+                "enableExportShare": "true",
+                "showLayerControl": "false"
+            }
+        },
+        "viz_truck_table": {
+            "type": "splunk.table",
+            "title": "Trucks — current state",
+            "dataSources": { "primary": "ds_table" },
+            "options": {
+                "headerVisibility": "fixed"
+            }
+        },
+        "viz_speed_spark": {
+            "type": "splunk.area",
+            "title": "Speed over time, per truck (km/h)",
+            "dataSources": { "primary": "ds_spark" },
+            "options": {
+                "yAxisTitleText": "km/h"
+            }
+        }
+    },
     "layout": {
         "type": "absolute",
-        "options": { "width": 1440, "height": 960, "backgroundColor": "#0b1a2d" },
+        "options": {
+            "width": 1600,
+            "height": 1080,
+            "display": "auto-scale",
+            "backgroundColor": "#08090f"
+        },
+        "globalInputs": ["input_global_time", "input_truck", "input_status"],
         "structure": [
-            { "item": "viz_fleet", "type": "block", "position": { "x": 0, "y": 0, "w": 1440, "h": 960 } }
+            { "item": "viz_kpi_active",     "type": "block", "position": { "x": 10,   "y": 10,  "w": 308, "h": 110 } },
+            { "item": "viz_kpi_in_transit", "type": "block", "position": { "x": 328,  "y": 10,  "w": 308, "h": 110 } },
+            { "item": "viz_kpi_idle",       "type": "block", "position": { "x": 646,  "y": 10,  "w": 308, "h": 110 } },
+            { "item": "viz_kpi_alerts",     "type": "block", "position": { "x": 964,  "y": 10,  "w": 308, "h": 110 } },
+            { "item": "viz_kpi_avg_speed",  "type": "block", "position": { "x": 1282, "y": 10,  "w": 308, "h": 110 } },
+            { "item": "viz_fleet",          "type": "block", "position": { "x": 10,   "y": 140, "w": 1080, "h": 720 } },
+            { "item": "viz_truck_table",    "type": "block", "position": { "x": 1100, "y": 140, "w": 490, "h": 720 } },
+            { "item": "viz_speed_spark",    "type": "block", "position": { "x": 10,   "y": 870, "w": 1580, "h": 200 } }
         ]
-    }
+    },
+    "applicationProperties": { "theme": "dark" }
 }
     ]]></definition>
 </dashboard>

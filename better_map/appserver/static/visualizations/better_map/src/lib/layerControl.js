@@ -20,6 +20,10 @@ const CONTROL_ITEM_CLASS = 'better_map-layer-control__item';
 const CONTROL_SWATCH_CLASS = 'better_map-layer-control__swatch';
 const CONTROL_LABEL_CLASS = 'better_map-layer-control__label';
 const CONTROL_CHECKBOX_CLASS = 'better_map-layer-control__checkbox';
+// v1.5.2 — BM-CT-1 reset affordances. CSS for these classes lives in
+// visualization.css under "Layer Control 'Show all' footer".
+const CONTROL_FOOTER_CLASS = 'better_map-layer-control__footer';
+const CONTROL_SHOW_ALL_CLASS = 'better_map-layer-control__show-all';
 
 /**
  * Build a new layer control instance attached to a DOM container.
@@ -91,10 +95,60 @@ export function createLayerControl(parentEl, callbacks) {
             row.appendChild(label);
             root.appendChild(row);
         });
+
+        // v1.5.2 — BM-CT-1 footer with a "Show all" reset button. Only
+        // rendered when there are 2+ layers (with one layer it's
+        // semantically meaningless). The button re-enables every layer
+        // and fires onToggle() for any layer that was previously
+        // hidden so the parent shell can re-apply MapLibre visibility.
+        if (names.length >= 2) {
+            const footer = document.createElement('div');
+            footer.className = CONTROL_FOOTER_CLASS;
+
+            const resetBtn = document.createElement('button');
+            resetBtn.type = 'button';
+            resetBtn.className = CONTROL_SHOW_ALL_CLASS;
+            resetBtn.textContent = 'Show all';
+            resetBtn.setAttribute('aria-label', 'Show all map layers');
+            resetBtn.title = 'Show every layer (reset to default)';
+            resetBtn.addEventListener('click', function () {
+                resetVisibility();
+            });
+
+            footer.appendChild(resetBtn);
+            root.appendChild(footer);
+        }
     }
 
     function isVisible(name) {
         return visibleState[name] !== false;
+    }
+
+    /**
+     * v1.5.2 — BM-CT-1 reset: snap every layer back to visible.
+     *
+     * Walks the current layer list, marks each as visible in
+     * visibleState, checks the corresponding checkbox in the DOM, and
+     * fires onToggle(name, true) ONLY for layers whose visibility
+     * actually changed (so the parent shell does not pay for redundant
+     * setLayoutProperty('visibility') calls on already-visible layers).
+     */
+    function resetVisibility() {
+        for (let i = 0; i < lastNames.length; i++) {
+            const name = lastNames[i];
+            const wasVisible = visibleState[name] !== false;
+            visibleState[name] = true;
+            if (!wasVisible) {
+                onToggle(name, true);
+            }
+        }
+        // Re-sync DOM checkboxes — render() is keyed on a stable
+        // `sameArray(lastNames)` check so it won't redraw, but the
+        // existing checkbox elements may now be out of sync with state.
+        const checkboxes = root.querySelectorAll('.' + CONTROL_CHECKBOX_CLASS);
+        for (let j = 0; j < checkboxes.length; j++) {
+            checkboxes[j].checked = true;
+        }
     }
 
     function destroy() {
@@ -106,6 +160,7 @@ export function createLayerControl(parentEl, callbacks) {
     return {
         render: render,
         isVisible: isVisible,
+        resetVisibility: resetVisibility,
         destroy: destroy
     };
 }

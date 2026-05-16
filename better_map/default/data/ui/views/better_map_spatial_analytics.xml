@@ -1,0 +1,135 @@
+<dashboard version="2" theme="dark">
+    <label>Better Map - Spatial Analytics</label>
+    <description>Showcase for the v1.6 spatial analytics suite - draw tools, measure, lasso, brushing and a synthetic point cloud over which DBSCAN clustering, KDE heatmap density, and nearest-neighbour distance can be exercised at runtime via the on-map control panel. Replace the inline SPL with your own event source to operationalise.</description>
+    <definition><![CDATA[
+{
+    "title": "Better Map - Spatial Analytics",
+    "description": "Demo dataset for the v1.6 spatial analytics widgets and the BM-CT-1 control panel.",
+    "visualizations": {
+        "viz_kpi_pts": {
+            "type": "splunk.singlevalue",
+            "title": "Points in window",
+            "dataSources": { "primary": "ds_kpi_count" },
+            "options": {
+                "majorField": "count",
+                "majorColor": "#22d3ee",
+                "majorFontSize": 44,
+                "backgroundColor": "transparent"
+            }
+        },
+        "viz_kpi_extent": {
+            "type": "splunk.singlevalue",
+            "title": "Approx extent (deg)",
+            "dataSources": { "primary": "ds_kpi_extent" },
+            "options": {
+                "majorField": "extent_deg",
+                "majorColor": "#a3e635",
+                "majorFontSize": 44,
+                "backgroundColor": "transparent",
+                "numberPrecision": 2
+            }
+        },
+        "viz_kpi_hint": {
+            "type": "splunk.singlevalue",
+            "title": "Try (open control panel)",
+            "dataSources": { "primary": "ds_kpi_hint" },
+            "options": {
+                "majorField": "hint",
+                "majorColor": "#fbbf24",
+                "majorFontSize": 18,
+                "backgroundColor": "transparent"
+            }
+        },
+        "viz_map": {
+            "type": "better_map.better_map",
+            "title": "Synthetic point cloud (draw a polygon to query)",
+            "description": "Open the BM-CT-1 control panel to enable Draw tools, Measure, Lasso, Brushing, Side-by-side compare, Geocoder, Minimap, Command palette, etc.",
+            "dataSources": { "primary": "ds_points" },
+            "options": {
+                "tileProvider": "openfreemap-positron",
+                "pointRenderer": "markers",
+                "markerColor": "#22d3ee",
+                "markerOutline": "#0b1a2d",
+                "cameraPitch": "0",
+                "cameraBearing": "0",
+                "vignette": "false",
+                "showTimeScrubber": "false",
+                "showControlPanel": "true",
+                "showLayerControl": "true",
+                "enableExportShare": "true",
+                "v2Geocoder": "true",
+                "v2CommandPalette": "true",
+                "v2Minimap": "true",
+                "v2DrawTools": "true",
+                "v2Measure": "true",
+                "v2Lasso": "true",
+                "v2Brushing": "true",
+                "v2SideBySide": "true",
+                "v2SpatialQuery": "true",
+                "centerLat": "37.78",
+                "centerLon": "-122.42",
+                "zoom": "11"
+            }
+        },
+        "viz_filtered_table": {
+            "type": "splunk.table",
+            "title": "Points matching the drawn shape (driven by spatial-query token)",
+            "dataSources": { "primary": "ds_filtered" },
+            "options": {
+                "backgroundColor": "transparent",
+                "headerVisibility": "fixed"
+            }
+        }
+    },
+    "dataSources": {
+        "ds_points": {
+            "type": "ds.search",
+            "name": "Synthetic point cloud (3 clusters + noise)",
+            "options": {
+                "query": "| makeresults count=240\n| streamstats count AS i\n| eval cluster=case(i<=80,\"a\", i<=160,\"b\", true(),\"c\")\n| eval clat=case(cluster==\"a\", 37.78, cluster==\"b\", 37.79, cluster==\"c\", 37.76)\n| eval clon=case(cluster==\"a\", -122.42, cluster==\"b\", -122.40, cluster==\"c\", -122.45)\n| eval lat=clat+((random()%200)-100)/10000\n| eval lon=clon+((random()%200)-100)/10000\n| eval severity=case((i%23)==0,\"high\", (i%7)==0,\"medium\", true(),\"low\")\n| eval host=\"host-\".tostring(i)\n| fields _time, lat, lon, severity, host, cluster"
+            }
+        },
+        "ds_kpi_count": {
+            "type": "ds.search",
+            "name": "Count of points",
+            "options": { "query": "| makeresults\n| eval count=240" }
+        },
+        "ds_kpi_extent": {
+            "type": "ds.search",
+            "name": "Extent in degrees",
+            "options": { "query": "| makeresults\n| eval extent_deg=0.05" }
+        },
+        "ds_kpi_hint": {
+            "type": "ds.search",
+            "name": "Hint card",
+            "options": { "query": "| makeresults\n| eval hint=\"Click \u2699 Controls -> enable Draw tools\"" }
+        },
+        "ds_filtered": {
+            "type": "ds.search",
+            "name": "Points matching drawn polygon (token driven)",
+            "options": {
+                "query": "| makeresults count=8\n| streamstats count AS i\n| eval host=\"host-\".tostring(i), severity=if(i%3==0,\"high\",\"low\")\n| eval matches_drawn_shape=if(isnotnull($better_map.spatial_query$),\"yes\",\"no\")\n| fields host, severity, matches_drawn_shape"
+            }
+        }
+    },
+    "defaults": {
+        "dataSources": {
+            "ds.search": {
+                "options": { "queryParameters": { "earliest": "-15m", "latest": "now" } }
+            }
+        }
+    },
+    "layout": {
+        "type": "absolute",
+        "options": { "width": 1440, "height": 960, "backgroundColor": "#0b1220" },
+        "structure": [
+            { "item": "viz_kpi_pts",      "type": "block", "position": { "x": 20,   "y": 20,  "w": 350, "h": 130 } },
+            { "item": "viz_kpi_extent",   "type": "block", "position": { "x": 380,  "y": 20,  "w": 350, "h": 130 } },
+            { "item": "viz_kpi_hint",     "type": "block", "position": { "x": 740,  "y": 20,  "w": 680, "h": 130 } },
+            { "item": "viz_map",          "type": "block", "position": { "x": 20,   "y": 170, "w": 1080, "h": 760 } },
+            { "item": "viz_filtered_table","type": "block", "position": { "x": 1110, "y": 170, "w": 310,  "h": 760 } }
+        ]
+    }
+}
+    ]]></definition>
+</dashboard>

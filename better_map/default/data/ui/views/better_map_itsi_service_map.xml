@@ -1,0 +1,96 @@
+<dashboard version="2" theme="dark">
+    <label>Better Map - ITSI Service Map</label>
+    <description>v1.6 showcase: ITSI service tree rendered as geo-positioned nodes + edges. The demo SPL fabricates a service graph of front-end -&gt; api -&gt; database -&gt; storage with health scores; in production wire it to the ITSI REST endpoint (services + dependencies + health_score). The ITSI integration handles graph fetch + force-directed layout for services without explicit geo coords.</description>
+    <definition><![CDATA[
+{
+    "title": "Better Map - ITSI Service Map",
+    "description": "v1.6 ITSI service-map mode demo.",
+    "visualizations": {
+        "viz_kpi_services": {
+            "type": "splunk.singlevalue",
+            "title": "Services in tree",
+            "dataSources": { "primary": "ds_kpi_services" },
+            "options": { "majorField": "value", "majorColor": "#22d3ee", "majorFontSize": 44, "backgroundColor": "transparent" }
+        },
+        "viz_kpi_healthy": {
+            "type": "splunk.singlevalue",
+            "title": "Healthy",
+            "dataSources": { "primary": "ds_kpi_healthy" },
+            "options": { "majorField": "value", "majorColor": "#a3e635", "majorFontSize": 44, "backgroundColor": "transparent" }
+        },
+        "viz_kpi_critical": {
+            "type": "splunk.singlevalue",
+            "title": "Critical",
+            "dataSources": { "primary": "ds_kpi_critical" },
+            "options": { "majorField": "value", "majorColor": "#f43f5e", "majorFontSize": 44, "backgroundColor": "transparent" }
+        },
+        "viz_map": {
+            "type": "better_map.better_map",
+            "title": "ITSI service tree (nodes + edges with health score)",
+            "dataSources": { "primary": "ds_services" },
+            "options": {
+                "tileProvider": "openfreemap-positron",
+                "pointRenderer": "markers",
+                "pathColor": "#22d3ee",
+                "pathWidth": "2",
+                "markerColor": "#a3e635",
+                "vignette": "false",
+                "cameraPitch": "0",
+                "cameraBearing": "0",
+                "showTimeScrubber": "false",
+                "showControlPanel": "true",
+                "enableExportShare": "true",
+                "v2Itsi": "true",
+                "v2Geocoder": "true",
+                "v2Minimap": "true",
+                "v2CommandPalette": "true",
+                "centerLat": "20",
+                "centerLon": "0",
+                "zoom": "1.5"
+            }
+        },
+        "viz_table": {
+            "type": "splunk.table",
+            "title": "Service tree",
+            "dataSources": { "primary": "ds_services_table" },
+            "options": { "backgroundColor": "transparent", "headerVisibility": "fixed" }
+        }
+    },
+    "dataSources": {
+        "ds_services": {
+            "type": "ds.search",
+            "name": "Synthetic ITSI service graph",
+            "options": {
+                "query": "| makeresults count=8\n| streamstats count AS i\n| eval service=case(i==1,\"web-front\", i==2,\"api-gateway\", i==3,\"orders-svc\", i==4,\"payments-svc\", i==5,\"orders-db\", i==6,\"payments-db\", i==7,\"object-store\", true(),\"auth-idp\")\n| eval lat=case(service==\"web-front\",40, service==\"api-gateway\",30, service==\"orders-svc\",20, service==\"payments-svc\",20, service==\"orders-db\",10, service==\"payments-db\",10, service==\"object-store\",-10, true(),50)\n| eval lon=case(service==\"web-front\",-80, service==\"api-gateway\",-50, service==\"orders-svc\",-20, service==\"payments-svc\",20, service==\"orders-db\",-20, service==\"payments-db\",20, service==\"object-store\",0, true(),0)\n| eval health_score=case(service==\"orders-db\",58, service==\"object-store\",72, true(),95)\n| eval health_state=case(health_score>=90,\"healthy\", health_score>=70,\"warning\", true(),\"critical\")\n| eval color=case(health_state==\"healthy\",\"#a3e635\", health_state==\"warning\",\"#fbbf24\", true(),\"#f43f5e\")\n| eval popup=\"<b>\".service.\"</b><br>health: \".health_score\n| fields _time, lat, lon, service, health_score, health_state, color, popup"
+            }
+        },
+        "ds_kpi_services": { "type": "ds.search", "name": "Service count", "options": { "query": "| makeresults\n| eval value=8" } },
+        "ds_kpi_healthy":  { "type": "ds.search", "name": "Healthy count", "options": { "query": "| makeresults\n| eval value=6" } },
+        "ds_kpi_critical": { "type": "ds.search", "name": "Critical count", "options": { "query": "| makeresults\n| eval value=1" } },
+        "ds_services_table": {
+            "type": "ds.search",
+            "name": "Service table",
+            "options": {
+                "query": "| makeresults count=8\n| streamstats count AS i\n| eval service=case(i==1,\"web-front\", i==2,\"api-gateway\", i==3,\"orders-svc\", i==4,\"payments-svc\", i==5,\"orders-db\", i==6,\"payments-db\", i==7,\"object-store\", true(),\"auth-idp\")\n| eval health_score=case(service==\"orders-db\",58, service==\"object-store\",72, true(),95)\n| eval health_state=case(health_score>=90,\"healthy\", health_score>=70,\"warning\", true(),\"critical\")\n| fields service, health_state, health_score"
+            }
+        }
+    },
+    "defaults": {
+        "dataSources": {
+            "ds.search": { "options": { "queryParameters": { "earliest": "-15m", "latest": "now" } } }
+        }
+    },
+    "layout": {
+        "type": "absolute",
+        "options": { "width": 1440, "height": 960, "backgroundColor": "#0e1424" },
+        "structure": [
+            { "item": "viz_kpi_services",  "type": "block", "position": { "x": 20,   "y": 20,  "w": 460, "h": 130 } },
+            { "item": "viz_kpi_healthy",   "type": "block", "position": { "x": 490,  "y": 20,  "w": 460, "h": 130 } },
+            { "item": "viz_kpi_critical",  "type": "block", "position": { "x": 960,  "y": 20,  "w": 460, "h": 130 } },
+            { "item": "viz_map",           "type": "block", "position": { "x": 20,   "y": 170, "w": 1020, "h": 760 } },
+            { "item": "viz_table",         "type": "block", "position": { "x": 1050, "y": 170, "w": 370,  "h": 760 } }
+        ]
+    }
+}
+    ]]></definition>
+</dashboard>

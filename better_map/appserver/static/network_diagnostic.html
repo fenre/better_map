@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Better Map — Network Diagnostic</title>
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<style>
+  :root {
+    --bg: #0b1a2d;
+    --panel: #11203a;
+    --panel-border: #2a3a4d;
+    --accent: #06b6d4;
+    --ok: #22c55e;
+    --fail: #ef4444;
+    --warn: #f59e0b;
+    --muted: #94a3b8;
+    --text: #f8fafc;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 24px;
+    line-height: 1.5;
+  }
+  h1 { font-size: 24px; margin: 0 0 8px; color: var(--accent); }
+  .lede { color: var(--muted); margin: 0 0 24px; max-width: 780px; }
+  .test {
+    padding: 14px 16px;
+    margin: 8px 0;
+    border: 1px solid var(--panel-border);
+    border-radius: 8px;
+    background: var(--panel);
+  }
+  .test .name { font-weight: 600; font-size: 15px; margin-bottom: 2px; }
+  .test .url {
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    color: var(--accent);
+    word-break: break-all;
+    margin-bottom: 6px;
+  }
+  .status { font-weight: 700; font-family: ui-monospace, monospace; font-size: 13px; }
+  .ok { color: var(--ok); }
+  .fail { color: var(--fail); }
+  .warn { color: var(--warn); }
+  .muted { color: var(--muted); }
+  .detail { color: var(--muted); font-size: 12px; margin-top: 4px; font-family: ui-monospace, monospace; }
+  .summary {
+    padding: 18px 20px;
+    border: 2px solid var(--accent);
+    border-radius: 10px;
+    background: linear-gradient(180deg, #0e1f3a, #0b1a2d);
+    margin-top: 24px;
+  }
+  .summary h2 { margin: 0 0 8px; font-size: 18px; }
+  .summary p { margin: 6px 0; color: var(--text); }
+  .summary code { background: #0b1a2d; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
+  .stat { display: inline-block; margin-right: 18px; font-size: 14px; }
+  .stat strong { font-size: 18px; }
+  button {
+    background: var(--accent);
+    color: #0b1a2d;
+    border: 0;
+    padding: 8px 14px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-right: 8px;
+  }
+  button:hover { background: #0891b2; }
+  .meta {
+    background: #0e1f3a;
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin: 16px 0;
+    font-family: ui-monospace, monospace;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .meta .k { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<h1>Better Map — Network Diagnostic</h1>
+<p class="lede">
+  Tests every tile-server URL the better_map viz might fetch <strong>from this browser</strong>,
+  with the same origin, cookies, and headers the real dashboard uses (this page is served
+  by the same Splunk Web at the same origin).
+  Results paint visibly below — no DevTools required. If you see exceptions or non-200 responses,
+  share this whole page as a screenshot.
+</p>
+
+<div class="meta">
+  <div><span class="k">page origin:</span> <span id="origin"></span></div>
+  <div><span class="k">user agent:</span> <span id="ua"></span></div>
+  <div><span class="k">referrer:</span> <span id="referrer"></span></div>
+</div>
+
+<div>
+  <button onclick="runAll()">Re-run all tests</button>
+  <button onclick="runAll({cors:'no-cors'})">Re-run with no-cors mode</button>
+</div>
+
+<div id="results" style="margin-top: 16px;"></div>
+<div class="summary" id="summary" style="display:none"></div>
+
+<h2 style="margin-top: 32px; color: var(--accent);">Phase 2 — Direct MapLibre render test</h2>
+<p class="lede">
+  Below we instantiate <strong>real MapLibre maps</strong> outside of the better_map viz code, with the
+  exact same style URLs the viz uses. If these maps render basemaps but the dashboard panel doesn't,
+  the bug is in our viz code (lifecycle, container sizing, layer ordering). If these are also blank,
+  MapLibre itself is failing in this browser environment. Watch the status text under each map.
+</p>
+
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+  <div>
+    <h3 style="margin: 0 0 4px;">OpenFreeMap Liberty (vector)</h3>
+    <div id="map_liberty" style="width: 100%; height: 360px; background: #1a1a1a; border: 1px solid var(--panel-border); border-radius: 6px;"></div>
+    <div id="status_liberty" class="status warn" style="margin-top: 6px;">initialising…</div>
+  </div>
+  <div>
+    <h3 style="margin: 0 0 4px;">OSM raster (inline style)</h3>
+    <div id="map_osm" style="width: 100%; height: 360px; background: #1a1a1a; border: 1px solid var(--panel-border); border-radius: 6px;"></div>
+    <div id="status_osm" class="status warn" style="margin-top: 6px;">initialising…</div>
+  </div>
+</div>
+
+<div class="summary" id="phase2_summary" style="display:none; margin-top: 24px;"></div>
+
+<script>
+(function () {
+  document.getElementById('origin').textContent = window.location.origin;
+  document.getElementById('ua').textContent = navigator.userAgent;
+  document.getElementById('referrer').textContent = document.referrer || '(none)';
+})();
+
+var TESTS = [
+  // CONTROL: Splunk Web same-origin (must always pass — proves the page itself can fetch)
+  { name: 'Splunk Web (same origin) — control',
+    url: '/en-US/account/login',
+    expectMin: 100,
+    note: 'Same-origin sanity check. If this fails, the page itself broke.' },
+
+  // OpenStreetMap raster tile (used by osm_raster provider)
+  { name: 'OSM raster tile (used by osm_raster provider)',
+    url: 'https://tile.openstreetmap.org/2/2/2.png',
+    expectMin: 200,
+    note: 'OpenStreetMap Foundation tile server. Must work for osm_raster fallback to render.' },
+
+  // OpenFreeMap vector style JSON (used by openfreemap_liberty provider)
+  { name: 'OpenFreeMap Liberty style JSON (default basemap)',
+    url: 'https://tiles.openfreemap.org/styles/liberty',
+    expectMin: 1000,
+    note: 'JSON style document. MapLibre fetches this first, then issues secondary requests for tiles/sprites/glyphs.' },
+
+  { name: 'OpenFreeMap Positron style JSON (light theme)',
+    url: 'https://tiles.openfreemap.org/styles/positron',
+    expectMin: 1000 },
+
+  // OpenFreeMap planet TileJSON (referenced by Liberty/Positron styles)
+  { name: 'OpenFreeMap planet TileJSON (referenced by Liberty)',
+    url: 'https://tiles.openfreemap.org/planet',
+    expectMin: 100,
+    note: 'TileJSON metadata document. MapLibre fetches this after the style.' },
+
+  // OpenFreeMap sprite (icon sheet)
+  { name: 'OpenFreeMap sprite metadata',
+    url: 'https://tiles.openfreemap.org/sprites/ofm_f384/ofm.json',
+    expectMin: 100 },
+
+  // OpenFreeMap glyphs (PBF font tile)
+  { name: 'OpenFreeMap glyphs PBF (font tile)',
+    url: 'https://tiles.openfreemap.org/fonts/Noto%20Sans%20Regular/0-255.pbf',
+    expectMin: 100,
+    note: 'Binary protobuf font tile. Cross-origin binary fetch.' },
+
+  // MapLibre demotiles (used as fallback glyphs in osm_raster style)
+  { name: 'MapLibre demotiles glyphs (osm_raster fallback)',
+    url: 'https://demotiles.maplibre.org/font/Open%20Sans%20Regular/0-255.pbf',
+    expectMin: 100,
+    note: 'Used by osm_raster style when MapLibre needs to draw text labels.' }
+];
+
+function fmtBytes(n) {
+  if (n < 1024) return n + 'B';
+  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + 'KB';
+  return (n / 1024 / 1024).toFixed(2) + 'MB';
+}
+
+async function runTest(test, opts) {
+  opts = opts || {};
+  var div = document.createElement('div');
+  div.className = 'test';
+  div.innerHTML =
+    '<div class="name">' + test.name + '</div>' +
+    '<div class="url">' + test.url + '</div>' +
+    '<div class="status warn">testing…</div>' +
+    '<div class="detail"></div>';
+  document.getElementById('results').appendChild(div);
+
+  var statusEl = div.querySelector('.status');
+  var detailEl = div.querySelector('.detail');
+  var t0 = performance.now();
+
+  try {
+    var fetchOpts = { method: 'GET', cache: 'no-store' };
+    if (opts.cors) fetchOpts.mode = opts.cors;
+    var r = await fetch(test.url, fetchOpts);
+    var elapsed = (performance.now() - t0).toFixed(0);
+
+    var bodySize = 0;
+    try {
+      var blob = await r.blob();
+      bodySize = blob.size;
+    } catch (be) {
+      bodySize = -1;
+    }
+
+    var ok = r.ok && bodySize >= (test.expectMin || 1);
+    statusEl.className = 'status ' + (ok ? 'ok' : 'fail');
+    statusEl.textContent =
+      (ok ? 'PASS' : 'FAIL') +
+      ' — HTTP ' + r.status + ' ' + r.statusText +
+      ' / ' + (bodySize >= 0 ? fmtBytes(bodySize) : '?B') +
+      ' / ' + elapsed + 'ms';
+
+    var details = [];
+    var ct = r.headers.get('content-type');
+    if (ct) details.push('content-type: ' + ct);
+    var cl = r.headers.get('content-length');
+    if (cl) details.push('content-length: ' + cl);
+    var cors = r.headers.get('access-control-allow-origin');
+    if (cors) details.push('access-control-allow-origin: ' + cors);
+    if (test.note) details.push('note: ' + test.note);
+    detailEl.innerHTML = details.join('<br>');
+
+    return ok ? 'pass' : 'fail';
+  } catch (e) {
+    var elapsed = (performance.now() - t0).toFixed(0);
+    statusEl.className = 'status fail';
+    statusEl.textContent = 'EXCEPTION — ' + (e.name || 'Error') + ' (' + elapsed + 'ms)';
+    detailEl.innerHTML =
+      'message: ' + (e.message || '(no message)') +
+      '<br>This usually means: blocked by browser extension, blocked by network firewall/proxy, ' +
+      'CORS denial (server didn\'t send access-control-allow-origin), DNS failure, or TLS failure.';
+    return 'exception';
+  }
+}
+
+async function runAll(opts) {
+  document.getElementById('results').innerHTML = '';
+  document.getElementById('summary').style.display = 'none';
+
+  var pass = 0, fail = 0, exc = 0;
+  for (var i = 0; i < TESTS.length; i++) {
+    var r = await runTest(TESTS[i], opts);
+    if (r === 'pass') pass++;
+    else if (r === 'fail') fail++;
+    else exc++;
+  }
+
+  var sum = document.getElementById('summary');
+  sum.style.display = 'block';
+  var verdict = '';
+  if (pass === TESTS.length) {
+    verdict = '<p class="ok"><strong>All tests passed.</strong> Network is fine. The basemap-blank symptom is therefore a bug INSIDE the viz (MapLibre runtime, style parsing, or canvas init), not the network. Investigate the viz code.</p>';
+  } else if (pass === 1 && (fail + exc) === TESTS.length - 1 && document.querySelector('.test:first-child .ok')) {
+    verdict = '<p class="fail"><strong>Same-origin works, every external host fails.</strong> Your browser can reach this Splunk server but cannot reach any public tile CDN. This is almost certainly a corporate firewall / VPN egress filter / DNS sinkhole / DNS-level ad blocker (Pi-hole, NextDNS, AdGuard Home) blocking outbound traffic. Confirm by pinging or curling the URLs from your terminal.</p>';
+  } else if (exc > 0) {
+    verdict = '<p class="fail"><strong>Some requests threw exceptions.</strong> Look at each row labeled EXCEPTION — common causes: a browser extension is blocking the request (uBlock, Privacy Badger, AdGuard), the server returned an error before any HTTP response, or CORS denied the response. Try disabling browser extensions and re-running.</p>';
+  } else {
+    verdict = '<p class="warn"><strong>Mixed results.</strong> Look at the failed rows individually.</p>';
+  }
+  sum.innerHTML =
+    '<h2>Summary</h2>' +
+    '<p>' +
+      '<span class="stat ok"><strong>' + pass + '</strong> passed</span>' +
+      '<span class="stat fail"><strong>' + fail + '</strong> failed</span>' +
+      '<span class="stat warn"><strong>' + exc + '</strong> exception</span>' +
+    '</p>' +
+    verdict +
+    '<p class="muted" style="font-size:12px; margin-top:12px;">' +
+      'Page version: 1.0 · ' + new Date().toISOString() +
+    '</p>';
+}
+
+runAll().then(runPhase2);
+
+// ============================================================================
+// Phase 2 — Direct MapLibre render tests (no viz code involved)
+// ============================================================================
+
+function runPhase2() {
+  if (typeof maplibregl === 'undefined') {
+    showPhase2('MapLibre failed to load from CDN — Phase 2 aborted.');
+    return;
+  }
+
+  var libertyResult = { error: null, styleLoaded: false, sourceLoaded: false, tilesLoaded: 0, errors: [] };
+  var osmResult = { error: null, styleLoaded: false, sourceLoaded: false, tilesLoaded: 0, errors: [] };
+
+  // ----- Map 1: OpenFreeMap Liberty -----
+  try {
+    var libMap = new maplibregl.Map({
+      container: 'map_liberty',
+      style: 'https://tiles.openfreemap.org/styles/liberty',
+      center: [0, 20],
+      zoom: 1.4,
+      attributionControl: false
+    });
+
+    libMap.on('error', function (e) {
+      libertyResult.errors.push({
+        name: e && e.error ? e.error.name : 'Unknown',
+        message: e && e.error ? e.error.message : String(e),
+        url: e && e.error ? e.error.url : ''
+      });
+    });
+    libMap.on('styledata', function () { libertyResult.styleLoaded = true; });
+    libMap.on('sourcedata', function (e) { if (e.isSourceLoaded) libertyResult.sourceLoaded = true; });
+    libMap.on('data', function (e) { if (e.dataType === 'source' && e.tile) libertyResult.tilesLoaded++; });
+
+    setTimeout(function () { reportPhase2Map('liberty', libertyResult); }, 4000);
+  } catch (e) {
+    libertyResult.error = e.message;
+    reportPhase2Map('liberty', libertyResult);
+  }
+
+  // ----- Map 2: OSM raster (inline style, same shape as our osm_raster provider) -----
+  try {
+    var osmMap = new maplibregl.Map({
+      container: 'map_osm',
+      style: {
+        version: 8,
+        sources: {
+          'osm': {
+            type: 'raster',
+            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            attribution: '© OpenStreetMap contributors',
+            maxzoom: 19
+          }
+        },
+        layers: [
+          { id: 'osm-raster-layer', type: 'raster', source: 'osm', minzoom: 0, maxzoom: 22 }
+        ],
+        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf'
+      },
+      center: [0, 20],
+      zoom: 1.4,
+      attributionControl: false
+    });
+
+    osmMap.on('error', function (e) {
+      osmResult.errors.push({
+        name: e && e.error ? e.error.name : 'Unknown',
+        message: e && e.error ? e.error.message : String(e),
+        url: e && e.error ? e.error.url : ''
+      });
+    });
+    osmMap.on('styledata', function () { osmResult.styleLoaded = true; });
+    osmMap.on('sourcedata', function (e) { if (e.isSourceLoaded) osmResult.sourceLoaded = true; });
+    osmMap.on('data', function (e) { if (e.dataType === 'source' && e.tile) osmResult.tilesLoaded++; });
+
+    setTimeout(function () { reportPhase2Map('osm', osmResult); }, 4000);
+  } catch (e) {
+    osmResult.error = e.message;
+    reportPhase2Map('osm', osmResult);
+  }
+
+  setTimeout(showPhase2Summary, 5000);
+}
+
+function reportPhase2Map(id, result) {
+  var statusEl = document.getElementById('status_' + id);
+  if (!statusEl) return;
+
+  if (result.error) {
+    statusEl.className = 'status fail';
+    statusEl.textContent = 'EXCEPTION at construction: ' + result.error;
+    return;
+  }
+
+  var parts = [];
+  parts.push('styleLoaded=' + result.styleLoaded);
+  parts.push('sourceLoaded=' + result.sourceLoaded);
+  parts.push('tilesLoaded=' + result.tilesLoaded);
+  parts.push('errors=' + result.errors.length);
+
+  // Try to read the canvas element to confirm rendering happened
+  var container = document.getElementById('map_' + id);
+  var canvas = container ? container.querySelector('canvas.maplibregl-canvas') : null;
+  if (canvas) {
+    parts.push('canvas=' + canvas.width + 'x' + canvas.height);
+    // Sample a pixel from center to check if anything painted
+    try {
+      var ctx = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (ctx) {
+        var pixels = new Uint8Array(4);
+        var x = Math.floor(canvas.width / 2);
+        var y = Math.floor(canvas.height / 2);
+        ctx.readPixels(x, y, 1, 1, ctx.RGBA, ctx.UNSIGNED_BYTE, pixels);
+        var rgba = 'rgba(' + pixels[0] + ',' + pixels[1] + ',' + pixels[2] + ',' + pixels[3] + ')';
+        parts.push('center-pixel=' + rgba);
+
+        var allBlack = pixels[0] === 0 && pixels[1] === 0 && pixels[2] === 0;
+        var allTransparent = pixels[3] === 0;
+        if (allBlack || allTransparent) {
+          parts.unshift('CANVAS BLANK');
+          statusEl.className = 'status fail';
+        } else {
+          parts.unshift('CANVAS PAINTED');
+          statusEl.className = 'status ok';
+        }
+      } else {
+        parts.unshift('NO WEBGL');
+        statusEl.className = 'status fail';
+      }
+    } catch (e) {
+      parts.unshift('READ-PIXEL ERR');
+      parts.push('readPixels err: ' + e.message);
+      statusEl.className = 'status warn';
+    }
+  } else {
+    parts.unshift('NO CANVAS');
+    statusEl.className = 'status fail';
+  }
+
+  statusEl.textContent = parts.join(' · ');
+
+  if (result.errors.length) {
+    var errDiv = document.createElement('div');
+    errDiv.className = 'detail';
+    errDiv.style.marginTop = '4px';
+    errDiv.innerHTML = result.errors.slice(0, 5).map(function (e) {
+      return e.name + ': ' + (e.message || '?') + (e.url ? ' (' + e.url + ')' : '');
+    }).join('<br>');
+    statusEl.parentNode.appendChild(errDiv);
+  }
+}
+
+function showPhase2Summary() {
+  var libStatus = document.getElementById('status_liberty');
+  var osmStatus = document.getElementById('status_osm');
+  var libOk = libStatus && libStatus.classList.contains('ok');
+  var osmOk = osmStatus && osmStatus.classList.contains('ok');
+
+  var sum = document.getElementById('phase2_summary');
+  sum.style.display = 'block';
+  var verdict = '';
+  if (libOk && osmOk) {
+    verdict = '<p class="ok"><strong>Both direct MapLibre maps render successfully.</strong> ' +
+      'This proves MapLibre + this browser + this network can all paint a basemap. ' +
+      'The bug is therefore inside the better_map viz wrapping — likely in MapBuilder.init() lifecycle, ' +
+      'container CSS, layer ordering, or the interaction with Splunk Dashboard Studio\'s render cycle.</p>';
+  } else if (!libOk && !osmOk) {
+    verdict = '<p class="fail"><strong>BOTH direct maps failed to render.</strong> MapLibre itself, ' +
+      'or this browser\'s WebGL stack, can\'t produce a basemap here. ' +
+      'Check WebGL availability, browser version, and the error rows above.</p>';
+  } else {
+    verdict = '<p class="warn"><strong>Mixed: ' + (libOk ? 'Liberty works, OSM fails' : 'OSM works, Liberty fails') + '.</strong> ' +
+      'Compare the working vs failing setup to isolate which style format MapLibre is choking on.</p>';
+  }
+  sum.innerHTML = '<h2>Phase 2 verdict</h2>' + verdict;
+}
+</script>
+
+</body>
+</html>

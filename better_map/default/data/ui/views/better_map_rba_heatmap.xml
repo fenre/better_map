@@ -1,0 +1,95 @@
+<dashboard version="2" theme="dark">
+    <label>Better Map - RBA Risk Heatmap</label>
+    <description>v1.6 showcase: risk-based-alerting heatmap that aggregates accumulated risk scores per geographic bin (lat/lon rounded to two decimals). The RBA module emits an SPL helper macro you can use against the Splunk ES risk index. Replace the inline SPL with: index=risk | bin lat span=0.5 | bin lon span=0.5 | stats sum(risk_score) AS risk by lat, lon.</description>
+    <definition><![CDATA[
+{
+    "title": "Better Map - RBA Risk Heatmap",
+    "description": "v1.6 risk-based-alerting heatmap demo.",
+    "visualizations": {
+        "viz_kpi_total_risk": {
+            "type": "splunk.singlevalue",
+            "title": "Total risk (window)",
+            "dataSources": { "primary": "ds_kpi_total" },
+            "options": { "majorField": "value", "majorColor": "#f43f5e", "majorFontSize": 44, "backgroundColor": "transparent" }
+        },
+        "viz_kpi_bins": {
+            "type": "splunk.singlevalue",
+            "title": "Risk bins",
+            "dataSources": { "primary": "ds_kpi_bins" },
+            "options": { "majorField": "value", "majorColor": "#fbbf24", "majorFontSize": 44, "backgroundColor": "transparent" }
+        },
+        "viz_kpi_top_user": {
+            "type": "splunk.singlevalue",
+            "title": "Top risk object",
+            "dataSources": { "primary": "ds_kpi_top_user" },
+            "options": { "majorField": "object", "majorColor": "#22d3ee", "majorFontSize": 24, "backgroundColor": "transparent" }
+        },
+        "viz_map": {
+            "type": "better_map.better_map",
+            "title": "Accumulated risk score per geo bin (heatmap)",
+            "dataSources": { "primary": "ds_risk" },
+            "options": {
+                "tileProvider": "carto_dark_matter",
+                "pointRenderer": "heatmap",
+                "heatmapRadius": "24",
+                "heatmapOpacity": "0.9",
+                "palette": "rdylbu",
+                "vignette": "true",
+                "cameraPitch": "0",
+                "cameraBearing": "0",
+                "showTimeScrubber": "true",
+                "showControlPanel": "true",
+                "enableExportShare": "true",
+                "v2Rba": "true",
+                "v2Geocoder": "true",
+                "v2Minimap": "true",
+                "v2DrawTools": "true",
+                "v2SpatialQuery": "true",
+                "centerLat": "20",
+                "centerLon": "0",
+                "zoom": "1.6"
+            }
+        },
+        "viz_top_objects": {
+            "type": "splunk.table",
+            "title": "Top risk objects",
+            "dataSources": { "primary": "ds_top_objects" },
+            "options": { "backgroundColor": "transparent", "headerVisibility": "fixed" }
+        }
+    },
+    "dataSources": {
+        "ds_risk": {
+            "type": "ds.search",
+            "name": "Synthetic risk events (replace with index=risk)",
+            "options": {
+                "query": "| makeresults count=480\n| streamstats count AS i\n| eval lat=case(i%4==0,38, i%4==1,52, i%4==2,1, true(),35)+((random()%30)-15)/10\n| eval lon=case(i%4==0,-95, i%4==1,10, i%4==2,103, true(),139)+((random()%30)-15)/10\n| eval risk_score=10+(random()%70)\n| eval object=case(i%5==0,\"svc-account-prod-\".tostring(i%17), i%5==1,\"user-\".tostring(i%37), true(),\"host-\".tostring(i%53))\n| eval value=risk_score\n| fields _time, lat, lon, value, object, risk_score"
+            }
+        },
+        "ds_kpi_total":    { "type": "ds.search", "name": "Total risk",  "options": { "query": "| makeresults\n| eval value=18420" } },
+        "ds_kpi_bins":     { "type": "ds.search", "name": "Risk bins",   "options": { "query": "| makeresults\n| eval value=480" } },
+        "ds_kpi_top_user": { "type": "ds.search", "name": "Top object",  "options": { "query": "| makeresults\n| eval object=\"svc-account-prod-7\"" } },
+        "ds_top_objects": {
+            "type": "ds.search",
+            "name": "Top risk objects",
+            "options": {
+                "query": "| makeresults count=10\n| streamstats count AS i\n| eval object=case(i==1,\"svc-account-prod-7\", i==2,\"user-23\", i==3,\"host-101\", i==4,\"svc-account-stg-3\", i==5,\"user-12\", i==6,\"host-58\", i==7,\"svc-account-prod-12\", i==8,\"user-44\", i==9,\"host-77\", true(),\"user-3\")\n| eval risk=420-(i*22)\n| fields object, risk"
+            }
+        }
+    },
+    "defaults": {
+        "dataSources": { "ds.search": { "options": { "queryParameters": { "earliest": "-24h", "latest": "now" } } } }
+    },
+    "layout": {
+        "type": "absolute",
+        "options": { "width": 1440, "height": 960, "backgroundColor": "#08090f" },
+        "structure": [
+            { "item": "viz_kpi_total_risk", "type": "block", "position": { "x": 20,   "y": 20,  "w": 460, "h": 130 } },
+            { "item": "viz_kpi_bins",       "type": "block", "position": { "x": 490,  "y": 20,  "w": 460, "h": 130 } },
+            { "item": "viz_kpi_top_user",   "type": "block", "position": { "x": 960,  "y": 20,  "w": 460, "h": 130 } },
+            { "item": "viz_map",            "type": "block", "position": { "x": 20,   "y": 170, "w": 1020, "h": 760 } },
+            { "item": "viz_top_objects",    "type": "block", "position": { "x": 1050, "y": 170, "w": 370,  "h": 760 } }
+        ]
+    }
+}
+    ]]></definition>
+</dashboard>

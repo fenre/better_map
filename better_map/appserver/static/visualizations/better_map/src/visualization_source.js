@@ -32,6 +32,16 @@
 import SplunkVisualizationBase from 'api/SplunkVisualizationBase';
 import SplunkVisualizationUtils from 'api/SplunkVisualizationUtils';
 
+// Bundle the viz's own stylesheet into the JS so it's injected at runtime.
+// Splunk's classic SimpleXML viz framework auto-loads
+// appserver/static/visualizations/<viz>/visualization.css, but Dashboard
+// Studio v2 does NOT — without this import, .better_map-viz / .better_map-map
+// have no width/height rules, the inner MapLibre <div> collapses to 0x0,
+// and the canvas renders nothing visible (the viz chrome still paints
+// because the className strings are set, but they fall back to default
+// block flow). webpack style-loader injects this via <style> at runtime.
+import '../visualization.css';
+
 import { MapBuilder } from './lib/mapBuilder.js';
 import { createThemeWatcher } from './lib/theme.js';
 import { analyze } from './lib/dataFitness.js';
@@ -39,9 +49,10 @@ import { DEFAULT_PROVIDER } from './lib/styles.js';
 import { renderErrorBanner } from './lib/errorStates.js';
 import { createLayerControl } from './lib/layerControl.js';
 import { createScrubber } from './lib/time/scrubber.js';
-import { VIRIDIS, RDYLBU, SET3 } from './lib/palettes.js';
+import { VIRIDIS, RDYLBU, SET3, CYBER, SYNTHWAVE, TACTICAL } from './lib/palettes.js';
 import { waitForVisible, reserveContext, releaseContext, contextsLeft } from './lib/lazyInit.js';
 import { createPerfHUD } from './lib/perfHUD.js';
+import { createDebugHud } from './lib/debugHud.js';
 import { createViewLock } from './lib/viewLock.js';
 import { createLiveRegion, applyHighContrast } from './lib/a11y.js';
 import {
@@ -50,6 +61,23 @@ import {
     encodeShareHash,
     copyToClipboard
 } from './lib/exportShare.js';
+
+// v1.5.2 — BM-CT-1 wiring. The control panel widget shows per-action
+// toggles + reset buttons plus the master "Pause all motion" + "Reset
+// view" controls. Each animation module exposes a setEnabled/isEnabled
+// /reset triple that we register with MapBuilder.registerFancyAction
+// during initial builder spin-up. See `.cursor/rules/bm-control-trio.mdc`
+// for the full architectural contract.
+import { createControlPanel } from './lib/controlPanel.js';
+import { setMotionPaused as motionSetPaused } from './lib/motion.js';
+import * as pathsLayer from './lib/layers/paths.js';
+import * as markersLayer from './lib/layers/markers.js';
+import * as extrusionLayer from './lib/layers/extrusion.js';
+import * as hexbinLayer from './lib/layers/hexbin.js';
+// v1.6 — bundle of every new widget, layer, and Splunk integration.
+// The bundle exposes setEnabled/isEnabled/reset for each item and
+// registers them with the master control panel automatically.
+import { createV2Bundle } from './lib/widgets/v2Bundle.js';
 
 function getOption(config, ns, key, defaultValue) {
     var v = config[ns + key];
@@ -110,9 +138,16 @@ export default SplunkVisualizationBase.extend({
         this._viewLock = null;
         this._liveRegion = null;
         this._exportShare = null;
+        this._debugHud = null;
         this._cancelVisibilityWatch = null;
         this._contextReserved = false;
         this._waitingForVisibility = false;
+        // v1.5.2 — BM-CT-1 widget + last-applied motion-pause state. We
+        // track the previous value so applyOptions only re-applies the
+        // OS-level motion pause when it actually changed (avoids
+        // thrashing the cached prefers-reduced-motion query each tick).
+        this._controlPanel = null;
+        this._lastMotionPaused = null;
 
         // Hidden ARIA live region for status announcements (tooltip text,
         // layer toggles, error banners). Created up-front so the screen
@@ -176,6 +211,19 @@ export default SplunkVisualizationBase.extend({
             getOption(config, ns, 'showLayerControl', 'true'),
             true
         );
+        // v1.5.2 — BM-CT-1 master controls. `showControlPanel` toggles
+        // the on-map widget; `motionPaused` is the dashboard-author
+        // initial value for the master "Pause all motion" state (the
+        // user can flip it at runtime via the widget). Default is to
+        // show the panel and start un-paused.
+        var showControlPanel = parseBool(
+            getOption(config, ns, 'showControlPanel', 'true'),
+            true
+        );
+        var motionPaused = parseBool(
+            getOption(config, ns, 'motionPaused', 'false'),
+            false
+        );
 
         var self = this;
         if (!this._themeWatcher) {
@@ -192,11 +240,90 @@ export default SplunkVisualizationBase.extend({
         var enableCrossPanel = parseBool(getOption(config, ns, 'enableCrossPanel', 'true'), true);
         var enablePopups = parseBool(getOption(config, ns, 'enablePopups', 'true'), true);
         var showPerfHUD = parseBool(getOption(config, ns, 'showPerfHUD', 'false'), false);
+        var showDebugHud = parseBool(getOption(config, ns, 'showDebugHud', 'false'), false);
         var highContrast = parseBool(getOption(config, ns, 'highContrast', 'false'), false);
         var labelLanguage = String(getOption(config, ns, 'labelLanguage', '') || '').trim();
         var enableExportShare = parseBool(getOption(config, ns, 'enableExportShare', 'true'), true);
+        // v1.5.0 sexy-maps options. After the user chose "FULL" visual
+        // upgrades, the cinematic 30°/15° camera became the new default.
+        // Dashboards can opt out by passing cameraPitch=0 cameraBearing=0.
+        // The pitch is what makes glow paths and pulsing markers actually
+        // *look* like the sexy maps people post on Twitter — pure top-down
+        // is the "Splunk dashboard from 2009" look.
+        var cameraPitch = parseFloat(getOption(config, ns, 'cameraPitch', '30'));
+        var cameraBearing = parseFloat(getOption(config, ns, 'cameraBearing', '15'));
+        var vignette = parseBool(getOption(config, ns, 'vignette', 'true'), true);
+
+        // v1.6 — per-feature default-state map. The v2 bundle defaults
+        // every entry to OFF; the formatter lets dashboard authors flip
+        // any of them to ON at load time. Keys MUST match the instance
+        // keys inside createV2Bundle (see src/lib/widgets/v2Bundle.js).
+        var v2Defaults = {
+            geocoder:         parseBool(getOption(config, ns, 'v2Geocoder',         'false'), false),
+            commandPalette:   parseBool(getOption(config, ns, 'v2CommandPalette',   'false'), false),
+            minimap:          parseBool(getOption(config, ns, 'v2Minimap',          'false'), false),
+            drawTools:        parseBool(getOption(config, ns, 'v2DrawTools',        'false'), false),
+            measure:          parseBool(getOption(config, ns, 'v2Measure',          'false'), false),
+            lasso:            parseBool(getOption(config, ns, 'v2Lasso',            'false'), false),
+            brushing:         parseBool(getOption(config, ns, 'v2Brushing',         'false'), false),
+            sideBySide:       parseBool(getOption(config, ns, 'v2SideBySide',       'false'), false),
+            spatialQuery:     parseBool(getOption(config, ns, 'v2SpatialQuery',     'false'), false),
+            timeSplit:        parseBool(getOption(config, ns, 'v2TimeSplit',        'false'), false),
+            wmsLayer:         parseBool(getOption(config, ns, 'v2WmsLayer',         'false'), false),
+            kmlLayer:         parseBool(getOption(config, ns, 'v2KmlLayer',         'false'), false),
+            tripsLayer:       parseBool(getOption(config, ns, 'v2TripsLayer',       'false'), false),
+            geofenceLayer:    parseBool(getOption(config, ns, 'v2GeofenceLayer',    'false'), false),
+            windLayer:        parseBool(getOption(config, ns, 'v2WindLayer',        'false'), false),
+            scenegraphLayer:  parseBool(getOption(config, ns, 'v2ScenegraphLayer',  'false'), false),
+            mil2525Layer:     parseBool(getOption(config, ns, 'v2Mil2525Layer',     'false'), false),
+            mitre:            parseBool(getOption(config, ns, 'v2Mitre',            'false'), false),
+            esNotable:        parseBool(getOption(config, ns, 'v2EsNotable',        'false'), false),
+            itsi:             parseBool(getOption(config, ns, 'v2Itsi',             'false'), false),
+            soar:             parseBool(getOption(config, ns, 'v2Soar',             'false'), false),
+            rba:              parseBool(getOption(config, ns, 'v2Rba',              'false'), false),
+            purdue:           parseBool(getOption(config, ns, 'v2Purdue',           'false'), false),
+            aiGeo:            parseBool(getOption(config, ns, 'v2AiGeo',            'false'), false),
+            aiAssistant:      parseBool(getOption(config, ns, 'v2AiAssistant',      'false'), false)
+        };
+        // Endpoint URLs and per-feature config strings consumed by the
+        // v2 bundle. Splunk integrations that have empty endpoints stay
+        // disabled even if their toggle is on (the modules log a noop).
+        var v2EndpointOpts = {
+            wmsLayer:    { url: String(getOption(config, ns, 'v2WmsUrl', '') || ''),
+                           layers: String(getOption(config, ns, 'v2WmsLayers', '') || '') },
+            esNotable:   { baseUrl: String(getOption(config, ns, 'v2EsBaseUrl', '') || '') },
+            soar:        { url: String(getOption(config, ns, 'v2SoarUrl', '') || '') },
+            purdue:      { lookup: String(getOption(config, ns, 'v2PurdueLookup', 'ot_asset_register') || '') }
+        };
+        // Stash on `this` so the lazy-init callback (which fires async
+        // when the panel first becomes visible) reads the freshest
+        // values, and so subsequent updateView() cycles can re-apply
+        // formatter changes to a live bundle without a full rebuild.
+        this._v2Defaults = v2Defaults;
+        this._v2EndpointOpts = v2EndpointOpts;
 
         applyHighContrast(this.el, highContrast);
+
+        // v1.5.2 — BM-CT-1: push the dashboard-author motion-paused
+        // value into the shared motion.js state ONLY when it changes
+        // (so a user's runtime toggle via the control panel is not
+        // clobbered by every redraw). The first call MUST always
+        // apply, even if the dashboard default is `false`, so that the
+        // shared state matches the formatter.
+        if (this._lastMotionPaused !== motionPaused) {
+            motionSetPaused(motionPaused);
+            this._lastMotionPaused = motionPaused;
+            if (this._builder && typeof this._builder.setMotionPaused === 'function') {
+                this._builder.setMotionPaused(motionPaused);
+            }
+        }
+
+        if (showDebugHud && !this._debugHud) {
+            this._debugHud = createDebugHud(this.el);
+        } else if (!showDebugHud && this._debugHud) {
+            this._debugHud.destroy();
+            this._debugHud = null;
+        }
 
         if (!this._builder) {
             // Lazy-init guard: only spin up MapLibre once the panel is in or
@@ -225,14 +352,30 @@ export default SplunkVisualizationBase.extend({
                 enableDrilldown: enableDrilldown,
                 enableCrossPanel: enableCrossPanel,
                 enablePopups: enablePopups,
-                labelLanguage: labelLanguage
+                labelLanguage: labelLanguage,
+                pitch: isFinite(cameraPitch) ? cameraPitch : 0,
+                bearing: isFinite(cameraBearing) ? cameraBearing : 0
             };
+            // Vignette overlay is a CSS-only effect — toggle via a class
+            // on the viz root so the v1.5.0 default (on) can be turned
+            // off per-panel without rebuilding the bundle.
+            if (vignette) {
+                this.el.classList.add('better_map-vignette');
+            } else {
+                this.el.classList.remove('better_map-vignette');
+            }
             this._cancelVisibilityWatch = waitForVisible(this.el, function () {
                 initSelf._cancelVisibilityWatch = null;
                 initSelf._waitingForVisibility = false;
                 initSelf._builder = new MapBuilder(initSelf.el);
+                if (initSelf._debugHud) {
+                    initSelf._builder.setDebugHud(initSelf._debugHud);
+                }
                 initSelf._builder.init(initOpts);
                 if (initSelf._builder.map) {
+                    if (initSelf._debugHud) {
+                        initSelf._debugHud.attach(initSelf._builder.map);
+                    }
                     initSelf._builder.enableIntegrations(initSelf, {
                         drilldown: initOpts.enableDrilldown,
                         crossPanel: initOpts.enableCrossPanel,
@@ -241,6 +384,48 @@ export default SplunkVisualizationBase.extend({
                     if (showPerfHUD && !initSelf._perfHUD) {
                         initSelf._perfHUD = createPerfHUD(initSelf.el);
                         initSelf._perfHUD.attach(initSelf._builder.map);
+                    }
+                    // v1.5.2 — BM-CT-1: register every fancy action
+                    // with the builder's registry, then mount the
+                    // control panel widget. Done once after first map
+                    // init so the actions are immediately discoverable
+                    // — they no-op gracefully when the host layer is
+                    // not yet present (no markers, no paths, etc.).
+                    initSelf._registerFancyActions();
+                    // v1.6 — instantiate the v2 widget/layer/Splunk
+                    // bundle and register every entry as a fancy
+                    // action so the master control panel auto-
+                    // discovers them. Idempotent: if a previous
+                    // applyAnalysis() call already created a bundle
+                    // it's destroyed first to avoid double registration.
+                    try {
+                        if (initSelf._v2Bundle && typeof initSelf._v2Bundle.destroy === 'function') {
+                            initSelf._v2Bundle.destroy();
+                        }
+                        initSelf._v2Bundle = createV2Bundle(
+                            initSelf.el,
+                            initSelf._builder,
+                            initSelf,
+                            initSelf._v2EndpointOpts || {}
+                        );
+                        initSelf._v2Bundle.register(initSelf._builder);
+                        // Apply the dashboard-author's per-feature default
+                        // state once the bundle exists.
+                        initSelf._applyV2Defaults();
+                    } catch (_e) {
+                        // v2 bundle is non-critical; swallow so a single
+                        // misbehaving widget can't take down the viz.
+                        initSelf._v2Bundle = null;
+                    }
+                    if (showControlPanel) {
+                        initSelf._mountControlPanel();
+                    }
+                    // Honour the dashboard-author motion-paused
+                    // default exactly once after the map is live so
+                    // the builder's internal state matches the
+                    // formatter from the very first frame.
+                    if (motionPaused && typeof initSelf._builder.setMotionPaused === 'function') {
+                        initSelf._builder.setMotionPaused(true);
                     }
                     // Force a re-run of updateView now that the map is live.
                     initSelf.invalidateUpdateView();
@@ -254,9 +439,20 @@ export default SplunkVisualizationBase.extend({
             apiKey: apiKey,
             customStyleUrl: customStyle
         });
+        // Vignette toggle on subsequent cycles so the user can flip it
+        // from the formatter at runtime.
+        if (vignette) {
+            this.el.classList.add('better_map-vignette');
+        } else {
+            this.el.classList.remove('better_map-vignette');
+        }
         if (typeof this._builder.setLabelLanguage === 'function') {
             this._builder.setLabelLanguage(labelLanguage);
         }
+        // v1.6 — re-apply per-feature default-state on every redraw so
+        // the dashboard author can toggle a v2 widget in the formatter
+        // and see it take effect without reloading the dashboard.
+        this._applyV2Defaults();
 
         if (!this._builder.map) {
             return;
@@ -284,6 +480,18 @@ export default SplunkVisualizationBase.extend({
         }
         this._lastAnalysis = analysis;
 
+        if (this._debugHud && this._debugHud.recordInput) {
+            try {
+                this._debugHud.recordInput(
+                    (data.rows || []).length,
+                    (data.fields || []).map(function (f) { return f && f.name; })
+                );
+            } catch (_e) { /* ignore */ }
+        }
+        if (this._debugHud && this._debugHud.recordAnalysis) {
+            try { this._debugHud.recordAnalysis(analysis); } catch (_e) { /* ignore */ }
+        }
+
         var paletteId = String(getOption(config, ns, 'palette', 'viridis')).toLowerCase();
         var markerColor = getOption(config, ns, 'markerColor', '');
         var markerOutline = getOption(config, ns, 'markerOutline', '');
@@ -291,6 +499,29 @@ export default SplunkVisualizationBase.extend({
         var pathWidth = parseFloat(getOption(config, ns, 'pathWidth', ''));
         var pathArrows = parseBool(getOption(config, ns, 'pathArrows', 'false'), false);
         var pathAnimated = parseBool(getOption(config, ns, 'pathAnimated', 'false'), false);
+        // v1.5.0 — laser-beam glow under each path. Default ON because
+        // the new default basemap (Carto Dark Matter) makes flat lines
+        // hard to distinguish from the muted grey landmasses.
+        var pathGlow = parseBool(getOption(config, ns, 'pathGlow', 'true'), true);
+        // v1.5.1 — traveling comets along arc-shape data. Defaults to
+        // 'auto' which means "ON when the FC contains LineString
+        // features tagged isArc=true". Explicit 'true' / 'false' force
+        // the behaviour regardless of arc detection. The comet emitter
+        // is the single biggest visual upgrade in v1.5.1: every arc
+        // gets a glowing packet that travels src->dst and dissolves
+        // into the destination, giving the NORSE-map "data is alive"
+        // signature.
+        var pathCometRaw = String(getOption(config, ns, 'pathComet', 'auto')).toLowerCase();
+        var pathComet;
+        if (pathCometRaw === 'auto' || pathCometRaw === '') {
+            pathComet = undefined; // let paths.js auto-detect
+        } else {
+            pathComet = parseBool(pathCometRaw, true);
+        }
+        // v1.5.0 — animated radar-ring ping under each marker. Default
+        // ON for sparse-point views; the dispatcher only mounts markers
+        // for < 200 features so the animation overhead is negligible.
+        var pointPulse = parseBool(getOption(config, ns, 'pointPulse', 'true'), true);
         var polygonFill = getOption(config, ns, 'polygonFill', '');
         var polygonOpacity = parseFloat(getOption(config, ns, 'polygonOpacity', ''));
         var heatmapRadius = parseFloat(getOption(config, ns, 'heatmapRadius', ''));
@@ -310,6 +541,19 @@ export default SplunkVisualizationBase.extend({
             getOption(config, ns, 'hexbinResolution', ''),
             10
         );
+        // v1.5.1 — breathing extrusion. When true, hexbin / 3D extrusion
+        // column heights gently rise and fall by +/-12% on a 4s sine
+        // wave. Opt-in because the effect changes the perceived value
+        // of the underlying metric; only enable on dashboards where
+        // "this is live telemetry" is more important than "this is the
+        // exact value right now".
+        var extrusionPulse = parseBool(getOption(config, ns, 'extrusionPulse', 'false'), false);
+        // v1.5.1 — slow continuous bearing rotation. Speed expressed in
+        // degrees-per-second; 3 deg/s completes a full orbit in 2 minutes
+        // which feels alive without being distracting. Pauses on user
+        // interaction and resumes 5s after the last interaction.
+        var cameraAutoOrbit = parseBool(getOption(config, ns, 'cameraAutoOrbit', 'false'), false);
+        var autoOrbitSpeed = parseFloat(getOption(config, ns, 'autoOrbitSpeed', '3'));
         var featureJoinPreset = getOption(config, ns, 'featureJoinPreset', '');
         var featureJoinUrl = getOption(config, ns, 'featureJoinUrl', '');
         var featureJoinSourceLayer = getOption(config, ns, 'featureJoinSourceLayer', '');
@@ -327,7 +571,8 @@ export default SplunkVisualizationBase.extend({
             pointRenderer: pointRenderer,
             markers: {
                 color: markerColor || undefined,
-                outline: markerOutline || undefined
+                outline: markerOutline || undefined,
+                pulse: pointPulse
             },
             clusters: {
                 color: markerColor || undefined,
@@ -345,13 +590,16 @@ export default SplunkVisualizationBase.extend({
                 extrude: hexbinEnabled && enable3D,
                 aggregate: getOption(config, ns, 'hexbinAggregate', 'count'),
                 palette: palette,
-                opacity: isFinite(hexbinOpacity) ? hexbinOpacity : undefined
+                opacity: isFinite(hexbinOpacity) ? hexbinOpacity : undefined,
+                pulse: extrusionPulse
             },
             paths: {
                 color: pathColor || undefined,
                 width: isFinite(pathWidth) ? pathWidth : undefined,
                 animated: pathAnimated,
                 arrowHeads: pathArrows,
+                glow: pathGlow,
+                comet: pathComet,
                 outline: markerOutline || undefined
             },
             polygons: {
@@ -364,7 +612,8 @@ export default SplunkVisualizationBase.extend({
                 enabled: enable3D,
                 heightProperty: getOption(config, ns, 'extrusionHeightField', 'height'),
                 scale: parseFloat(getOption(config, ns, 'extrusionScale', '1')) || 1,
-                palette: palette
+                palette: palette,
+                pulse: extrusionPulse
             },
             featureJoin: {
                 enabled: featureJoinEnabled,
@@ -383,6 +632,29 @@ export default SplunkVisualizationBase.extend({
                 opacity: isFinite(indoorOpacity) ? indoorOpacity : 0.95
             }
         });
+
+        // v1.5.1 — camera auto-orbit. Drive it from updateView() so
+        // toggling the option in the formatter takes effect immediately;
+        // MapBuilder.setAutoOrbit is idempotent and cheap to re-invoke
+        // (it only spawns a RAF when none is running).
+        if (this._builder && typeof this._builder.setAutoOrbit === 'function') {
+            this._builder.setAutoOrbit(
+                cameraAutoOrbit && isFinite(autoOrbitSpeed) ? autoOrbitSpeed : 0
+            );
+        }
+
+        if (this._debugHud && this._debugHud.recordLayerOpts) {
+            try {
+                this._debugHud.recordLayerOpts({
+                    pointRenderer: pointRenderer,
+                    paths: {
+                        color: pathColor || undefined,
+                        animated: pathAnimated,
+                        arrowHeads: pathArrows
+                    }
+                });
+            } catch (_e) { /* ignore */ }
+        }
 
         // Floating layer-control widget, only shown when the user surfaced
         // a `layer` field and we have more than one distinct layer name.
@@ -500,6 +772,22 @@ export default SplunkVisualizationBase.extend({
             this._scrubber = null;
             this._builder.applyTimeTrail(null);
         }
+
+        // v1.5.2 — BM-CT-1: keep the control panel in sync with the
+        // dashboard. Show/hide on formatter changes, and re-render
+        // open panels so toggle state reflects any external changes
+        // (e.g. master Reset View flipping action states).
+        if (showControlPanel) {
+            if (!this._controlPanel) {
+                this._mountControlPanel();
+            }
+            if (this._controlPanel && this._controlPanel.render) {
+                this._controlPanel.render();
+            }
+        } else if (this._controlPanel) {
+            this._controlPanel.destroy();
+            this._controlPanel = null;
+        }
     },
 
     _installScrubber: function (range, windowMs) {
@@ -521,6 +809,201 @@ export default SplunkVisualizationBase.extend({
         if (this._builder) {
             this._builder.applyTimeTrail(this._scrubber.getCurrent(), windowMs);
         }
+    },
+
+    /**
+     * v1.6 — apply the dashboard-author per-feature default-state
+     * map to the live v2 bundle. Safe to call on every redraw; the
+     * underlying widget setEnabled() functions short-circuit when the
+     * new state matches the current state. No-op when the bundle is
+     * not yet instantiated (panel not visible) or has been destroyed.
+     */
+    _applyV2Defaults: function () {
+        var bundle = this._v2Bundle;
+        var defaults = this._v2Defaults;
+        if (!bundle || !bundle.instances || !defaults) return;
+        var instances = bundle.instances;
+        Object.keys(defaults).forEach(function (key) {
+            var inst = instances[key];
+            if (!inst || typeof inst.setEnabled !== 'function') return;
+            try {
+                var currently = typeof inst.isEnabled === 'function' ? !!inst.isEnabled() : false;
+                var want = !!defaults[key];
+                if (currently !== want) inst.setEnabled(want);
+            } catch (_e) { /* swallow per-instance */ }
+        });
+    },
+
+    /**
+     * v1.5.2 — BM-CT-1 registration. Every fancy action is registered
+     * with the builder's registry ONCE per builder lifetime — the
+     * action's setEnabled/isEnabled/reset closures are tolerant of
+     * "host layer not yet present" (e.g. registering the marker pulse
+     * action before any markers have been mounted is a no-op until
+     * markers arrive).
+     *
+     * Stable IDs (kebab-case, no spaces) are how the control panel
+     * keys its DOM elements — do NOT change them once shipped.
+     */
+    _registerFancyActions: function () {
+        var builder = this._builder;
+        if (!builder || typeof builder.registerFancyAction !== 'function') {
+            return;
+        }
+        var getMap = function () { return builder && builder.map; };
+
+        builder.registerFancyAction('paths-animated', {
+            id: 'paths-animated',
+            label: 'Marching dashes',
+            icon: '\u21E2', // rightward dashed arrow
+            setEnabled: function (on) {
+                var m = getMap();
+                if (m) pathsLayer.setAnimated(m, !!on);
+            },
+            isEnabled: function () { return pathsLayer.isAnimatedEnabled(); },
+            reset: function () {
+                var m = getMap();
+                if (m) pathsLayer.reset(m);
+            }
+        });
+
+        builder.registerFancyAction('paths-comet', {
+            id: 'paths-comet',
+            label: 'Arc comets',
+            icon: '\u2728', // sparkles
+            setEnabled: function (on) {
+                var m = getMap();
+                if (m) pathsLayer.setComet(m, !!on);
+            },
+            isEnabled: function () { return pathsLayer.isCometEnabled(); },
+            reset: function () {
+                var m = getMap();
+                if (m) pathsLayer.reset(m);
+            }
+        });
+
+        builder.registerFancyAction('markers-pulse', {
+            id: 'markers-pulse',
+            label: 'Marker heartbeat',
+            icon: '\u2665', // heart
+            setEnabled: function (on) {
+                var m = getMap();
+                if (m) markersLayer.setPulse(m, !!on);
+            },
+            isEnabled: function () { return markersLayer.isPulseEnabled(); },
+            reset: function () {
+                var m = getMap();
+                if (m) markersLayer.reset(m);
+            }
+        });
+
+        builder.registerFancyAction('extrusion-pulse', {
+            id: 'extrusion-pulse',
+            label: 'Breathing extrusion',
+            icon: '\u25B2', // up-pointing triangle (column)
+            setEnabled: function (on) {
+                var m = getMap();
+                if (m) extrusionLayer.setPulse(m, !!on);
+            },
+            isEnabled: function () {
+                var m = getMap();
+                return m ? extrusionLayer.isPulseEnabled(m) : false;
+            },
+            reset: function () {
+                var m = getMap();
+                if (m) extrusionLayer.reset(m);
+            }
+        });
+
+        builder.registerFancyAction('hexbin-pulse', {
+            id: 'hexbin-pulse',
+            label: 'Hexbin breathing',
+            icon: '\u2B22', // black hexagon
+            setEnabled: function (on) {
+                var m = getMap();
+                if (m) hexbinLayer.setPulse(m, !!on);
+            },
+            isEnabled: function () {
+                var m = getMap();
+                return m ? hexbinLayer.isPulseEnabled(m) : false;
+            },
+            reset: function () {
+                var m = getMap();
+                if (m) hexbinLayer.reset(m);
+            }
+        });
+
+        builder.registerFancyAction('camera-auto-orbit', {
+            id: 'camera-auto-orbit',
+            label: 'Camera auto-orbit',
+            icon: '\u21BB', // clockwise open circle arrow
+            setEnabled: function (on) {
+                if (on) {
+                    // Re-arm with the last-applied speed if MapBuilder
+                    // remembered one, otherwise the calm 3 deg/s default.
+                    builder.setAutoOrbit(3);
+                } else {
+                    builder.setAutoOrbit(0);
+                }
+            },
+            isEnabled: function () {
+                return typeof builder.isAutoOrbiting === 'function'
+                    ? builder.isAutoOrbiting()
+                    : false;
+            },
+            reset: function () {
+                // The dashboard-author value for auto-orbit lives in
+                // the formatter's `cameraAutoOrbit` / `autoOrbitSpeed`
+                // pair. Re-read them on reset by invalidating the
+                // view so the formatter's intent is re-applied.
+                if (typeof builder.resetCamera === 'function') {
+                    builder.resetCamera();
+                }
+            }
+        });
+    },
+
+    /**
+     * v1.5.2 — BM-CT-1 widget instantiation. Separated from the
+     * registration step so a dashboard can hide the panel via the
+     * `showControlPanel=false` option without losing the underlying
+     * registry — that way `resetView()` (called from elsewhere, e.g.
+     * a keybinding) still works.
+     */
+    _mountControlPanel: function () {
+        if (this._controlPanel || !this._builder) return;
+        var self = this;
+        this._controlPanel = createControlPanel(this.el, {
+            builder: this._builder,
+            onMotionPauseToggle: function (paused) {
+                // Mirror the runtime state back into the cached
+                // dashboard-author tracker so the next applyOptions
+                // call does not overwrite the user's choice.
+                self._lastMotionPaused = paused;
+                if (self._liveRegion) {
+                    self._liveRegion.announce(
+                        paused
+                            ? 'All map motion paused.'
+                            : 'Map motion resumed.'
+                    );
+                }
+            },
+            onResetView: function () {
+                // Master "Reset view" also resets the scrubber to the
+                // dashboard-author default (end-of-range, 1x speed,
+                // paused) when one is currently mounted.
+                if (self._scrubber && typeof self._scrubber.reset === 'function') {
+                    self._scrubber.reset();
+                }
+                // ...and the layer-control visibility map.
+                if (self._layerControl && typeof self._layerControl.resetVisibility === 'function') {
+                    self._layerControl.resetVisibility();
+                }
+                if (self._liveRegion) {
+                    self._liveRegion.announce('View reset to dashboard defaults.');
+                }
+            }
+        });
     },
 
     reflow: function () {
@@ -562,6 +1045,18 @@ export default SplunkVisualizationBase.extend({
         if (this._exportShare) {
             this._exportShare.destroy();
             this._exportShare = null;
+        }
+        if (this._controlPanel) {
+            this._controlPanel.destroy();
+            this._controlPanel = null;
+        }
+        if (this._v2Bundle && typeof this._v2Bundle.destroy === 'function') {
+            this._v2Bundle.destroy();
+            this._v2Bundle = null;
+        }
+        if (this._debugHud) {
+            this._debugHud.destroy();
+            this._debugHud = null;
         }
         if (this._liveRegion) {
             this._liveRegion.destroy();
@@ -606,6 +1101,9 @@ function combineAll(analysis) {
 function resolvePalette(id) {
     if (id === 'rdylbu') return RDYLBU;
     if (id === 'set3') return SET3;
+    if (id === 'cyber') return CYBER;
+    if (id === 'synthwave') return SYNTHWAVE;
+    if (id === 'tactical') return TACTICAL;
     return VIRIDIS;
 }
 

@@ -19,9 +19,57 @@
  */
 
 export const PROVIDERS = Object.freeze({
+    /*
+     * v1.5.0 sexy-maps default. Carto's basemap-styles bucket hosts
+     * Dark Matter, Voyager, and Positron as MapLibre style JSON without
+     * an API key and without rate-limiting the public read path. This
+     * is the same basemap Kepler.gl, Uber Movement, and most of the
+     * "sexy demo" map projects use as a foundation. The dark variant
+     * (`dark-matter-gl-style/style.json`) is near-black with subtle
+     * grey landmasses; ideal for glow / arc / pulse overlays.
+     *
+     * Light fallback uses Voyager (Carto's modern muted-color style)
+     * because Dark Matter on a light theme is unreadable.
+     */
+    carto_dark_matter: {
+        id: 'carto_dark_matter',
+        label: 'Carto Dark Matter (sexy default)',
+        requiresKey: false,
+        vector: true,
+        light: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
+        dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+        attribution:
+            '\u00a9 <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a> ' +
+            '\u00b7 \u00a9 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
+        attributionLocked: true
+    },
+    carto_voyager: {
+        id: 'carto_voyager',
+        label: 'Carto Voyager (muted color)',
+        requiresKey: false,
+        vector: true,
+        light: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
+        dark: 'https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json',
+        attribution:
+            '\u00a9 <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a> ' +
+            '\u00b7 \u00a9 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
+        attributionLocked: true
+    },
+    carto_positron: {
+        id: 'carto_positron',
+        label: 'Carto Positron (light)',
+        requiresKey: false,
+        vector: true,
+        light: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+        dark: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+        attribution:
+            '\u00a9 <a href="https://carto.com/attributions" target="_blank" rel="noopener">CARTO</a> ' +
+            '\u00b7 \u00a9 <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
+        attributionLocked: true
+    },
     openfreemap_liberty: {
         id: 'openfreemap_liberty',
-        label: 'OpenFreeMap Liberty (default)',
+        label: 'OpenFreeMap Liberty',
         requiresKey: false,
         vector: true,
         light: 'https://tiles.openfreemap.org/styles/liberty',
@@ -126,7 +174,17 @@ export const PROVIDERS = Object.freeze({
     }
 });
 
-export const DEFAULT_PROVIDER = 'openfreemap_liberty';
+/*
+ * v1.5.0 default switched from openfreemap_liberty (light raster-ish
+ * Google-Maps-look) to carto_dark_matter (near-black cosmic basemap).
+ * This is the single biggest visual upgrade in v1.5.0 — every overlay
+ * (glow paths, pulsing dots, great-circle arcs) was designed against
+ * a dark cosmic background and looks washed-out on light tiles.
+ *
+ * Dashboards that explicitly want the old basemap can opt back in with
+ * `tileProvider="openfreemap_liberty"`.
+ */
+export const DEFAULT_PROVIDER = 'carto_dark_matter';
 
 /**
  * Resolve a MapLibre style URL or inline style for a given provider intent.

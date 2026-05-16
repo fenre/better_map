@@ -1,0 +1,99 @@
+<dashboard version="2" theme="dark">
+    <label>Better Map - Threat Map (MITRE)</label>
+    <description>v1.6 showcase: ES-style threat map with MITRE ATT&amp;CK enrichment. The map data source emits an attack_id field per event; the MITRE overlay decorates each feature with the technique name and tactics, and the ES-notable drilldown links each marker into Incident Review. Replace the inline SPL with your threat-intel + alerts.csv merge.</description>
+    <definition><![CDATA[
+{
+    "title": "Better Map - Threat Map with MITRE",
+    "description": "v1.6 MITRE ATT&CK overlay + ES notable drilldown demo.",
+    "visualizations": {
+        "viz_kpi_alerts": {
+            "type": "splunk.singlevalue",
+            "title": "ATT&CK alerts (window)",
+            "dataSources": { "primary": "ds_kpi_alerts" },
+            "options": { "majorField": "value", "majorColor": "#f43f5e", "backgroundColor": "transparent", "majorFontSize": 44 }
+        },
+        "viz_kpi_techniques": {
+            "type": "splunk.singlevalue",
+            "title": "Distinct techniques",
+            "dataSources": { "primary": "ds_kpi_techniques" },
+            "options": { "majorField": "value", "majorColor": "#fbbf24", "backgroundColor": "transparent", "majorFontSize": 44 }
+        },
+        "viz_kpi_top_tactic": {
+            "type": "splunk.singlevalue",
+            "title": "Top tactic",
+            "dataSources": { "primary": "ds_kpi_top_tactic" },
+            "options": { "majorField": "tactic", "majorColor": "#22d3ee", "backgroundColor": "transparent", "majorFontSize": 28 }
+        },
+        "viz_map": {
+            "type": "better_map.better_map",
+            "title": "Attacks enriched with MITRE ATT&CK (click a marker to open in Incident Review)",
+            "dataSources": { "primary": "ds_attacks" },
+            "options": {
+                "tileProvider": "carto_dark_matter",
+                "pointRenderer": "markers",
+                "pathColor": "#f43f5e",
+                "pathGlow": "true",
+                "pathArrows": "true",
+                "pathComet": "true",
+                "pointPulse": "true",
+                "vignette": "true",
+                "cameraPitch": "30",
+                "cameraBearing": "10",
+                "markerColor": "#fbbf24",
+                "showTimeScrubber": "true",
+                "showControlPanel": "true",
+                "enableExportShare": "true",
+                "v2Mitre": "true",
+                "v2EsNotable": "true",
+                "v2Geocoder": "true",
+                "v2Minimap": "true",
+                "centerLat": "30",
+                "centerLon": "10",
+                "zoom": "2"
+            }
+        },
+        "viz_table": {
+            "type": "splunk.table",
+            "title": "ATT&CK techniques in window",
+            "dataSources": { "primary": "ds_table" },
+            "options": { "backgroundColor": "transparent", "headerVisibility": "fixed" }
+        }
+    },
+    "dataSources": {
+        "ds_attacks": {
+            "type": "ds.search",
+            "name": "Synthetic attacks enriched with attack_id",
+            "options": {
+                "query": "| makeresults count=42\n| streamstats count AS i\n| eval lat=case(i%3==0,38.9, i%3==1,51.5, true(),35.7)\n| eval lon=case(i%3==0,-77.0, i%3==1,-0.1, true(),139.7)\n| eval orig_lat=case(i%5==0,-23.5, i%5==1,55.7, i%5==2,30.0, i%5==3,-33.8, true(),22.3)\n| eval orig_lon=case(i%5==0,-46.6, i%5==1,37.6, i%5==2,121.4, i%5==3,151.2, true(),114.1)\n| eval attack_id=case(i%7==0,\"T1190\", i%7==1,\"T1059\", i%7==2,\"T1078\", i%7==3,\"T1071\", i%7==4,\"T1110\", i%7==5,\"T1486\", true(),\"T1566\")\n| eval severity=case(i%4==0,\"critical\", i%4==1,\"high\", i%4==2,\"medium\", true(),\"low\")\n| eval notable_id=\"NTB-\".tostring(10000+i)\n| eval popup=\"<b>\".attack_id.\"</b><br>severity: \".severity\n| fields _time, lat, lon, orig_lat, orig_lon, attack_id, severity, notable_id, popup"
+            }
+        },
+        "ds_kpi_alerts": { "type": "ds.search", "name": "Alert count", "options": { "query": "| makeresults\n| eval value=42" } },
+        "ds_kpi_techniques": { "type": "ds.search", "name": "Distinct techniques", "options": { "query": "| makeresults\n| eval value=7" } },
+        "ds_kpi_top_tactic": { "type": "ds.search", "name": "Top tactic", "options": { "query": "| makeresults\n| eval tactic=\"initial-access\"" } },
+        "ds_table": {
+            "type": "ds.search",
+            "name": "Technique table",
+            "options": {
+                "query": "| makeresults count=7\n| streamstats count AS i\n| eval attack_id=case(i==1,\"T1190\", i==2,\"T1059\", i==3,\"T1078\", i==4,\"T1071\", i==5,\"T1110\", i==6,\"T1486\", true(),\"T1566\")\n| eval technique=case(attack_id==\"T1190\",\"Exploit Public-Facing App\", attack_id==\"T1059\",\"Command and Scripting Interpreter\", attack_id==\"T1078\",\"Valid Accounts\", attack_id==\"T1071\",\"Application Layer Protocol\", attack_id==\"T1110\",\"Brute Force\", attack_id==\"T1486\",\"Data Encrypted for Impact\", true(),\"Phishing\")\n| eval tactic=case(attack_id==\"T1190\",\"initial-access\", attack_id==\"T1059\",\"execution\", attack_id==\"T1078\",\"defense-evasion\", attack_id==\"T1071\",\"command-and-control\", attack_id==\"T1110\",\"credential-access\", attack_id==\"T1486\",\"impact\", true(),\"initial-access\")\n| fields attack_id, technique, tactic"
+            }
+        }
+    },
+    "defaults": {
+        "dataSources": {
+            "ds.search": { "options": { "queryParameters": { "earliest": "-30m", "latest": "now" } } }
+        }
+    },
+    "layout": {
+        "type": "absolute",
+        "options": { "width": 1440, "height": 960, "backgroundColor": "#070b13" },
+        "structure": [
+            { "item": "viz_kpi_alerts",     "type": "block", "position": { "x": 20,   "y": 20,  "w": 320, "h": 130 } },
+            { "item": "viz_kpi_techniques", "type": "block", "position": { "x": 350,  "y": 20,  "w": 320, "h": 130 } },
+            { "item": "viz_kpi_top_tactic", "type": "block", "position": { "x": 680,  "y": 20,  "w": 740, "h": 130 } },
+            { "item": "viz_map",            "type": "block", "position": { "x": 20,   "y": 170, "w": 1020, "h": 760 } },
+            { "item": "viz_table",          "type": "block", "position": { "x": 1050, "y": 170, "w": 370,  "h": 760 } }
+        ]
+    }
+}
+    ]]></definition>
+</dashboard>

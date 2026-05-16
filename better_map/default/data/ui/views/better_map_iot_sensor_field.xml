@@ -1,50 +1,221 @@
 <dashboard version="2" theme="dark">
     <label>Better Map - IoT Sensor Field</label>
-    <description>H3 hexbin aggregation with 3D extrusion and a color ramp driven by the sensor value. Try switching pointRenderer between hexbin and heatmap.</description>
+    <description>2,500 simulated IoT sensors over central Europe rendered as a 3D-extruded H3 hexbin heatmap. Top-row KPIs (sensors online, mean reading, max reading, sensors over threshold, hottest zone), zone + sensor-type filter dropdowns, top-zones table, alarming-sensors table, mean-reading-over-time area chart. Carto Dark Matter basemap, viridis ramp, cinematic 3D pitch.</description>
     <definition><![CDATA[
 {
+    "title": "Better Map - IoT Sensor Field",
+    "description": "2,500 IoT sensors over central Europe with 3D hexbin heatmap",
     "visualizations": {
-        "viz_iot": {
-            "type": "splunk.custom",
+        "viz_kpi_total": {
+            "type": "splunk.singlevalue",
+            "title": "Sensors online",
+            "dataSources": { "primary": "ds_kpi" },
             "options": {
-                "type": "better_map",
-                "name": "better_map",
-                "tileProvider": "openfreemap-positron",
+                "majorField": "total",
+                "majorColor": "#22d3ee",
+                "backgroundColor": "transparent",
+                "majorFontSize": 44,
+                "shouldUseThousandSeparators": true
+            }
+        },
+        "viz_kpi_mean": {
+            "type": "splunk.singlevalue",
+            "title": "Mean reading",
+            "dataSources": { "primary": "ds_kpi" },
+            "options": {
+                "majorField": "mean_v",
+                "majorColor": "#a855f7",
+                "backgroundColor": "transparent",
+                "majorFontSize": 44,
+                "unit": "\u00b0C",
+                "unitPosition": "after"
+            }
+        },
+        "viz_kpi_max": {
+            "type": "splunk.singlevalue",
+            "title": "Max reading",
+            "dataSources": { "primary": "ds_kpi" },
+            "options": {
+                "majorField": "max_v",
+                "majorColor": "> if(value > 80, '#f43f5e', if(value > 60, '#fbbf24', '#a3e635'))",
+                "backgroundColor": "transparent",
+                "majorFontSize": 44,
+                "unit": "\u00b0C",
+                "unitPosition": "after"
+            }
+        },
+        "viz_kpi_over": {
+            "type": "splunk.singlevalue",
+            "title": "Over threshold",
+            "description": ">70 \u00b0C",
+            "dataSources": { "primary": "ds_kpi" },
+            "options": {
+                "majorField": "over_threshold",
+                "majorColor": "> if(value > 50, '#f43f5e', if(value > 10, '#fbbf24', '#a3e635'))",
+                "backgroundColor": "transparent",
+                "majorFontSize": 44
+            }
+        },
+        "viz_kpi_hot_zone": {
+            "type": "splunk.singlevalue",
+            "title": "Hottest zone",
+            "dataSources": { "primary": "ds_hot_zone" },
+            "options": {
+                "majorField": "zone",
+                "majorColor": "#fbbf24",
+                "backgroundColor": "transparent",
+                "majorFontSize": 32
+            }
+        },
+        "viz_iot": {
+            "type": "better_map.better_map",
+            "title": "IoT sensor field \u00b7 H3 hexbin with breathing 3D extrusion (mean value, viridis ramp)",
+            "dataSources": { "primary": "ds_iot" },
+            "options": {
+                "tileProvider": "carto_dark_matter",
                 "pointRenderer": "hexbin",
                 "hexbinAutoDegrade": "true",
                 "hexbinAggregate": "mean",
                 "enable3DExtrusion": "true",
-                "extrusionScale": "120",
-                "palette": "viridis"
-            },
-            "dataSources": {
-                "primary": "ds_iot"
+                "extrusionScale": "150",
+                "extrusionPulse": "true",
+                "palette": "viridis",
+                "vignette": "true",
+                "cameraPitch": "45",
+                "cameraBearing": "20",
+                "cameraAutoOrbit": "true",
+                "autoOrbitSpeed": "1.2",
+                "enableExportShare": "true",
+                "showDebugHud": "false"
+            }
+        },
+        "viz_table_zones": {
+            "type": "splunk.table",
+            "title": "Zones by mean reading",
+            "dataSources": { "primary": "ds_top_zones" },
+            "options": {
+                "backgroundColor": "transparent",
+                "headerVisibility": "fixed",
+                "rowBackgroundColors": ["transparent", "#0f172a"]
+            }
+        },
+        "viz_table_alarming": {
+            "type": "splunk.table",
+            "title": "Alarming sensors (>70 \u00b0C)",
+            "dataSources": { "primary": "ds_alarming" },
+            "options": {
+                "backgroundColor": "transparent",
+                "headerVisibility": "fixed",
+                "rowBackgroundColors": ["transparent", "#0f172a"]
+            }
+        },
+        "viz_sparkline": {
+            "type": "splunk.area",
+            "title": "Mean reading over the last hour",
+            "dataSources": { "primary": "ds_sparkline" },
+            "options": {
+                "backgroundColor": "transparent",
+                "seriesColors": ["#22d3ee", "#a3e635", "#fbbf24", "#f43f5e", "#a855f7"],
+                "stackMode": "unstacked",
+                "legendDisplay": "right"
             }
         }
     },
     "dataSources": {
         "ds_iot": {
             "type": "ds.search",
+            "name": "2,500 simulated sensors with zone + sensor_type metadata",
             "options": {
-                "query": "| makeresults count=2500 | streamstats c | eval lat = 47 + (random()%1000)/200.0 | eval lon = 8 + (random()%1000)/200.0 | eval value = round(15 + random()%65 + 10*sin(c/12.0), 2) | fields lat lon value"
+                "query": "| makeresults count=2500\n| streamstats count AS c\n| eval lat=47+(random()%1000)/200.0\n| eval lon=8+(random()%1000)/200.0\n| eval zone=case(c%5=0,\"north\",c%5=1,\"south\",c%5=2,\"east\",c%5=3,\"west\",true(),\"central\")\n| eval sensor_type=case(c%4=0,\"temperature\",c%4=1,\"humidity\",c%4=2,\"pressure\",true(),\"vibration\")\n| eval value=round(15+random()%65+10*sin(c/12.0),2)\n| where (\"$tok_zone$\"=\"all\" OR zone=\"$tok_zone$\") AND (\"$tok_type$\"=\"all\" OR sensor_type=\"$tok_type$\")\n| fields lat lon value zone sensor_type"
+            }
+        },
+        "ds_kpi": {
+            "type": "ds.search",
+            "name": "Sensor field KPI rollup",
+            "options": {
+                "query": "| makeresults count=2500\n| streamstats count AS c\n| eval zone=case(c%5=0,\"north\",c%5=1,\"south\",c%5=2,\"east\",c%5=3,\"west\",true(),\"central\")\n| eval sensor_type=case(c%4=0,\"temperature\",c%4=1,\"humidity\",c%4=2,\"pressure\",true(),\"vibration\")\n| eval value=round(15+random()%65+10*sin(c/12.0),2)\n| where (\"$tok_zone$\"=\"all\" OR zone=\"$tok_zone$\") AND (\"$tok_type$\"=\"all\" OR sensor_type=\"$tok_type$\")\n| stats count AS total avg(value) AS mean_v max(value) AS max_v count(eval(value>70)) AS over_threshold\n| eval mean_v=round(mean_v,1)\n| fields total mean_v max_v over_threshold"
+            }
+        },
+        "ds_hot_zone": {
+            "type": "ds.search",
+            "name": "Zone with highest mean reading",
+            "options": {
+                "query": "| makeresults count=2500\n| streamstats count AS c\n| eval zone=case(c%5=0,\"north\",c%5=1,\"south\",c%5=2,\"east\",c%5=3,\"west\",true(),\"central\")\n| eval sensor_type=case(c%4=0,\"temperature\",c%4=1,\"humidity\",c%4=2,\"pressure\",true(),\"vibration\")\n| eval value=round(15+random()%65+10*sin(c/12.0),2)\n| where \"$tok_type$\"=\"all\" OR sensor_type=\"$tok_type$\"\n| stats avg(value) AS mean_v BY zone\n| sort -mean_v\n| head 1\n| fields zone"
+            }
+        },
+        "ds_top_zones": {
+            "type": "ds.search",
+            "name": "Zones ranked by mean reading + over-threshold count",
+            "options": {
+                "query": "| makeresults count=2500\n| streamstats count AS c\n| eval zone=case(c%5=0,\"north\",c%5=1,\"south\",c%5=2,\"east\",c%5=3,\"west\",true(),\"central\")\n| eval sensor_type=case(c%4=0,\"temperature\",c%4=1,\"humidity\",c%4=2,\"pressure\",true(),\"vibration\")\n| eval value=round(15+random()%65+10*sin(c/12.0),2)\n| where \"$tok_type$\"=\"all\" OR sensor_type=\"$tok_type$\"\n| stats count AS sensors avg(value) AS mean_v max(value) AS max_v count(eval(value>70)) AS over_thr BY zone\n| eval mean_v=round(mean_v,1)\n| sort -mean_v\n| rename zone AS Zone sensors AS Count mean_v AS Mean max_v AS Max over_thr AS Over70\n| table Zone Count Mean Max Over70"
+            }
+        },
+        "ds_alarming": {
+            "type": "ds.search",
+            "name": "Top 12 sensors over threshold",
+            "options": {
+                "query": "| makeresults count=2500\n| streamstats count AS c\n| eval lat=47+(random()%1000)/200.0\n| eval lon=8+(random()%1000)/200.0\n| eval zone=case(c%5=0,\"north\",c%5=1,\"south\",c%5=2,\"east\",c%5=3,\"west\",true(),\"central\")\n| eval sensor_type=case(c%4=0,\"temperature\",c%4=1,\"humidity\",c%4=2,\"pressure\",true(),\"vibration\")\n| eval value=round(15+random()%65+10*sin(c/12.0),2)\n| eval sensor_id=\"S-\".tostring(c,\"hex\")\n| where value>70 AND (\"$tok_zone$\"=\"all\" OR zone=\"$tok_zone$\") AND (\"$tok_type$\"=\"all\" OR sensor_type=\"$tok_type$\")\n| sort -value\n| head 12\n| eval Lat=round(lat,3) Lon=round(lon,3)\n| rename sensor_id AS Sensor zone AS Zone sensor_type AS Type value AS Value\n| table Sensor Zone Type Value Lat Lon"
+            }
+        },
+        "ds_sparkline": {
+            "type": "ds.search",
+            "name": "Mean reading per zone over the last hour",
+            "options": {
+                "query": "| makeresults count=2500\n| streamstats count AS c\n| eval _time=now()-c*1.4\n| eval zone=case(c%5=0,\"north\",c%5=1,\"south\",c%5=2,\"east\",c%5=3,\"west\",true(),\"central\")\n| eval sensor_type=case(c%4=0,\"temperature\",c%4=1,\"humidity\",c%4=2,\"pressure\",true(),\"vibration\")\n| eval value=round(15+random()%65+10*sin(c/12.0),2)\n| where (\"$tok_zone$\"=\"all\" OR zone=\"$tok_zone$\") AND (\"$tok_type$\"=\"all\" OR sensor_type=\"$tok_type$\")\n| timechart span=2m avg(value) AS mean_v BY zone\n| fillnull value=0"
+            }
+        },
+        "ds_zone_choices": {
+            "type": "ds.search",
+            "name": "Zone dropdown choices",
+            "options": {
+                "query": "| makeresults\n| eval zone=split(\"all,north,south,east,west,central\",\",\")\n| mvexpand zone\n| fields zone"
+            }
+        },
+        "ds_type_choices": {
+            "type": "ds.search",
+            "name": "Sensor type dropdown choices",
+            "options": {
+                "query": "| makeresults\n| eval sensor_type=split(\"all,temperature,humidity,pressure,vibration\",\",\")\n| mvexpand sensor_type\n| fields sensor_type"
             }
         }
     },
     "defaults": {
         "dataSources": {
             "ds.search": {
-                "options": {
-                    "queryParameters": { "earliest": "-15m", "latest": "now" }
-                }
+                "options": { "queryParameters": { "earliest": "-1h", "latest": "now" } }
             }
         }
     },
-    "inputs": {},
+    "inputs": {
+        "input_zone": {
+            "type": "input.dropdown",
+            "title": "Zone",
+            "options": { "defaultValue": "all", "token": "tok_zone" },
+            "dataSources": { "primary": "ds_zone_choices" },
+            "context": { "options": { "labelField": "zone", "valueField": "zone" } }
+        },
+        "input_type": {
+            "type": "input.dropdown",
+            "title": "Sensor type",
+            "options": { "defaultValue": "all", "token": "tok_type" },
+            "dataSources": { "primary": "ds_type_choices" },
+            "context": { "options": { "labelField": "sensor_type", "valueField": "sensor_type" } }
+        }
+    },
     "layout": {
         "type": "absolute",
-        "options": { "width": 1440, "height": 960, "backgroundColor": "#0b1a2d" },
+        "options": { "width": 1440, "height": 1080, "backgroundColor": "#08090f" },
+        "globalInputs": ["input_zone", "input_type"],
         "structure": [
-            { "item": "viz_iot", "type": "block", "position": { "x": 0, "y": 0, "w": 1440, "h": 960 } }
+            { "item": "viz_kpi_total",    "type": "block", "position": { "x": 20,   "y": 20,  "w": 270, "h": 130 } },
+            { "item": "viz_kpi_mean",     "type": "block", "position": { "x": 300,  "y": 20,  "w": 270, "h": 130 } },
+            { "item": "viz_kpi_max",      "type": "block", "position": { "x": 580,  "y": 20,  "w": 270, "h": 130 } },
+            { "item": "viz_kpi_over",     "type": "block", "position": { "x": 860,  "y": 20,  "w": 270, "h": 130 } },
+            { "item": "viz_kpi_hot_zone", "type": "block", "position": { "x": 1140, "y": 20,  "w": 280, "h": 130 } },
+            { "item": "viz_iot",            "type": "block", "position": { "x": 20,   "y": 170, "w": 960, "h": 700 } },
+            { "item": "viz_table_zones",    "type": "block", "position": { "x": 990,  "y": 170, "w": 430, "h": 340 } },
+            { "item": "viz_table_alarming", "type": "block", "position": { "x": 990,  "y": 520, "w": 430, "h": 350 } },
+            { "item": "viz_sparkline",      "type": "block", "position": { "x": 20,   "y": 880, "w": 1400, "h": 180 } }
         ]
     }
 }

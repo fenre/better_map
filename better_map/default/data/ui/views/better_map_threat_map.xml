@@ -1,33 +1,229 @@
 <dashboard version="2" theme="dark">
     <label>Better Map - Threat Map</label>
-    <description>Origin-destination threat lines styled like the classic NORSE map. Replace the inline SPL with your firewall or IDS feed to go live.</description>
+    <description>NORSE-style live threat map: glowing great-circle arcs between attack origins and three target hubs (Washington DC, London, Tokyo), pulsing target markers, cyber palette, 3D cinematic camera, vignette. Top-row KPIs (attacks/min, blocked %, critical count, unique sources, top severity), severity + action filter dropdowns, top-source / top-target / top-attack-type tables, attacks/min sparkline. Replace the inline SPL with your firewall, IDS, or threat-intel feed to go live.</description>
     <definition><![CDATA[
 {
+    "title": "Better Map - Threat Map",
+    "description": "NORSE-style live threat map with glowing great-circle arcs.",
     "visualizations": {
-        "viz_threat": {
-            "type": "splunk.custom",
+        "viz_kpi_attacks_per_min": {
+            "type": "splunk.singlevalue",
+            "title": "Attacks / min",
+            "description": "Last 30 minutes",
+            "dataSources": { "primary": "ds_kpi_apm" },
             "options": {
-                "type": "better_map",
-                "name": "better_map",
-                "tileProvider": "openfreemap-liberty",
+                "majorField": "value",
+                "majorColor": "#22d3ee",
+                "backgroundColor": "transparent",
+                "majorFontSize": 44,
+                "unit": "/m",
+                "unitPosition": "after"
+            }
+        },
+        "viz_kpi_blocked": {
+            "type": "splunk.singlevalue",
+            "title": "Blocked %",
+            "description": "Action = blocked / total",
+            "dataSources": { "primary": "ds_kpi_blocked" },
+            "options": {
+                "majorField": "value",
+                "majorColor": "> if(value >= 90, '#a3e635', if(value >= 75, '#fbbf24', '#f43f5e'))",
+                "backgroundColor": "transparent",
+                "majorFontSize": 44,
+                "unit": "%",
+                "unitPosition": "after"
+            }
+        },
+        "viz_kpi_critical": {
+            "type": "splunk.singlevalue",
+            "title": "Critical events",
+            "description": "Severity = critical",
+            "dataSources": { "primary": "ds_kpi_critical" },
+            "options": {
+                "majorField": "value",
+                "majorColor": "> if(value > 5, '#f43f5e', '#fbbf24')",
+                "backgroundColor": "transparent",
+                "majorFontSize": 44
+            }
+        },
+        "viz_kpi_unique_sources": {
+            "type": "splunk.singlevalue",
+            "title": "Unique sources",
+            "description": "Distinct origin IPs",
+            "dataSources": { "primary": "ds_kpi_sources" },
+            "options": {
+                "majorField": "value",
+                "majorColor": "#a855f7",
+                "backgroundColor": "transparent",
+                "majorFontSize": 44
+            }
+        },
+        "viz_kpi_top_severity": {
+            "type": "splunk.singlevalue",
+            "title": "Top severity",
+            "description": "Most-frequent in window",
+            "dataSources": { "primary": "ds_kpi_top_sev" },
+            "options": {
+                "majorField": "severity",
+                "majorColor": "> case(value=='critical', '#f43f5e', value=='high', '#fbbf24', value=='medium', '#22d3ee', true(), '#a3e635')",
+                "backgroundColor": "transparent",
+                "majorFontSize": 32
+            }
+        },
+        "viz_threat": {
+            "type": "better_map.better_map",
+            "title": "Inbound threats (origin \u2192 destination, NORSE-style, glowing arcs)",
+            "description": "Carto Dark Matter basemap, cyber palette, great-circle arcs, pulsing target rings, 30\u00b0 cinematic pitch.",
+            "dataSources": { "primary": "ds_threat" },
+            "options": {
+                "tileProvider": "carto_dark_matter",
                 "pointRenderer": "markers",
-                "pathColor": "#fb8072",
-                "pathAnimated": true,
-                "pathArrows": true,
-                "markerColor": "#fdb462",
-                "showTimeScrubber": "true",
-                "trailWindowMs": "60000"
-            },
-            "dataSources": {
-                "primary": "ds_threat"
+                "pathColor": "#22d3ee",
+                "pathAnimated": "true",
+                "pathArrows": "true",
+                "pathGlow": "true",
+                "pathComet": "true",
+                "pointPulse": "true",
+                "vignette": "true",
+                "cameraPitch": "35",
+                "cameraBearing": "10",
+                "cameraAutoOrbit": "true",
+                "autoOrbitSpeed": "2",
+                "markerColor": "#fbbf24",
+                "showTimeScrubber": "false",
+                "showDebugHud": "false",
+                "enableExportShare": "true",
+                "centerLat": "30",
+                "centerLon": "10",
+                "zoom": "1.6"
+            }
+        },
+        "viz_table_sources": {
+            "type": "splunk.table",
+            "title": "Top source countries",
+            "dataSources": { "primary": "ds_top_sources" },
+            "options": {
+                "backgroundColor": "transparent",
+                "headerVisibility": "fixed",
+                "rowBackgroundColors": ["transparent", "#0f172a"]
+            }
+        },
+        "viz_table_targets": {
+            "type": "splunk.table",
+            "title": "Top targets",
+            "dataSources": { "primary": "ds_top_targets" },
+            "options": {
+                "backgroundColor": "transparent",
+                "headerVisibility": "fixed",
+                "rowBackgroundColors": ["transparent", "#0f172a"]
+            }
+        },
+        "viz_table_types": {
+            "type": "splunk.table",
+            "title": "Top attack types",
+            "dataSources": { "primary": "ds_top_types" },
+            "options": {
+                "backgroundColor": "transparent",
+                "headerVisibility": "fixed",
+                "rowBackgroundColors": ["transparent", "#0f172a"]
+            }
+        },
+        "viz_sparkline": {
+            "type": "splunk.area",
+            "title": "Attacks / min over the window",
+            "dataSources": { "primary": "ds_sparkline" },
+            "options": {
+                "backgroundColor": "transparent",
+                "seriesColors": ["#f43f5e", "#fbbf24", "#22d3ee"],
+                "stackMode": "stacked",
+                "showSplitSeries": "true",
+                "legendDisplay": "right"
             }
         }
     },
     "dataSources": {
         "ds_threat": {
             "type": "ds.search",
+            "name": "80 attack flows (origin \u2192 DC/London/Tokyo) with severity, action, type, country",
             "options": {
-                "query": "| makeresults count=80 | streamstats c | eval pathId = \"attack-\" . c | eval origLat = 35 - random()%70 | eval origLon = 180 - random()%360 | eval dstLat = case(c%3=0, 38.89, c%3=1, 51.5, true(), 35.68) | eval dstLon = case(c%3=0, -77.04, c%3=1, -0.13, true(), 139.65) | eval _time = relative_time(now(), \"-30m\") + c * 20 | eval color = case(c%3=0, \"#fb8072\", c%3=1, \"#fdb462\", true(), \"#bebada\") | append [| makeresults count=80 | streamstats c | eval pathId = \"attack-\" . c | eval origLat = 35 - random()%70 | eval origLon = 180 - random()%360 | eval dstLat = case(c%3=0, 38.89, c%3=1, 51.5, true(), 35.68) | eval dstLon = case(c%3=0, -77.04, c%3=1, -0.13, true(), 139.65) | eval _time = relative_time(now(), \"-30m\") + c * 20 + 12 | eval color = case(c%3=0, \"#fb8072\", c%3=1, \"#fdb462\", true(), \"#bebada\") | eval lat = dstLat | eval lon = dstLon | fields _time pathId lat lon color] | eval lat = if(isnull(lat), origLat, lat) | eval lon = if(isnull(lon), origLon, lon) | fields _time pathId lat lon color"
+                "query": "| makeresults count=80\n| streamstats count AS c\n| eval pathId=\"atk-\".c\n| eval src_lat=(random()%140)-70\n| eval src_lon=(random()%340)-170\n| eval target=case(c%3=0,\"DC\",c%3=1,\"London\",true(),\"Tokyo\")\n| eval dst_lat=case(target=\"DC\",38.89,target=\"London\",51.5,true(),35.68)\n| eval dst_lon=case(target=\"DC\",-77.04,target=\"London\",-0.13,true(),139.65)\n| eval severity=case(c%9=0,\"critical\",c%4=0,\"high\",c%2=0,\"medium\",true(),\"low\")\n| eval action=case(c%6=0,\"allowed\",c%5=0,\"alerted\",true(),\"blocked\")\n| eval attack_type=case(c%5=0,\"sqli\",c%5=1,\"xss\",c%5=2,\"bruteforce\",c%5=3,\"port-scan\",true(),\"c2-beacon\")\n| eval src_country=case(c%7=0,\"RU\",c%7=1,\"CN\",c%7=2,\"BR\",c%7=3,\"IN\",c%7=4,\"US\",c%7=5,\"NL\",true(),\"VN\")\n| eval color=case(severity=\"critical\",\"#f43f5e\",severity=\"high\",\"#fbbf24\",severity=\"medium\",\"#22d3ee\",true(),\"#a3e635\")\n| eval _time=now()-(80-c)*22\n| where (\"$tok_severity$\"=\"all\" OR severity=\"$tok_severity$\") AND (\"$tok_action$\"=\"all\" OR action=\"$tok_action$\")\n| fields _time pathId src_lat src_lon dst_lat dst_lon color severity action attack_type src_country target"
+            }
+        },
+        "ds_kpi_apm": {
+            "type": "ds.search",
+            "name": "Attacks per minute KPI",
+            "options": {
+                "query": "| makeresults count=80\n| streamstats count AS c\n| eval severity=case(c%9=0,\"critical\",c%4=0,\"high\",c%2=0,\"medium\",true(),\"low\")\n| eval action=case(c%6=0,\"allowed\",c%5=0,\"alerted\",true(),\"blocked\")\n| eval _time=now()-(80-c)*22\n| where (\"$tok_severity$\"=\"all\" OR severity=\"$tok_severity$\") AND (\"$tok_action$\"=\"all\" OR action=\"$tok_action$\")\n| stats count AS total\n| eval value=round(total/30,1)\n| fields value"
+            }
+        },
+        "ds_kpi_blocked": {
+            "type": "ds.search",
+            "name": "Blocked percentage KPI",
+            "options": {
+                "query": "| makeresults count=80\n| streamstats count AS c\n| eval severity=case(c%9=0,\"critical\",c%4=0,\"high\",c%2=0,\"medium\",true(),\"low\")\n| eval action=case(c%6=0,\"allowed\",c%5=0,\"alerted\",true(),\"blocked\")\n| where \"$tok_severity$\"=\"all\" OR severity=\"$tok_severity$\"\n| stats count AS total count(eval(action=\"blocked\")) AS blocked\n| eval value=round(blocked*100/total,1)\n| fields value"
+            }
+        },
+        "ds_kpi_critical": {
+            "type": "ds.search",
+            "name": "Critical event count KPI",
+            "options": {
+                "query": "| makeresults count=80\n| streamstats count AS c\n| eval severity=case(c%9=0,\"critical\",c%4=0,\"high\",c%2=0,\"medium\",true(),\"low\")\n| eval action=case(c%6=0,\"allowed\",c%5=0,\"alerted\",true(),\"blocked\")\n| where (\"$tok_action$\"=\"all\" OR action=\"$tok_action$\") AND severity=\"critical\"\n| stats count AS value\n| fields value"
+            }
+        },
+        "ds_kpi_sources": {
+            "type": "ds.search",
+            "name": "Unique source country KPI",
+            "options": {
+                "query": "| makeresults count=80\n| streamstats count AS c\n| eval severity=case(c%9=0,\"critical\",c%4=0,\"high\",c%2=0,\"medium\",true(),\"low\")\n| eval action=case(c%6=0,\"allowed\",c%5=0,\"alerted\",true(),\"blocked\")\n| eval src_country=case(c%7=0,\"RU\",c%7=1,\"CN\",c%7=2,\"BR\",c%7=3,\"IN\",c%7=4,\"US\",c%7=5,\"NL\",true(),\"VN\")\n| where (\"$tok_severity$\"=\"all\" OR severity=\"$tok_severity$\") AND (\"$tok_action$\"=\"all\" OR action=\"$tok_action$\")\n| stats dc(src_country) AS value\n| fields value"
+            }
+        },
+        "ds_kpi_top_sev": {
+            "type": "ds.search",
+            "name": "Top severity in window KPI",
+            "options": {
+                "query": "| makeresults count=80\n| streamstats count AS c\n| eval severity=case(c%9=0,\"critical\",c%4=0,\"high\",c%2=0,\"medium\",true(),\"low\")\n| eval action=case(c%6=0,\"allowed\",c%5=0,\"alerted\",true(),\"blocked\")\n| where (\"$tok_severity$\"=\"all\" OR severity=\"$tok_severity$\") AND (\"$tok_action$\"=\"all\" OR action=\"$tok_action$\")\n| stats count BY severity\n| sort -count\n| head 1\n| fields severity"
+            }
+        },
+        "ds_top_sources": {
+            "type": "ds.search",
+            "name": "Top 10 source countries (by attack count)",
+            "options": {
+                "query": "| makeresults count=80\n| streamstats count AS c\n| eval severity=case(c%9=0,\"critical\",c%4=0,\"high\",c%2=0,\"medium\",true(),\"low\")\n| eval action=case(c%6=0,\"allowed\",c%5=0,\"alerted\",true(),\"blocked\")\n| eval src_country=case(c%7=0,\"RU\",c%7=1,\"CN\",c%7=2,\"BR\",c%7=3,\"IN\",c%7=4,\"US\",c%7=5,\"NL\",true(),\"VN\")\n| where (\"$tok_severity$\"=\"all\" OR severity=\"$tok_severity$\") AND (\"$tok_action$\"=\"all\" OR action=\"$tok_action$\")\n| stats count AS attacks dc(eval(if(action=\"blocked\",src_country,null()))) AS blocked_dc BY src_country\n| sort -attacks\n| head 10\n| rename src_country AS country\n| table country attacks"
+            }
+        },
+        "ds_top_targets": {
+            "type": "ds.search",
+            "name": "Top targets (by attack count)",
+            "options": {
+                "query": "| makeresults count=80\n| streamstats count AS c\n| eval target=case(c%3=0,\"DC\",c%3=1,\"London\",true(),\"Tokyo\")\n| eval severity=case(c%9=0,\"critical\",c%4=0,\"high\",c%2=0,\"medium\",true(),\"low\")\n| eval action=case(c%6=0,\"allowed\",c%5=0,\"alerted\",true(),\"blocked\")\n| where (\"$tok_severity$\"=\"all\" OR severity=\"$tok_severity$\") AND (\"$tok_action$\"=\"all\" OR action=\"$tok_action$\")\n| stats count AS attacks count(eval(severity=\"critical\")) AS critical BY target\n| sort -attacks\n| table target attacks critical"
+            }
+        },
+        "ds_top_types": {
+            "type": "ds.search",
+            "name": "Top attack types",
+            "options": {
+                "query": "| makeresults count=80\n| streamstats count AS c\n| eval attack_type=case(c%5=0,\"sqli\",c%5=1,\"xss\",c%5=2,\"bruteforce\",c%5=3,\"port-scan\",true(),\"c2-beacon\")\n| eval severity=case(c%9=0,\"critical\",c%4=0,\"high\",c%2=0,\"medium\",true(),\"low\")\n| eval action=case(c%6=0,\"allowed\",c%5=0,\"alerted\",true(),\"blocked\")\n| where (\"$tok_severity$\"=\"all\" OR severity=\"$tok_severity$\") AND (\"$tok_action$\"=\"all\" OR action=\"$tok_action$\")\n| stats count AS hits count(eval(action=\"blocked\")) AS blocked BY attack_type\n| sort -hits\n| rename attack_type AS type\n| table type hits blocked"
+            }
+        },
+        "ds_sparkline": {
+            "type": "ds.search",
+            "name": "Attacks per minute over the window, split by severity bucket",
+            "options": {
+                "query": "| makeresults count=80\n| streamstats count AS c\n| eval _time=now()-(80-c)*22\n| eval severity=case(c%9=0,\"critical\",c%4=0,\"high\",c%2=0,\"medium\",true(),\"low\")\n| eval action=case(c%6=0,\"allowed\",c%5=0,\"alerted\",true(),\"blocked\")\n| eval bucket=case(severity=\"critical\",\"critical\",severity=\"high\",\"high\",true(),\"other\")\n| where (\"$tok_severity$\"=\"all\" OR severity=\"$tok_severity$\") AND (\"$tok_action$\"=\"all\" OR action=\"$tok_action$\")\n| timechart span=2m count BY bucket\n| fillnull value=0"
+            }
+        },
+        "ds_severity_choices": {
+            "type": "ds.search",
+            "name": "Severity dropdown choices",
+            "options": {
+                "query": "| makeresults\n| eval severity=split(\"all,critical,high,medium,low\",\",\")\n| mvexpand severity\n| fields severity"
+            }
+        },
+        "ds_action_choices": {
+            "type": "ds.search",
+            "name": "Action dropdown choices",
+            "options": {
+                "query": "| makeresults\n| eval action=split(\"all,blocked,alerted,allowed\",\",\")\n| mvexpand action\n| fields action"
             }
         }
     },
@@ -40,12 +236,41 @@
             }
         }
     },
-    "inputs": {},
+    "inputs": {
+        "input_severity": {
+            "type": "input.dropdown",
+            "title": "Severity",
+            "options": { "defaultValue": "all", "token": "tok_severity" },
+            "dataSources": { "primary": "ds_severity_choices" },
+            "context": {
+                "options": { "labelField": "severity", "valueField": "severity" }
+            }
+        },
+        "input_action": {
+            "type": "input.dropdown",
+            "title": "Action",
+            "options": { "defaultValue": "all", "token": "tok_action" },
+            "dataSources": { "primary": "ds_action_choices" },
+            "context": {
+                "options": { "labelField": "action", "valueField": "action" }
+            }
+        }
+    },
     "layout": {
         "type": "absolute",
-        "options": { "width": 1440, "height": 960, "backgroundColor": "#0b1a2d" },
+        "options": { "width": 1440, "height": 1080, "backgroundColor": "#08090f" },
+        "globalInputs": ["input_severity", "input_action"],
         "structure": [
-            { "item": "viz_threat", "type": "block", "position": { "x": 0, "y": 0, "w": 1440, "h": 960 } }
+            { "item": "viz_kpi_attacks_per_min", "type": "block", "position": { "x": 20,   "y": 20,  "w": 270, "h": 130 } },
+            { "item": "viz_kpi_blocked",         "type": "block", "position": { "x": 300,  "y": 20,  "w": 270, "h": 130 } },
+            { "item": "viz_kpi_critical",        "type": "block", "position": { "x": 580,  "y": 20,  "w": 270, "h": 130 } },
+            { "item": "viz_kpi_unique_sources",  "type": "block", "position": { "x": 860,  "y": 20,  "w": 270, "h": 130 } },
+            { "item": "viz_kpi_top_severity",    "type": "block", "position": { "x": 1140, "y": 20,  "w": 280, "h": 130 } },
+            { "item": "viz_threat",        "type": "block", "position": { "x": 20,   "y": 170, "w": 960, "h": 700 } },
+            { "item": "viz_table_sources", "type": "block", "position": { "x": 990,  "y": 170, "w": 430, "h": 230 } },
+            { "item": "viz_table_targets", "type": "block", "position": { "x": 990,  "y": 410, "w": 430, "h": 220 } },
+            { "item": "viz_table_types",   "type": "block", "position": { "x": 990,  "y": 640, "w": 430, "h": 230 } },
+            { "item": "viz_sparkline",     "type": "block", "position": { "x": 20,   "y": 880, "w": 1400, "h": 180 } }
         ]
     }
 }

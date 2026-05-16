@@ -34,19 +34,25 @@ echo "Version: $VERSION"
 echo "Output:  $TARBALL"
 echo ""
 
-# [1/4] Install npm deps if missing
+# [1/4] Install npm deps for the AMD viz if missing
 if [ ! -d "$VIZ_DIR/node_modules" ]; then
-    echo "[1/4] Installing npm dependencies (npm ci preferred when lockfile present)..."
+    echo "[1/4] Installing AMD viz npm dependencies..."
     if [ -f "$VIZ_DIR/package-lock.json" ]; then
         ( cd "$VIZ_DIR" && npm ci )
     else
         ( cd "$VIZ_DIR" && npm install )
     fi
 else
-    echo "[1/4] node_modules already present, skipping install."
+    echo "[1/4] AMD viz node_modules already present, skipping install."
 fi
 
-# [2/4] Build the webpack bundle
+# [2/4] Build the AMD webpack bundle. This is the canonical render path:
+# Splunk Dashboard Studio loads it via visualizations.conf as
+# `<app_id>.<viz_name>` (better_map.better_map). Simple XML dashboards load
+# it the same way. There is no React DashboardCore alternative — v1.4.0
+# removed the React rewrite scaffolding after the AMD path was proven to
+# work on Splunk Enterprise 10.2.x DS (see CHANGELOG.md and
+# splunk-ds-onprem-custom-viz SKILL.md Symptoms D, E, F, G, H, I, J).
 echo "[2/4] Building visualization.js (webpack --mode production)..."
 ( cd "$VIZ_DIR" && npm run build )
 
@@ -65,6 +71,21 @@ if ! echo "$BUNDLE_HEAD" | grep -qE '^define\(\[[^]]*\][[:space:]]*,[[:space:]]*
     exit 1
 fi
 echo "[3/4] AMD prefix OK."
+
+# Verify the AMD callback returns the unwrapped viz constructor (NOT the
+# `__webpack_exports__` wrapper). See SKILL.md Symptom E for why this
+# matters: without `output.library.export = 'default'` in webpack.config.js,
+# the callback returns `{ default: vizClass, __esModule: true }` and DS
+# silently falls back to the grey placeholder icon.
+BUNDLE_TAIL=$(tail -c 60 "$VIZ_DIR/visualization.js")
+if ! echo "$BUNDLE_TAIL" | grep -qE '\.default\}\(\)\}\)\;?$'; then
+    echo "ERROR: visualization.js does NOT end with '.default}()});' — DS will get the webpack ESM wrapper, not the viz constructor." >&2
+    echo "Last 60 bytes were:" >&2
+    echo "$BUNDLE_TAIL" >&2
+    echo "Fix: ensure webpack.config.js has output.library: { type: 'amd', export: 'default' }" >&2
+    exit 1
+fi
+echo "[3/4] AMD default-export unwrap OK."
 
 # [4/4] Package the app
 mkdir -p "$OUTPUT_DIR"

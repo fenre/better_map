@@ -1,0 +1,68 @@
+<dashboard version="2" theme="dark">
+    <label>Better Map - Debug HUD</label>
+    <description>Internal state HUD overlay - shows MapLibre's resolved style, lifecycle events, source/layer counts, and any errors. Use to diagnose why a basemap fails to render. Two panels: openfreemap-liberty (vector) and osm_raster (inline raster). Compare the HUD output side-by-side against the standalone Phase 2 maps in network_diagnostic.html.</description>
+    <definition><![CDATA[
+{
+    "visualizations": {
+        "viz_debug_liberty": {
+            "type": "better_map.better_map",
+            "options": {
+                "tileProvider": "openfreemap_liberty",
+                "pointRenderer": "markers",
+                "showDebugHud": "true",
+                "showLayerControl": "false",
+                "enableDrilldown": "false",
+                "enableCrossPanel": "false",
+                "enableExportShare": "false",
+                "markerColor": "#4cd9c4"
+            },
+            "dataSources": {
+                "primary": "ds_two_points"
+            },
+            "title": "openfreemap_liberty + Debug HUD"
+        },
+        "viz_debug_osm": {
+            "type": "better_map.better_map",
+            "options": {
+                "tileProvider": "osm_raster",
+                "pointRenderer": "markers",
+                "showDebugHud": "true",
+                "showLayerControl": "false",
+                "enableDrilldown": "false",
+                "enableCrossPanel": "false",
+                "enableExportShare": "false",
+                "markerColor": "#ff8c00"
+            },
+            "dataSources": {
+                "primary": "ds_two_points"
+            },
+            "title": "osm_raster + Debug HUD"
+        }
+    },
+    "dataSources": {
+        "ds_two_points": {
+            "type": "ds.search",
+            "options": {
+                "query": "| makeresults count=2 | streamstats c | eval lat=case(c=1, 40.7, true(), 51.5) | eval lon=case(c=1, -74.0, true(), -0.13) | fields lat lon"
+            }
+        }
+    },
+    "defaults": {
+        "dataSources": {
+            "ds.search": {
+                "options": { "queryParameters": { "earliest": "-15m", "latest": "now" } }
+            }
+        }
+    },
+    "inputs": {},
+    "layout": {
+        "type": "absolute",
+        "options": { "width": 1920, "height": 720, "backgroundColor": "#0b1a2d" },
+        "structure": [
+            { "item": "viz_debug_liberty", "type": "block", "position": { "x": 0,   "y": 0, "w": 960, "h": 720 } },
+            { "item": "viz_debug_osm",     "type": "block", "position": { "x": 960, "y": 0, "w": 960, "h": 720 } }
+        ]
+    }
+}
+    ]]></definition>
+</dashboard>

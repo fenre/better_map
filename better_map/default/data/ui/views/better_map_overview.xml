@@ -1,60 +1,166 @@
 <dashboard version="2" theme="dark">
     <label>Better Map - Overview</label>
-    <description>Combined showcase of Better Map's flagship layers and integrations. The left map paints H3 hexbins of incident density; the right map paints colour-coded site markers with a layer-control filter. Both maps coordinate camera state through the better_map.camera.* tokens so dragging one mirrors the view in the other.</description>
+    <description>Executive cross-domain showcase: top-row KPIs across all four domains (active threats, fleet on-road, sites OK, sensors alarming), two cinematic dark-matter maps side-by-side (3D-extruded incident hexbins on the left, pulsing global site markers on the right), and a bottom recent-events table. Both maps coordinate camera state through `better_map.camera.*` tokens so dragging one mirrors the other. Cyber palette, vignette, glow, 30\u00b0 cinematic pitch.</description>
     <definition><![CDATA[
 {
+    "title": "Better Map - Overview",
+    "description": "Executive cross-domain dashboard with twin cinematic maps",
     "visualizations": {
-        "viz_hex": {
-            "type": "splunk.custom",
+        "viz_kpi_threats": {
+            "type": "splunk.singlevalue",
+            "title": "Active threats",
+            "description": "Threat events / 30 min",
+            "dataSources": { "primary": "ds_kpi_threats" },
             "options": {
-                "type": "better_map",
-                "name": "better_map",
-                "tileProvider": "openfreemap_positron",
+                "majorField": "value",
+                "majorColor": "> if(value > 50, '#f43f5e', if(value > 20, '#fbbf24', '#a3e635'))",
+                "backgroundColor": "transparent",
+                "majorFontSize": 44
+            }
+        },
+        "viz_kpi_fleet": {
+            "type": "splunk.singlevalue",
+            "title": "Fleet on-road",
+            "description": "Trucks in transit",
+            "dataSources": { "primary": "ds_kpi_fleet" },
+            "options": {
+                "majorField": "value",
+                "majorColor": "#22d3ee",
+                "backgroundColor": "transparent",
+                "majorFontSize": 44
+            }
+        },
+        "viz_kpi_sites_ok": {
+            "type": "splunk.singlevalue",
+            "title": "Sites healthy",
+            "dataSources": { "primary": "ds_kpi_sites" },
+            "options": {
+                "majorField": "value",
+                "majorColor": "> if(value >= 90, '#a3e635', if(value >= 70, '#fbbf24', '#f43f5e'))",
+                "backgroundColor": "transparent",
+                "majorFontSize": 44,
+                "unit": "%",
+                "unitPosition": "after"
+            }
+        },
+        "viz_kpi_sensors_alarm": {
+            "type": "splunk.singlevalue",
+            "title": "Sensors alarming",
+            "dataSources": { "primary": "ds_kpi_sensors" },
+            "options": {
+                "majorField": "value",
+                "majorColor": "> if(value > 100, '#f43f5e', if(value > 25, '#fbbf24', '#a3e635'))",
+                "backgroundColor": "transparent",
+                "majorFontSize": 44
+            }
+        },
+        "viz_hex": {
+            "type": "better_map.better_map",
+            "title": "Incident density \u00b7 H3 3D-extruded hexbin (breathing, auto-orbit)",
+            "dataSources": { "primary": "ds_incidents" },
+            "options": {
+                "tileProvider": "carto_dark_matter",
                 "pointRenderer": "hexbin",
                 "hexbinAutoDegrade": "true",
                 "hexbinOpacity": "0.85",
+                "enable3DExtrusion": "true",
+                "extrusionScale": "180",
+                "extrusionPulse": "true",
                 "palette": "viridis",
+                "vignette": "true",
+                "cameraPitch": "45",
+                "cameraBearing": "20",
+                "cameraAutoOrbit": "true",
+                "autoOrbitSpeed": "1.5",
                 "enableDrilldown": "true",
                 "enableCrossPanel": "true",
                 "showLayerControl": "false",
-                "enableExportShare": "true"
-            },
-            "dataSources": {
-                "primary": "ds_incidents"
-            },
-            "title": "Incident density (H3 hexbin)"
+                "enableExportShare": "true",
+                "showDebugHud": "false"
+            }
         },
         "viz_sites": {
-            "type": "splunk.custom",
+            "type": "better_map.better_map",
+            "title": "Sites \u00b7 pulsing markers, severity-bound heartbeat",
+            "dataSources": { "primary": "ds_sites" },
             "options": {
-                "type": "better_map",
-                "name": "better_map",
-                "tileProvider": "openfreemap_liberty",
+                "tileProvider": "carto_dark_matter",
                 "pointRenderer": "markers",
+                "pointPulse": "true",
+                "vignette": "true",
+                "cameraPitch": "30",
+                "cameraBearing": "10",
+                "cameraAutoOrbit": "true",
+                "autoOrbitSpeed": "2",
                 "showLayerControl": "true",
                 "enableDrilldown": "true",
                 "enableCrossPanel": "true",
-                "markerColor": "#4cd9c4",
-                "markerOutline": "#0b1a2d",
-                "enableExportShare": "true"
-            },
-            "dataSources": {
-                "primary": "ds_sites"
-            },
-            "title": "Sites by category"
+                "markerColor": "#22d3ee",
+                "markerOutline": "#08090f",
+                "palette": "cyber",
+                "enableExportShare": "true",
+                "showDebugHud": "false"
+            }
+        },
+        "viz_recent_events": {
+            "type": "splunk.table",
+            "title": "Recent cross-domain events",
+            "dataSources": { "primary": "ds_recent_events" },
+            "options": {
+                "backgroundColor": "transparent",
+                "headerVisibility": "fixed",
+                "rowBackgroundColors": ["transparent", "#0f172a"]
+            }
         }
     },
     "dataSources": {
         "ds_incidents": {
             "type": "ds.search",
+            "name": "2,000 simulated incidents clustered around NYC, London, SF, Tokyo",
             "options": {
-                "query": "| makeresults count=2000 | streamstats c | eval baseLat = case(c%4=0, 40.7, c%4=1, 51.5, c%4=2, 37.77, true(), 35.68) | eval baseLon = case(c%4=0, -74.0, c%4=1, -0.13, c%4=2, -122.42, true(), 139.69) | eval lat = baseLat + (random()/2147483647.0 - 0.5) * 4 | eval lon = baseLon + (random()/2147483647.0 - 0.5) * 6 | fields lat lon"
+                "query": "| makeresults count=2000\n| streamstats count AS c\n| eval baseLat=case(c%4=0,40.7,c%4=1,51.5,c%4=2,37.77,true(),35.68)\n| eval baseLon=case(c%4=0,-74.0,c%4=1,-0.13,c%4=2,-122.42,true(),139.69)\n| eval lat=baseLat+(random()/2147483647.0-0.5)*4\n| eval lon=baseLon+(random()/2147483647.0-0.5)*6\n| fields lat lon"
             }
         },
         "ds_sites": {
             "type": "ds.search",
+            "name": "Bundled site inventory with cyber-palette status mapping",
             "options": {
-                "query": "| inputlookup better_map_sample_sites.csv | rename layer AS layerName"
+                "query": "| inputlookup better_map_sample_sites.csv\n| eval status=case(value>500,\"critical\",value>200,\"warning\",true(),\"healthy\")\n| eval color=case(status=\"critical\",\"#f43f5e\",status=\"warning\",\"#fbbf24\",true(),\"#a3e635\")\n| rename layer AS layerName"
+            }
+        },
+        "ds_kpi_threats": {
+            "type": "ds.search",
+            "name": "Active threats KPI",
+            "options": {
+                "query": "| makeresults count=80\n| streamstats count AS c\n| eval severity=case(c%9=0,\"critical\",c%4=0,\"high\",c%2=0,\"medium\",true(),\"low\")\n| stats count AS value\n| fields value"
+            }
+        },
+        "ds_kpi_fleet": {
+            "type": "ds.search",
+            "name": "Fleet on-road KPI",
+            "options": {
+                "query": "| makeresults count=200\n| streamstats count AS c\n| eval truck_id=case(c%4=0,\"TRUCK-101\",c%4=1,\"TRUCK-202\",c%4=2,\"TRUCK-303\",true(),\"TRUCK-404\")\n| eval speed_kph=round(60+30*sin(c/8.0)+10*cos(c/3.0),1)\n| eval status=case(speed_kph<5,\"idle\",speed_kph>95,\"alert-speed\",true(),\"in-transit\")\n| where status=\"in-transit\"\n| stats dc(truck_id) AS value\n| fields value"
+            }
+        },
+        "ds_kpi_sites": {
+            "type": "ds.search",
+            "name": "Sites healthy % KPI",
+            "options": {
+                "query": "| inputlookup better_map_sample_sites.csv\n| eval status=case(value>500,\"critical\",value>200,\"warning\",true(),\"healthy\")\n| stats count AS total count(eval(status=\"healthy\")) AS healthy\n| eval value=round(healthy*100/total,1)\n| fields value"
+            }
+        },
+        "ds_kpi_sensors": {
+            "type": "ds.search",
+            "name": "Sensors alarming KPI",
+            "options": {
+                "query": "| makeresults count=2500\n| streamstats count AS c\n| eval value=round(15+random()%65+10*sin(c/12.0),2)\n| stats count(eval(value>70)) AS value\n| fields value"
+            }
+        },
+        "ds_recent_events": {
+            "type": "ds.search",
+            "name": "Recent cross-domain events (synthesized for the demo)",
+            "options": {
+                "query": "| makeresults count=15\n| streamstats count AS c\n| eval _time=now()-c*47\n| eval domain=case(c%4=0,\"threat\",c%4=1,\"fleet\",c%4=2,\"site\",true(),\"sensor\")\n| eval severity=case(c%5=0,\"critical\",c%3=0,\"warning\",true(),\"info\")\n| eval entity=case(domain=\"threat\",\"atk-\".tostring(c),domain=\"fleet\",\"TRUCK-\".(101+(c%4)*101),domain=\"site\",\"site-\".tostring(c,\"hex\"),true(),\"S-\".tostring(c,\"hex\"))\n| eval message=case(domain=\"threat\",\"port-scan from \".case(c%3=0,\"RU\",c%3=1,\"CN\",true(),\"BR\"),domain=\"fleet\",\"speed exceeded \".tostring(95+c%15).\" km/h\",domain=\"site\",\"load=\".tostring(200+c*40).\" exceeded warning threshold\",true(),\"reading \".tostring(70+c%15).\" \\u00b0C exceeded threshold\")\n| eval Time=strftime(_time,\"%H:%M:%S\")\n| rename domain AS Domain severity AS Severity entity AS Entity message AS Message\n| sort -_time\n| table Time Domain Severity Entity Message"
             }
         }
     },
@@ -68,10 +174,15 @@
     "inputs": {},
     "layout": {
         "type": "absolute",
-        "options": { "width": 1920, "height": 1000, "backgroundColor": "#0b1a2d" },
+        "options": { "width": 1920, "height": 1080, "backgroundColor": "#08090f" },
         "structure": [
-            { "item": "viz_hex",   "type": "block", "position": { "x": 0,    "y": 0,  "w": 960, "h": 1000 } },
-            { "item": "viz_sites", "type": "block", "position": { "x": 960,  "y": 0,  "w": 960, "h": 1000 } }
+            { "item": "viz_kpi_threats",       "type": "block", "position": { "x": 20,   "y": 20,  "w": 460, "h": 130 } },
+            { "item": "viz_kpi_fleet",         "type": "block", "position": { "x": 490,  "y": 20,  "w": 460, "h": 130 } },
+            { "item": "viz_kpi_sites_ok",      "type": "block", "position": { "x": 960,  "y": 20,  "w": 460, "h": 130 } },
+            { "item": "viz_kpi_sensors_alarm", "type": "block", "position": { "x": 1430, "y": 20,  "w": 470, "h": 130 } },
+            { "item": "viz_hex",   "type": "block", "position": { "x": 20,  "y": 170, "w": 940, "h": 700 } },
+            { "item": "viz_sites", "type": "block", "position": { "x": 970, "y": 170, "w": 930, "h": 700 } },
+            { "item": "viz_recent_events", "type": "block", "position": { "x": 20, "y": 880, "w": 1880, "h": 180 } }
         ]
     }
 }

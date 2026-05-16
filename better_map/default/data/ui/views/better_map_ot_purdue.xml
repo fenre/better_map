@@ -1,0 +1,95 @@
+<dashboard version="2" theme="dark">
+    <label>Better Map - OT Purdue Overlay</label>
+    <description>v1.6 showcase: OT asset map colored by Purdue / IEC 62443 level (0-5). The Purdue module enriches each feature from a Splunk lookup containing host,asset_id,purdue_level. Demo data fabricates a 2-site plant with Level-0 sensors, Level-1 PLCs, Level-2 SCADA, Level-3 MES, Level-4 ERP, and Level-5 enterprise IT. Replace the inline SPL with your asset register.</description>
+    <definition><![CDATA[
+{
+    "title": "Better Map - OT Purdue / IEC 62443 Overlay",
+    "description": "v1.6 OT Purdue-level overlay demo.",
+    "visualizations": {
+        "viz_kpi_assets": {
+            "type": "splunk.singlevalue",
+            "title": "OT assets",
+            "dataSources": { "primary": "ds_kpi_assets" },
+            "options": { "majorField": "value", "majorColor": "#22d3ee", "majorFontSize": 44, "backgroundColor": "transparent" }
+        },
+        "viz_kpi_sis": {
+            "type": "splunk.singlevalue",
+            "title": "Safety-related",
+            "dataSources": { "primary": "ds_kpi_sis" },
+            "options": { "majorField": "value", "majorColor": "#f43f5e", "majorFontSize": 44, "backgroundColor": "transparent" }
+        },
+        "viz_kpi_l1": {
+            "type": "splunk.singlevalue",
+            "title": "Level-1 PLCs",
+            "dataSources": { "primary": "ds_kpi_l1" },
+            "options": { "majorField": "value", "majorColor": "#fbbf24", "majorFontSize": 44, "backgroundColor": "transparent" }
+        },
+        "viz_map": {
+            "type": "better_map.better_map",
+            "title": "Plant assets by Purdue level (0=red, 1=orange, 2=yellow, 3=teal, 4=blue, 5=violet)",
+            "dataSources": { "primary": "ds_assets" },
+            "options": {
+                "tileProvider": "openfreemap-positron",
+                "pointRenderer": "markers",
+                "markerColor": "#22d3ee",
+                "markerOutline": "#0b1a2d",
+                "vignette": "false",
+                "cameraPitch": "0",
+                "cameraBearing": "0",
+                "showTimeScrubber": "false",
+                "showControlPanel": "true",
+                "enableExportShare": "true",
+                "v2Purdue": "true",
+                "v2PurdueLookup": "ot_asset_register",
+                "v2Geocoder": "true",
+                "v2Minimap": "true",
+                "v2Measure": "true",
+                "v2CommandPalette": "true",
+                "centerLat": "52.52",
+                "centerLon": "13.40",
+                "zoom": "13"
+            }
+        },
+        "viz_table": {
+            "type": "splunk.table",
+            "title": "Asset register",
+            "dataSources": { "primary": "ds_table" },
+            "options": { "backgroundColor": "transparent", "headerVisibility": "fixed" }
+        }
+    },
+    "dataSources": {
+        "ds_assets": {
+            "type": "ds.search",
+            "name": "Synthetic OT assets across two sites",
+            "options": {
+                "query": "| makeresults count=30\n| streamstats count AS i\n| eval site_lat=case(i<=15,52.52, true(),52.51)\n| eval site_lon=case(i<=15,13.40, true(),13.42)\n| eval lat=site_lat + ((random()%50)-25)/10000\n| eval lon=site_lon + ((random()%50)-25)/10000\n| eval purdue_level=case(i%6==0,0, i%6==1,1, i%6==2,2, i%6==3,3, i%6==4,4, true(),5)\n| eval safety_related=if(purdue_level<=1,\"yes\",\"no\")\n| eval color=case(purdue_level==0,\"#f43f5e\", purdue_level==1,\"#fb923c\", purdue_level==2,\"#fbbf24\", purdue_level==3,\"#22d3ee\", purdue_level==4,\"#60a5fa\", true(),\"#a78bfa\")\n| eval host=\"asset-\".tostring(1000+i)\n| eval asset_id=\"PA-\".tostring(1000+i)\n| eval popup=\"<b>\".host.\"</b><br>level: \".purdue_level.\"<br>safety: \".safety_related\n| fields _time, lat, lon, host, asset_id, purdue_level, safety_related, color, popup"
+            }
+        },
+        "ds_kpi_assets": { "type": "ds.search", "name": "Asset count", "options": { "query": "| makeresults\n| eval value=30" } },
+        "ds_kpi_sis":    { "type": "ds.search", "name": "SIS-related count", "options": { "query": "| makeresults\n| eval value=10" } },
+        "ds_kpi_l1":     { "type": "ds.search", "name": "Level-1 count", "options": { "query": "| makeresults\n| eval value=5" } },
+        "ds_table": {
+            "type": "ds.search",
+            "name": "Asset table",
+            "options": {
+                "query": "| makeresults count=8\n| streamstats count AS i\n| eval host=\"asset-\".tostring(1000+i)\n| eval purdue_level=case(i%6==0,0, i%6==1,1, i%6==2,2, i%6==3,3, i%6==4,4, true(),5)\n| eval safety_related=if(purdue_level<=1,\"yes\",\"no\")\n| fields host, purdue_level, safety_related"
+            }
+        }
+    },
+    "defaults": {
+        "dataSources": { "ds.search": { "options": { "queryParameters": { "earliest": "-60m", "latest": "now" } } } }
+    },
+    "layout": {
+        "type": "absolute",
+        "options": { "width": 1440, "height": 960, "backgroundColor": "#0b1220" },
+        "structure": [
+            { "item": "viz_kpi_assets", "type": "block", "position": { "x": 20,   "y": 20,  "w": 460, "h": 130 } },
+            { "item": "viz_kpi_sis",    "type": "block", "position": { "x": 490,  "y": 20,  "w": 460, "h": 130 } },
+            { "item": "viz_kpi_l1",     "type": "block", "position": { "x": 960,  "y": 20,  "w": 460, "h": 130 } },
+            { "item": "viz_map",        "type": "block", "position": { "x": 20,   "y": 170, "w": 1020, "h": 760 } },
+            { "item": "viz_table",      "type": "block", "position": { "x": 1050, "y": 170, "w": 370,  "h": 760 } }
+        ]
+    }
+}
+    ]]></definition>
+</dashboard>

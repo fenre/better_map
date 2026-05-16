@@ -16,18 +16,56 @@
       "default": "openfreemap_liberty"
     },
     {
-      "name": "enableClustering",
-      "label": "Clustering",
+      "name": "pointRenderer",
+      "label": "Point renderer",
+      "type": "select",
+      "options": [
+        { "v": "auto", "l": "Auto" },
+        { "v": "markers", "l": "Markers" },
+        { "v": "cluster", "l": "Cluster" },
+        { "v": "heatmap", "l": "Heatmap" },
+        { "v": "hexbin", "l": "H3 Hexbin" }
+      ],
+      "default": "auto"
+    },
+    {
+      "name": "palette",
+      "label": "Palette",
+      "type": "select",
+      "options": [
+        { "v": "viridis", "l": "Viridis" },
+        { "v": "rdylbu", "l": "RdYlBu" },
+        { "v": "set3", "l": "Set3" }
+      ],
+      "default": "viridis"
+    },
+    {
+      "name": "showTimeScrubber",
+      "label": "Time scrubber",
       "type": "radio",
       "options": ["true", "false"],
       "default": "true"
     },
     {
-      "name": "enableHeatmap",
-      "label": "Heatmap",
+      "name": "enable3DExtrusion",
+      "label": "3D extrusion",
       "type": "radio",
       "options": ["true", "false"],
       "default": "false"
+    },
+    {
+      "name": "highContrast",
+      "label": "High contrast",
+      "type": "radio",
+      "options": ["true", "false"],
+      "default": "false"
+    },
+    {
+      "name": "enableExportShare",
+      "label": "Export / Share toolbar",
+      "type": "radio",
+      "options": ["true", "false"],
+      "default": "true"
     }
   ],
   "data": {

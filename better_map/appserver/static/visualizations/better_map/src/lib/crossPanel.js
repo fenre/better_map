@@ -35,6 +35,16 @@ const CAMERA_TOKENS = [
     'better_map.camera.bearing'
 ];
 
+// v1.6 — time tokens for cross-panel scrubber coordination. When the
+// scrubber-owning panel calls broadcastTime(t, isPlaying, speed) we
+// publish into these three tokens. Subscriber panels can mirror by
+// calling applyRemoteTime(scrubber, tokens).
+const TIME_TOKENS = [
+    'better_map.time.cursor_ms',
+    'better_map.time.playing',
+    'better_map.time.speed'
+];
+
 export function createCrossPanel(map, viz, options) {
     if (!map || !viz) return noop();
     const opts = options || {};
@@ -72,8 +82,26 @@ export function createCrossPanel(map, viz, options) {
     map.on('pitchend', broadcastCamera);
     map.on('rotateend', broadcastCamera);
 
+    // v1.6 — scrubber broadcast. The owning viz calls broadcastTime() on
+    // every scrubber change tick. Subscribers receive via the dashboard
+    // token model and replay via applyRemoteTime().
+    let lastTimeBroadcast = 0;
+    const minTimeIntervalMs = typeof opts.minTimeIntervalMs === 'number' ? opts.minTimeIntervalMs : 100;
+
+    function broadcastTime(timeMs, playing, speed) {
+        const now = Date.now();
+        if (now - lastTimeBroadcast < minTimeIntervalMs) return;
+        lastTimeBroadcast = now;
+        publishTokens(viz, {
+            'better_map.time.cursor_ms': Number.isFinite(timeMs) ? timeMs : null,
+            'better_map.time.playing': !!playing,
+            'better_map.time.speed': Number.isFinite(speed) ? speed : 1
+        });
+    }
+
     return {
         broadcastCamera: broadcastCamera,
+        broadcastTime: broadcastTime,
         publishSelection: publishSelection,
         destroy: function () {
             map.off('moveend', broadcastCamera);
@@ -112,8 +140,41 @@ export function tokenNames() {
     return CAMERA_TOKENS.slice();
 }
 
+export function timeTokenNames() {
+    return TIME_TOKENS.slice();
+}
+
 export function tokenPrefix() {
     return TOKEN_PREFIX;
+}
+
+/**
+ * v1.6 — apply incoming time tokens to a scrubber instance. The owning
+ * scrubber (which broadcasts) MUST be filtered out by the caller (panel
+ * id check) before calling this, otherwise the panels enter an echo
+ * loop.
+ *
+ * @param {object} scrubber created via createScrubber()
+ * @param {object} tokens dashboard token bag
+ */
+export function applyRemoteTime(scrubber, tokens) {
+    if (!scrubber || !tokens) return;
+    const t = pickNumber(tokens, ['better_map.time.cursor_ms']);
+    const speed = pickNumber(tokens, ['better_map.time.speed']);
+    const playingRaw = tokens['better_map.time.playing'];
+    if (Number.isFinite(t) && typeof scrubber.setCurrent === 'function') {
+        scrubber.setCurrent(t);
+    }
+    if (Number.isFinite(speed) && typeof scrubber.setSpeed === 'function') {
+        scrubber.setSpeed(speed);
+    }
+    if (typeof scrubber.play === 'function' && typeof scrubber.pause === 'function') {
+        if (playingRaw === true || playingRaw === 'true' || playingRaw === 1 || playingRaw === '1') {
+            scrubber.play();
+        } else if (playingRaw === false || playingRaw === 'false' || playingRaw === 0 || playingRaw === '0') {
+            scrubber.pause();
+        }
+    }
 }
 
 // -----------------------------------------------------------------------
@@ -167,6 +228,7 @@ function pickNumber(obj, keys) {
 function noop() {
     return {
         broadcastCamera: function () {},
+        broadcastTime: function () {},
         publishSelection: function () {},
         destroy: function () {}
     };

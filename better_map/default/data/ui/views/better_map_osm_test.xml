@@ -1,0 +1,75 @@
+<dashboard version="2" theme="dark">
+    <label>Better Map - OSM Raster Test</label>
+    <description>Diagnostic dashboard that forces the osm_raster tile provider (OpenStreetMap raster, no OpenFreeMap dependency). Use this to verify the Better Map viz renders correctly even when OpenFreeMap is blocked or unreachable. If THIS dashboard renders maps but better_map_overview does not, the issue is OpenFreeMap-specific (browser content blocker, cached 404, corporate DNS). Same test data as the overview dashboard so direct visual comparison is meaningful.</description>
+    <definition><![CDATA[
+{
+    "visualizations": {
+        "viz_osm_hex": {
+            "type": "better_map.better_map",
+            "options": {
+                "tileProvider": "osm_raster",
+                "pointRenderer": "hexbin",
+                "hexbinAutoDegrade": "true",
+                "hexbinOpacity": "0.85",
+                "palette": "viridis",
+                "enableDrilldown": "true",
+                "enableCrossPanel": "true",
+                "showLayerControl": "false",
+                "enableExportShare": "true"
+            },
+            "dataSources": {
+                "primary": "ds_incidents"
+            },
+            "title": "Incident density (H3 hexbin) - OSM raster"
+        },
+        "viz_osm_sites": {
+            "type": "better_map.better_map",
+            "options": {
+                "tileProvider": "osm_raster",
+                "pointRenderer": "markers",
+                "showLayerControl": "true",
+                "enableDrilldown": "true",
+                "enableCrossPanel": "true",
+                "markerColor": "#4cd9c4",
+                "markerOutline": "#0b1a2d",
+                "enableExportShare": "true"
+            },
+            "dataSources": {
+                "primary": "ds_sites"
+            },
+            "title": "Sites by category - OSM raster"
+        }
+    },
+    "dataSources": {
+        "ds_incidents": {
+            "type": "ds.search",
+            "options": {
+                "query": "| makeresults count=2000 | streamstats c | eval baseLat = case(c%4=0, 40.7, c%4=1, 51.5, c%4=2, 37.77, true(), 35.68) | eval baseLon = case(c%4=0, -74.0, c%4=1, -0.13, c%4=2, -122.42, true(), 139.69) | eval lat = baseLat + (random()/2147483647.0 - 0.5) * 4 | eval lon = baseLon + (random()/2147483647.0 - 0.5) * 6 | fields lat lon"
+            }
+        },
+        "ds_sites": {
+            "type": "ds.search",
+            "options": {
+                "query": "| inputlookup better_map_sample_sites.csv | rename layer AS layerName"
+            }
+        }
+    },
+    "defaults": {
+        "dataSources": {
+            "ds.search": {
+                "options": { "queryParameters": { "earliest": "-24h@h", "latest": "now" } }
+            }
+        }
+    },
+    "inputs": {},
+    "layout": {
+        "type": "absolute",
+        "options": { "width": 1920, "height": 1000, "backgroundColor": "#0b1a2d" },
+        "structure": [
+            { "item": "viz_osm_hex",   "type": "block", "position": { "x": 0,    "y": 0,  "w": 960, "h": 1000 } },
+            { "item": "viz_osm_sites", "type": "block", "position": { "x": 960,  "y": 0,  "w": 960, "h": 1000 } }
+        ]
+    }
+}
+    ]]></definition>
+</dashboard>

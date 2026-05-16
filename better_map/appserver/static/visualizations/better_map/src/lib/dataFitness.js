@@ -72,6 +72,62 @@ const ICON_ALIASES = ['icon', 'symbol'];
 const COLOR_ALIASES = ['color', 'colour'];
 const SIZE_ALIASES = ['size', 'radius'];
 
+/*
+ * v1.5.0 — origin/destination aliases. When all four are present on a
+ * single row, we treat the row as a "flow" record and emit a great-
+ * circle arc LineString instead of a Point. This is what unlocks the
+ * NORSE / GitHub Globe / Uber Movement aesthetic where attacks (or
+ * trips, or signals) curve elegantly across the globe instead of
+ * cutting straight through it.
+ *
+ * Recognised name pairs:
+ *   src_lat / src_lon            (snake_case, most common in SPL)
+ *   srcLat  / srcLon             (camelCase)
+ *   source_lat / source_lon
+ *   origin_lat / origin_lon
+ *   from_lat / from_lon
+ *   start_lat / start_lon
+ *
+ *   dst_lat / dst_lon
+ *   dstLat  / dstLon
+ *   dest_lat / dest_lon
+ *   destination_lat / destination_lon
+ *   to_lat / to_lon
+ *   end_lat / end_lon
+ *   target_lat / target_lon
+ */
+const SRC_LAT_ALIASES = [
+    'src_lat', 'srcLat', 'source_lat', 'sourceLat',
+    'origin_lat', 'originLat', 'from_lat', 'fromLat',
+    'start_lat', 'startLat'
+];
+const SRC_LON_ALIASES = [
+    'src_lon', 'srcLon', 'src_lng', 'srcLng',
+    'source_lon', 'sourceLon', 'source_lng', 'sourceLng',
+    'origin_lon', 'originLon', 'origin_lng', 'originLng',
+    'from_lon', 'fromLon', 'from_lng', 'fromLng',
+    'start_lon', 'startLon', 'start_lng', 'startLng'
+];
+const DST_LAT_ALIASES = [
+    'dst_lat', 'dstLat', 'dest_lat', 'destLat',
+    'destination_lat', 'destinationLat', 'to_lat', 'toLat',
+    'end_lat', 'endLat', 'target_lat', 'targetLat'
+];
+const DST_LON_ALIASES = [
+    'dst_lon', 'dstLon', 'dst_lng', 'dstLng',
+    'dest_lon', 'destLon', 'dest_lng', 'destLng',
+    'destination_lon', 'destinationLon', 'destination_lng', 'destinationLng',
+    'to_lon', 'toLon', 'to_lng', 'toLng',
+    'end_lon', 'endLon', 'end_lng', 'endLng',
+    'target_lon', 'targetLon', 'target_lng', 'targetLng'
+];
+
+// 64 segments per arc looks smooth at every zoom level (the sphere
+// curvature visibly differs from straight at zoom 1; even at zoom 14
+// the segments are sub-pixel). 32 segments is the cheaper alternative
+// if perf becomes an issue.
+const ARC_SEGMENTS = 64;
+
 // -----------------------------------------------------------------------
 // Public API
 
@@ -109,8 +165,17 @@ export function analyze(input, opts) {
         popupField: pickField(fieldNames, POPUP_ALIASES),
         iconField: pickField(fieldNames, ICON_ALIASES),
         colorField: pickField(fieldNames, COLOR_ALIASES),
-        sizeField: pickField(fieldNames, SIZE_ALIASES)
+        sizeField: pickField(fieldNames, SIZE_ALIASES),
+        // v1.5.0 origin/destination quad
+        srcLatField: pickField(fieldNames, SRC_LAT_ALIASES),
+        srcLonField: pickField(fieldNames, SRC_LON_ALIASES),
+        dstLatField: pickField(fieldNames, DST_LAT_ALIASES),
+        dstLonField: pickField(fieldNames, DST_LON_ALIASES)
     };
+    detected.flowDetected = !!(
+        detected.srcLatField && detected.srcLonField &&
+        detected.dstLatField && detected.dstLonField
+    );
 
     const points = [];
     const lines = [];
@@ -122,6 +187,39 @@ export function analyze(input, opts) {
     for (let i = 0; i < rows.length; i++) {
         const row = rows[i] || [];
         const props = buildProps(fields, row, colIdx, detected);
+
+        // v1.5.0 — flow rows (src_lat/src_lon -> dst_lat/dst_lon) become
+        // great-circle arcs. Tested against rows that ALSO have a single
+        // lat/lon: we prefer the arc interpretation because that is what
+        // the user clearly meant by including all four columns. The arc
+        // already passes through the source point, so nothing is lost.
+        if (detected.flowDetected) {
+            const srcLat = toNumber(row[colIdx[detected.srcLatField]]);
+            const srcLon = toNumber(row[colIdx[detected.srcLonField]]);
+            const dstLat = toNumber(row[colIdx[detected.dstLatField]]);
+            const dstLon = toNumber(row[colIdx[detected.dstLonField]]);
+            if (
+                Number.isFinite(srcLat) && Number.isFinite(srcLon) &&
+                Number.isFinite(dstLat) && Number.isFinite(dstLon) &&
+                Math.abs(srcLat) <= 90 && Math.abs(srcLon) <= 180 &&
+                Math.abs(dstLat) <= 90 && Math.abs(dstLon) <= 180
+            ) {
+                const arcCoords = greatCircleArc(
+                    srcLon, srcLat, dstLon, dstLat, ARC_SEGMENTS
+                );
+                lines.push({
+                    type: 'Feature',
+                    id: 'flow:' + i,
+                    geometry: { type: 'LineString', coordinates: arcCoords },
+                    properties: Object.assign({}, props, {
+                        srcLat: srcLat, srcLon: srcLon,
+                        dstLat: dstLat, dstLon: dstLon,
+                        isArc: true
+                    })
+                });
+                continue;
+            }
+        }
 
         // Path rows take precedence over single-point coordinates: if the
         // row has a pathId AND coords, accumulate it for the paths layer.
@@ -353,13 +451,19 @@ function buildProps(fields, row, colIdx, detected) {
         const name = fields[i] && fields[i].name;
         if (!name) continue;
         // Skip raw lat/lon/wkt/geojson/geohash - they are already in
-        // `geometry` and would otherwise bloat the popup.
+        // `geometry` and would otherwise bloat the popup. v1.5.0 also
+        // strips src/dst quad columns from per-feature properties for
+        // the same reason; the arc geometry already encodes them.
         if (
             name === detected.latField ||
             name === detected.lonField ||
             name === detected.wktField ||
             name === detected.geojsonField ||
-            name === detected.geohashField
+            name === detected.geohashField ||
+            name === detected.srcLatField ||
+            name === detected.srcLonField ||
+            name === detected.dstLatField ||
+            name === detected.dstLonField
         ) {
             continue;
         }
@@ -561,6 +665,82 @@ function parseCoordPair(text) {
     const lat = parseFloat(parts[1]);
     if (!Number.isFinite(lon) || !Number.isFinite(lat)) return null;
     return [lon, lat];
+}
+
+// -----------------------------------------------------------------------
+// Great-circle arc interpolator (spherical linear interpolation / slerp).
+//
+// Given two lon/lat pairs in degrees, return an array of [lon, lat]
+// coordinates that traces the shortest path between them along the
+// surface of a unit sphere. Crossings of the antimeridian (+/-180°)
+// are handled by inserting a [-180, lat] / [180, lat] split so MapLibre
+// renders the arc as two segments instead of a horizontal line wrapping
+// the entire globe.
+//
+// The math:
+//   1. Convert lon/lat to ECEF unit vectors (x, y, z on unit sphere).
+//   2. Compute the angular distance d = acos(dot(a, b)).
+//   3. For t in [0, 1], slerp:
+//          p(t) = sin((1-t)*d)/sin(d) * a + sin(t*d)/sin(d) * b
+//   4. Convert each p(t) back to lon/lat.
+//
+// Edge cases:
+//   - Identical points (d == 0) return [a, b] verbatim (no arc).
+//   - Antipodal points (d == PI) have an undefined arc; we pick the
+//     prime-meridian shortcut (still better than a straight line on
+//     the screen).
+function greatCircleArc(srcLon, srcLat, dstLon, dstLat, segments) {
+    if (srcLon === dstLon && srcLat === dstLat) {
+        return [[srcLon, srcLat], [dstLon, dstLat]];
+    }
+    const D2R = Math.PI / 180;
+    const R2D = 180 / Math.PI;
+    const aLon = srcLon * D2R;
+    const aLat = srcLat * D2R;
+    const bLon = dstLon * D2R;
+    const bLat = dstLat * D2R;
+    const ax = Math.cos(aLat) * Math.cos(aLon);
+    const ay = Math.cos(aLat) * Math.sin(aLon);
+    const az = Math.sin(aLat);
+    const bx = Math.cos(bLat) * Math.cos(bLon);
+    const by = Math.cos(bLat) * Math.sin(bLon);
+    const bz = Math.sin(bLat);
+    const dot = ax * bx + ay * by + az * bz;
+    const clamped = dot > 1 ? 1 : (dot < -1 ? -1 : dot);
+    const d = Math.acos(clamped);
+    if (d === 0) {
+        return [[srcLon, srcLat], [dstLon, dstLat]];
+    }
+    const sinD = Math.sin(d);
+    const out = [];
+    let prevLon = null;
+    for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        const sa = Math.sin((1 - t) * d) / sinD;
+        const sb = Math.sin(t * d) / sinD;
+        const px = sa * ax + sb * bx;
+        const py = sa * ay + sb * by;
+        const pz = sa * az + sb * bz;
+        const lat = Math.asin(pz) * R2D;
+        let lon = Math.atan2(py, px) * R2D;
+        // Antimeridian split: when consecutive lon values jump by more
+        // than 180 degrees the LineString would otherwise draw a flat
+        // horizontal segment across the whole map. Insert a discontinuity
+        // by emitting two coordinates at the date line.
+        if (prevLon !== null && Math.abs(lon - prevLon) > 180) {
+            const wrapLat = (lat + out[out.length - 1][1]) / 2;
+            if (lon > prevLon) {
+                out.push([-180, wrapLat]);
+                out.push([180, wrapLat]);
+            } else {
+                out.push([180, wrapLat]);
+                out.push([-180, wrapLat]);
+            }
+        }
+        out.push([lon, lat]);
+        prevLon = lon;
+    }
+    return out;
 }
 
 // -----------------------------------------------------------------------

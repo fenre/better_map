@@ -42,8 +42,18 @@ import { applyTrail, clearTrail } from './time/trail.js';
 import { attachDrilldown } from './drilldown.js';
 import { createCrossPanel } from './crossPanel.js';
 import { applyA11yAttrs, applyLabelLanguage } from './a11y.js';
+import {
+    prefersReducedMotion,
+    shouldSuppressMotion,
+    setMotionPaused as motionSetPaused,
+    isMotionPaused,
+    nowMs,
+    scheduleFrame,
+    cancelFrame
+} from './motion.js';
 
 let pmtilesRegistered = false;
+let bmstyleRegistered = false;
 
 function ensurePMTilesProtocol() {
     if (pmtilesRegistered) {
@@ -52,6 +62,123 @@ function ensurePMTilesProtocol() {
     const protocol = new PMTilesProtocol();
     maplibregl.addProtocol('pmtiles', protocol.tile);
     pmtilesRegistered = true;
+}
+
+/*
+ * `bmstyle://` and `bmsource://` custom protocols.
+ *
+ * Empirical evidence (HUD probes v1.3.16) shows that MapLibre's internal
+ * style/sprite/source-JSON fetches return HTTP 404 from third-party CDNs
+ * (e.g. tiles.openfreemap.org/styles/liberty) when invoked from inside a
+ * Splunk Dashboard Studio panel — even though the IDENTICAL URL returns
+ * HTTP 200 to vanilla `fetch(url, {cache:'no-store', credentials:'omit'})`
+ * in the same dashboard's document context.
+ *
+ * The trigger is something in MapLibre's full Request shape (Accept header,
+ * AbortController signal, referrer string, or the way `new Request(url, ...)`
+ * builds the request) that causes either Splunk's bundled fetch shim or the
+ * upstream CDN to reject it.
+ *
+ * Rather than reverse-engineer which property triggers the rejection, we
+ * route Style/SpriteJSON/Source-JSON requests through our OWN fetch via
+ * MapLibre's `addProtocol()` API. Tile (image) fetches still go through
+ * MapLibre's normal pipeline because raster tiles use `<img>` elements,
+ * not fetch — and `<img>` doesn't suffer from the same shape-mismatch.
+ */
+function ensureBMStyleProtocol() {
+    if (bmstyleRegistered) {
+        return;
+    }
+
+    /*
+     * Two handlers, one for metadata (Style/Source/SpriteJSON) and one for
+     * binary data (Tile/SpriteImage/Glyphs). Metadata uses cache:'no-store'
+     * so a poisoned 404 in the browser cache never sticks. Binary data uses
+     * cache:'default' so tiles cache normally for performance.
+     */
+    function makeHandler(cacheMode) {
+        return function (params, abortController) {
+            const realUrl = decodeBmUrl(params.url);
+            const fetchInit = {
+                cache: cacheMode,
+                credentials: 'omit',
+                signal: abortController ? abortController.signal : undefined
+            };
+            return fetch(realUrl, fetchInit).then(function (r) {
+                if (!r.ok) {
+                    throw new Error('bm-protocol: HTTP ' + r.status + ' ' + r.statusText + ' for ' + realUrl);
+                }
+                const cacheControl = r.headers.get('Cache-Control');
+                const expires = r.headers.get('Expires');
+                // MapLibre derives `params.type` from the resourceType:
+                //   Style / Source / SpriteJSON / Glyphs        → 'json' (text actually for Style)
+                //   Tile (vector or raster) / SpriteImage      → 'arrayBuffer'
+                //   Image (some viz layers)                    → 'image'
+                // Be defensive: when we can't tell, sniff the response body.
+                if (params.type === 'arrayBuffer' || params.type === 'image') {
+                    return r.arrayBuffer().then(function (data) {
+                        return { data: data, cacheControl: cacheControl, expires: expires };
+                    });
+                }
+                if (params.type === 'json') {
+                    return r.json().then(function (data) {
+                        return { data: data, cacheControl: cacheControl, expires: expires };
+                    });
+                }
+                // Default: return text. MapLibre's style loader accepts both
+                // string-style and object-style results for text/json types.
+                return r.text().then(function (data) {
+                    return { data: data, cacheControl: cacheControl, expires: expires };
+                });
+            });
+        };
+    }
+
+    const metaHandler = makeHandler('no-store');
+    const dataHandler = makeHandler('default');
+
+    // Metadata (JSON) protocols
+    maplibregl.addProtocol('bmstyle', metaHandler);
+    maplibregl.addProtocol('bmsource', metaHandler);
+    // Binary data protocols (tiles, sprites, glyphs)
+    maplibregl.addProtocol('bmtile', dataHandler);
+    maplibregl.addProtocol('bmsprite', dataHandler);
+    maplibregl.addProtocol('bmglyphs', dataHandler);
+
+    bmstyleRegistered = true;
+}
+
+function encodeBmUrl(scheme, httpsUrl) {
+    return scheme + '://' + httpsUrl.replace(/^https:\/\//, '');
+}
+
+function decodeBmUrl(bmUrl) {
+    return 'https://' + bmUrl.replace(/^bm[a-z]+:\/\//, '');
+}
+
+/*
+ * Map a MapLibre resourceType to a custom-protocol scheme name.
+ * Returns null if the resource should NOT be rewritten (e.g. non-https URL,
+ * pmtiles://, blob:, custom user URL).
+ */
+function pickBmScheme(url, resourceType) {
+    if (typeof url !== 'string' || url.indexOf('https://') !== 0) {
+        return null;
+    }
+    switch (resourceType) {
+        case 'Style':
+        case 'Source':
+        case 'SpriteJSON':
+            return 'bmstyle';
+        case 'Tile':
+            return 'bmtile';
+        case 'SpriteImage':
+            return 'bmsprite';
+        case 'Glyphs':
+            return 'bmglyphs';
+        default:
+            return null;
+    }
 }
 
 export class MapBuilder {
@@ -67,12 +194,41 @@ export class MapBuilder {
         this._lastLayerOpts = {};
         this._detachDrilldown = null;
         this._crossPanel = null;
+        this._debugHud = null;
 
         this._mapDiv = document.createElement('div');
         this._mapDiv.className = 'better_map-map';
         this._mapDiv.style.position = 'absolute';
         this._mapDiv.style.inset = '0';
         container.appendChild(this._mapDiv);
+
+        // v1.5.1 — auto-orbit state. The orbit runs as a single shared
+        // RAF that bumps the map bearing by (speedDegPerSec * dt) each
+        // frame. User interactions pause it; the orbit resumes
+        // ORBIT_RESUME_DELAY_MS after the last interaction. State is
+        // intentionally per-MapBuilder (not global) so two maps in a
+        // dual-panel dashboard can orbit independently.
+        this._orbit = {
+            enabled: false,
+            speedDegPerSec: 0,
+            rafId: null,
+            lastFrameMs: 0,
+            pausedUntilMs: 0,
+            handlers: null
+        };
+
+        // v1.5.2 — Dashboard-author defaults registry (BM-CT-1).
+        // Captured on first init() so the master "Reset all" / per-
+        // action reset can snap back to what the dashboard author
+        // configured. Stored as a plain object so callers can read
+        // individual keys (`getDashboardDefaults().cameraPitch`) or
+        // mass-restore via Object.assign.
+        this._dashboardDefaults = null;
+        // v1.5.2 — Registered runtime overrides. Each entry is an
+        // imperative pair { setEnabled(bool), reset(), isEnabled() }
+        // contributed by a layer/animation module via `registerFancyAction`.
+        // The control panel iterates this map to build its rows.
+        this._fancyActions = new Map();
     }
 
     /**
@@ -105,6 +261,7 @@ export class MapBuilder {
         }
 
         ensurePMTilesProtocol();
+        ensureBMStyleProtocol();
 
         let resolved;
         try {
@@ -121,6 +278,29 @@ export class MapBuilder {
 
         this._provider = resolved.provider;
         this._currentStyleKey = makeStyleKey(opts, this._provider.id);
+
+        // v1.5.2 — capture the dashboard-author defaults the FIRST time
+        // we initialise. Subsequent applyStyle() calls do NOT overwrite
+        // them, so per-action reset always snaps back to what the
+        // dashboard author chose, not whatever the user most recently
+        // overrode (which would be a no-op reset).
+        if (this._dashboardDefaults === null) {
+            this._dashboardDefaults = {
+                provider: opts.provider || DEFAULT_PROVIDER,
+                theme: opts.theme || 'dark',
+                center: validCenter(opts.center) || [0, 20],
+                zoom: typeof opts.zoom === 'number' ? opts.zoom : 1.4,
+                pitch: typeof opts.pitch === 'number' ? opts.pitch : 0,
+                bearing: typeof opts.bearing === 'number' ? opts.bearing : 0,
+                allowPitch: opts.allowPitch !== false,
+                allowRotate: opts.allowRotate !== false,
+                labelLanguage: opts.labelLanguage || null
+            };
+        }
+
+        if (this._debugHud && this._debugHud.recordStyle) {
+            this._debugHud.recordStyle(resolved.style);
+        }
 
         try {
             this._map = new maplibregl.Map({
@@ -143,7 +323,33 @@ export class MapBuilder {
                 preserveDrawingBuffer: opts.preserveDrawingBuffer !== false,
                 // Limit max parallel tile fetches so we stay friendly to
                 // OpenFreeMap and other free tile services.
-                maxParallelImageRequests: 8
+                maxParallelImageRequests: 8,
+                /*
+                 * MapLibre's default `Request` shape (Accept header, signal,
+                 * referrer combo) triggers a 404 from several CDNs when run
+                 * inside Splunk Dashboard Studio's iframe context — even when
+                 * the same URL returns 200 to a vanilla `fetch(url)` call.
+                 * Reproducible against tiles.openfreemap.org for
+                 * Style/Source/SpriteJSON/SpriteImage/Tile/Glyphs.
+                 *
+                 * Workaround: route every relevant resourceType through a
+                 * `bm*://` custom protocol that uses our own controlled
+                 * `fetch()` shape (cache, credentials, no extra headers).
+                 * Metadata gets cache:'no-store' so a poisoned 404 in the
+                 * browser cache never sticks. Tiles/sprites/glyphs get
+                 * cache:'default' so the browser cache works normally.
+                 */
+                transformRequest: function (url, resourceType) {
+                    if (typeof window !== 'undefined') {
+                        window.__bm_xform_count = (window.__bm_xform_count || 0) + 1;
+                        window.__bm_xform_last = (resourceType || '?') + ':' + url.replace(/^https?:\/\//, '').slice(0, 38);
+                    }
+                    const scheme = pickBmScheme(url, resourceType);
+                    if (scheme) {
+                        return { url: encodeBmUrl(scheme, url), credentials: 'omit' };
+                    }
+                    return { url: url, credentials: 'omit' };
+                }
             });
         } catch (err) {
             renderErrorBanner(
@@ -248,7 +454,13 @@ export class MapBuilder {
             if (!self._map || self._destroyed) {
                 return;
             }
-            self._layerState = reconcile(self._map, analysis, self._lastLayerOpts, self._layerState);
+            self._layerState = reconcile(
+                self._map,
+                analysis,
+                self._lastLayerOpts,
+                self._layerState,
+                self._debugHud
+            );
         });
     }
 
@@ -368,6 +580,295 @@ export class MapBuilder {
         }
     }
 
+    /**
+     * v1.5.1 — Continuous slow rotation of the map bearing. Speed in
+     * degrees-per-second; positive values rotate clockwise. A value of
+     * ~3 deg/sec completes a full orbit in 2 minutes, which feels alive
+     * without being distracting. User interactions (drag / wheel /
+     * touch) pause the orbit for ORBIT_RESUME_DELAY_MS so users can
+     * inspect a feature without fighting the camera.
+     *
+     * Pass speedDegPerSec === 0 (or omit) to disable. Idempotent: safe
+     * to call repeatedly; only the most-recent speed is honoured.
+     */
+    setAutoOrbit(speedDegPerSec) {
+        if (!this._map || this._destroyed) return;
+        const speed = Number(speedDegPerSec);
+        const orbit = this._orbit;
+
+        // Disable case: stop RAF, detach listeners, restore bearing
+        // control to the user.
+        if (!isFinite(speed) || speed === 0) {
+            this._stopAutoOrbit();
+            return;
+        }
+
+        // Reduced motion: leave bearing where the user put it. Honour
+        // the requested speed semantics (i.e. record it) but do not
+        // start the RAF so the camera stays put.
+        if (prefersReducedMotion()) {
+            orbit.speedDegPerSec = speed;
+            return;
+        }
+
+        orbit.speedDegPerSec = speed;
+        if (orbit.enabled) {
+            return; // already running; new speed takes effect next frame
+        }
+        orbit.enabled = true;
+        orbit.lastFrameMs = nowMs();
+        orbit.pausedUntilMs = 0;
+        this._attachOrbitPauseHandlers();
+        this._tickOrbit();
+    }
+
+    /**
+     * v1.5.2 — BM-CT-1 introspection: is the auto-orbit RAF currently
+     * registered as enabled? Used by the control panel's `isEnabled()`
+     * hook for the "Camera auto-orbit" row. Returns false BOTH when
+     * orbit is fully off AND when it's currently paused for user
+     * interaction (since visually nothing is moving in that state).
+     */
+    isAutoOrbiting() {
+        const orbit = this._orbit;
+        if (!orbit || !orbit.enabled) return false;
+        // Honour the brief post-interaction pause window — visually
+        // identical to "off" from the user's perspective.
+        return orbit.pausedUntilMs <= nowMs();
+    }
+
+    // -------------------------------------------------------------------
+    // v1.5.2 — Control Trio APIs (BM-CT-1 contract).
+    //
+    // These methods are the master controls invoked by controlPanel.js
+    // and viewLock.js. They MUST be idempotent and safe to call against
+    // a partially-initialised map (e.g. during the lazyInit visibility
+    // wait, before this._map exists).
+
+    /**
+     * Capture additional defaults beyond what init() recorded. Called
+     * from visualization_source.js with the FULL set of dashboard-author
+     * options so per-action reset can find their initial state.
+     */
+    setDashboardDefaults(extra) {
+        if (!extra || typeof extra !== 'object') return;
+        if (this._dashboardDefaults === null) {
+            this._dashboardDefaults = {};
+        }
+        // Shallow-merge — the camera defaults set in init() take
+        // precedence over anything set here.
+        const merged = Object.assign({}, extra, this._dashboardDefaults);
+        // ...except that fields ONLY supplied via setDashboardDefaults
+        // (not init) should be present. Re-overlay the extras for those.
+        Object.keys(extra).forEach(function (k) {
+            if (merged[k] === undefined || merged[k] === null) {
+                merged[k] = extra[k];
+            }
+        });
+        this._dashboardDefaults = merged;
+    }
+
+    /**
+     * Read the captured defaults registry. Returns a shallow copy so
+     * callers can't accidentally mutate the source of truth.
+     */
+    getDashboardDefaults() {
+        return Object.assign({}, this._dashboardDefaults || {});
+    }
+
+    /**
+     * Register a fancy action with the master reset / control panel.
+     * Modules call this once on mount; controlPanel.js iterates the
+     * registry to build its rows.
+     *
+     * @param {string} id          stable identifier ("paths.comet")
+     * @param {object} spec
+     * @param {string} spec.label  human label shown in the control panel
+     * @param {Function} spec.isEnabled    () => boolean
+     * @param {Function} spec.setEnabled   (boolean) => void
+     * @param {Function} spec.reset        () => void
+     * @param {string} [spec.icon]         single-char glyph for the row
+     */
+    registerFancyAction(id, spec) {
+        if (!id || !spec) return;
+        const entry = {
+            id: id,
+            label: spec.label || id,
+            icon: spec.icon || '\u25CB',
+            isEnabled: typeof spec.isEnabled === 'function' ? spec.isEnabled : function () { return false; },
+            setEnabled: typeof spec.setEnabled === 'function' ? spec.setEnabled : function () {},
+            reset: typeof spec.reset === 'function' ? spec.reset : function () {}
+        };
+        this._fancyActions.set(id, entry);
+        return entry;
+    }
+
+    /**
+     * Read the registered fancy actions. Used by controlPanel.js to
+     * render rows.
+     */
+    getFancyActions() {
+        const out = [];
+        this._fancyActions.forEach(function (entry) {
+            out.push(entry);
+        });
+        return out;
+    }
+
+    /**
+     * Unregister a fancy action (e.g. when its host layer is unmounted
+     * because the SPL changed). Safe no-op if not registered.
+     */
+    unregisterFancyAction(id) {
+        if (this._fancyActions && id) {
+            this._fancyActions.delete(id);
+        }
+    }
+
+    /**
+     * Master "Pause all motion" toggle. Independent of OS-level
+     * prefers-reduced-motion. Routed through motion.js so every RAF
+     * loop in the bundle sees it via shouldSuppressMotion().
+     */
+    setMotionPaused(paused) {
+        motionSetPaused(paused);
+    }
+
+    isMotionPaused() {
+        return isMotionPaused();
+    }
+
+    /**
+     * Master "Reset all motion" — invoke .reset() on every registered
+     * fancy action. Does NOT touch the camera (call resetCamera() for
+     * that). Does NOT touch motion-paused state (call setMotionPaused
+     * for that).
+     */
+    resetAllMotion() {
+        this._fancyActions.forEach(function (entry) {
+            try { entry.reset(); } catch (_e) { /* swallow per-action failures */ }
+        });
+    }
+
+    /**
+     * Reset just the camera to its dashboard-author defaults.
+     * Animated so the user sees what happened.
+     */
+    resetCamera() {
+        if (!this._map || this._destroyed || !this._dashboardDefaults) {
+            return;
+        }
+        const d = this._dashboardDefaults;
+        try {
+            this._map.easeTo({
+                center: d.center || [0, 20],
+                zoom: typeof d.zoom === 'number' ? d.zoom : 1.4,
+                pitch: typeof d.pitch === 'number' ? d.pitch : 0,
+                bearing: typeof d.bearing === 'number' ? d.bearing : 0,
+                duration: 800
+            });
+        } catch (_e) {
+            // setStyle race — bail; the next applyAnalysis will catch up.
+        }
+    }
+
+    /**
+     * Master "Reset view" — the single-button user-facing reset.
+     *   1. Restore camera to dashboard defaults
+     *   2. Re-enable all dashboard-default animations
+     *   3. Clear master pause-motion flag (back to dashboard intent)
+     *
+     * Does NOT clear selections, drawings, lassos, or filters yet —
+     * those subsystems are Wave-1 roadmap. When they ship they MUST
+     * register a reset hook here.
+     */
+    resetView() {
+        this.setMotionPaused(false);
+        this.resetAllMotion();
+        this.resetCamera();
+    }
+
+    _stopAutoOrbit() {
+        const orbit = this._orbit;
+        orbit.enabled = false;
+        orbit.speedDegPerSec = 0;
+        if (orbit.rafId !== null) {
+            cancelFrame(orbit.rafId);
+            orbit.rafId = null;
+        }
+        this._detachOrbitPauseHandlers();
+    }
+
+    _attachOrbitPauseHandlers() {
+        if (!this._map || this._orbit.handlers) return;
+        const orbit = this._orbit;
+        const ORBIT_RESUME_DELAY_MS = 5000;
+        const pause = function () {
+            orbit.pausedUntilMs = nowMs() + ORBIT_RESUME_DELAY_MS;
+        };
+        const events = ['mousedown', 'touchstart', 'wheel', 'dragstart'];
+        // Listen on the map canvas — user gestures land there before
+        // MapLibre's own handlers see them.
+        const canvas = this._map.getCanvasContainer
+            ? this._map.getCanvasContainer()
+            : this._map.getContainer();
+        events.forEach(function (evt) {
+            canvas.addEventListener(evt, pause, { passive: true });
+        });
+        // Also listen for MapLibre's own movestart so programmatic
+        // moves (e.g. fitTo on filter change) don't fight the orbit.
+        this._map.on('movestart', function (e) {
+            // originalEvent is set only for user-driven moves; ignore
+            // moves triggered by our own RAF or by easeTo() helpers
+            // because pausing on those would create a feedback loop.
+            if (e && e.originalEvent) pause();
+        });
+        orbit.handlers = { canvas: canvas, pause: pause, events: events };
+    }
+
+    _detachOrbitPauseHandlers() {
+        const orbit = this._orbit;
+        if (!orbit.handlers) return;
+        const h = orbit.handlers;
+        h.events.forEach(function (evt) {
+            h.canvas.removeEventListener(evt, h.pause);
+        });
+        orbit.handlers = null;
+    }
+
+    _tickOrbit() {
+        const orbit = this._orbit;
+        const self = this;
+        if (!orbit.enabled || !this._map || this._destroyed) {
+            return;
+        }
+        // v1.5.2 — honour the master "Pause all motion" toggle (in
+        // addition to OS-level prefers-reduced-motion which we already
+        // checked in setAutoOrbit). We re-check every frame because
+        // the user can flip the master pause at any time without
+        // tearing down the orbit RAF.
+        const suppress = shouldSuppressMotion();
+        const now = nowMs();
+        const dt = orbit.lastFrameMs ? (now - orbit.lastFrameMs) / 1000 : 0;
+        orbit.lastFrameMs = now;
+        if (!suppress && now >= orbit.pausedUntilMs && dt > 0 && dt < 0.5) {
+            // dt < 0.5 guards against multi-second tab-resume jumps —
+            // we don't want one resume to spin the map by 90°.
+            try {
+                const bearing = this._map.getBearing();
+                this._map.setBearing(bearing + orbit.speedDegPerSec * dt);
+            } catch (_e) {
+                // setBearing during a style swap can throw; bail this
+                // frame and let the next frame catch up.
+            }
+        }
+        orbit.rafId = scheduleFrame(function () { self._tickOrbit(); }, 33);
+    }
+
+    setDebugHud(hud) {
+        this._debugHud = hud || null;
+    }
+
     get map() {
         return this._map;
     }
@@ -379,6 +880,17 @@ export class MapBuilder {
     destroy() {
         this._destroyed = true;
         this._afterStyleQueue.length = 0;
+        // v1.5.2 — clear the fancy-action registry so torn-down layer
+        // modules' reset() callbacks (which capture closures over the
+        // dying map) can't be invoked by a stale controlPanel that
+        // outlives this MapBuilder.
+        if (this._fancyActions) {
+            this._fancyActions.clear();
+        }
+        // v1.5.1 — explicitly stop auto-orbit so the RAF doesn't keep
+        // dispatching against a torn-down map (silent setBearing
+        // exceptions land in the catch{} but still consume frames).
+        try { this._stopAutoOrbit(); } catch (_err) { /* swallow */ }
         if (this._detachDrilldown) {
             try { this._detachDrilldown(); } catch (_err) { /* swallow */ }
             this._detachDrilldown = null;

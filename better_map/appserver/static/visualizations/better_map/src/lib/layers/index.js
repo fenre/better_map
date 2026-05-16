@@ -52,7 +52,7 @@ const ORDER = [
     'markers'
 ];
 
-export function reconcile(map, analysis, options, state) {
+export function reconcile(map, analysis, options, state, hud) {
     if (!map || !analysis) {
         return state || {};
     }
@@ -62,19 +62,96 @@ export function reconcile(map, analysis, options, state) {
     // Decide which strategies are active for this cycle.
     const active = decideActive(analysis, opts);
 
+    // Trace one entry per active strategy so debugHud can render a
+    // RECONCILE line. We capture: did we mount this cycle, the FC length
+    // we passed to update(), and the immediate post-setData feature count
+    // from querySourceFeatures(). The last value is the smoking gun for
+    // setData()-not-reaching-the-source bugs (Symptom H, src=0 case).
+    const trace = [];
+
     // Mount or update active layers in the configured render order.
     ORDER.forEach(function (id) {
         if (!active[id]) return;
         const strategy = ALL[id];
         const fc = active[id].fc;
         const layerOpts = active[id].opts;
-        if (!next[id]) {
-            strategy.mount(map, layerOpts);
-            next[id] = true;
+        const fcLen = (fc && fc.features && fc.features.length) || 0;
+        let mountedThisCycle = false;
+        let err = null;
+        try {
+            if (!next[id]) {
+                // v1.3.24: prefer mountAndUpdate if the strategy exposes
+                // it, so the GeoJSON source is created with the real FC
+                // attached on the very first call. The empty-mount-then-
+                // setData chain leaves Splunk Dashboard Studio's MapLibre
+                // worker stuck in a perpetual loading state for reasons
+                // we are still investigating (see SETDATA HUD line).
+                if (typeof strategy.mountAndUpdate === 'function') {
+                    strategy.mountAndUpdate(map, fc, layerOpts);
+                } else {
+                    strategy.mount(map, layerOpts);
+                    strategy.update(map, fc, layerOpts);
+                }
+                next[id] = true;
+                mountedThisCycle = true;
+            } else {
+                // Subsequent cycles always go through update.
+                strategy.update(map, fc, layerOpts);
+            }
+        } catch (e) {
+            err = (e && e.message) || String(e);
         }
-        // All strategies accept (map, fc, opts); most ignore opts but
-        // hexbin and choropleth use it to re-aggregate / re-ramp.
-        strategy.update(map, fc, layerOpts);
+        let srcCountAfter = -1;
+        const srcId = strategy && strategy.SOURCE_ID;
+        if (srcId) {
+            try {
+                const feats = map.querySourceFeatures(srcId);
+                srcCountAfter = (feats && feats.length) || 0;
+            } catch (_e) {
+                srcCountAfter = -2; // -2 = querySourceFeatures threw
+            }
+        }
+        trace.push({
+            id: id,
+            mounted: mountedThisCycle,
+            fcLen: fcLen,
+            srcCountAfter: srcCountAfter,
+            err: err
+        });
+
+        // v1.3.24: emit a richer single-source probe for the paths
+        // strategy specifically. This is the smoking-gun line for
+        // "setData was called but the worker never tiled the data" —
+        // captures isSourceLoaded, the first feature's geometry shape,
+        // and the property keys we hand to the worker (in case some
+        // value isn't structured-cloneable).
+        if (id === 'paths' && hud && typeof hud.recordSourceProbe === 'function') {
+            const probe = { srcId: srcId || '?', fcLen: fcLen, err: err };
+            try {
+                if (typeof map.isSourceLoaded === 'function') {
+                    probe.isLoaded = !!map.isSourceLoaded(srcId);
+                }
+            } catch (_e) { /* swallow */ }
+            const f0 = fc && fc.features && fc.features[0];
+            if (f0) {
+                probe.feat0Type = (f0.geometry && f0.geometry.type) || '?';
+                const c0 = f0.geometry && f0.geometry.coordinates && f0.geometry.coordinates[0];
+                if (Array.isArray(c0) && c0.length >= 2) {
+                    probe.feat0Coord0 = [
+                        Number(c0[0].toFixed ? c0[0].toFixed(2) : c0[0]),
+                        Number(c0[1].toFixed ? c0[1].toFixed(2) : c0[1])
+                    ];
+                } else if (typeof c0 === 'number') {
+                    // Point geometry — coordinates is [lng, lat] not [[..]]
+                    probe.feat0Coord0 = [c0, f0.geometry.coordinates[1]];
+                }
+                probe.propKeys = f0.properties ? Object.keys(f0.properties) : [];
+            }
+            // Stash the FC so the user can poke at it from devtools:
+            //   JSON.stringify(window.__bm_last_paths_fc, null, 2)
+            try { window.__bm_last_paths_fc = fc; } catch (_e) { /* swallow */ }
+            hud.recordSourceProbe(probe);
+        }
     });
 
     // Unmount strategies that were active last cycle but not this cycle.
@@ -84,6 +161,10 @@ export function reconcile(map, analysis, options, state) {
             delete next[id];
         }
     });
+
+    if (hud && typeof hud.recordReconcile === 'function') {
+        try { hud.recordReconcile(trace); } catch (_e) { /* swallow */ }
+    }
 
     return next;
 }

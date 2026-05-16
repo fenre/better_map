@@ -470,3 +470,429 @@
 .better_map-viz.is-theme-light .better_map-error {
     background: rgba(28, 38, 56, 0.92);
 }
+
+/* ----------------------------------------------------------------------- */
+/* v1.5.0 — vignette overlay.                                              */
+/*                                                                         */
+/* Radial-gradient pseudo-element layered over the map. Darkens the edges  */
+/* by ~20% so the user's eye is naturally drawn to the center of the      */
+/* viewport. Pointer-events: none so it doesn't intercept map clicks.     */
+/* z-index: 4 sits below the floating widget UI (z-index: 5+) but above   */
+/* the MapLibre canvas. This is the cinematic finish that lifts the       */
+/* whole panel from "Splunk dashboard" to "showroom map".                 */
+/*                                                                         */
+/* The vignette is suppressed on the light theme — Carto Voyager already  */
+/* uses pale colours that get washed out by darker corners.               */
+
+.better_map-viz.better_map-vignette::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    pointer-events: none;
+    background: radial-gradient(
+        ellipse at center,
+        rgba(0, 0, 0, 0) 55%,
+        rgba(0, 0, 0, 0.18) 85%,
+        rgba(0, 0, 0, 0.32) 100%
+    );
+}
+
+.better_map-viz.better_map-vignette.is-theme-light::after {
+    background: radial-gradient(
+        ellipse at center,
+        rgba(0, 0, 0, 0) 65%,
+        rgba(0, 0, 0, 0.06) 90%,
+        rgba(0, 0, 0, 0.10) 100%
+    );
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .better_map-viz.better_map-vignette::after {
+        background: transparent;
+    }
+}
+
+/* =============================================================
+ * v1.5.2 — Control Panel (BM-CT-1 contract)
+ *
+ * Collapsible top-right widget exposing the on-map runtime toggle
+ * + reset for every fancy action registered with MapBuilder, plus
+ * the master "Pause all motion" and "Reset view" controls.
+ *
+ * Visual language matches better_map-view-controls (the existing
+ * camera reset / lock widget) for a coherent toolbar aesthetic.
+ * The launcher sits in the top-right; when expanded the body
+ * displaces it (same coords) so the widget doesn't grow beyond
+ * the click target the user just hit.
+ * ============================================================= */
+
+.better_map-viz .better_map-control-panel {
+    position: absolute;
+    top: 12px;
+    right: 116px; /* leave 100px clearance for view-controls + scrubber */
+    z-index: 6;   /* above view-controls (5) so the expanded body wins */
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #e3edf7;
+}
+
+.better_map-viz .better_map-control-panel__launcher {
+    appearance: none;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(11, 26, 45, 0.82);
+    color: #e3edf7;
+    font-size: 16px;
+    line-height: 1;
+    padding: 6px 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.better_map-viz .better_map-control-panel__launcher:hover {
+    background: rgba(11, 26, 45, 0.95);
+    border-color: rgba(255, 255, 255, 0.32);
+}
+
+.better_map-viz .better_map-control-panel__launcher:focus-visible {
+    outline: 2px solid #4cd9c4;
+    outline-offset: 2px;
+}
+
+.better_map-viz .better_map-control-panel__body {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 256px;
+    background: rgba(11, 26, 45, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    padding: 4px;
+}
+
+.better_map-viz .better_map-control-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.better_map-viz .better_map-control-panel__title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #b9c8d8;
+}
+
+.better_map-viz .better_map-control-panel__close {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: #e3edf7;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0 6px;
+    border-radius: 4px;
+    line-height: 1;
+}
+
+.better_map-viz .better_map-control-panel__close:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.better_map-viz .better_map-control-panel__close:focus-visible {
+    outline: 2px solid #4cd9c4;
+    outline-offset: 2px;
+}
+
+.better_map-viz .better_map-control-panel__row {
+    display: grid;
+    grid-template-columns: 18px 1fr auto auto;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    font-size: 12px;
+    border-radius: 4px;
+}
+
+.better_map-viz .better_map-control-panel__row:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.better_map-viz .better_map-control-panel__row-icon {
+    font-size: 13px;
+    text-align: center;
+    color: #b9c8d8;
+}
+
+.better_map-viz .better_map-control-panel__row-label {
+    cursor: pointer;
+    user-select: none;
+    color: #e3edf7;
+}
+
+.better_map-viz .better_map-control-panel__toggle {
+    cursor: pointer;
+    /* Default checkbox look is fine; preserve native a11y rather than
+     * style a custom toggle that would need its own focus / ARIA story. */
+    accent-color: #4cd9c4;
+}
+
+.better_map-viz .better_map-control-panel__reset {
+    appearance: none;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.06);
+    color: #e3edf7;
+    font-size: 13px;
+    line-height: 1;
+    padding: 3px 7px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.better_map-viz .better_map-control-panel__reset:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.32);
+}
+
+.better_map-viz .better_map-control-panel__reset:focus-visible {
+    outline: 2px solid #4cd9c4;
+    outline-offset: 2px;
+}
+
+.better_map-viz .better_map-control-panel__footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 4px 0;
+    margin-top: 4px;
+}
+
+.better_map-viz .better_map-control-panel__master-reset {
+    appearance: none;
+    width: calc(100% - 16px);
+    margin: 4px 8px;
+    border: 1px solid rgba(76, 217, 196, 0.45);
+    background: rgba(76, 217, 196, 0.12);
+    color: #4cd9c4;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.better_map-viz .better_map-control-panel__master-reset:hover {
+    background: rgba(76, 217, 196, 0.22);
+    border-color: #4cd9c4;
+}
+
+.better_map-viz .better_map-control-panel__master-reset:focus-visible {
+    outline: 2px solid #4cd9c4;
+    outline-offset: 2px;
+}
+
+.better_map-viz .better_map-control-panel__empty {
+    margin: 12px 8px;
+    font-size: 11px;
+    color: #b9c8d8;
+    font-style: italic;
+    text-align: center;
+}
+
+/* Light theme variants */
+.better_map-viz.is-theme-light .better_map-control-panel__launcher,
+.better_map-viz.is-theme-light .better_map-control-panel__body {
+    background: rgba(247, 250, 253, 0.95);
+    border-color: rgba(15, 35, 60, 0.18);
+    color: #0b1a2d;
+}
+
+.better_map-viz.is-theme-light .better_map-control-panel__launcher:hover {
+    background: rgba(232, 240, 247, 0.98);
+    border-color: rgba(15, 35, 60, 0.32);
+}
+
+.better_map-viz.is-theme-light .better_map-control-panel__title,
+.better_map-viz.is-theme-light .better_map-control-panel__row-icon,
+.better_map-viz.is-theme-light .better_map-control-panel__empty {
+    color: #486485;
+}
+
+.better_map-viz.is-theme-light .better_map-control-panel__row-label,
+.better_map-viz.is-theme-light .better_map-control-panel__launcher,
+.better_map-viz.is-theme-light .better_map-control-panel__close,
+.better_map-viz.is-theme-light .better_map-control-panel__reset {
+    color: #0b1a2d;
+}
+
+.better_map-viz.is-theme-light .better_map-control-panel__reset {
+    background: rgba(15, 35, 60, 0.06);
+    border-color: rgba(15, 35, 60, 0.18);
+}
+
+.better_map-viz.is-theme-light .better_map-control-panel__reset:hover {
+    background: rgba(15, 35, 60, 0.12);
+    border-color: rgba(15, 35, 60, 0.32);
+}
+
+.better_map-viz.is-theme-light .better_map-control-panel__row:hover {
+    background: rgba(15, 35, 60, 0.05);
+}
+
+.better_map-viz.is-theme-light .better_map-control-panel__header,
+.better_map-viz.is-theme-light .better_map-control-panel__footer {
+    border-color: rgba(15, 35, 60, 0.1);
+}
+
+/* High-contrast variants */
+.better_map-viz.is-high-contrast .better_map-control-panel__launcher,
+.better_map-viz.is-high-contrast .better_map-control-panel__body {
+    background: #000;
+    border: 2px solid #fff;
+    color: #fff;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.better_map-viz.is-high-contrast .better_map-control-panel__title,
+.better_map-viz.is-high-contrast .better_map-control-panel__row-icon,
+.better_map-viz.is-high-contrast .better_map-control-panel__row-label,
+.better_map-viz.is-high-contrast .better_map-control-panel__close,
+.better_map-viz.is-high-contrast .better_map-control-panel__reset,
+.better_map-viz.is-high-contrast .better_map-control-panel__master-reset,
+.better_map-viz.is-high-contrast .better_map-control-panel__empty {
+    color: #fff;
+}
+
+.better_map-viz.is-high-contrast .better_map-control-panel__reset,
+.better_map-viz.is-high-contrast .better_map-control-panel__master-reset {
+    background: transparent;
+    border-color: #fff;
+}
+
+.better_map-viz.is-high-contrast .better_map-control-panel__row:hover,
+.better_map-viz.is-high-contrast .better_map-control-panel__reset:hover,
+.better_map-viz.is-high-contrast .better_map-control-panel__master-reset:hover {
+    background: #fff;
+    color: #000;
+}
+
+/* =============================================================
+ * v1.5.2 — Layer Control "Show all" footer (BM-CT-1 contract)
+ * ============================================================= */
+
+.better_map-viz .better_map-layer-control__footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 6px 0 2px 0;
+    margin-top: 4px;
+    text-align: center;
+}
+
+.better_map-viz .better_map-layer-control__show-all {
+    appearance: none;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.06);
+    color: #e3edf7;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.better_map-viz .better_map-layer-control__show-all:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.32);
+}
+
+.better_map-viz .better_map-layer-control__show-all:focus-visible {
+    outline: 2px solid #4cd9c4;
+    outline-offset: 2px;
+}
+
+.better_map-viz.is-theme-light .better_map-layer-control__footer {
+    border-color: rgba(15, 35, 60, 0.1);
+}
+
+.better_map-viz.is-theme-light .better_map-layer-control__show-all {
+    background: rgba(15, 35, 60, 0.06);
+    border-color: rgba(15, 35, 60, 0.18);
+    color: #0b1a2d;
+}
+
+.better_map-viz.is-theme-light .better_map-layer-control__show-all:hover {
+    background: rgba(15, 35, 60, 0.12);
+    border-color: rgba(15, 35, 60, 0.32);
+}
+
+.better_map-viz.is-high-contrast .better_map-layer-control__show-all {
+    background: transparent;
+    border-color: #fff;
+    color: #fff;
+}
+
+.better_map-viz.is-high-contrast .better_map-layer-control__show-all:hover {
+    background: #fff;
+    color: #000;
+}
+
+/* =============================================================
+ * v1.5.2 — Time scrubber Reset buttons (BM-CT-1 contract)
+ * ============================================================= */
+
+.better_map-viz .better_map-scrubber__reset {
+    appearance: none;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.06);
+    color: #e3edf7;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 11px;
+    padding: 3px 7px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.12s ease, border-color 0.12s ease;
+    margin-left: 4px;
+}
+
+.better_map-viz .better_map-scrubber__reset:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.32);
+}
+
+.better_map-viz .better_map-scrubber__reset:focus-visible {
+    outline: 2px solid #4cd9c4;
+    outline-offset: 2px;
+}
+
+.better_map-viz.is-theme-light .better_map-scrubber__reset {
+    background: rgba(15, 35, 60, 0.06);
+    border-color: rgba(15, 35, 60, 0.18);
+    color: #0b1a2d;
+}
+
+.better_map-viz.is-theme-light .better_map-scrubber__reset:hover {
+    background: rgba(15, 35, 60, 0.12);
+    border-color: rgba(15, 35, 60, 0.32);
+}
+
+.better_map-viz.is-high-contrast .better_map-scrubber__reset {
+    background: transparent;
+    border-color: #fff;
+    color: #fff;
+}
+
+.better_map-viz.is-high-contrast .better_map-scrubber__reset:hover {
+    background: #fff;
+    color: #000;
+}
+

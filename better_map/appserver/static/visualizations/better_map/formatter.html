@@ -287,6 +287,32 @@
             <p class="splunk-formatter-help">Top-right floating widget driven by the <code>layer</code> SPL field.</p>
         </div>
 
+        <!--
+            v1.5.2 — BM-CT-1 Control Trio.
+
+            Every "fancy action" (animation, interactive overlay,
+            camera behaviour) MUST expose enable / disable / reset.
+            The on-map control panel is the user-facing surface for
+            these operations. See `.cursor/rules/bm-control-trio.mdc`.
+        -->
+        <h3 class="splunk-formatter-heading">Map controls (BM-CT-1)</h3>
+        <div class="splunk-formatter-row">
+            <label for="bm-showControlPanel">Show on-map control panel</label>
+            <select id="bm-showControlPanel" data-name="showControlPanel">
+                <option value="true" selected>Show</option>
+                <option value="false">Hide</option>
+            </select>
+            <p class="splunk-formatter-help">Floating "&#9881; Controls" widget. Lets the user enable, disable, and reset every fancy action (comets, marching dashes, marker heartbeat, breathing extrusion, camera auto-orbit), plus master "Pause all motion" and "Reset view" controls. Hide to lock the dashboard-author defaults.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-motionPaused">Pause all motion (initial state)</label>
+            <select id="bm-motionPaused" data-name="motionPaused">
+                <option value="false" selected>Play</option>
+                <option value="true">Paused</option>
+            </select>
+            <p class="splunk-formatter-help">Dashboard-author initial value for the master pause. The user can flip it at runtime via the control panel. OS-level <code>prefers-reduced-motion</code> is still honoured on top of this.</p>
+        </div>
+
         <h3 class="splunk-formatter-heading">Time scrubber</h3>
         <div class="splunk-formatter-row">
             <label for="bm-showTimeScrubber">Show time scrubber</label>
@@ -300,6 +326,247 @@
             <label for="bm-trailWindowMs">Comet trail window (ms)</label>
             <input id="bm-trailWindowMs" type="number" min="1000" step="1000" data-name="trailWindowMs" placeholder="300000" />
             <p class="splunk-formatter-help">How long a point stays visible after the scrubber passes it. Default is 5 minutes.</p>
+        </div>
+
+        <!--
+            v1.6 — Widgets, layers and Splunk integrations.
+
+            Every entry below is a BM-CT-1 fancy action that the user can
+            toggle at runtime via the on-map control panel. The formatter
+            value is just the DEFAULT state at dashboard load time. The
+            user can flip any of them while the dashboard is live; the
+            control panel "Reset view" action returns every entry to its
+            authored default.
+        -->
+        <h3 class="splunk-formatter-heading">v1.6 — Widgets</h3>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2Geocoder">Geocoder (search box)</label>
+            <select id="bm-v2Geocoder" data-name="v2Geocoder">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Free-text place lookup via Nominatim. Debounced; pan/zoom on select.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2CommandPalette">Command palette (&#8984;K)</label>
+            <select id="bm-v2CommandPalette" data-name="v2CommandPalette">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Quick-action menu — toggle layers, jump to bookmarks, run presets, export PNG.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2Minimap">Minimap overview</label>
+            <select id="bm-v2Minimap" data-name="v2Minimap">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Corner overview with viewport rectangle, synced to the main camera.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2DrawTools">Draw tools</label>
+            <select id="bm-v2DrawTools" data-name="v2DrawTools">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Polygon, rectangle, circle, line and point. Drawn GeoJSON is emitted as a dashboard token.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2Measure">Measure tool</label>
+            <select id="bm-v2Measure" data-name="v2Measure">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Click vertices to compute distance, area and bearing via turf.js. Copy-to-clipboard.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2Lasso">Lasso select</label>
+            <select id="bm-v2Lasso" data-name="v2Lasso">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Freehand-polygon multi-select. Right-click the selection for an action menu.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2Brushing">Brushing highlight</label>
+            <select id="bm-v2Brushing" data-name="v2Brushing">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Cursor-radius highlight; features outside the radius dim out.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2SideBySide">Side-by-side compare</label>
+            <select id="bm-v2SideBySide" data-name="v2SideBySide">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Vertical divider between two basemaps for visual comparison.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2SpatialQuery">Spatial query (SPL emit)</label>
+            <select id="bm-v2SpatialQuery" data-name="v2SpatialQuery">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Drawn shapes emit an SPL <code>where</code> geomatch template into <code>better_map.spatial_query</code> for downstream panels.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2TimeSplit">Time-window split view</label>
+            <select id="bm-v2TimeSplit" data-name="v2TimeSplit">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Same camera, two time windows (e.g. T-1h vs now) split by a vertical divider.</p>
+        </div>
+
+        <h3 class="splunk-formatter-heading">v1.6 — Layer modules</h3>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2WmsLayer">WMS raster layer</label>
+            <select id="bm-v2WmsLayer" data-name="v2WmsLayer">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Overlay arbitrary WMS GetMap services as a raster source.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2WmsUrl">WMS base URL</label>
+            <input id="bm-v2WmsUrl" type="text" data-name="v2WmsUrl" placeholder="https://wms.example.com/geoserver/wms" />
+            <p class="splunk-formatter-help">Only used when the WMS layer is enabled.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2WmsLayers">WMS layer names (comma-separated)</label>
+            <input id="bm-v2WmsLayers" type="text" data-name="v2WmsLayers" placeholder="topp:states,topp:roads" />
+            <p class="splunk-formatter-help">Comma-separated list of layer names in the WMS service.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2KmlLayer">KML import layer</label>
+            <select id="bm-v2KmlLayer" data-name="v2KmlLayer">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Renders KML uploads via togeojson into markers, paths and polygons.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2TripsLayer">Trip replay layer</label>
+            <select id="bm-v2TripsLayer" data-name="v2TripsLayer">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Multi-track replay with trailing fade, tied to the scrubber.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2GeofenceLayer">Geofence layer</label>
+            <select id="bm-v2GeofenceLayer" data-name="v2GeofenceLayer">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Drawn-or-loaded polygons with SPL alert templates for in/out events.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2WindLayer">Wind / flow particles</label>
+            <select id="bm-v2WindLayer" data-name="v2WindLayer">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Particle system over a u/v vector field input.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2ScenegraphLayer">Scenegraph (3D-style icons)</label>
+            <select id="bm-v2ScenegraphLayer" data-name="v2ScenegraphLayer">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Drone/truck/ship/aircraft canvas sprites with bearing-aware rotation.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2Mil2525Layer">MIL-STD-2525 symbology</label>
+            <select id="bm-v2Mil2525Layer" data-name="v2Mil2525Layer">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Tactical symbols rendered via milsymbol. Driven by the <code>symbol_code</code> field.</p>
+        </div>
+
+        <h3 class="splunk-formatter-heading">v1.6 — Splunk integrations</h3>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2Mitre">MITRE ATT&amp;CK overlay</label>
+            <select id="bm-v2Mitre" data-name="v2Mitre">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Enriches features with the technique name + tactics from the <code>attack_id</code> field.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2EsNotable">ES notable drilldown</label>
+            <select id="bm-v2EsNotable" data-name="v2EsNotable">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Click a feature to open it in Incident Review. Requires Enterprise Security.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2EsBaseUrl">ES base URL (optional)</label>
+            <input id="bm-v2EsBaseUrl" type="text" data-name="v2EsBaseUrl" placeholder="https://splunk.example.com:8000" />
+            <p class="splunk-formatter-help">Leave blank to use the current Splunk web origin.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2Itsi">ITSI service map mode</label>
+            <select id="bm-v2Itsi" data-name="v2Itsi">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Renders the ITSI service tree as geo-positioned nodes + edges. Requires ITSI.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2Soar">SOAR playbook trigger</label>
+            <select id="bm-v2Soar" data-name="v2Soar">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Right-click a selection to POST entities to <code>phantom_forward</code>. Requires Splunk SOAR.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2SoarUrl">SOAR phantom_forward URL</label>
+            <input id="bm-v2SoarUrl" type="text" data-name="v2SoarUrl" placeholder="https://soar.example.com/rest/playbook_run" />
+            <p class="splunk-formatter-help">Only used when the SOAR integration is enabled.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2Rba">RBA risk heatmap</label>
+            <select id="bm-v2Rba" data-name="v2Rba">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Aggregates accumulated risk scores per geographic bin. Requires the <code>risk</code> index.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2Purdue">OT Purdue / IEC 62443 overlay</label>
+            <select id="bm-v2Purdue" data-name="v2Purdue">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Colours markers by Purdue level (0–5) via the asset-register lookup.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2PurdueLookup">Purdue asset lookup name</label>
+            <input id="bm-v2PurdueLookup" type="text" data-name="v2PurdueLookup" placeholder="ot_asset_register" />
+            <p class="splunk-formatter-help">Splunk lookup containing <code>host,asset_id,purdue_level</code> columns.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2AiGeo">A&amp;I geo-resolution</label>
+            <select id="bm-v2AiGeo" data-name="v2AiGeo">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Resolves missing lat/lon for events by joining against <code>assets.csv</code> / <code>identities.csv</code>.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-v2AiAssistant">AI Assistant chat</label>
+            <select id="bm-v2AiAssistant" data-name="v2AiAssistant">
+                <option value="false" selected>Off</option>
+                <option value="true">On</option>
+            </select>
+            <p class="splunk-formatter-help">Sidebar chat panel that calls Splunk_AI_Assistant_Cloud's SPL generator. Feature-flagged.</p>
         </div>
     </section>
 

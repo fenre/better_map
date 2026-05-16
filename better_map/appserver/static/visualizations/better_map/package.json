@@ -1,6 +1,6 @@
 {
   "name": "better-map-viz",
-  "version": "1.0.0",
+  "version": "1.6.0",
   "private": true,
   "description": "Better Map - Splunk custom map visualization built on MapLibre GL JS",
   "license": "MIT",
@@ -11,10 +11,16 @@
     "format": "prettier --write \"src/**/*.{js,css,json}\""
   },
   "dependencies": {
+    "@tmcw/togeojson": "^7.1.2",
+    "@turf/turf": "^7.3.5",
+    "density-clustering": "^1.3.0",
     "dompurify": "^3.2.0",
     "h3-js": "^4.1.0",
     "maplibre-gl": "^4.7.0",
-    "pmtiles": "^3.2.0",
+    "marked": "^16.4.2",
+    "milsymbol": "^3.0.4",
+    "pmtiles": "^4.4.1",
+    "simple-statistics": "^7.8.9",
     "supercluster": "^8.0.1"
   },
   "devDependencies": {
