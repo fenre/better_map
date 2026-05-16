@@ -896,3 +896,1218 @@
     color: #000;
 }
 
+/* =============================================================
+ * v1.6 — Widget styles
+ *
+ * Every v1.6 widget (geocoder, command palette, minimap, draw
+ * tools, measure tool, lasso, brushing, side-by-side, time-split,
+ * spatial-query nudge, markdown popup) was shipped without CSS,
+ * which left them in `position: static` and consequently painted
+ * behind the absolutely-positioned `.better_map-map`. Result:
+ * the user could toggle them on via the control panel but nothing
+ * was visible and no click could reach them.
+ *
+ * This block makes every v1.6 widget a positioned overlay on top
+ * of the MapLibre canvas with deterministic z-index ordering and
+ * dark / light / high-contrast theming, so toggling them on via
+ * the control panel actually produces a clickable result.
+ *
+ * Z-index layering inside `.better_map-viz`:
+ *   3   - sbs / tsplit overlay roots (pointer-events: none)
+ *   4   - sbs / tsplit handles (pointer-events: auto)
+ *   5   - floating widget toolbars (geocoder, minimap, draw,
+ *         measure, view-controls, export-share, layer-control,
+ *         floor-switcher, scrubber)
+ *   6   - control panel launcher / body, popup-md
+ *   7   - perf-hud, spatial-query nudge, measure status panel
+ *   8   - markdown popup pinned (sits above floating widgets)
+ *   9   - command palette modal + lasso context menu
+ * ============================================================= */
+
+/* --------------------- Geocoder (top-center) --------------------- */
+.better_map-viz .better_map-geocoder {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    width: min(360px, calc(100% - 320px)); /* leave room for view-controls + control-panel */
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+    background: rgba(11, 26, 45, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    overflow: visible;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.better_map-viz .better_map-geocoder__input {
+    flex: 1 1 auto;
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: #e3edf7;
+    font-size: 12px;
+    line-height: 1.4;
+    padding: 6px 10px;
+    outline: none;
+    min-width: 0;
+}
+
+.better_map-viz .better_map-geocoder__input::placeholder {
+    color: rgba(227, 237, 247, 0.55);
+}
+
+.better_map-viz .better_map-geocoder__button {
+    appearance: none;
+    border: 0;
+    border-left: 1px solid rgba(255, 255, 255, 0.18);
+    background: transparent;
+    color: #e3edf7;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 12px;
+    cursor: pointer;
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+    transition: background 0.12s ease;
+}
+
+.better_map-viz .better_map-geocoder__button:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.better_map-viz .better_map-geocoder__results {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: 4px 0;
+    list-style: none;
+    background: rgba(11, 26, 45, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    max-height: 240px;
+    overflow-y: auto;
+    z-index: 6;
+}
+
+.better_map-viz .better_map-geocoder__result {
+    padding: 6px 10px;
+    color: #e3edf7;
+    font-size: 12px;
+    line-height: 1.35;
+    cursor: pointer;
+    border: none;
+}
+
+.better_map-viz .better_map-geocoder__result:hover,
+.better_map-viz .better_map-geocoder__result:focus {
+    background: rgba(255, 255, 255, 0.08);
+    outline: none;
+}
+
+.better_map-viz .better_map-geocoder__result[aria-disabled="true"] {
+    cursor: default;
+    color: rgba(227, 237, 247, 0.55);
+}
+
+/* ---------------------- Command palette (modal) -------------------- */
+.better_map-viz .better_map-cmdk {
+    position: absolute;
+    inset: 0;
+    z-index: 9;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.better_map-viz .better_map-cmdk__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(8, 14, 24, 0.55);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+.better_map-viz .better_map-cmdk__panel {
+    position: absolute;
+    top: 15%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(520px, calc(100% - 32px));
+    max-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    background: rgba(16, 24, 38, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55);
+    overflow: hidden;
+    color: #e3edf7;
+}
+
+.better_map-viz .better_map-cmdk__input {
+    appearance: none;
+    border: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    background: transparent;
+    color: #e3edf7;
+    font-size: 14px;
+    padding: 12px 14px;
+    outline: none;
+}
+
+.better_map-viz .better_map-cmdk__input::placeholder {
+    color: rgba(227, 237, 247, 0.5);
+}
+
+.better_map-viz .better_map-cmdk__list {
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+    overflow-y: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.better_map-viz .better_map-cmdk__item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 14px;
+    cursor: pointer;
+    color: #e3edf7;
+    font-size: 13px;
+}
+
+.better_map-viz .better_map-cmdk__item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.better_map-viz .better_map-cmdk__item--active {
+    background: rgba(76, 217, 196, 0.18);
+    color: #ffffff;
+}
+
+.better_map-viz .better_map-cmdk__item[aria-disabled="true"] {
+    cursor: default;
+    color: rgba(227, 237, 247, 0.55);
+}
+
+.better_map-viz .better_map-cmdk__item-label {
+    flex: 1 1 auto;
+}
+
+.better_map-viz .better_map-cmdk__item-hint {
+    color: rgba(227, 237, 247, 0.55);
+    font-size: 11px;
+    text-align: right;
+    white-space: nowrap;
+    flex: 0 0 auto;
+}
+
+.better_map-viz .better_map-cmdk__footer {
+    padding: 6px 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 11px;
+    color: rgba(227, 237, 247, 0.55);
+}
+
+/* ------------------- Minimap (bottom-right) ---------------------- */
+.better_map-viz .better_map-minimap {
+    position: absolute;
+    bottom: 80px; /* sit above floor-switcher (bottom: 36) when present */
+    right: 12px;
+    z-index: 5;
+    padding: 6px;
+    background: rgba(11, 26, 45, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #e3edf7;
+}
+
+.better_map-viz .better_map-minimap__label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #a3b1c6;
+    margin-bottom: 4px;
+}
+
+.better_map-viz .better_map-minimap__frame {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 4px;
+    background: #0b162a;
+}
+
+.better_map-viz .better_map-minimap__world {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px) 0 0 / 32px 32px,
+        linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px) 0 0 / 32px 32px,
+        radial-gradient(circle at 50% 50%, rgba(76, 217, 196, 0.18), rgba(11, 26, 45, 0.0) 70%);
+}
+
+.better_map-viz .better_map-minimap__viewport {
+    position: absolute;
+    box-sizing: border-box;
+    border: 1.5px solid #4cd9c4;
+    background: rgba(76, 217, 196, 0.12);
+    border-radius: 2px;
+    pointer-events: none;
+}
+
+/* ----------------------- Draw tools (top-left) -------------------- */
+.better_map-viz .better_map-draw {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 5;
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: rgba(11, 26, 45, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.better_map-viz .better_map-draw__btn {
+    appearance: none;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.06);
+    color: #e3edf7;
+    font-size: 13px;
+    line-height: 1;
+    padding: 5px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    min-width: 28px;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.better_map-viz .better_map-draw__btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.32);
+}
+
+.better_map-viz .better_map-draw__btn--active {
+    background: #4cd9c4;
+    color: #0b1a2d;
+    border-color: #4cd9c4;
+}
+
+/* ------------------- Measure tool (top-left below draw) ---------- */
+.better_map-viz .better_map-measure {
+    position: absolute;
+    top: 12px;
+    /* Stack to the right of draw tools — draw is ~ 6 buttons wide */
+    left: 232px;
+    z-index: 5;
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    background: rgba(11, 26, 45, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.better_map-viz .better_map-measure__btn {
+    appearance: none;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.06);
+    color: #e3edf7;
+    font-size: 13px;
+    line-height: 1;
+    padding: 5px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    min-width: 28px;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.better_map-viz .better_map-measure__btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.32);
+}
+
+.better_map-viz .better_map-measure__btn--active {
+    background: #FFB300;
+    color: #0b1a2d;
+    border-color: #FFB300;
+}
+
+.better_map-viz .better_map-measure__panel {
+    position: absolute;
+    top: 56px;
+    left: 232px;
+    z-index: 7;
+    max-width: 260px;
+    padding: 8px 10px;
+    background: rgba(11, 26, 45, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: #e3edf7;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size: 11px;
+    line-height: 1.45;
+    white-space: pre-line;
+    cursor: copy;
+}
+
+/* ---------------------- Side-by-side overlay --------------------- */
+/* Root is a transparent full-cover overlay; only the handle catches clicks. */
+.better_map-viz .better_map-sbs {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    background: linear-gradient(90deg,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0) 50%,
+        rgba(11, 26, 45, 0.18) 50%,
+        rgba(11, 26, 45, 0.18) 100%);
+    --bm-sbs-x: 50%;
+}
+
+.better_map-viz .better_map-sbs__handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--bm-sbs-x, 50%);
+    width: 2px;
+    background: rgba(76, 217, 196, 0.85);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+    transform: translateX(-50%);
+    cursor: ew-resize;
+    pointer-events: auto;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.better_map-viz .better_map-sbs__bar {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgba(76, 217, 196, 0.85);
+}
+
+.better_map-viz .better_map-sbs__grip {
+    position: relative;
+    z-index: 1;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #4cd9c4;
+    color: #0b1a2d;
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 24px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+    user-select: none;
+}
+
+.better_map-viz .better_map-sbs__handle:focus-visible {
+    outline: 2px solid #4cd9c4;
+    outline-offset: 2px;
+}
+
+/* --------------------- Time-split overlay ------------------------ */
+.better_map-viz .better_map-tsplit {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 0;
+    z-index: 3;
+    pointer-events: none;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.better_map-viz .better_map-tsplit__handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 2px;
+    background: rgba(255, 179, 0, 0.85);
+    transform: translateX(-50%);
+    cursor: ew-resize;
+    pointer-events: auto;
+    z-index: 4;
+}
+
+.better_map-viz .better_map-tsplit__handle::before {
+    content: "⏱";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    border-radius: 50%;
+    background: #FFB300;
+    color: #0b1a2d;
+    font-size: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+
+.better_map-viz .better_map-tsplit__label {
+    position: absolute;
+    top: 8px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(11, 26, 45, 0.82);
+    color: #e3edf7;
+    font-size: 11px;
+    line-height: 1.3;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    pointer-events: none;
+    white-space: nowrap;
+    z-index: 5;
+}
+
+.better_map-viz .better_map-tsplit__label--left {
+    right: 8px;
+    transform: translateX(0);
+}
+
+.better_map-viz .better_map-tsplit__label--right {
+    left: 8px;
+    transform: translateX(0);
+}
+
+/* --------------------- Spatial-query nudge ----------------------- */
+.better_map-viz .better_map-spatial-query__nudge {
+    position: absolute;
+    bottom: 56px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 7;
+    padding: 6px 12px;
+    background: rgba(11, 26, 45, 0.94);
+    border: 1px solid rgba(76, 217, 196, 0.55);
+    color: #4cd9c4;
+    border-radius: 999px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 11px;
+    line-height: 1.3;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    pointer-events: none;
+    /* JS removes the node after a timeout; CSS fade is a nicety. */
+    animation: bm-nudge-fade 2.4s ease-out both;
+}
+
+@keyframes bm-nudge-fade {
+    0%   { opacity: 0; transform: translate(-50%, 6px); }
+    10%  { opacity: 1; transform: translate(-50%, 0); }
+    80%  { opacity: 1; transform: translate(-50%, 0); }
+    100% { opacity: 0; transform: translate(-50%, -4px); }
+}
+
+/* ----------------------- Brushing ring --------------------------- */
+.better_map-viz .better_map-brush-ring {
+    position: absolute;
+    z-index: 4;
+    border: 2px solid rgba(76, 217, 196, 0.85);
+    background: rgba(76, 217, 196, 0.08);
+    border-radius: 50%;
+    box-shadow: 0 0 16px rgba(76, 217, 196, 0.35);
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    will-change: transform, left, top;
+}
+
+/* ----------------------- Lasso context menu ---------------------- */
+/* Lasso menu is appended to document.body, not the viz root, so we
+ * scope it globally (no .better_map-viz prefix). */
+.better_map-lasso__menu {
+    position: fixed;
+    z-index: 9999;
+    min-width: 200px;
+    padding: 4px;
+    background: rgba(16, 24, 38, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: #e3edf7;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 12px;
+}
+
+.better_map-lasso__menu-item {
+    padding: 6px 10px;
+    cursor: pointer;
+    border-radius: 4px;
+    color: #e3edf7;
+    line-height: 1.35;
+}
+
+.better_map-lasso__menu-item:hover,
+.better_map-lasso__menu-item:focus {
+    background: rgba(76, 217, 196, 0.18);
+    outline: none;
+}
+
+.better_map-lasso__menu-item[role="presentation"] {
+    cursor: default;
+    color: rgba(227, 237, 247, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 10px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 4px;
+}
+
+.better_map-lasso__menu-item[role="presentation"]:hover {
+    background: transparent;
+}
+
+/* --------------------- Markdown popup (free-floating) ------------ */
+.better_map-viz .better_map-popup-md {
+    position: absolute;
+    z-index: 6;
+    min-width: 220px;
+    max-width: 320px;
+    background: rgba(11, 26, 45, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: #e3edf7;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 12px;
+    transform: translate(-50%, calc(-100% - 12px));
+}
+
+.better_map-viz .better_map-popup-md--pinned {
+    z-index: 8;
+    border-color: rgba(76, 217, 196, 0.55);
+    box-shadow: 0 6px 22px rgba(76, 217, 196, 0.32);
+}
+
+.better_map-viz .better_map-popup-md__header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.better_map-viz .better_map-popup-md__title {
+    flex: 1 1 auto;
+    font-weight: 600;
+    font-size: 12px;
+    line-height: 1.35;
+    color: #e3edf7;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.better_map-viz .better_map-popup-md__pin,
+.better_map-viz .better_map-popup-md__close {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: #e3edf7;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.better_map-viz .better_map-popup-md__pin:hover,
+.better_map-viz .better_map-popup-md__close:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.better_map-viz .better_map-popup-md__pin[aria-pressed="true"] {
+    background: rgba(76, 217, 196, 0.22);
+    color: #4cd9c4;
+}
+
+.better_map-viz .better_map-popup-md__body {
+    padding: 8px 10px;
+    line-height: 1.45;
+}
+
+/* =============================================================
+ * v1.6 — Light theme variants for every v1.6 widget
+ * ============================================================= */
+
+.better_map-viz.is-theme-light .better_map-geocoder,
+.better_map-viz.is-theme-light .better_map-geocoder__results,
+.better_map-viz.is-theme-light .better_map-cmdk__panel,
+.better_map-viz.is-theme-light .better_map-minimap,
+.better_map-viz.is-theme-light .better_map-draw,
+.better_map-viz.is-theme-light .better_map-measure,
+.better_map-viz.is-theme-light .better_map-measure__panel,
+.better_map-viz.is-theme-light .better_map-popup-md,
+.better_map-viz.is-theme-light .better_map-tsplit__label {
+    background: rgba(247, 250, 253, 0.95);
+    color: #0b1a2d;
+    border-color: rgba(15, 35, 60, 0.18);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+.better_map-viz.is-theme-light .better_map-geocoder__input,
+.better_map-viz.is-theme-light .better_map-cmdk__input {
+    color: #0b1a2d;
+}
+
+.better_map-viz.is-theme-light .better_map-geocoder__input::placeholder,
+.better_map-viz.is-theme-light .better_map-cmdk__input::placeholder {
+    color: rgba(11, 26, 45, 0.45);
+}
+
+.better_map-viz.is-theme-light .better_map-geocoder__button {
+    color: #0b1a2d;
+    border-left-color: rgba(15, 35, 60, 0.18);
+}
+
+.better_map-viz.is-theme-light .better_map-geocoder__button:hover,
+.better_map-viz.is-theme-light .better_map-geocoder__result:hover,
+.better_map-viz.is-theme-light .better_map-geocoder__result:focus,
+.better_map-viz.is-theme-light .better_map-cmdk__item:hover {
+    background: rgba(15, 35, 60, 0.08);
+}
+
+.better_map-viz.is-theme-light .better_map-geocoder__result {
+    color: #0b1a2d;
+}
+
+.better_map-viz.is-theme-light .better_map-cmdk__panel,
+.better_map-viz.is-theme-light .better_map-cmdk__item {
+    color: #0b1a2d;
+}
+
+.better_map-viz.is-theme-light .better_map-cmdk__input {
+    border-bottom-color: rgba(15, 35, 60, 0.12);
+}
+
+.better_map-viz.is-theme-light .better_map-cmdk__footer {
+    color: rgba(11, 26, 45, 0.55);
+    border-top-color: rgba(15, 35, 60, 0.12);
+}
+
+.better_map-viz.is-theme-light .better_map-cmdk__item--active {
+    background: rgba(26, 140, 121, 0.18);
+    color: #0b1a2d;
+}
+
+.better_map-viz.is-theme-light .better_map-minimap__label {
+    color: #486485;
+}
+
+.better_map-viz.is-theme-light .better_map-minimap__world {
+    background:
+        linear-gradient(rgba(15, 35, 60, 0.06) 1px, transparent 1px) 0 0 / 32px 32px,
+        linear-gradient(90deg, rgba(15, 35, 60, 0.06) 1px, transparent 1px) 0 0 / 32px 32px,
+        radial-gradient(circle at 50% 50%, rgba(26, 140, 121, 0.18), rgba(255, 255, 255, 0) 70%);
+}
+
+.better_map-viz.is-theme-light .better_map-draw__btn,
+.better_map-viz.is-theme-light .better_map-measure__btn {
+    background: rgba(15, 35, 60, 0.06);
+    border-color: rgba(15, 35, 60, 0.18);
+    color: #0b1a2d;
+}
+
+.better_map-viz.is-theme-light .better_map-draw__btn:hover,
+.better_map-viz.is-theme-light .better_map-measure__btn:hover {
+    background: rgba(15, 35, 60, 0.12);
+    border-color: rgba(15, 35, 60, 0.32);
+}
+
+.better_map-viz.is-theme-light .better_map-draw__btn--active {
+    background: #1a8c79;
+    color: #ffffff;
+    border-color: #1a8c79;
+}
+
+.better_map-viz.is-theme-light .better_map-measure__btn--active {
+    background: #c2740a;
+    color: #ffffff;
+    border-color: #c2740a;
+}
+
+.better_map-viz.is-theme-light .better_map-popup-md__title,
+.better_map-viz.is-theme-light .better_map-popup-md__pin,
+.better_map-viz.is-theme-light .better_map-popup-md__close {
+    color: #0b1a2d;
+}
+
+.better_map-viz.is-theme-light .better_map-popup-md__header {
+    border-bottom-color: rgba(15, 35, 60, 0.12);
+}
+
+.better_map-viz.is-theme-light .better_map-tsplit__label {
+    color: #0b1a2d;
+}
+
+/* =============================================================
+ * v1.6 — High-contrast variants
+ * ============================================================= */
+
+.better_map-viz.is-high-contrast .better_map-geocoder,
+.better_map-viz.is-high-contrast .better_map-geocoder__results,
+.better_map-viz.is-high-contrast .better_map-cmdk__panel,
+.better_map-viz.is-high-contrast .better_map-minimap,
+.better_map-viz.is-high-contrast .better_map-draw,
+.better_map-viz.is-high-contrast .better_map-measure,
+.better_map-viz.is-high-contrast .better_map-measure__panel,
+.better_map-viz.is-high-contrast .better_map-popup-md,
+.better_map-viz.is-high-contrast .better_map-tsplit__label,
+.better_map-viz.is-high-contrast .better_map-spatial-query__nudge {
+    background: #000000;
+    color: #ffffff;
+    border: 1px solid #ffffff;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
+}
+
+.better_map-viz.is-high-contrast .better_map-cmdk__backdrop {
+    background: rgba(0, 0, 0, 0.75);
+}
+
+.better_map-viz.is-high-contrast .better_map-geocoder__input,
+.better_map-viz.is-high-contrast .better_map-geocoder__button,
+.better_map-viz.is-high-contrast .better_map-geocoder__result,
+.better_map-viz.is-high-contrast .better_map-cmdk__input,
+.better_map-viz.is-high-contrast .better_map-cmdk__item,
+.better_map-viz.is-high-contrast .better_map-cmdk__footer,
+.better_map-viz.is-high-contrast .better_map-minimap__label,
+.better_map-viz.is-high-contrast .better_map-draw__btn,
+.better_map-viz.is-high-contrast .better_map-measure__btn,
+.better_map-viz.is-high-contrast .better_map-popup-md__title,
+.better_map-viz.is-high-contrast .better_map-popup-md__pin,
+.better_map-viz.is-high-contrast .better_map-popup-md__close {
+    color: #ffffff;
+}
+
+.better_map-viz.is-high-contrast .better_map-draw__btn,
+.better_map-viz.is-high-contrast .better_map-measure__btn {
+    background: transparent;
+    border-color: #ffffff;
+}
+
+.better_map-viz.is-high-contrast .better_map-draw__btn--active,
+.better_map-viz.is-high-contrast .better_map-measure__btn--active,
+.better_map-viz.is-high-contrast .better_map-cmdk__item--active,
+.better_map-viz.is-high-contrast .better_map-geocoder__result:hover,
+.better_map-viz.is-high-contrast .better_map-cmdk__item:hover {
+    background: #ffffff;
+    color: #000000;
+}
+
+.better_map-viz.is-high-contrast .better_map-spatial-query__nudge {
+    border-color: #ffffff;
+    color: #ffffff;
+}
+
+.better_map-viz.is-high-contrast .better_map-sbs,
+.better_map-viz.is-high-contrast .better_map-tsplit {
+    background: none;
+}
+
+.better_map-viz.is-high-contrast .better_map-sbs__handle,
+.better_map-viz.is-high-contrast .better_map-tsplit__handle {
+    background: #ffffff;
+}
+
+.better_map-viz.is-high-contrast .better_map-sbs__grip {
+    background: #ffffff;
+    color: #000000;
+}
+
+.better_map-viz.is-high-contrast .better_map-tsplit__handle::before {
+    background: #ffffff;
+    color: #000000;
+}
+
+.better_map-viz.is-high-contrast .better_map-brush-ring {
+    border-color: #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 16px rgba(255, 255, 255, 0.55);
+}
+
+.better_map-viz.is-high-contrast .better_map-popup-md--pinned {
+    border-color: #ffffff;
+    box-shadow: 0 0 0 2px #ffffff inset;
+}
+
+/* High-contrast scoped lasso menu (lives outside .better_map-viz). */
+@media not all {
+    /* Documentation marker: scoped above. */
+}
+
+/* =============================================================
+ * v1.6 — Mobile / narrow-panel responsive fallbacks.
+ *
+ * Below 640px viewport width the top-left draw + measure toolbars
+ * would overlap the top-center geocoder. Stack measure below draw
+ * so they don't collide. The minimap goes back to small dimensions.
+ * ============================================================= */
+
+@media (max-width: 640px) {
+    .better_map-viz .better_map-geocoder {
+        width: calc(100% - 24px);
+        left: 12px;
+        transform: none;
+    }
+
+    .better_map-viz .better_map-measure {
+        top: 56px;
+        left: 12px;
+    }
+
+    .better_map-viz .better_map-measure__panel {
+        left: 12px;
+        top: 100px;
+        max-width: calc(100% - 24px);
+    }
+
+    .better_map-viz .better_map-minimap {
+        bottom: 96px;
+    }
+}
+
+/* =============================================================
+ * v1.6 — Scrubber sub-elements added in v1.6 but never styled
+ * (BM-FIX-02 — companion to BM-FIX-01).
+ *
+ * The scrubber row already has CSS for the slider input, play
+ * button, speed button, and label, but v1.6 added four new
+ * sub-elements that were appended to the row with no styling:
+ *
+ *   - `.better_map-scrubber__rail`       wrapper for the slider
+ *                                        plus the absolutely-
+ *                                        positioned anomaly /
+ *                                        event overlays.
+ *   - `.better_map-scrubber__anomaly-layer` and
+ *   - `.better_map-scrubber__anomaly`    coloured bands painted
+ *                                        underneath the slider
+ *                                        for warning / critical
+ *                                        time windows.
+ *   - `.better_map-scrubber__event-layer` and
+ *   - `.better_map-scrubber__event`      clickable dots on the
+ *                                        rail that jump the
+ *                                        cursor to a given event.
+ *   - `.better_map-scrubber__reverse`    reverse-playback toggle
+ *                                        button next to the speed
+ *                                        button.
+ *
+ * Without these rules the rail wrapper collapsed to a 0px block
+ * (no height), the event dots rendered inline as default buttons
+ * (no positioning), and the anomaly bands took the entire row
+ * width instead of being sized by the JS-set `left: %` /
+ * `width: %`. End-result: the v1.6 scrubber upgrades looked
+ * broken and the reverse button — though clickable — sat next
+ * to the play button with no visual differentiation.
+ * ============================================================= */
+
+.better_map-viz .better_map-scrubber__rail {
+    position: relative;
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    /* Reserve height so the absolutely-positioned overlays have a
+     * deterministic bounding box. The slider input is ~4px tall
+     * but we give the rail more room so anomaly bands have a
+     * visible footprint above and below the track. */
+    height: 16px;
+}
+
+.better_map-viz .better_map-scrubber__rail .better_map-scrubber__range {
+    /* Range slider inside the rail wrapper needs to claim the
+     * whole horizontal footprint regardless of overlay order. */
+    flex: 1 1 auto;
+    width: 100%;
+    position: relative;
+    z-index: 2;
+}
+
+.better_map-viz .better_map-scrubber__anomaly-layer,
+.better_map-viz .better_map-scrubber__event-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+
+.better_map-viz .better_map-scrubber__event-layer {
+    /* Event dots must be clickable individually, so re-enable
+     * pointer-events on the children (declared on .__event). */
+    z-index: 3;
+}
+
+.better_map-viz .better_map-scrubber__anomaly {
+    position: absolute;
+    top: 1px;
+    bottom: 1px;
+    background: rgba(245, 184, 47, 0.32);
+    border-left: 1px solid rgba(245, 184, 47, 0.55);
+    border-right: 1px solid rgba(245, 184, 47, 0.55);
+    pointer-events: none;
+}
+
+.better_map-viz .better_map-scrubber__anomaly--warning {
+    background: rgba(245, 184, 47, 0.32);
+    border-color: rgba(245, 184, 47, 0.55);
+}
+
+.better_map-viz .better_map-scrubber__anomaly--critical {
+    background: rgba(217, 63, 60, 0.36);
+    border-color: rgba(217, 63, 60, 0.60);
+}
+
+.better_map-viz .better_map-scrubber__anomaly--info {
+    background: rgba(76, 217, 196, 0.26);
+    border-color: rgba(76, 217, 196, 0.50);
+}
+
+.better_map-viz .better_map-scrubber__event {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    appearance: none;
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    background: #4cd9c4;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    padding: 0;
+    pointer-events: auto;
+    cursor: pointer;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+    transition: transform 0.1s ease;
+}
+
+.better_map-viz .better_map-scrubber__event:hover {
+    transform: translate(-50%, -50%) scale(1.4);
+}
+
+.better_map-viz .better_map-scrubber__event:focus-visible {
+    outline: 2px solid #4cd9c4;
+    outline-offset: 2px;
+}
+
+.better_map-viz .better_map-scrubber__reverse {
+    appearance: none;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: transparent;
+    color: #e6eef9;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 13px;
+    cursor: pointer;
+    line-height: 1.4;
+    transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.better_map-viz .better_map-scrubber__reverse:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.better_map-viz .better_map-scrubber__reverse--on {
+    background: rgba(76, 217, 196, 0.18);
+    border-color: rgba(76, 217, 196, 0.55);
+    color: #4cd9c4;
+}
+
+.better_map-viz.is-theme-light .better_map-scrubber__anomaly {
+    border-color: rgba(184, 134, 11, 0.65);
+}
+
+.better_map-viz.is-theme-light .better_map-scrubber__anomaly--critical {
+    background: rgba(160, 30, 30, 0.20);
+    border-color: rgba(160, 30, 30, 0.55);
+}
+
+.better_map-viz.is-theme-light .better_map-scrubber__event {
+    background: #2c8d80;
+    border-color: rgba(0, 0, 0, 0.65);
+}
+
+.better_map-viz.is-theme-light .better_map-scrubber__reverse {
+    color: #11233d;
+    border-color: rgba(0, 0, 0, 0.18);
+}
+
+.better_map-viz.is-theme-light .better_map-scrubber__reverse--on {
+    background: rgba(44, 141, 128, 0.20);
+    border-color: rgba(44, 141, 128, 0.60);
+    color: #2c8d80;
+}
+
+.better_map-viz.is-high-contrast .better_map-scrubber__anomaly {
+    background: #ffd54f;
+    border-color: #000000;
+    opacity: 0.6;
+}
+
+.better_map-viz.is-high-contrast .better_map-scrubber__anomaly--critical {
+    background: #ff5252;
+}
+
+.better_map-viz.is-high-contrast .better_map-scrubber__event {
+    background: #ffffff;
+    border-color: #000000;
+}
+
+.better_map-viz.is-high-contrast .better_map-scrubber__reverse {
+    background: #000000;
+    color: #ffffff;
+    border-color: #ffffff;
+}
+
+.better_map-viz.is-high-contrast .better_map-scrubber__reverse--on {
+    background: #ffffff;
+    color: #000000;
+}
+
+/* =============================================================
+ * v1.6 — Markdown popup KPI sub-elements (BM-FIX-02 cont'd).
+ *
+ * The popup-md card itself already has positioning + theming
+ * but the v1.6 KPI grid inside it (small tiles with label,
+ * value, and an optional sparkline) had no rules. Without
+ * them the tiles render as inline-block defaults with no gaps
+ * or alignment.
+ * ============================================================= */
+
+.better_map-viz .better_map-popup-md__kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+    gap: 6px;
+    margin: 6px 0 4px;
+}
+
+.better_map-viz .better_map-popup-md__kpi-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 4px 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    min-width: 0;
+}
+
+.better_map-viz .better_map-popup-md__kpi-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #b9c8d8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.better_map-viz .better_map-popup-md__kpi-value {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e3edf7;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.better_map-viz .better_map-popup-md__sparkline {
+    width: 100%;
+    height: 14px;
+    display: block;
+    margin-top: 2px;
+}
+
+.better_map-viz.is-theme-light .better_map-popup-md__kpi-tile {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.better_map-viz.is-theme-light .better_map-popup-md__kpi-label {
+    color: #4d5a6e;
+}
+
+.better_map-viz.is-theme-light .better_map-popup-md__kpi-value {
+    color: #11233d;
+}
+
+.better_map-viz.is-high-contrast .better_map-popup-md__kpi-tile {
+    background: #000000;
+    border-color: #ffffff;
+}
+
+.better_map-viz.is-high-contrast .better_map-popup-md__kpi-label,
+.better_map-viz.is-high-contrast .better_map-popup-md__kpi-value {
+    color: #ffffff;
+}
+
+/* =============================================================
+ * v1.6 — OS reduced-motion: skip the spatial-query nudge fade.
+ *
+ * The nudge is informational and goes away on its own; users with
+ * reduce-motion set should still see it appear / disappear, but
+ * without the slide animation.
+ * ============================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+    .better_map-viz .better_map-spatial-query__nudge {
+        animation: none;
+    }
+
+    .better_map-viz .better_map-scrubber__event {
+        transition: none;
+    }
+
+    .better_map-viz .better_map-scrubber__event:hover {
+        transform: translate(-50%, -50%);
+    }
+}

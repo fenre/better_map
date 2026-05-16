@@ -4,6 +4,117 @@ All notable changes to Better Map are tracked here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.2] - 2026-05-16
+
+### Fixed — v1.6 scrubber + popup-md sub-element CSS shipped (BM-FIX-02)
+
+Companion to v1.6.1 / BM-FIX-01. After verifying the twelve top-level
+v1.6 widgets render correctly, audit of the bundle vs. stylesheet found
+nine additional v1.6 sub-element classes that were created by JS but
+had no CSS — leaving them either invisible or visually broken even
+though their parent widgets now layer correctly:
+
+- **Scrubber rail wrapper** (`.better_map-scrubber__rail`) — wraps the
+  range slider and the absolutely-positioned event / anomaly overlays.
+  Without explicit `position: relative` and a reserved height the
+  overlays had no bounding box and the slider lost its flex sizing.
+- **Anomaly bands** (`.better_map-scrubber__anomaly` and its layer)
+  — coloured bands (`--warning`, `--critical`, `--info`) painted under
+  the slider for time-windows of interest. Without absolute positioning
+  they rendered as block elements taking the whole row width.
+- **Event dots** (`.better_map-scrubber__event` and its layer) — round
+  clickable buttons on the rail that jump the cursor to a given event.
+  Without absolute positioning + `transform: translate(-50%, -50%)` they
+  rendered inline with the play/speed buttons.
+- **Reverse playback button** (`.better_map-scrubber__reverse` and its
+  `--on` modifier) — toggled the scrubber direction. Was clickable but
+  visually indistinguishable from the speed button.
+- **Markdown-popup KPI grid** (`.better_map-popup-md__kpi-grid`,
+  `__kpi-tile`, `__kpi-label`, `__kpi-value`, `__sparkline`) — used by
+  the rich popup template to render small KPI tiles. Without the grid
+  layout the tiles wrapped vertically with no spacing and the value
+  text was the same size as the label.
+
+All new rules ship dark / light / high-contrast variants and respect
+`prefers-reduced-motion` (event dots use a `none` transition + no hover
+scale when reduce-motion is set).
+
+### Changed
+
+- `app.conf` `[install] build` bumped to `1611` so browsers refetch the
+  static `visualization.css` instead of using a cached copy.
+- `package.json` and `debugHud.js` `HUD_VERSION` bumped to `1.6.2`.
+
+### Verified
+
+- Every class that is created by JS in `src/lib/widgets/*.js` and
+  `src/lib/time/scrubber.js` and is user-visible now has at least
+  one rule in the served `visualization.css`.
+
+## [1.6.1] - 2026-05-16
+
+### Fixed — v1.6 widget CSS shipped (BM-FIX-01)
+
+The v1.6 release added twelve new widget UI surfaces (geocoder, command
+palette, minimap, draw tools, measure tool, lasso menu, brushing ring,
+side-by-side compare, time-split divider, spatial-query nudge, markdown
+popup, and the AI Assistant chat scaffold) but `visualization.css` was
+never updated to position them. The widget DOM was created and appended
+to the viz root, but with default `position: static` every widget was
+painted **behind** the absolutely-positioned `.better_map-map` (which
+fills `inset: 0`). From the user's perspective the v1.6 toggles in the
+control panel "did nothing": the underlying widgets were always invisible
+and unclickable because the MapLibre canvas sat on top.
+
+v1.6.1 ships the missing CSS:
+
+- **Geocoder** is now a top-center search bar (offset from the
+  control-panel launcher), with dropdown results, dark/light/HC themes,
+  and a mobile-stack fallback below 640 px viewport width.
+- **Command palette** is a real modal dialog (backdrop dim + centered
+  panel) at z-index 9, above every other floating control.
+- **Minimap** sits at bottom-right above the floor-switcher, with a
+  subtle world-grid background and a viewport rectangle.
+- **Draw tools** and **Measure tool** are top-left toolbars
+  (`top: 12px / left: 12px` and `top: 12px / left: 232px`) with their
+  active-mode highlight color matched to the tool family.
+- **Measure status panel** is a tabular-numerics readout under the
+  measure toolbar, click-to-copy.
+- **Side-by-side** and **Time-split** are full-height overlay handles
+  (z-index 3 / 4) with `pointer-events: none` on the root so map
+  interaction passes through, plus `pointer-events: auto` on the
+  draggable handle itself.
+- **Spatial-query nudge** is a bottom-center toast with a sliding
+  fade-in/fade-out animation (suppressed under `prefers-reduced-motion`).
+- **Brushing ring** is a glowing CSS ring positioned by JS via
+  `transform: translate(-50%, -50%)`.
+- **Lasso context menu** (rendered into `document.body`, not the viz
+  root) gets a globally-scoped rule at z-index 9999.
+- **Markdown popup** is a free-floating card with `position: absolute`
+  and a `--pinned` modifier that lifts it above other widgets when the
+  user pins it.
+
+Every widget ships with full dark / light / high-contrast variants and
+respects `prefers-reduced-motion`. Z-index layering is now documented in
+the CSS file itself (lines 898–926).
+
+No JavaScript changes — the widgets were already correctly wired up. The
+fix is purely the missing stylesheet.
+
+### Changed
+
+- `app.conf` `[install] build` bumped to `1610` so browsers refetch the
+  static `visualization.css` instead of using a cached copy.
+- `package.json` and `debugHud.js` `HUD_VERSION` bumped to `1.6.1`.
+
+### Verified
+
+- All v1.6.0 toggles in the control panel now produce a visible,
+  clickable overlay on top of the MapLibre canvas.
+- Existing v1.5.2 controls (view-controls, export-share, layer-control,
+  floor-switcher, scrubber, control-panel) remain at their original
+  coordinates and z-index — no regression to legacy behavior.
+
 ## [1.6.0] - 2026-05-16
 
 ### Added — additive opt-in feature pack on top of the v1.5.2 BM-CT-1 contract
