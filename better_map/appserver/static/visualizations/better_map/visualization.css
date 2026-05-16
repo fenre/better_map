@@ -20,6 +20,20 @@
     height: 100%;
 }
 
+/*
+ * Map container div that we create in mapBuilder.js and hand to
+ * `new maplibregl.Map({ container: el })`. MapLibre injects its own DOM
+ * inside it. We pin the wrapper to fill its parent so absolutely-positioned
+ * children of `.better_map-viz` (widgets, overlays) stack correctly above
+ * the canvas instead of inheriting the wrapper's static positioning.
+ * G8 lint requires every JS-created `better_map-*` class to carry an
+ * explicit rule (see scripts/lint-js-css-contract.js).
+ */
+.better_map-viz .better_map-map {
+    position: absolute;
+    inset: 0;
+}
+
 .better_map-viz .better_map-error {
     position: absolute;
     top: 12px;
@@ -110,6 +124,27 @@
 .better_map-viz .maplibregl-popup.better_map-popup-wrapper .maplibregl-popup-content img {
     max-width: 100%;
     height: auto;
+}
+
+/*
+ * Sanitised popup content wrapper created by buildPopupFragment() in
+ * popupSanitizer.js. Lives INSIDE the maplibregl-popup-content box, so it
+ * just needs typography parity with that container and a small spacing
+ * reset (the outer container already supplies padding).
+ */
+.better_map-viz .better_map-popup {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    line-height: 1.4;
+}
+
+.better_map-viz .better_map-popup > *:first-child {
+    margin-top: 0;
+}
+
+.better_map-viz .better_map-popup > *:last-child {
+    margin-bottom: 0;
 }
 
 .better_map-viz .better_map-view-controls {
@@ -675,6 +710,17 @@
     margin-top: 4px;
 }
 
+/*
+ * Master pause toggle — the "stop all map animations" checkbox that lives
+ * in the control-panel footer. Combines with `.better_map-control-panel__toggle`
+ * for the base accent-color, and adds a slight emphasis (a touch more
+ * accent saturation) to mark it as a panel-wide control rather than a
+ * per-row toggle.
+ */
+.better_map-viz .better_map-control-panel__master-pause {
+    accent-color: #4cd9c4;
+}
+
 .better_map-viz .better_map-control-panel__master-reset {
     appearance: none;
     width: calc(100% - 16px);
@@ -1018,6 +1064,15 @@
 .better_map-viz .better_map-geocoder__result[aria-disabled="true"] {
     cursor: default;
     color: rgba(227, 237, 247, 0.55);
+}
+
+/*
+ * Highlight applied by geocoder.js to the first result in the dropdown so
+ * the user knows that pressing Enter will choose it. Subtle left accent
+ * bar mirrors the focus treatment without overriding the :hover state.
+ */
+.better_map-viz .better_map-geocoder__result--first {
+    box-shadow: inset 2px 0 0 0 #4cd9c4;
 }
 
 /* ---------------------- Command palette (modal) -------------------- */
@@ -1569,6 +1624,119 @@
 .better_map-viz .better_map-popup-md__body {
     padding: 8px 10px;
     line-height: 1.45;
+}
+
+/* --------------------- AI Assistant chat panel ------------------- */
+/*
+ * Feature-flagged off in v1.6.x by default — createChatPanel() does not
+ * attach the root element until enabled=true. The rules below define what
+ * the panel looks like ONCE it's mounted; if the scaffold is never wired
+ * the rules are dead-CSS noise but the JS literals still demand them by
+ * G8 contract (see scripts/lint-js-css-contract.js).
+ *
+ * Layout: bottom-right docked panel, ~320px wide, ~360px tall, flex column
+ * with messages scrolling above an input row pinned at the bottom.
+ */
+.better_map-viz .better_map-ai-chat {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    z-index: 7;
+    width: 320px;
+    max-width: calc(100% - 24px);
+    height: 360px;
+    max-height: 70%;
+    display: flex;
+    flex-direction: column;
+    background: rgba(11, 18, 28, 0.94);
+    color: #e3edf7;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 12px;
+    overflow: hidden;
+}
+
+.better_map-viz .better_map-ai-chat__messages {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    line-height: 1.4;
+}
+
+.better_map-viz .better_map-ai-chat__messages > * {
+    padding: 4px 8px;
+    border-radius: 4px;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.better_map-viz .better_map-ai-chat__messages__user {
+    background: rgba(76, 217, 196, 0.12);
+    color: #4cd9c4;
+    align-self: flex-end;
+    max-width: 85%;
+}
+
+.better_map-viz .better_map-ai-chat__messages__assistant {
+    background: rgba(255, 255, 255, 0.06);
+    align-self: flex-start;
+    max-width: 85%;
+}
+
+.better_map-viz .better_map-ai-chat__status {
+    flex: 0 0 auto;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: rgba(227, 237, 247, 0.65);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    min-height: 18px;
+}
+
+.better_map-viz .better_map-ai-chat__input {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 6px;
+    padding: 8px 10px 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.18);
+}
+
+.better_map-viz .better_map-ai-chat__input input {
+    flex: 1 1 auto;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #e3edf7;
+    font: inherit;
+    padding: 5px 8px;
+    border-radius: 4px;
+    min-width: 0;
+}
+
+.better_map-viz .better_map-ai-chat__input input:focus-visible {
+    outline: 2px solid #4cd9c4;
+    outline-offset: 1px;
+}
+
+.better_map-viz .better_map-ai-chat__input button {
+    appearance: none;
+    border: 1px solid rgba(76, 217, 196, 0.45);
+    background: rgba(76, 217, 196, 0.16);
+    color: #4cd9c4;
+    font: inherit;
+    font-weight: 600;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.better_map-viz .better_map-ai-chat__input button:hover {
+    background: rgba(76, 217, 196, 0.24);
 }
 
 /* =============================================================

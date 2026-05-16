@@ -1,13 +1,13 @@
 # CI — better_map Splunk custom visualization
 #
-# Scope: ROADMAP §3 G2 foundation (PR pipeline only).
-# This workflow lints the JS, builds the webpack production bundle, sanity-
-# checks the build artifacts, and validates incoming PR commit messages
-# against Conventional Commits. It does NOT (yet) run AppInspect, unit
-# tests, the G8 JS↔CSS contract lint, the dashboard XML/JSON parse check,
-# the production-bundle console-noise check, or the live dispatch test.
-# Those gates are tracked as v1.7 follow-up commits under ROADMAP §3 G2
-# and §3 G8, and as quality boxes in ROADMAP §7b.
+# Scope: ROADMAP §3 G2 foundation + §3 G8 (PR pipeline).
+# This workflow lints the JS, runs the JS↔CSS contract lint, builds the
+# webpack production bundle, sanity-checks the build artifacts, and
+# validates incoming PR commit messages against Conventional Commits.
+# It does NOT (yet) run AppInspect, unit tests, the dashboard XML/JSON
+# parse check, the production-bundle console-noise check, or the live
+# dispatch test. Those gates are tracked as v1.7 follow-up commits under
+# ROADMAP §3 G2 and as quality boxes in ROADMAP §7b.
 
 name: CI
 
@@ -54,6 +54,14 @@ jobs:
 
       - name: Lint (ESLint)
         run: npm run lint
+
+      - name: Lint (G8 JS↔CSS contract)
+        # Asserts that every `better_map-*` class created in src/lib/**/*.js
+        # has a matching rule in visualization.css OR an entry in
+        # scripts/css-contract-allowlist.json. Defends against the
+        # BM-FIX-01 / BM-FIX-02 class of bug where 21 widget classes shipped
+        # in v1.6.0 with zero CSS rules. See ROADMAP §3 G8.
+        run: npm run lint:css-contract
 
       - name: Build webpack production bundle
         run: npm run build

@@ -1,0 +1,34 @@
+{
+  "_comment": "G8 — JS↔CSS contract allowlist. Every entry below is a class name that exists in JS but has no rule in visualization.css, AND is intentionally so. Every entry MUST have a one-line justification in the _justifications block. The linter (scripts/lint-js-css-contract.js) consults this file to suppress otherwise-failing classes. See ROADMAP §3 G8.",
+
+  "intentionallyInheritanceOnly": [
+    "better_map-formatter",
+    "better_map-debug-hud",
+    "better_map-live"
+  ],
+
+  "stateToggleModifiers": [],
+
+  "dynamicPrefixes": [
+    "better_map-error__",
+    "better_map-scrubber__anomaly",
+    "better_map-scrubber__event",
+    "better_map-scrubber__reverse",
+    "better_map-tsplit__label--",
+    "better_map-ai-chat__messages__"
+  ],
+
+  "_justifications": {
+    "better_map-formatter": "Outer wrapper class on the Splunk-formatter <form>; styled by Splunk Web's own formatter chrome stylesheet (visualization-formatter.css), not by us.",
+    "better_map-debug-hud": "DOM-attached only when DEBUG_HUD is enabled; fully styled inline via Object.assign(el.style, {...}) in src/lib/debugHud.js — no production CSS needed because production builds tree-shake the HUD path.",
+    "better_map-live": "ARIA live region; fully styled inline in src/lib/a11y.js (visually-hidden sr-only pattern — position absolute, 1px square, off-screen). No CSS rule required because the styling is structural, not themeable.",
+    "better_map-error__": "errorStates.js composes child classes via JS string concatenation (CLASS + '__text', CLASS + '__close'); the CSS contains the resolved selectors (.better_map-error__text, .better_map-error__close) — listed as a dynamic prefix so the dead-CSS check accepts them as live.",
+    "better_map-scrubber__anomaly": "scrubber.js composes anomaly child classes dynamically: ANOMALY_CLASS + '-layer' and `${ANOMALY_CLASS}--${level}` (--critical, --info, --warning). The CSS contains all four resolved selectors; this prefix allowlist tells the dead-CSS check they are live.",
+    "better_map-scrubber__event": "scrubber.js composes EVENT_CLASS + '-layer' dynamically. The CSS contains .better_map-scrubber__event-layer; this prefix accepts it as live.",
+    "better_map-scrubber__reverse": "scrubber.js toggles REVERSE_CLASS + '--on' dynamically via classList.toggle. The CSS contains .better_map-scrubber__reverse--on; this prefix accepts it as live.",
+    "better_map-tsplit__label--": "timeSplit.js composes LABEL_CLASS + '--left' and LABEL_CLASS + '--right' dynamically. The CSS contains both resolved selectors; this prefix accepts them as live.",
+    "better_map-ai-chat__messages__": "aiAssistant.js composes per-role message classes via MESSAGES_CLASS + '__' + role (resolves to __user, __assistant). The CSS contains both resolved selectors; this prefix accepts them as live.",
+    "_v1.6.2_baseline": "Initial v1.6.2 state has 3 intentionally-inheritance-only entries (formatter chrome, debug HUD, live region) and 6 dynamic-prefix entries covering JS string-concat composition patterns. Every other better_map-* class created in JS has a matching CSS rule. New entries here MUST be reviewed in the PR that adds them.",
+    "_format": "When adding an entry above, document WHY here. The linter does not enforce the presence of a justification — that is a human review responsibility."
+  }
+}

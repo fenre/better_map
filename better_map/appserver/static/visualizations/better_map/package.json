@@ -8,6 +8,7 @@
     "build": "webpack --mode production",
     "dev": "webpack --mode development --watch",
     "lint": "eslint src/",
+    "lint:css-contract": "node ../../../../../scripts/lint-js-css-contract.js",
     "format": "prettier --write \"src/**/*.{js,css,json}\""
   },
   "dependencies": {
