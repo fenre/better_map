@@ -1,16 +1,19 @@
 # CI — better_map Splunk custom visualization
 #
 # Scope: ROADMAP §3 G2 foundation + §3 G8 + §7b Q-1 + §7b Q-2 + §7b Q-3
-# (PR pipeline).
+# + REL-1 version-consistency check (PR pipeline).
 # This workflow lints the JS, runs the JS↔CSS contract lint, parses every
 # dashboard XML + its embedded Dashboard Studio JSON definition, builds
 # the webpack production bundle, runs the production-bundle console-noise
 # check, runs the bundle-size budget check against the §7b table,
-# sanity-checks the build artifacts, and validates incoming PR commit
-# messages against Conventional Commits.
+# verifies the three version sources (app.conf / package.json / HUD_VERSION)
+# agree, sanity-checks the build artifacts, and validates incoming PR
+# commit messages against Conventional Commits.
 # It does NOT (yet) run AppInspect, unit tests, or the live dispatch
 # test. Those gates are tracked as v1.7 follow-up commits under ROADMAP
 # §3 G2 and as quality boxes in ROADMAP §7b / §7c-widget.
+# Release automation lives in `.github/workflows/release.yml` and runs
+# on `v*` tag pushes (see ROADMAP §3 G2 REL-1).
 
 name: CI
 
@@ -57,6 +60,15 @@ jobs:
 
       - name: Lint (ESLint)
         run: npm run lint
+
+      - name: Check version consistency (REL-1)
+        # Asserts app.conf [launcher] version, package.json version, and
+        # debugHud.js HUD_VERSION all agree. Catches the "I bumped one of
+        # the three" failure mode before a tag is cut. The release
+        # workflow runs the same check with --tag to also verify the git
+        # tag matches. ROADMAP §3 G2 + REL-1.
+        working-directory: ${{ github.workspace }}
+        run: node scripts/check-version-consistency.js
 
       - name: Lint (G8 JS↔CSS contract)
         # Asserts that every `better_map-*` class created in src/lib/**/*.js

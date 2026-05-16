@@ -1,0 +1,276 @@
+# Release — better_map Splunk custom visualization
+#
+# Scope: ROADMAP §3 G2 — release automation v0.
+#
+# Triggered on push of any tag matching `v*` (e.g. `v1.7.0`, `v2.0.0-rc1`).
+# Produces a GitHub Release with the canonical Splunk app archive
+# (`better_map-vX.Y.Z.tar.gz` and its `.spl` alias) plus SHA-256 checksums.
+#
+# What this workflow does:
+#   1. Re-run every PR-gate quality check against the tagged commit
+#      (a release MUST clear the same bar a PR clears, no exceptions).
+#   2. Assert all four version sources agree on the tag (REL-1 contract):
+#        - app.conf [launcher] version
+#        - app.conf [install]  build
+#        - package.json version
+#        - debugHud.js HUD_VERSION
+#        - the tag itself
+#      Without this, "the v1.7.0 release" could ship code labelled
+#      v1.6.2 in the dashboard HUD and Apps UI.
+#   3. Build the webpack production bundle.
+#   4. Re-run Q-2 (console noise) + Q-3 (bundle size) against the fresh
+#      bundle — defends against the "different bundle in CI vs release"
+#      class of bug.
+#   5. Package the better_map/ directory as a tarball, clean of macOS
+#      artifacts and with deterministic permissions (per
+#      splunk-app-packaging.mdc).
+#   6. Produce BOTH `better_map-vX.Y.Z.tar.gz` AND its `.spl` alias.
+#      Splunkbase and AppInspect both accept either extension; we ship
+#      both so consumers don't have to rename.
+#   7. Compute SHA-256 for each artifact and attach as a sidecar file.
+#   8. Create a GitHub Release using GitHub's auto-generated body
+#      (conventional-commits-aware as of the commitlint rollout in PR #1)
+#      and attach the four artifacts.
+#
+# What this workflow does NOT yet do (tracked as ROADMAP §3 G2 follow-ups):
+#   - cosign signing of the .tar.gz (G1 — needs a project-owned cosign cert)
+#   - Splunkbase upload via REST (E1 — needs an approved listing + token)
+#   - AppInspect cloud-cert step (G2-2 — separate PR after this one merges)
+#
+# How to release (manual, one-time per tag):
+#
+#   1. On main, run `node scripts/check-version-consistency.js` — must PASS.
+#      (CI does this on every PR, so a green main is already a PASS.)
+#   2. Bump the three version sources to the target version (e.g. 1.7.0):
+#        - better_map/default/app.conf  [launcher] version + bump [install] build
+#        - better_map/appserver/.../package.json  "version"
+#        - better_map/appserver/.../src/lib/debugHud.js  HUD_VERSION
+#      Open a release PR titled `chore(release): vX.Y.Z`. Merge after CI.
+#   3. From the merged main commit, tag:
+#        git tag -a vX.Y.Z -m "vX.Y.Z"
+#        git push origin vX.Y.Z
+#   4. This workflow runs. Watch the Actions tab; if anything fails, fix
+#      on main and re-tag with a new patch number (you cannot reuse a
+#      published tag without force-pushing, which IS allowed for releases
+#      that never produced a public artifact — see step 5).
+#   5. The release lands at https://github.com/<owner>/better_map/releases.
+#      Verify the artifacts manually before announcing.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+# Releases need write access to contents (to create the Release) but no
+# write access to the codebase itself — never push back to main from here.
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build, verify, and publish release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          # Need full history so GitHub Release auto-body can compute
+          # commit range against the previous tag.
+          fetch-depth: 0
+
+      - name: Resolve tag and version
+        # Extract the semver from the tag (strip leading `v`) and expose
+        # both forms as workflow outputs / env for later steps.
+        id: tag
+        run: |
+          set -eu
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG#v}"
+          if [ -z "$TAG" ] || [ "$TAG" = "$GITHUB_REF" ]; then
+            echo "::error::could not extract tag from GITHUB_REF=$GITHUB_REF"
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Resolved tag=$TAG version=$VERSION"
+
+      - name: Set up Node.js 18 (matches viz engines.node)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: better_map/appserver/static/visualizations/better_map/package-lock.json
+
+      - name: Install viz dependencies (clean, reproducible)
+        working-directory: better_map/appserver/static/visualizations/better_map
+        run: npm ci
+
+      - name: Check version consistency vs tag (REL-1)
+        # All four sources MUST agree before we even build, so we fail
+        # fast and don't waste CI minutes packaging a mismatched release.
+        run: node scripts/check-version-consistency.js --tag=${{ steps.tag.outputs.tag }}
+
+      - name: Lint (ESLint)
+        working-directory: better_map/appserver/static/visualizations/better_map
+        run: npm run lint
+
+      - name: Lint (G8 JS↔CSS contract)
+        working-directory: better_map/appserver/static/visualizations/better_map
+        run: npm run lint:css-contract
+
+      - name: Check dashboard XML + Studio JSON (Q-1)
+        run: python3 scripts/check-dashboard-xml-json.py
+
+      - name: Build webpack production bundle
+        working-directory: better_map/appserver/static/visualizations/better_map
+        run: npm run build
+
+      - name: Check production-bundle console noise (Q-2)
+        run: node scripts/check-bundle-console-noise.js
+
+      - name: Check bundle-size budget (Q-3)
+        run: node scripts/check-bundle-size.js
+
+      - name: Stage shippable app contents (exclude dev-only files)
+        # rsync the better_map/ tree into a staging dir with everything
+        # NOT needed by the running Splunk app stripped out:
+        #
+        #   - node_modules/          — dev deps (~24 MB), restored via
+        #                              npm ci on a build host, never
+        #                              executed by Splunk Web.
+        #   - src/                   — JS sources. The shipped bundle is
+        #                              visualization.js; the sources are
+        #                              available in the GitHub repo for
+        #                              auditors.
+        #   - scripts/               — repo-local build helpers
+        #                              (build-pmtiles.sh, etc).
+        #   - docs/                  — viz-internal design notes.
+        #   - package.json /         — Node manifest; runtime never reads.
+        #     package-lock.json
+        #   - webpack.config.js      — build config.
+        #   - .eslintrc.cjs /        — lint config.
+        #     .eslintignore
+        #   - harness.json           — Splunk viz dev-harness manifest.
+        #   - AIR-GAPPED-PMTILES.md  — repo doc; lives in the GitHub README too.
+        #
+        # Anything NOT in the exclude list is included automatically, so
+        # adding a new runtime asset later (e.g. preview.png variants,
+        # bundled .glb models for B1) does not require workflow edits.
+        # Also drop macOS artefacts and set deterministic 755/644 perms.
+        run: |
+          set -eu
+          mkdir -p dist
+          rsync -a \
+            --exclude='node_modules' \
+            --exclude='src' \
+            --exclude='scripts' \
+            --exclude='docs' \
+            --exclude='package.json' \
+            --exclude='package-lock.json' \
+            --exclude='webpack.config.js' \
+            --exclude='.eslintrc.cjs' \
+            --exclude='.eslintignore' \
+            --exclude='harness.json' \
+            --exclude='AIR-GAPPED-PMTILES.md' \
+            --exclude='build-pmtiles.sh' \
+            better_map/ dist/better_map/
+          find dist/better_map -name '._*' -delete
+          find dist/better_map -name '.DS_Store' -delete
+          find dist/better_map -type d -exec chmod 755 {} \;
+          find dist/better_map -type f -exec chmod 644 {} \;
+          echo "--- staged tree top-level ---"
+          ls -la dist/better_map | head -20
+          echo "--- staged viz dir top-level ---"
+          ls -la dist/better_map/appserver/static/visualizations/better_map | head -20
+
+      - name: Package as Splunk app archive (.tar.gz + .spl)
+        # COPYFILE_DISABLE is a macOS thing but harmless on Linux; we set
+        # it anyway for parity with the local-build instructions in
+        # splunk-app-packaging.mdc. The tarball has `better_map/` at the
+        # top, which is what Splunk's app install expects. We also copy
+        # the .tar.gz to a .spl sidekick — both extensions are valid
+        # Splunk app archives and Splunkbase / AppInspect accept either.
+        env:
+          COPYFILE_DISABLE: '1'
+        run: |
+          set -eu
+          VERSION="${{ steps.tag.outputs.version }}"
+          TARBALL="better_map-v${VERSION}.tar.gz"
+          SPL="better_map-v${VERSION}.spl"
+          tar czf "$TARBALL" -C dist better_map
+          cp "$TARBALL" "$SPL"
+          # Smoke-check: there must be ZERO macOS forks inside the tar.
+          fork_count=$(tar tzf "$TARBALL" | grep -c '\._' || true)
+          if [ "$fork_count" != "0" ]; then
+            echo "::error file=$TARBALL::macOS resource forks present ($fork_count)"
+            exit 1
+          fi
+          # Sanity: top-level directory must be `better_map/` exactly,
+          # not a build-host-specific prefix (e.g. user home path).
+          top_dirs=$(tar tzf "$TARBALL" | awk -F/ '{print $1}' | sort -u)
+          if [ "$top_dirs" != "better_map" ]; then
+            echo "::error file=$TARBALL::expected single top dir 'better_map', got: $top_dirs"
+            exit 1
+          fi
+          # Smoke-check: node_modules MUST NOT ship in the release tarball.
+          nm_count=$(tar tzf "$TARBALL" | grep -c 'node_modules' || true)
+          if [ "$nm_count" != "0" ]; then
+            echo "::error file=$TARBALL::node_modules leaked into release archive ($nm_count entries)"
+            exit 1
+          fi
+          # Smoke-check: src/ MUST NOT ship (we ship the built bundle, not source).
+          src_count=$(tar tzf "$TARBALL" | grep -cE 'visualizations/better_map/src/' || true)
+          if [ "$src_count" != "0" ]; then
+            echo "::error file=$TARBALL::src/ leaked into release archive ($src_count entries)"
+            exit 1
+          fi
+          # Smoke-check: visualization.js MUST be present (the whole point).
+          if ! tar tzf "$TARBALL" | grep -q 'visualizations/better_map/visualization.js$'; then
+            echo "::error file=$TARBALL::visualization.js missing from release archive"
+            exit 1
+          fi
+          ls -la "$TARBALL" "$SPL"
+
+      - name: Compute SHA-256 checksums
+        # Sidecar `.sha256` files in the standard `<hash>  <filename>`
+        # format consumed by `sha256sum -c`. Customers can verify the
+        # downloaded artifact with:
+        #
+        #     sha256sum -c better_map-vX.Y.Z.tar.gz.sha256
+        run: |
+          set -eu
+          VERSION="${{ steps.tag.outputs.version }}"
+          TARBALL="better_map-v${VERSION}.tar.gz"
+          SPL="better_map-v${VERSION}.spl"
+          sha256sum "$TARBALL" > "${TARBALL}.sha256"
+          sha256sum "$SPL"     > "${SPL}.sha256"
+          echo '--- SHA-256 ---'
+          cat "${TARBALL}.sha256"
+          cat "${SPL}.sha256"
+
+      - name: Create GitHub Release with auto-generated notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # `--generate-notes` makes GitHub auto-build the release body
+        # from the commits since the previous tag, using the
+        # conventional-commits prefix mapping introduced in PR #1.
+        # `--verify-tag` ensures we are publishing the exact tag the
+        # workflow was triggered by (no race window where main moves
+        # ahead of the tag between trigger and publish).
+        run: |
+          set -eu
+          VERSION="${{ steps.tag.outputs.version }}"
+          TAG="${{ steps.tag.outputs.tag }}"
+          TARBALL="better_map-v${VERSION}.tar.gz"
+          SPL="better_map-v${VERSION}.spl"
+          gh release create "$TAG" \
+            "$TARBALL" \
+            "${TARBALL}.sha256" \
+            "$SPL" \
+            "${SPL}.sha256" \
+            --title "$TAG" \
+            --generate-notes \
+            --verify-tag
