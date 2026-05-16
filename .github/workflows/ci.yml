@@ -1,13 +1,14 @@
 # CI — better_map Splunk custom visualization
 #
-# Scope: ROADMAP §3 G2 foundation + §3 G8 (PR pipeline).
-# This workflow lints the JS, runs the JS↔CSS contract lint, builds the
-# webpack production bundle, sanity-checks the build artifacts, and
+# Scope: ROADMAP §3 G2 foundation + §3 G8 + §7b Q-1 (PR pipeline).
+# This workflow lints the JS, runs the JS↔CSS contract lint, parses every
+# dashboard XML + its embedded Dashboard Studio JSON definition, builds
+# the webpack production bundle, sanity-checks the build artifacts, and
 # validates incoming PR commit messages against Conventional Commits.
-# It does NOT (yet) run AppInspect, unit tests, the dashboard XML/JSON
-# parse check, the production-bundle console-noise check, or the live
-# dispatch test. Those gates are tracked as v1.7 follow-up commits under
-# ROADMAP §3 G2 and as quality boxes in ROADMAP §7b.
+# It does NOT (yet) run AppInspect, unit tests, the production-bundle
+# console-noise check, or the live dispatch test. Those gates are tracked
+# as v1.7 follow-up commits under ROADMAP §3 G2 and as quality boxes
+# in ROADMAP §7b.
 
 name: CI
 
@@ -62,6 +63,16 @@ jobs:
         # BM-FIX-01 / BM-FIX-02 class of bug where 21 widget classes shipped
         # in v1.6.0 with zero CSS rules. See ROADMAP §3 G8.
         run: npm run lint:css-contract
+
+      - name: Check dashboard XML + Studio JSON (Q-1)
+        # Walks every default/data/ui/views/*.xml and verifies (a) the
+        # XML is well-formed, (b) the <![CDATA[...]]> inside <definition>
+        # parses as JSON, (c) the JSON has the minimum Dashboard Studio
+        # shape (title, dataSources, visualizations, layout). Defends
+        # against the "typo'd CDATA closing tag" / "missing brace" /
+        # "unescaped & in <label>" class of bug. ROADMAP §3 G2 + §7b.
+        working-directory: ${{ github.workspace }}
+        run: python3 scripts/check-dashboard-xml-json.py
 
       - name: Build webpack production bundle
         run: npm run build

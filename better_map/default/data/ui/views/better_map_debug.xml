@@ -3,6 +3,8 @@
     <description>Internal state HUD overlay - shows MapLibre's resolved style, lifecycle events, source/layer counts, and any errors. Use to diagnose why a basemap fails to render. Two panels: openfreemap-liberty (vector) and osm_raster (inline raster). Compare the HUD output side-by-side against the standalone Phase 2 maps in network_diagnostic.html.</description>
     <definition><![CDATA[
 {
+    "title": "Better Map - Debug HUD",
+    "description": "Internal dashboard for live testing of better_map widgets, tile providers, and renderers. Surfaces the debug HUD overlay; not intended for production use.",
     "visualizations": {
         "viz_debug_liberty": {
             "type": "better_map.better_map",
