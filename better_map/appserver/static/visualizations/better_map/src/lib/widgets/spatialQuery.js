@@ -39,7 +39,17 @@ const NUDGE_CLASS = 'better_map-spatial-query__nudge';
 /**
  * @param {HTMLElement} parentEl
  * @param {object} opts
- * @param {string} [opts.tokenName='bm_spatial_filter']
+ * @param {string} [opts.tokenName='better_map.spatial_query']
+ *   Splunk Dashboard Studio token name to receive the emitted SPL
+ *   fragment. Defaults to the `better_map.*` namespace that the
+ *   showcase dashboards (`better_map_spatial_analytics.xml`),
+ *   `savedsearches.conf.spec` documentation, and `formatter.html`
+ *   user-facing help text all reference. Prior to SPATIAL-1 this
+ *   defaulted to `bm_spatial_filter`, breaking the dashboard ↔ widget
+ *   contract: the showcase dashboard consumed `$better_map.spatial_query$`
+ *   but the widget emitted into `$bm_spatial_filter$`, so the spatial
+ *   filter never reached the bound panels. Customers overriding the
+ *   token name should pass `opts.tokenName`.
  * @param {string} [opts.latField='lat']
  * @param {string} [opts.lonField='lon']
  * @param {string} [opts.idField='id']
@@ -49,7 +59,12 @@ const NUDGE_CLASS = 'better_map-spatial-query__nudge';
  */
 export function createSpatialQuery(parentEl, opts) {
     const options = opts || {};
-    const tokenName = options.tokenName || 'bm_spatial_filter';
+    // SPATIAL-1 fix: align the default with the documented contract.
+    // The matching dashboard panels, savedsearches.conf.spec entry, and
+    // formatter.html help text ALL reference `better_map.spatial_query`.
+    // Keep the `better_map.*` namespace consistent with crossPanel.js
+    // TOKEN_PREFIX so downstream tokens are discoverable as a group.
+    const tokenName = options.tokenName || 'better_map.spatial_query';
     const latField = options.latField || 'lat';
     const lonField = options.lonField || 'lon';
     const idField = options.idField || 'id';

@@ -12,6 +12,17 @@
  * RAF per mousemove and use turf.distance only for points inside the
  * cursor's screen-space radius (cheap bbox prefilter).
  *
+ * NOTE on cross-panel wiring (SPATIAL-1):
+ *   This widget is INTENTIONALLY visual-only. It does NOT emit a
+ *   Splunk Dashboard token, nor a `bm:brush-select` CustomEvent.
+ *   It is the cursor-attention helper for crowded maps, not a
+ *   filter-emitter. If you want a Splunk token populated with the
+ *   set of features under the cursor, use `lasso.js` (mouse-button-
+ *   driven, lasso geometry) or `drawTools.js` (polygon/circle); both
+ *   feed into `spatialQuery.js` which is the single token-emitter.
+ *   This boundary is documented in the v2 control-panel manifest
+ *   (v2Bundle.js) so the user discoverability is preserved.
+ *
  * BM-CT-1 contract: setEnabled / isEnabled / reset.
  */
 
