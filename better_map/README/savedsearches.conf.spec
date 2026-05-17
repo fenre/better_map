@@ -23,9 +23,13 @@ display.visualizations.custom.better_map.better_map.tileProviderApiKey = <string
 display.visualizations.custom.better_map.better_map.customStyleUrl = <string>
 * Style URL used when tileProvider = custom or pmtiles.
 
-display.visualizations.custom.better_map.better_map.mapLabelLanguage = <string>
-* auto | en | es | fr | de | ja | zh. Switches MapLibre text-field labels
-* when the tileset supports the chosen locale. Default: auto.
+# Label-language switching is exposed as `labelLanguage` (see the
+# "Accessibility / localization" stanzas below). The former
+# `mapLabelLanguage` key was a duplicate UI surface for the same
+# behaviour and was removed in v1.7 (D3 accessibility hardening — the
+# duplicate `<select>` triggered axe-core `duplicate-id-aria` /
+# `form-field-multiple-labels` findings and was never wired up to any
+# JS reader).
 
 #-----------------------------------------------------------------------
 # Data configurations (field detection)

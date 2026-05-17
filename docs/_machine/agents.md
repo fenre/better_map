@@ -150,9 +150,17 @@ directly.
 > **Duplicate `data-name`s:** the parser handles them via
 > "last-write-wins" and records the conflict in
 > `x-meta.known-issues.duplicate-data-names` of the schema. This is
-> *not* a feature — it's a documented escape hatch for the legacy
-> `highContrast` duplicate that pre-dates the gate. New duplicates
-> should be fixed by renaming, not ratified.
+> *not* a feature — it's a documented escape hatch. As of v1.7 D3
+> the only legacy duplicate (`highContrast`) was removed (the
+> duplicate `<select>` triggered axe-core `duplicate-id-aria` and
+> `form-field-multiple-labels` findings; the canonical control lives
+> in `Data configurations > Accessibility & localization`). The
+> escape hatch remains in the parser as a safety net, but the
+> `duplicate-data-names` list MUST be empty going forward — adding
+> a new duplicate fails the `check-formatter-coverage.py` gate AND
+> the `check-accessibility.js` gate (the `duplicate-id-aria` rule
+> catches the matching `id`/`for` collision). Fix by renaming, not
+> ratifying.
 
 ---
 
@@ -220,6 +228,12 @@ python3 scripts/check-npm-audit.py
 # Dashboard XML / JSON validity
 python3 scripts/check-dashboard-xml-json.py
 
+# Accessibility (D3) — axe-core WCAG 2.2 AA on formatter.html.
+# First run only: `cd better_map/appserver/static/visualizations/better_map
+# && npx playwright install chromium` to fetch the browser binary
+# (Playwright ships the binary separately from the npm package).
+node scripts/check-accessibility.js
+
 # Bundle hygiene (run after webpack build)
 node scripts/check-bundle-size.js
 node scripts/check-bundle-console-noise.js
@@ -242,6 +256,8 @@ to fix and the exact command to re-run.
 | `[FAIL] manifest drift` | A new shippable file appeared (or an excluded one slipped through) | `python3 scripts/build-manifest.py && git add scripts/manifest.json` — but FIRST verify the new file is actually meant to ship; if not, add it to `SHIP_EXCLUDES_REL` in `build-manifest.py` |
 | `[FAIL] license not on allowlist` | A transitive dependency landed with a copyleft license | `docs/runbooks/supply-chain.md` §"Copyleft dependency replacement"; do NOT add to the allowlist without architecture review |
 | `[FAIL] high-severity vulnerability` | `npm audit` found a non-waived high/critical CVE | Update the dependency; if no fix exists, add a time-boxed waiver to `scripts/npm-audit-waivers.json` per `docs/runbooks/supply-chain.md` §"CVE waiver management" |
+| `FAIL — axe-core reported violations` | New formatter markup broke WCAG 2.2 AA (missing `<label for=...>`, duplicate `id`, no accessible name, contrast regression, etc.) | Fix the markup in `formatter.html` and rerun `node scripts/check-accessibility.js`; if the rule is genuinely a Splunk-host concern, add the rule id to `DISABLED_RULES` in `scripts/check-accessibility.js` with a one-line justification |
+| `FATAL — Executable doesn't exist at .../chrome-headless-shell` | First run on this machine; Playwright's Chromium isn't installed yet | `cd better_map/appserver/static/visualizations/better_map && npx playwright install chromium` |
 
 ---
 

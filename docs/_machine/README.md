@@ -23,7 +23,7 @@ under `/docs/` per ROADMAP §3 E2).
 
 | File / dir | What it documents | Source of truth | Drift gate |
 |---|---|---|---|
-| `formatter-schema.json` | All 83 formatter options exposed by the visualization (type, default, enum-values, help text, Splunk property path). JSON Schema 2020-12. | `better_map/appserver/static/visualizations/better_map/formatter.html` | `scripts/check-formatter-schema.py` (byte equality) + `scripts/check-formatter-coverage.py` (HTML ↔ schema mapping + duplicate transparency) |
+| `formatter-schema.json` | All 82 formatter options exposed by the visualization (type, default, enum-values, help text, Splunk property path). JSON Schema 2020-12. | `better_map/appserver/static/visualizations/better_map/formatter.html` | `scripts/check-formatter-schema.py` (byte equality) + `scripts/check-formatter-coverage.py` (HTML ↔ schema mapping + duplicate transparency) + `scripts/check-accessibility.js` (axe-core WCAG 2.2 AA — D3 Phase 1) |
 | `integrations/itsi.yaml` | ITSI integration scaffold (REST endpoints, auth, field contract, BM-CT-1 surface). | `src/lib/splunk/itsi.js` | hand-maintained; intentional drift requires an explicit PR |
 | `integrations/soar.yaml` | SOAR integration scaffold. | `src/lib/splunk/soar.js` | hand-maintained |
 | `integrations/rba.yaml` | Risk-Based Alerting offline helpers. | `src/lib/splunk/rba.js` | hand-maintained |

@@ -155,6 +155,52 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: python3 scripts/check-formatter-coverage.py
 
+      - name: Install Playwright Chromium (D3 accessibility audit)
+        # Playwright ships browser binaries separately from the npm
+        # package — `npm ci` only fetches the JS adapter. We pin to
+        # `chromium` (no Firefox/WebKit) because the formatter HTML
+        # has no engine-specific behaviour worth testing here; what
+        # axe-core flags it flags in any modern engine. `--with-deps`
+        # installs the apt packages the headless shell needs on the
+        # GitHub-hosted runner (libnss3, libnspr4, libatk1.0-0, etc.).
+        # The cost is ~15s on the cold cache and well under 1s on
+        # the warm cache (`actions/setup-node` already cached the npm
+        # tree, which carries Playwright's version pin).
+        run: npx playwright install --with-deps chromium
+
+      - name: Check accessibility (D3 — axe-core on formatter.html)
+        # ROADMAP §3 D3 Phase 1 + §7b "WCAG 2.2 AA conformance
+        # verified" box.
+        # Loads `formatter.html` (wrapped in a minimal HTML5 page so
+        # axe sees document-level landmarks) in headless Chromium and
+        # runs axe-core against the WCAG 2.0 A/AA + 2.1 A/AA + 2.2 AA
+        # tag set. ZERO violations is the bar; the gate also reports
+        # `incomplete` findings for manual review on release-prep but
+        # does NOT fail on them. JSON report is uploaded for offline
+        # triage. Phase 2 (axe inside Playwright on the 12 showcase
+        # dashboards) lands with D5 (Splunk Docker compose harness).
+        # On FAIL, run locally via:
+        #   cd better_map/appserver/static/visualizations/better_map
+        #   npm run lint:a11y
+        # and either fix the markup or, if the rule is genuinely a
+        # host-page concern, add the rule id to DISABLED_RULES in
+        # scripts/check-accessibility.js with a one-line justification.
+        working-directory: ${{ github.workspace }}
+        run: node scripts/check-accessibility.js
+
+      - name: Upload accessibility report (D3)
+        # Always upload — the value is greatest on FAIL, when the
+        # in-line summary truncates affected-node lists at 5 per rule.
+        # Short retention because every PR produces one; main-branch
+        # runs carry the canonical evidence.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-report-${{ github.sha }}
+          path: reports/accessibility-report.json
+          retention-days: 14
+          if-no-files-found: warn
+
       - name: Check npm audit (G1) — fail on high+ without an active waiver
         # G1 supply-chain gate: runs `npm audit --omit=dev --json` in
         # the viz package and FAILs if any finding at severity `high`
