@@ -1,0 +1,72 @@
+# SPDX-License-Identifier: MIT
+# Source of truth: better_map/appserver/static/visualizations/better_map/src/lib/splunk/aiGeo.js
+meta:
+  version: 1
+  last_modified_iso8601: "2026-05-17"
+  generator: hand-authored
+  source_of_truth_path: better_map/appserver/static/visualizations/better_map/src/lib/splunk/aiGeo.js
+
+id: aiGeo
+display_name: "AI-suggested geo annotations"
+status: experimental
+splunk_app_required: "Splunk AI Assistant for SPL OR generic Splunk Cloud ML Toolkit endpoint"
+splunk_version_min: "any Splunk Cloud / Enterprise stack with a reachable AI endpoint"
+
+endpoints_called:
+  - method: POST
+    path: "<aiEndpoint>"
+    purpose: "Send a feature collection + free-text question; receive structured annotations (labels, clusters, narrative)."
+    auth: bearer
+    payload:
+      content_type: application/json
+      shape:
+        feature_count: "integer (downsampled to <= aiMaxFeatures)"
+        bbox: "[minLng, minLat, maxLng, maxLat]"
+        sample_features:
+          - id: string
+            geometry: "{ type: 'Point' | 'Polygon' | ..., coordinates: ... }"
+            properties: object
+        question: "string — user-supplied or template-driven prompt"
+    response:
+      shape:
+        annotations:
+          - feature_id: string
+            label: string
+            confidence: "number 0..1"
+            rationale: "string"
+        summary: "string — narrative"
+
+auth_required: "bearer token configured via `aiBearerToken` formatter option (encrypted at rest in Splunk Web)"
+
+field_contract:
+  input:
+    - the current MapLibre `FeatureCollection`
+    - optional `properties.context_text` — extra free-form context attached to each feature
+  output:
+    - properties._aiLabel: "string"
+    - properties._aiConfidence: "number 0..1"
+    - properties._aiRationale: "string"
+
+privacy_and_data_handling:
+  notice: |
+    BM-ANNOUNCE-1 must be wired before this integration is enabled in
+    production — users MUST be informed that feature properties are sent
+    to an external AI endpoint. The viz emits the
+    `better_map.ai.outbound_request` event on every call for audit.
+  redaction_supported: true
+  redaction_mechanism: "scripts/redact-fields.js (called pre-POST) — fields listed in `aiRedactProperties` are dropped or replaced with sha256."
+
+tested_against: null  # NOT YET VERIFIED against a live AI endpoint (Theme C)
+
+bm_ct_1:
+  setEnabled: "src/lib/splunk/aiGeo.js exports setEnabled() — gates the entire outbound request path; reset() clears the in-flight controller and cached annotations."
+  isEnabled: "Returns current enabled state."
+  reset: "Aborts in-flight requests; clears cached annotations from prior runs."
+
+references:
+  - description: "Splunk AI Assistant skill"
+    path: "/.cursor/skills/splunk-ai-assistant-setup/SKILL.md"
+  - description: "Splunk MCP Server (alternative AI surface)"
+    path: "/.cursor/skills/splunk-mcp-server-setup/SKILL.md"
+  - description: "Source module"
+    path: "better_map/appserver/static/visualizations/better_map/src/lib/splunk/aiGeo.js"

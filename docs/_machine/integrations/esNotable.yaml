@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: MIT
+# Source of truth: better_map/appserver/static/visualizations/better_map/src/lib/splunk/esNotable.js
+meta:
+  version: 1
+  last_modified_iso8601: "2026-05-17"
+  generator: hand-authored
+  source_of_truth_path: better_map/appserver/static/visualizations/better_map/src/lib/splunk/esNotable.js
+
+id: esNotable
+display_name: "ES Notable Event — drilldown URL builder + close stub"
+status: experimental
+splunk_app_required: "Splunk Enterprise Security"
+splunk_version_min: "ES 6.x"
+
+endpoints_called:
+  - method: POST
+    path: "/services/notable_update"
+    purpose: "Mark a notable closed, change urgency, reassign owner."
+    auth: session
+    payload:
+      content_type: "application/x-www-form-urlencoded"
+      shape:
+        ruleUIDs:  "comma-separated string of notable rule UIDs"
+        status:    "integer enum: 1=New, 2=In progress, 3=Pending, 4=Resolved, 5=Closed"
+        comment:   "string"
+        urgency:   "enum: low | medium | high | critical"
+        newOwner:  "Splunk username (optional)"
+
+  # URL builder (no fetch — opens in a new tab):
+  - method: GET-NAVIGATE
+    path: "/app/SplunkEnterpriseSecuritySuite/incident_review?form.search=...notable_id={{event_id}}"
+    purpose: "Pivot the user from a map feature to the ES Incident Review workflow pre-filtered for that notable."
+    auth: session
+    note: |
+      This is a navigation helper, not a REST call. The viz constructs
+      the URL and opens it (window.open or anchor). The Splunk session
+      authenticates the user when they land on the ES page.
+
+auth_required: "Splunk Web session cookie"
+
+field_contract:
+  input:
+    - properties.event_id?:   "string — the notable's event_id"
+    - properties.notable_id?: "string — same field under an alternate name"
+  output:
+    incident_review_url: "string — fully-formed app URL"
+    notable_update_payload: "object — see endpoints_called[0].payload"
+
+tested_against: null  # NOT YET VERIFIED against a live ES tenant (Theme C)
+
+bm_ct_1:
+  setEnabled: "src/lib/splunk/esNotable.js exports a setEnabled() that gates the popup 'Open in Incident Review' link."
+  isEnabled: "Returns the current enabled state."
+  reset: "Clears any cached notable-update form state."
+
+references:
+  - description: "ES Incident Review URL format"
+    url: "https://docs.splunk.com/Documentation/ES/latest/User/Howurgenciesaredetermined"
+  - description: "notable_update REST endpoint"
+    url: "https://docs.splunk.com/Documentation/ES/latest/RESTAPI/RESTendpoints"
+  - description: "VISTA Enterprise Security skill"
+    path: "/.cursor/skills/splunk-enterprise-security/SKILL.md"
+  - description: "Source module"
+    path: "better_map/appserver/static/visualizations/better_map/src/lib/splunk/esNotable.js"

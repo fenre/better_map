@@ -158,6 +158,17 @@ jobs:
         # the tarball contents. ROADMAP §3 G3.
         run: python3 scripts/check-manifest.py
 
+      - name: Check formatter schema drift (G7)
+        # Defence-in-depth re-run of the PR gate. A release that
+        # ships with a stale formatter-schema.json would silently
+        # publish a machine-readable contract that lies about the
+        # supported options — every AI agent consuming this release's
+        # schema would then make wrong decisions. ROADMAP §3 G7.
+        run: python3 scripts/check-formatter-schema.py
+
+      - name: Check formatter schema coverage (G7)
+        run: python3 scripts/check-formatter-coverage.py
+
       - name: Check npm audit (G1) — high+ blocking, shared waivers
         # Defence-in-depth re-run of the PR gate. Same script, same
         # waiver file. A waiver that was valid at PR-merge time may

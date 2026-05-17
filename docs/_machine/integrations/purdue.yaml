@@ -1,0 +1,70 @@
+# SPDX-License-Identifier: MIT
+# Source of truth: better_map/appserver/static/visualizations/better_map/src/lib/splunk/purdue.js
+meta:
+  version: 1
+  last_modified_iso8601: "2026-05-17"
+  generator: hand-authored
+  source_of_truth_path: better_map/appserver/static/visualizations/better_map/src/lib/splunk/purdue.js
+
+id: purdue
+display_name: "OT Purdue model / IEC 62443 overlay"
+status: experimental
+splunk_app_required: "none (asset register can come from any Splunk lookup or inline)"
+splunk_version_min: "any"
+
+endpoints_called:
+  - method: GET
+    path: "/servicesNS/-/<app>/data/lookups/asset_register.csv"
+    purpose: "Fetch the asset register lookup that maps host/asset_id → Purdue level + safety flag."
+    auth: session
+    note: |
+      Optional — the asset register can also be supplied inline (for the
+      air-gapped / offline case). When fetched, the visualization caches
+      the lookup at module level and refreshes on `reset()`.
+
+auth_required: "Splunk Web session cookie (when using the REST lookup path)"
+
+field_contract:
+  asset_register_lookup:
+    columns:
+      - asset_id: string
+      - purdue_level: "integer 0..5"
+      - zone: string
+      - safety_related: "Y | N"
+  input:
+    - properties.host?: string
+    - properties.asset_id?: string
+  output:
+    - properties._purdueLevel: "integer 0..5"
+    - properties._purdueZone: string
+    - properties._safetyRelated: "boolean"
+    - properties._purdueColor: "string — hex colour from the convention"
+
+# OT-SAFETY BOUNDARY (per /.cursor/rules/ot-safety.mdc Rules 1, 2, 5, 6):
+# This integration READS asset-register data only — never writes back to
+# any OT control system. The `safety_related=Y` rows are surfaced in the
+# visualization tooltip as a visible badge, NEVER silently filtered out
+# (Rule 2). The Safety Annex contract (Rule 5) lives at the customer
+# engagement level, not in this codebase.
+ot_safety:
+  rules_applicable:
+    - "Rule 1 — read-only acquisition for SIS-related signals"
+    - "Rule 2 — never disable, suppress, or filter a safety-related signal"
+    - "Rule 5 — SIS asset list is a read-only mirror of the customer SRS"
+    - "Rule 6 — detection metadata MUST flag safety dependencies"
+  enforcement: "viz reads the asset register; never writes back; tooltip shows the safety flag verbatim"
+
+tested_against: null  # NOT YET VERIFIED against a live OT tenant (Theme C)
+
+bm_ct_1:
+  setEnabled: "src/lib/splunk/purdue.js exports a setEnabled() that gates the overlay rendering."
+  isEnabled: "Returns the current enabled state."
+  reset: "Clears the cached asset register so the next enable refetches from REST."
+
+references:
+  - description: "OT safety boundary rule (REQUIRED reading for any OT engagement)"
+    path: "/.cursor/rules/ot-safety.mdc"
+  - description: "OT safety considerations (compass methodology)"
+    path: "splunk-skills/methodology/references/ot-safety-considerations.md"
+  - description: "Source module"
+    path: "better_map/appserver/static/visualizations/better_map/src/lib/splunk/purdue.js"

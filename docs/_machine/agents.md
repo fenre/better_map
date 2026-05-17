@@ -1,0 +1,272 @@
+<!-- SPDX-License-Identifier: MIT -->
+<!-- Source of truth: this file. Do NOT regenerate; hand-maintained. -->
+<!--
+  This file is the operator manual for AI agents working on the
+  better_map repo itself. It is intentionally short and link-rich.
+  When in doubt, FOLLOW THE LINKS — do not paraphrase, do not invent.
+-->
+
+# Agent operating guide — better_map
+
+> If you're an AI agent (Cursor, Claude Code, Copilot, Codex, Splunk AI
+> Assistant, etc.) about to edit this repository, **read this file first**.
+> It encodes the invariants that the CI gates enforce and the rules
+> that exist precisely because past contributors broke them.
+
+---
+
+## 1. The five non-negotiables
+
+| # | Rule | Enforced by |
+|---|---|---|
+| 1 | **No edits to `formatter-schema.json` by hand.** Regenerate from `formatter.html` via `scripts/build-formatter-schema.py`. | `scripts/check-formatter-schema.py` (drift gate) + `scripts/check-formatter-coverage.py` (coverage gate) — both run on every PR |
+| 2 | **No edits to the deployed-file manifest by hand.** Regenerate via `scripts/build-manifest.py`. | `scripts/check-manifest.py` |
+| 3 | **Every `better_map-*` CSS class created in JS MUST have at least one rule in `visualization.css`** OR an entry in `scripts/css-contract-allowlist.json`. This is the BM-FIX class of bug (control-panel toggles look dead because widgets render behind the MapLibre canvas). | `scripts/lint-js-css-contract.js` |
+| 4 | **Every `$better_map.*$` token referenced in a dashboard MUST be emitted by a widget in `src/lib/**/*.js`**, and vice-versa. This is the SPATIAL-1 class of bug (widget emits to `bm_spatial_filter`, dashboard consumes `$better_map.spatial_query$` — silent zero results). | `scripts/check-dashboard-tokens.py` |
+| 5 | **BM-CT-1 contract: every Splunk integration, layer, and widget MUST expose `setEnabled(bool)`, `isEnabled()`, and `reset()`.** Reset must restore the panel to its documented initial state in ≤ 400 ms. | Convention + future Playwright assertion (D5) |
+
+If you break any of these the PR pipeline will fail with a precise
+remediation message. Read the message; it tells you the exact script to
+run.
+
+---
+
+## 2. Where things live
+
+### 2a. The visualization itself
+
+```text
+better_map/appserver/static/visualizations/better_map/
+├── formatter.html                  ← UI for the formatter panel (SOURCE OF TRUTH for options)
+├── visualization.css               ← every better_map-* class MUST live here
+├── visualization_source.js         ← AMD entrypoint (transpiled to visualization.js)
+├── webpack.config.js               ← single-bundle AMD config (es5 target, see §3)
+├── visualizations.conf             ← Splunk registration stanza
+├── src/
+│   ├── lib/
+│   │   ├── splunk/                 ← 8 integration modules (one per Theme C scaffold)
+│   │   │   ├── itsi.js  soar.js  rba.js  aiGeo.js
+│   │   │   ├── mitre.js esNotable.js purdue.js aiAssistant.js
+│   │   │   ├── correlationSearchBuilder.js  rest.js  index.js
+│   │   ├── layers/                 ← MapLibre layer adapters (markers, hexbin, …)
+│   │   ├── widgets/                ← UI controls (spatialQuery, brushing, drawTools, …)
+│   │   ├── analytics/              ← spatial algorithms (DBSCAN, KDE, Getis-Ord, LISA)
+│   │   ├── basemaps/               ← PMTiles loader + tile pipeline
+│   │   ├── time/                   ← time scrubber
+│   │   └── …                       ← controlPanel, theme, palettes, mapBuilder, …
+│   └── styles/                     ← (rare — most CSS lives in visualization.css)
+└── .npmrc                          ← deterministic-build settings (engines-strict, save-exact)
+```
+
+### 2b. The Splunk app shell
+
+```text
+better_map/                         ← the app root that ships to Splunk
+├── default/
+│   ├── app.conf                    ← version is the source of truth (see §6 release flow)
+│   ├── visualizations.conf
+│   ├── data/ui/
+│   │   ├── nav/default.xml
+│   │   └── views/*.xml             ← Dashboard Studio v2 JSON inside CDATA
+│   └── …
+├── metadata/default.meta
+└── README/savedsearches.conf.spec  ← formatter property specs (mirrors formatter.html)
+```
+
+### 2c. CI, docs, scripts
+
+```text
+.github/
+├── workflows/ci.yml                ← PR pipeline
+├── workflows/release.yml           ← tag-triggered release (signs with cosign, ships SBOM)
+└── dependabot.yml                  ← weekly npm + github-actions updates
+
+docs/
+├── _machine/                       ← G7 machine-readable docs (this file lives here)
+│   ├── README.md                   ← contract for the _machine layer
+│   ├── agents.md                   ← you are here
+│   ├── formatter-schema.json       ← generated from formatter.html
+│   └── integrations/*.yaml         ← one file per Splunk integration
+└── runbooks/
+    ├── supply-chain.md             ← SBOM / cosign / OSV / waiver procedures
+    └── upgrade-hygiene.md          ← orphan-file detection on long-lived installs
+
+scripts/                            ← CI gates + build/release helpers + runbooks
+```
+
+---
+
+## 3. Build & runtime envelope (binding)
+
+These constraints come from `ROADMAP.md` §1a and ALL apply:
+
+1. **Single AMD bundle.** `webpack.config.js` outputs ONE `visualization.js`
+   with `target: ['web', 'es5']` and `output.environment.arrowFunction:
+   false`. No dynamic `import()`, no Service Workers, no extra script
+   tags.
+2. **Splunk Cloud CSP is centrally managed.** `script-src 'self'
+   'unsafe-eval'`, `worker-src 'self' blob:`, `connect-src 'self'`.
+   Workers ship as same-origin URLs. Basemap tiles must come via an
+   allow-listed CDN or PMTiles inside the app.
+3. **No external fetches except basemap tiles + air-gapped PMTiles + the
+   integrations declared in `docs/_machine/integrations/*.yaml`.** The
+   AI Assistant scaffold (`aiAssistant.yaml`) routes through
+   `Splunk_AI_Assistant_Cloud`, not directly to an LLM API.
+4. **No iframes pointing outside Splunk.** Drilldowns open new tabs
+   within the Splunk app.
+5. **No reliance on Dashboard Studio v3 `core.*` keys.** Splunk silently
+   ignores the AMD bundle and shows a grey placeholder.
+
+If you're about to break any of these, stop and re-read the table in
+ROADMAP.md §1a.
+
+---
+
+## 4. Adding a new formatter option (the right way)
+
+The formatter is rendered by Splunk from `formatter.html`. The schema in
+`docs/_machine/formatter-schema.json` is **derived** — never edit it
+directly.
+
+1. Add the control to `formatter.html`. Every input/select MUST carry a
+   unique `data-name="<camelCase>"` attribute and a `<p>` of help text.
+2. Add the matching `savedsearches.conf.spec` line under
+   `README/savedsearches.conf.spec`.
+3. Read the option in `visualization_source.js` (or wherever the
+   relevant layer lives) via the
+   `display.visualizations.custom.better_map.better_map.<name>`
+   property path. Helper getters already exist in `src/lib/`.
+4. Run `python3 scripts/build-formatter-schema.py` and commit the
+   updated `docs/_machine/formatter-schema.json`.
+5. Local sanity check:
+
+   ```bash
+   python3 scripts/check-formatter-schema.py
+   python3 scripts/check-formatter-coverage.py
+   ```
+
+   Both must print `[PASS]`.
+
+> **Duplicate `data-name`s:** the parser handles them via
+> "last-write-wins" and records the conflict in
+> `x-meta.known-issues.duplicate-data-names` of the schema. This is
+> *not* a feature — it's a documented escape hatch for the legacy
+> `highContrast` duplicate that pre-dates the gate. New duplicates
+> should be fixed by renaming, not ratified.
+
+---
+
+## 5. Adding a new Splunk integration (Theme C)
+
+1. Create `src/lib/splunk/<id>.js`. Export at minimum: `configure()`,
+   `setEnabled(bool)`, `isEnabled()`, `reset()` and the public
+   helpers documented in the corresponding YAML.
+2. Re-export from `src/lib/splunk/index.js` (alphabetical block).
+3. Author `docs/_machine/integrations/<id>.yaml` with the schema used by
+   the eight existing files (`itsi.yaml` is the canonical reference).
+   Fields: `meta`, `id`, `display_name`, `status` (`experimental` |
+   `verified` | `production`), `splunk_app_required`,
+   `splunk_version_min`, `endpoints_called`, `auth_required`,
+   `field_contract`, `tested_against`, `bm_ct_1`, `references`.
+4. If the integration touches an OT/ICS asset, read
+   `/.cursor/rules/ot-safety.mdc` and reflect Rules 1, 2, 5, 6 in
+   the YAML's `ot_safety` block (see `purdue.yaml` for the canonical
+   example).
+5. `status: experimental` is the default until the integration is
+   smoke-tested against a live Splunk tenant. Setting `tested_against`
+   to a non-null value is the trigger for `status: verified`.
+
+---
+
+## 6. The release flow (what you almost never touch)
+
+| Step | Where | Who triggers |
+|---|---|---|
+| Bump version | `better_map/default/app.conf` (`[launcher] version`) | release engineer |
+| Open release PR | `chore(release): vX.Y.Z` | release engineer |
+| Merge to `main` | normal PR gates apply (`ci.yml`) | reviewer |
+| Tag `vX.Y.Z` | `git tag -a vX.Y.Z -m '...'; git push --tags` | release engineer |
+| Release workflow fires | `.github/workflows/release.yml` — builds, signs (cosign keyless), SBOMs (CycloneDX 1.6), publishes GitHub Release | GitHub Actions |
+
+Verification of a downloaded release is documented in
+`docs/runbooks/supply-chain.md`. Do not invent your own verification
+procedure.
+
+---
+
+## 7. The "I'm about to commit, am I clean?" checklist
+
+Before you `git commit -a`, run the following — these mirror the PR
+pipeline and will catch ~95 % of CI failures locally:
+
+```bash
+# Formatter contract (G7)
+python3 scripts/check-formatter-schema.py
+python3 scripts/check-formatter-coverage.py
+
+# Manifest / upgrade hygiene (G3)
+python3 scripts/check-manifest.py
+
+# JS ↔ CSS contract (G8)
+node scripts/lint-js-css-contract.js
+
+# Dashboard token contract (Q-1B / SPATIAL-1)
+python3 scripts/check-dashboard-tokens.py
+
+# Supply chain (G1)
+python3 scripts/check-license-allowlist.py
+python3 scripts/check-npm-audit.py
+
+# Dashboard XML / JSON validity
+python3 scripts/check-dashboard-xml-json.py
+
+# Bundle hygiene (run after webpack build)
+node scripts/check-bundle-size.js
+node scripts/check-bundle-console-noise.js
+node scripts/check-version-consistency.js
+```
+
+Every one of these scripts has a clear FAIL message that names the file
+to fix and the exact command to re-run.
+
+---
+
+## 8. Common mistakes and their fixes
+
+| Symptom | Most likely cause | Fix |
+|---|---|---|
+| `[FAIL] formatter-schema.json mismatch` | You edited `formatter.html` and forgot to regenerate | `python3 scripts/build-formatter-schema.py && git add docs/_machine/formatter-schema.json` |
+| `[FAIL] HTML → schema coverage failed` | Your new `data-name` got dropped by the parser (often: malformed `<select>` tag) | Validate the HTML around the new option; rerun the builder |
+| `[FAIL] orphan token: better_map.<name>` | A widget emits to one token name, the dashboard consumes a different one | Align the names — the dashboard's `$better_map.x$` is the contract; rename in the widget |
+| `[FAIL] missing CSS class: better_map-<foo>` | New widget JS adds a class with no CSS rule | Add at least a `position` rule in `visualization.css`, or add an allowlist entry with justification |
+| `[FAIL] manifest drift` | A new shippable file appeared (or an excluded one slipped through) | `python3 scripts/build-manifest.py && git add scripts/manifest.json` — but FIRST verify the new file is actually meant to ship; if not, add it to `SHIP_EXCLUDES_REL` in `build-manifest.py` |
+| `[FAIL] license not on allowlist` | A transitive dependency landed with a copyleft license | `docs/runbooks/supply-chain.md` §"Copyleft dependency replacement"; do NOT add to the allowlist without architecture review |
+| `[FAIL] high-severity vulnerability` | `npm audit` found a non-waived high/critical CVE | Update the dependency; if no fix exists, add a time-boxed waiver to `scripts/npm-audit-waivers.json` per `docs/runbooks/supply-chain.md` §"CVE waiver management" |
+
+---
+
+## 9. What this file is NOT
+
+- Not a substitute for `README.md` (user-facing) or `CHANGELOG.md`.
+- Not the ROADMAP. Roadmap lives at `ROADMAP.md` and is the planning
+  document.
+- Not the canonical docs site (that's E2 — MkDocs-based, deferred).
+- Not the customer-facing setup guide (that's E5 — the recipe matrix,
+  deferred).
+- Not the API reference for plugin authors (that's G6, deferred to
+  v2.0).
+
+If you find drift between this file and the codebase, the codebase
+wins. Open a PR that updates this file.
+
+---
+
+## 10. References
+
+- `ROADMAP.md` §3 G7 — design intent for the machine-readable docs layer
+- `docs/_machine/README.md` — explains the `_machine` contract
+- `docs/_machine/formatter-schema.json` — generated formatter schema
+- `docs/_machine/integrations/*.yaml` — Splunk integration scaffolds
+- `docs/runbooks/supply-chain.md` — G1 verification + waiver procedures
+- `docs/runbooks/upgrade-hygiene.md` — G3 orphan-file remediation
+- `/.cursor/rules/ot-safety.mdc` — VISTA OT safety boundary (binding for OT integrations)

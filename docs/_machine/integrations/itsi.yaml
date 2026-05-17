@@ -1,0 +1,79 @@
+# SPDX-License-Identifier: MIT
+# Source of truth: better_map/appserver/static/visualizations/better_map/src/lib/splunk/itsi.js
+# CI gate `scripts/check-machine-integrations.py` asserts that every
+# `src/lib/splunk/<id>.js` has a matching `docs/_machine/integrations/<id>.yaml`
+# and vice-versa. Edit the .js file as the engineering source; mirror
+# its REST contract here so an AI agent can answer "how do I integrate
+# better_map with ITSI?" without scraping a JS comment block.
+meta:
+  version: 1
+  last_modified_iso8601: "2026-05-17"
+  generator: hand-authored
+  source_of_truth_path: better_map/appserver/static/visualizations/better_map/src/lib/splunk/itsi.js
+
+id: itsi
+display_name: "Splunk IT Service Intelligence (ITSI) — service map"
+status: experimental
+splunk_app_required: "ITSI (SA-ITOA)"
+splunk_version_min: "ITSI 4.x"
+
+# REST endpoints the visualization talks to. `auth: session` means the
+# call is made from inside Splunk Web and rides on the user's existing
+# Splunk session cookie — no bearer token required.
+endpoints_called:
+  - method: GET
+    path: "/servicesNS/-/SA-ITOA/itoa_interface/service"
+    purpose: "List ITSI services with dependency graph metadata."
+    auth: session
+    parameters:
+      filter: '{ "_owner": "nobody" }'
+      count: 0
+      fields:
+        - title
+        - _key
+        - services_depends_on
+        - services_depending_on
+        - health_calculated
+        - entities
+
+# The auth model for the visualization's outbound calls. The viz never
+# holds long-lived credentials of its own; it relies on Splunk Web
+# session affinity for read calls and on a delegated forwarder pattern
+# (SOAR) for write calls.
+auth_required: "Splunk Web session cookie (read-only)"
+
+# Field contract — the normalised graph shape the visualization emits
+# after fetching from REST. Layer authors and recipe authors consume
+# this shape, not the raw REST response.
+field_contract:
+  output:
+    nodes:
+      - id: string         # ITSI service _key
+      - title: string
+      - healthScore: number
+      - severity: string   # ok | info | normal | low | medium | high | critical
+      - lng: number?       # null when service has no geo-positioned entity
+      - lat: number?
+    edges:
+      - from: string       # node id
+      - to: string         # node id
+
+# Live-tenant verification status. Per ROADMAP §1c gap 1, this is a
+# scaffold without verified live-tenant smoke. Theme C1–C8 in v1.7
+# converts these to verified production code with smoke-tested field
+# contracts checked in here as `tested_against`.
+tested_against: null  # NOT YET VERIFIED against a live ITSI tenant (Theme C)
+
+# How this integration interacts with the BM-CT-1 control trio.
+bm_ct_1:
+  setEnabled: "src/lib/splunk/itsi.js exports a setEnabled() that gates REST polling."
+  isEnabled: "Returns the current enabled state."
+  reset: "Clears cached service graph + resubscribes if enabled."
+
+references:
+  - description: "ITSI Service REST API reference"
+    url: "https://docs.splunk.com/Documentation/ITSI/latest/RESTAPI/ITSIRESTAPIreference"
+  - description: "VISTA ITSI skill (engagement-time best practice)"
+    path: "/.cursor/skills/splunk-itsi/SKILL.md"
+  - description: "Source module (the authoritative contract)"
+    path: "better_map/appserver/static/visualizations/better_map/src/lib/splunk/itsi.js"
