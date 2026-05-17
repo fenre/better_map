@@ -558,10 +558,31 @@ jobs:
         # (above) and the install command read the same file. A version
         # bump is a single-file change with a clear PR diff. Mirrors
         # the AppInspect-job pattern (scripts/requirements-appinspect.txt).
+        # mkdocs depends on PyYAML transitively, so the recipe-schema
+        # gate below does NOT need a separate install step.
         run: |
           python3 -m pip install --quiet --upgrade pip
           python3 -m pip install --quiet -r scripts/requirements-mkdocs.txt
           mkdocs --version
+
+      - name: Check per-source recipe schema + index drift (E5 Phase 1)
+        # ROADMAP §3 E5 Phase 1 + §7e "per-source recipe matrix" box.
+        # Walks docs/recipes/<source>/<layer>.md and asserts:
+        #   1. Frontmatter conforms to docs/_machine/recipes/recipe-schema.json.
+        #   2. The filesystem path agrees with frontmatter id / source.id /
+        #      layer.id.
+        #   3. Six canonical markdown sections (1..6) are present in order.
+        #   4. The §2 SPL fence is tagged `spl` and obeys SPL Pipe-Per-Line.
+        #   5. The §4 JSON formatter-config fence parses, references only
+        #      real options from formatter-schema.json, and the options
+        #      set in §4 agree with required_formatter_options frontmatter.
+        #   6. expected_fields entries appear in the §3 markdown table.
+        #   7. docs/_machine/recipes/index.yaml regenerates byte-for-byte
+        #      from the recipe files on disk (drift gate).
+        # On FAIL, the script's stderr names the recipe + the violation;
+        # for index drift specifically, run
+        # `python3 scripts/build-recipe-index.py` and commit the result.
+        run: python3 scripts/check-recipe-schema.py
 
       - name: Build documentation site (strict mode)
         # `--strict` is the hammer: any MkDocs warning fails the build.

@@ -38,6 +38,8 @@ GitHub Pages on every push to `main` via
 | `integrations/purdue.yaml` | OT Purdue / IEC 62443 overlay (incl. OT safety boundary). | `src/lib/splunk/purdue.js` + `/.cursor/rules/ot-safety.mdc` | hand-maintained |
 | `integrations/aiGeo.yaml` | AI-suggested geo annotations. | `src/lib/splunk/aiGeo.js` | hand-maintained |
 | `integrations/aiAssistant.yaml` | Splunk AI Assistant for SPL bridge. | `src/lib/splunk/aiAssistant.js` | hand-maintained |
+| `recipes/recipe-schema.json` | E5 Phase 1 — per-source recipe contract. JSON Schema 2020-12 declaring the YAML frontmatter every `docs/recipes/<source>/<layer>.md` MUST carry (id, source, layer, status, expected_fields, required_formatter_options, ot_safety_relevant). | hand-maintained | `scripts/check-recipe-schema.py` (frontmatter validation + 6-section structure + SPL pipe-per-line + §4 JSON vs formatter-schema cross-check + §3 table vs expected_fields cross-check) |
+| `recipes/index.yaml` | E5 Phase 1 — auto-generated index of every recipe in `docs/recipes/<source>/<layer>.md`, with the frontmatter blocks flattened into one stable structure. The structured input for the G7 Phase 2 `llms.txt` emission. | `docs/recipes/<source>/<layer>.md` frontmatter (union of all) | `scripts/check-recipe-schema.py` (re-runs `scripts/build-recipe-index.py` under the hood and asserts byte-for-byte equality with the on-disk copy) |
 | `agents.md` | Operating guide for AI agents working on the repo itself (the five non-negotiables, where things live, common mistakes). | hand-maintained | n/a |
 | `README.md` | This file. | hand-maintained | n/a |
 
@@ -50,10 +52,10 @@ artefacts not yet built. They will be added once those land.
 
 | File | Blocked by |
 |---|---|
-| `llms.txt` | ~~E2 — MkDocs site~~ (E2 Phase 1 shipped v1.7; unblocked. Emission is the first item on the G7 Phase 2 backlog — needs a script that walks the MkDocs `nav:` tree, classifies each page, and emits the `llms.txt` convention) |
-| `llms-full.txt` | E2 Phase 1 (done) + per-page token budget definition |
+| `llms.txt` | ~~E2 — MkDocs site~~ (E2 Phase 1 shipped v1.7; unblocked) + ~~E5 — recipe matrix~~ (E5 Phase 1 shipped v1.7-prep with three starter recipes and `recipes/index.yaml`; the structured input now exists). Emission is the next G7 Phase 2 work item — needs a script that walks the MkDocs `nav:` tree + the recipe index, classifies each page, and emits the `llms.txt` convention |
+| `llms-full.txt` | E2 Phase 1 (done) + E5 Phase 1 (done) + per-page token budget definition |
 | `layers/<layer-id>.yaml` (one per layer type) | Independent of E2 but de-prioritised behind integrations (where the customer questions actually land) |
-| `recipes/index.yaml` | E5 — the recipe matrix (no recipes exist yet) |
+| `recipes/<source>/<layer>.md` (the remaining matrix cells) | ~~E5 framework~~ (Phase 1 shipped) + live-Splunk verification time for each cell (status flips from `unverified` → `verified` as a maintainer with REST access dispatches each SPL). The framework is now drift-gated, so each new recipe lands as a small isolated PR |
 | `openapi-better_map-rest.yaml` | The REST endpoints it would describe (KV-store bookmarks F1, plugin manifest G6, recipe-test webhook D5) are all v1.8 or later |
 
 When each of these blockers clears, the corresponding artefact lands
@@ -81,6 +83,14 @@ under this directory with its own drift gate.
    `docs/runbooks/supply-chain.md`. The runbook is the source of truth;
    the SBOM and signatures it describes are produced by
    `.github/workflows/release.yml`.
+6. **To answer "how do I wire source X into Better Map?":** read
+   `recipes/index.yaml` first for a structured list, then drill into
+   `docs/recipes/<source>/<layer>.md` for the full six-section
+   playbook. Each recipe carries a `status` field — `verified` means
+   the SPL has been dispatched against a real Splunk install (named
+   in `verified_against`); `unverified` means the recipe is
+   documentation-only and a maintainer-with-live-tenant should
+   confirm before customer delivery.
 
 ---
 

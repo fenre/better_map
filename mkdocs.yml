@@ -213,7 +213,11 @@ nav:
   - Integrations:
       - integrations/index.md
       - Catalogue: integrations/catalogue.md
-  - Recipes: recipes/index.md
+  - Recipes:
+      - recipes/index.md
+      - 'CIM Network Traffic — markers': recipes/cim-network-traffic/markers.md
+      - 'KV Store (lat/lon) — markers': recipes/kvstore-latlon/markers.md
+      - 'US states — choropleth': recipes/geo-us-states/choropleth.md
   - Performance: performance.md
   - Air-gapped deployment: air-gapped.md
   - Runbooks:

@@ -1,0 +1,229 @@
+{
+  "$id": "https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/recipe-schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Better Map per-source recipe — YAML frontmatter schema",
+  "description": "Machine-readable contract for the YAML frontmatter at the top of every per-source recipe file (docs/recipes/<source-id>/<layer-id>.md). Authored by hand; validated in CI by scripts/check-recipe-schema.py (which ALSO checks the six markdown body sections required by ROADMAP \u00a73 E5). The Phase 1 generator emits docs/_machine/recipes/index.yaml from the union of these frontmatter blocks. See ROADMAP \u00a73 E5 + \u00a77e.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "source",
+    "layer",
+    "status",
+    "last_verified_iso8601",
+    "verified_against",
+    "splunk_apps_required",
+    "expected_fields",
+    "required_formatter_options",
+    "ot_safety_relevant"
+  ],
+  "properties": {
+    "schema_version": {
+      "description": "Schema version this recipe declares against. Phase 1 is version 1.",
+      "type": "integer",
+      "const": 1
+    },
+    "id": {
+      "description": "Stable recipe id, MUST equal <source.id>--<layer.id> (the path-derived id). Used as the dedup key in index.yaml.",
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*--[a-z0-9]+(?:-[a-z0-9]+)*$",
+      "minLength": 5,
+      "maxLength": 80
+    },
+    "source": {
+      "description": "Which Splunk source pattern this recipe consumes. The 'id' is the directory name under docs/recipes/ and the row in the ROADMAP \u00a73 E5 matrix.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "display_name", "pattern"],
+      "properties": {
+        "id": {
+          "description": "Stable kebab-case id. Matches the docs/recipes/<id>/ directory name.",
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "enum": [
+            "cim-network-traffic",
+            "cim-authentication",
+            "cim-performance",
+            "cim-alerts",
+            "kvstore-latlon",
+            "csv-lookup-geo",
+            "itsi-kpi-base",
+            "es-risk",
+            "ot-datastreamer",
+            "netflow-sflow-ipfix",
+            "splunk-stream",
+            "cyber-vision",
+            "thousandeyes",
+            "meraki",
+            "geo-us-states"
+          ]
+        },
+        "display_name": {
+          "description": "Human-readable name for the docs site nav.",
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 80
+        },
+        "pattern": {
+          "description": "Broader category. Drives doc grouping and downstream llms.txt classification.",
+          "type": "string",
+          "enum": [
+            "splunk-cim",
+            "splunk-lookup",
+            "splunk-builtin",
+            "splunk-premium-es",
+            "splunk-premium-itsi",
+            "splunk-edge-hub",
+            "splunk-stream",
+            "splunk-vendor-ta"
+          ]
+        }
+      }
+    },
+    "layer": {
+      "description": "Which Better Map layer type this recipe drives. MUST match the filename (<layer.id>.md) and be one of the ten core layer types tracked in the ROADMAP \u00a73 E5 matrix.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "display_name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "enum": [
+            "markers",
+            "paths",
+            "polygons",
+            "choropleth",
+            "heat",
+            "h3",
+            "supercluster",
+            "extrusion-3d",
+            "indoor",
+            "vector-tile-join"
+          ]
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 60
+        }
+      }
+    },
+    "status": {
+      "description": "Verification state of the SPL recipe. 'verified' means the SPL has been dispatched against a real Splunk install (named in verified_against) and confirmed to dispatch without parse error and return the documented fields. 'unverified' is reserved for recipes authored from documentation only; 'deferred' for matrix cells the team has explicitly chosen not to ship in this release.",
+      "type": "string",
+      "enum": ["verified", "unverified", "deferred"]
+    },
+    "last_verified_iso8601": {
+      "description": "ISO-8601 date the SPL was last dispatched against a real Splunk install. MUST be the day of the most recent verification, NOT the file's commit date.",
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "verified_against": {
+      "description": "What 'verified' actually means for THIS recipe. The Splunk version + app context the SPL was dispatched in. NULL is only acceptable when status is 'deferred' or 'unverified'.",
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["splunk_version", "splunk_tenant_name_hash", "splunk_app"],
+          "properties": {
+            "splunk_version": {
+              "description": "Splunk Enterprise / Cloud version string the SPL was dispatched against.",
+              "type": "string",
+              "minLength": 3
+            },
+            "splunk_tenant_name_hash": {
+              "description": "Short, non-PII identifier of the lab tenant (e.g. 'rev:test'). Does NOT include hostname, customer name, or tokens.",
+              "type": "string",
+              "minLength": 1
+            },
+            "splunk_app": {
+              "description": "App context the dispatch happened in (e.g. 'search', 'Splunk_TA_cisco_meraki').",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      ]
+    },
+    "splunk_apps_required": {
+      "description": "Splunk apps / TAs that the customer needs installed for THIS recipe's SPL to return data. An empty array means the recipe runs on a vanilla Splunk install with no add-ons.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "optional"],
+        "properties": {
+          "id": {
+            "description": "Splunk app id (the value of [package] id in app.conf) OR 'builtin:<feature>' for vanilla-install features like iplocation.",
+            "type": "string",
+            "minLength": 1
+          },
+          "optional": {
+            "description": "If true, the recipe still works without this app but with reduced enrichment.",
+            "type": "boolean"
+          },
+          "version_min": {
+            "description": "Minimum app version. Optional; omit when 'any current version' is acceptable.",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "expected_fields": {
+      "description": "The field contract for the panel. Every field the recipe's SPL produces and the formatter binds to. The validator cross-checks that every entry here appears in the markdown body's 'Expected fields' table.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "type", "example"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["string", "number", "integer", "boolean"]
+          },
+          "example": {
+            "description": "A representative example value, as a string. Used to populate the field-contract table in the markdown body.",
+            "type": "string"
+          },
+          "drives_formatter_option": {
+            "description": "Optional cross-link: which formatter option this field is intended to feed (e.g. 'latitudeField'). Must be a property in docs/_machine/formatter-schema.json when present.",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "required_formatter_options": {
+      "description": "Minimum set of formatter options the recipe configures. Every entry MUST be a property name in docs/_machine/formatter-schema.json (the validator cross-checks).",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$"
+      }
+    },
+    "ot_safety_relevant": {
+      "description": "Per /.cursor/rules/ot-safety.mdc, is any signal in this recipe SIS-related (safety_related=Y) or sourced from OT Level 0/1/2? If true, the recipe MUST include an 'OT safety' note in section 6 Gotchas.",
+      "type": "boolean"
+    },
+    "references": {
+      "description": "Cross-references to source-of-truth files (skills, integrations YAML, other docs). Optional.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["description", "path"],
+        "properties": {
+          "description": {"type": "string", "minLength": 1},
+          "path": {"type": "string", "minLength": 1}
+        }
+      }
+    }
+  }
+}

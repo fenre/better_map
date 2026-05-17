@@ -1,0 +1,126 @@
+# AUTO-GENERATED — do not edit by hand.
+# Source: docs/recipes/<source>/<layer>.md frontmatter blocks.
+# Regenerate: python3 scripts/build-recipe-index.py
+# Drift gate: python3 scripts/check-recipe-schema.py
+schema_version: 1
+generator: scripts/build-recipe-index.py
+recipe_count: 3
+recipes:
+- id: cim-network-traffic--markers
+  source:
+    id: cim-network-traffic
+    display_name: CIM Network Traffic
+    pattern: splunk-cim
+  layer:
+    id: markers
+    display_name: Markers
+  status: unverified
+  last_verified_iso8601: '2026-05-17'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_SA_CIM
+    optional: false
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: 203.0.113.45
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '37.7749'
+  - name: lon
+    type: number
+    example: '-122.4194'
+  - name: dest_country
+    type: string
+    example: US
+  - name: value
+    type: integer
+    example: '847'
+  required_formatter_options:
+  - pointRenderer
+  ot_safety_relevant: false
+  references:
+  - description: Splunk CIM skill — Network Traffic data model field reference
+    path: ~/.cursor/skills/splunk-cim/SKILL.md
+  - description: Layer reference — markers
+    path: docs/reference/layers.md
+  - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
+    path: docs/reference/bm-ct-1.md
+  path: docs/recipes/cim-network-traffic/markers.md
+- id: geo-us-states--choropleth
+  source:
+    id: geo-us-states
+    display_name: US states (built-in geo lookup)
+    pattern: splunk-builtin
+  layer:
+    id: choropleth
+    display_name: Choropleth
+  status: unverified
+  last_verified_iso8601: '2026-05-17'
+  verified_against: null
+  splunk_apps_required: []
+  expected_fields:
+  - name: id
+    type: string
+    example: CA
+    drives_formatter_option: idField
+  - name: state_name
+    type: string
+    example: California
+  - name: value
+    type: integer
+    example: '12847'
+  required_formatter_options:
+  - featureJoinPreset
+  - enableChoropleth
+  - palette
+  ot_safety_relevant: false
+  references:
+  - description: Layer reference — choropleth
+    path: docs/reference/layers.md
+  - description: featureJoin layer (us-states PMTiles preset; promoteId=stusps)
+    path: better_map/appserver/static/visualizations/better_map/src/lib/layers/featureJoin.js
+  path: docs/recipes/geo-us-states/choropleth.md
+- id: kvstore-latlon--markers
+  source:
+    id: kvstore-latlon
+    display_name: KV Store (lat/lon collection)
+    pattern: splunk-lookup
+  layer:
+    id: markers
+    display_name: Markers
+  status: unverified
+  last_verified_iso8601: '2026-05-17'
+  verified_against: null
+  splunk_apps_required: []
+  expected_fields:
+  - name: id
+    type: string
+    example: DC-ATL-01
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '33.7490'
+  - name: lon
+    type: number
+    example: '-84.3880'
+  - name: site_name
+    type: string
+    example: Atlanta data center
+  - name: site_type
+    type: string
+    example: data_center
+  required_formatter_options:
+  - pointRenderer
+  ot_safety_relevant: false
+  references:
+  - description: Splunk lookups skill — KV Store lookup configuration
+    path: ~/.cursor/skills/splunk-lookups/SKILL.md
+  - description: Layer reference — markers
+    path: docs/reference/layers.md
+  - description: dataFitness.js alias auto-detect (lat/lon/id auto-picked)
+    path: better_map/appserver/static/visualizations/better_map/src/lib/dataFitness.js
+  path: docs/recipes/kvstore-latlon/markers.md
