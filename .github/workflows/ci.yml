@@ -1,21 +1,22 @@
 # CI — better_map Splunk custom visualization
 #
-# Scope: ROADMAP §3 G2 foundation + §3 G8 + §7b Q-1 + §7b Q-1B +
-# §7b Q-2 + §7b Q-3 + REL-1 version-consistency check + G2-2
-# AppInspect gate + T-1 vitest unit-test scaffold (PR pipeline). This
-# workflow lints the JS, runs the JS↔CSS contract lint, parses every
-# dashboard XML + its embedded Dashboard Studio JSON definition,
+# Scope: ROADMAP §3 G2 foundation + §3 G3 manifest + §3 G8 + §7b Q-1 +
+# §7b Q-1B + §7b Q-2 + §7b Q-3 + REL-1 version-consistency check +
+# G2-2 AppInspect gate + T-1 vitest unit-test scaffold (PR pipeline).
+# This workflow lints the JS, runs the JS↔CSS contract lint, parses
+# every dashboard XML + its embedded Dashboard Studio JSON definition,
 # cross-checks every `$better_map.*$` dashboard token against widget
 # producer literals in `src/lib/**/*.js` (Q-1B; SPATIAL-1 defence in
-# depth), runs the vitest unit-test suite, builds the webpack
-# production bundle, runs the production-bundle console-noise check,
-# runs the bundle-size budget check against the §7b table, verifies
-# the three version sources (app.conf / package.json / HUD_VERSION)
-# agree, sanity-checks the build artifacts, validates incoming PR
-# commit messages against Conventional Commits, and runs Splunk
-# AppInspect against the staged Splunk-app archive (cloud+future
-# tags) to defend against AppInspect regressions before they reach a
-# release tag.
+# depth), asserts the release manifest matches the source tree (G3;
+# orphan-file defence in depth), runs the vitest unit-test suite,
+# builds the webpack production bundle, runs the production-bundle
+# console-noise check, runs the bundle-size budget check against the
+# §7b table, verifies the three version sources (app.conf /
+# package.json / HUD_VERSION) agree, sanity-checks the build
+# artifacts, validates incoming PR commit messages against
+# Conventional Commits, and runs Splunk AppInspect against the staged
+# Splunk-app archive (cloud+future tags) to defend against AppInspect
+# regressions before they reach a release tag.
 # It does NOT (yet) run the live dispatch test. That gate is tracked
 # as a v1.7 follow-up under ROADMAP §3 G2 (D5).
 # Release automation lives in `.github/workflows/release.yml` and runs
@@ -107,6 +108,20 @@ jobs:
         # Theme G follow-up.
         working-directory: ${{ github.workspace }}
         run: python3 scripts/check-dashboard-tokens.py
+
+      - name: Check release manifest matches source tree (G3)
+        # Defends against orphan-file accumulation across releases.
+        # Splunk's `update=true` REST install extracts the new tarball
+        # on top of the previous install but does NOT delete files
+        # absent from the new tarball, so without a release manifest
+        # an operator cannot deterministically detect orphans. This
+        # gate regenerates the manifest from the source tree and
+        # asserts it byte-matches `better_map/default/_better_map_manifest.json`.
+        # On FAIL, run `python3 scripts/build-manifest.py` and commit
+        # the result. The operator runbook `scripts/find-orphans.sh`
+        # consumes this manifest. ROADMAP §3 G3.
+        working-directory: ${{ github.workspace }}
+        run: python3 scripts/check-manifest.py
 
       - name: Run unit tests (vitest, T-1 scaffold)
         # Executes src/lib/**/*.test.js under jsdom. Currently covers

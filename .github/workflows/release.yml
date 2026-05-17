@@ -127,6 +127,17 @@ jobs:
       - name: Check dashboard XML + Studio JSON (Q-1)
         run: python3 scripts/check-dashboard-xml-json.py
 
+      - name: Check dashboard ↔ widget token contract (Q-1B)
+        run: python3 scripts/check-dashboard-tokens.py
+
+      - name: Check release manifest matches source tree (G3)
+        # Defence-in-depth: the PR-gate ran this check at merge time, so
+        # a fresh tag from main should already pass. We re-run here so a
+        # tag created from a stale branch (or a tag pointing at a commit
+        # that bypassed PR review) cannot ship a manifest that lies about
+        # the tarball contents. ROADMAP §3 G3.
+        run: python3 scripts/check-manifest.py
+
       - name: Build webpack production bundle
         working-directory: better_map/appserver/static/visualizations/better_map
         run: npm run build
