@@ -96,6 +96,16 @@ jobs:
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
+        with:
+          # `enablement: true` lets the action self-bootstrap Pages on
+          # first run by calling the REST `enable-pages-for-repository`
+          # endpoint instead of failing with `Get Pages site failed`.
+          # The `pages: write` permission above is what authorises that
+          # call. Once Pages is enabled it's a no-op on subsequent runs,
+          # so leaving this on indefinitely is safe and means a fresh
+          # fork or clone (post-rename, post-transfer) bootstraps without
+          # the maintainer having to flip the Settings → Pages toggle.
+          enablement: true
 
       - name: Upload site/ as a Pages artifact
         uses: actions/upload-pages-artifact@v3
