@@ -1,19 +1,20 @@
 # CI — better_map Splunk custom visualization
 #
 # Scope: ROADMAP §3 G2 foundation + §3 G8 + §7b Q-1 + §7b Q-2 + §7b Q-3
-# + REL-1 version-consistency check + G2-2 AppInspect gate (PR pipeline).
-# This workflow lints the JS, runs the JS↔CSS contract lint, parses every
-# dashboard XML + its embedded Dashboard Studio JSON definition, builds
-# the webpack production bundle, runs the production-bundle console-noise
-# check, runs the bundle-size budget check against the §7b table,
-# verifies the three version sources (app.conf / package.json / HUD_VERSION)
-# agree, sanity-checks the build artifacts, validates incoming PR
-# commit messages against Conventional Commits, and runs Splunk AppInspect
-# against the staged Splunk-app archive (cloud+future tags) to defend
-# against AppInspect regressions before they reach a release tag.
-# It does NOT (yet) run unit tests or the live dispatch test. Those
-# gates are tracked as v1.7 follow-up commits under ROADMAP §3 G2 and
-# as quality boxes in ROADMAP §7b / §7c-widget.
+# + REL-1 version-consistency check + G2-2 AppInspect gate + T-1
+# vitest unit-test scaffold (PR pipeline). This workflow lints the JS,
+# runs the JS↔CSS contract lint, parses every dashboard XML + its
+# embedded Dashboard Studio JSON definition, runs the vitest unit-test
+# suite, builds the webpack production bundle, runs the production-
+# bundle console-noise check, runs the bundle-size budget check
+# against the §7b table, verifies the three version sources
+# (app.conf / package.json / HUD_VERSION) agree, sanity-checks the
+# build artifacts, validates incoming PR commit messages against
+# Conventional Commits, and runs Splunk AppInspect against the staged
+# Splunk-app archive (cloud+future tags) to defend against AppInspect
+# regressions before they reach a release tag.
+# It does NOT (yet) run the live dispatch test. That gate is tracked
+# as a v1.7 follow-up under ROADMAP §3 G2 (D5).
 # Release automation lives in `.github/workflows/release.yml` and runs
 # on `v*` tag pushes (see ROADMAP §3 G2 REL-1).
 
@@ -89,6 +90,18 @@ jobs:
         # "unescaped & in <label>" class of bug. ROADMAP §3 G2 + §7b.
         working-directory: ${{ github.workspace }}
         run: python3 scripts/check-dashboard-xml-json.py
+
+      - name: Run unit tests (vitest, T-1 scaffold)
+        # Executes src/lib/**/*.test.js under jsdom. Currently covers
+        # src/lib/popupSanitizer.js with 71 cases (security-critical
+        # module: every popup HTML string, every map URL, and every
+        # image src flows through one of its exports). Subsequent PRs
+        # raise coverage file-by-file under ROADMAP Theme C.
+        # `CI=true` switches vitest to the `dot` reporter so the log
+        # stays compact (default reporter is noisy in CI).
+        env:
+          CI: 'true'
+        run: npm test
 
       - name: Build webpack production bundle
         run: npm run build
