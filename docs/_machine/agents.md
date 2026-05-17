@@ -186,6 +186,89 @@ directly.
 
 ---
 
+## 5b. Adding a new per-source recipe (Theme E — E5 Phase 1)
+
+A recipe is a single Markdown file documenting how to wire ONE Splunk
+source pattern into ONE Better Map layer end-to-end (SPL + formatter
+config + expected fields + gotchas). The CI gates enforce a strict
+six-section structure so AI agents and humans can consume them with
+the same expectations. Source of truth:
+[`docs/_machine/recipes/recipe-schema.json`](https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/recipe-schema.json).
+
+1. **Create the file at the canonical path**
+
+   ```bash
+   mkdir -p docs/recipes/<source-id>
+   cp docs/recipes/kvstore-latlon/markers.md \
+      docs/recipes/<source-id>/<layer-id>.md
+   ```
+
+   `<source-id>` MUST be one of the enum values in `recipe-schema.json
+   #/properties/source/properties/id/enum`. `<layer-id>` MUST be one of
+   the ten core layer types (see
+   `recipe-schema.json#/properties/layer/properties/id/enum`).
+
+2. **Update the YAML frontmatter.** Every key in the schema is
+   required; the path-derived id contract is:
+
+   - `id`: `<source-id>--<layer-id>` (literal — the validator
+     enforces this).
+   - `source.id`: `<source-id>` (same as parent directory).
+   - `layer.id`: `<layer-id>` (same as filename stem).
+   - `expected_fields`: every field name the SPL produces, with type
+     and example. The validator cross-checks that each name appears
+     as a row in the §3 markdown table.
+   - `required_formatter_options`: every option the §4 JSON sets. The
+     validator cross-checks that each entry is a real property in
+     `formatter-schema.json` AND that the §4 JSON sets exactly those
+     options (no more, no fewer).
+   - `status`: start at `unverified`. Promote to `verified` only after
+     dispatching the SPL against a real Splunk tenant; you MUST also
+     populate `verified_against` in the same edit.
+   - `ot_safety_relevant`: per
+     [`/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc).
+     If `true`, the §6 Gotchas section MUST mention "OT safety" or
+     "safety_related" (the validator checks).
+
+3. **Write the six canonical sections, in order:**
+
+   1. `## 1. Source description` — what produces the data, typical
+      sourcetype / index, required add-ons.
+   2. `## 2. SPL recipe` — a single ```spl``` fence. Every pipe MUST
+      start its own physical line (the SPL Pipe-Per-Line Rule;
+      the validator enforces it).
+   3. `## 3. Expected fields` — a Markdown table whose first column
+      is the field name. Every `expected_fields[*].name` from the
+      frontmatter MUST appear here.
+   4. `## 4. Recommended formatter config` — a single ```json``` fence
+      with the minimum formatter options for the recipe. The keys
+      MUST match `required_formatter_options` from the frontmatter
+      exactly (sets are equal).
+   5. `## 5. Screenshot` — placeholder until the D5 Splunk Docker
+      compose harness lands.
+   6. `## 6. Gotchas` — failure modes, data-shape sharp edges, OT
+      safety notes if applicable.
+
+4. **Regenerate the machine-readable index AND run the validator:**
+
+   ```bash
+   python3 scripts/build-recipe-index.py
+   python3 scripts/check-recipe-schema.py
+   ```
+
+   The check-script also re-runs the index builder under the hood and
+   compares byte-for-byte against the on-disk copy — drift means you
+   added a recipe but forgot to commit the regenerated index.
+
+5. **(If possible) verify against a live tenant**, then flip
+   `status: unverified` → `status: verified`, populate
+   `verified_against`, and submit the same PR. A maintainer with
+   `secrets.env` REST access against `rev` can do this in seconds; an
+   agent without live credentials should leave the status at
+   `unverified` and document what was checked.
+
+---
+
 ## 6. The release flow (what you almost never touch)
 
 | Step | Where | Who triggers |
@@ -241,6 +324,14 @@ node scripts/check-accessibility.js
 # Then on every run:
 .venv-mkdocs/bin/mkdocs build --strict
 
+# Per-source recipe schema + index drift (E5 Phase 1).
+# Runs the validator against every docs/recipes/<source>/<layer>.md,
+# regenerates docs/_machine/recipes/index.yaml under the hood, and
+# FAILS on any drift. On drift: run `python3 scripts/build-recipe-index.py`
+# and commit. Needs PyYAML; the MkDocs venv above already provides it
+# (PyYAML is a hard dep of mkdocs).
+.venv-mkdocs/bin/python3 scripts/check-recipe-schema.py
+
 # Bundle hygiene (run after webpack build)
 node scripts/check-bundle-size.js
 node scripts/check-bundle-console-noise.js
@@ -268,6 +359,10 @@ to fix and the exact command to re-run.
 | `Aborted with N warnings in strict mode!` (MkDocs) | A new doc page introduced a broken cross-link, an orphan markdown file, or a deprecated MkDocs config key | Read the warning lines above the abort — each names the file + link target. Fix the link (relative within `docs/`, absolute `https://github.com/.../blob/main/...` for repo-root files), or remove the orphan from `nav:` in `mkdocs.yml`. Rerun `.venv-mkdocs/bin/mkdocs build --strict`. |
 | `ImportError: No module named 'mkdocs'` (first run of `mkdocs build`) | The MkDocs venv hasn't been created yet | `python3 -m venv .venv-mkdocs && .venv-mkdocs/bin/pip install -r scripts/requirements-mkdocs.txt` |
 | `Get Pages site failed` / `Create Pages site failed: Resource not accessible by integration` (docs deploy workflow) | Brand-new repo where GitHub Pages was never enabled; workflow `GITHUB_TOKEN` cannot self-bootstrap Pages (the REST `enable-pages-for-repository` endpoint requires PAT-level perms) | One-time, with maintainer credentials: `gh api -X POST /repos/<owner>/<repo>/pages -f build_type=workflow` — then re-run the docs workflow. From then on `actions/configure-pages`' `enablement: true` no-ops and the deploy is fully turnkey |
+| `[FAIL] docs/_machine/recipes/index.yaml drifted vs the recipe files on disk` | You added or edited a recipe but forgot to regenerate the machine-readable index | `python3 scripts/build-recipe-index.py && git add docs/_machine/recipes/index.yaml` |
+| `[FAIL] docs/recipes/<src>/<layer>.md: §2 SPL line N has K pipes on one physical line` | SPL Pipe-Per-Line Rule violation — splice the pipes onto their own lines | Reformat the SPL so every `\|` starts a new line in the ```spl ...``` fence; rerun `python3 scripts/check-recipe-schema.py` |
+| `[FAIL] docs/recipes/<src>/<layer>.md: §4 references formatter option(s) that are NOT in formatter-schema.json` | The recipe's §4 JSON sets a property name that doesn't exist on the formatter | Pick a real option (check `docs/_machine/formatter-schema.json`), or add the option to `formatter.html` first via §4 of this guide |
+| `[FAIL] docs/recipes/<src>/<layer>.md: expected_fields entry 'foo' is not present in the §3 markdown table` | Frontmatter promises a field the §3 table doesn't document | Add the field as a row in the §3 Markdown table, OR remove it from `expected_fields` if the SPL no longer produces it |
 
 ---
 
@@ -281,8 +376,12 @@ to fix and the exact command to re-run.
   [`mkdocs.yml`](https://github.com/fenre/better_map/blob/main/mkdocs.yml)
   + the human-readable `docs/` pages OUTSIDE this `_machine/`
   subtree; Phase 2 G7-driven auto-generation deferred).
-- Not the customer-facing setup guide (that's E5 — the recipe matrix,
-  deferred).
+- Not the customer-facing setup guide. That's E5 — the recipe matrix.
+  Phase 1 (framework + three starter recipes) shipped in v1.7-prep;
+  the remaining matrix cells (every layer × every source) are
+  authored as live-Splunk verification time becomes available. See
+  [`docs/recipes/index.md`](https://github.com/fenre/better_map/tree/main/docs/recipes)
+  for the live status table and §5b above for the authoring contract.
 - Not the API reference for plugin authors (that's G6, deferred to
   v2.0).
 
@@ -297,6 +396,8 @@ wins. Open a PR that updates this file.
 - `docs/_machine/README.md` — explains the `_machine` contract
 - `docs/_machine/formatter-schema.json` — generated formatter schema
 - `docs/_machine/integrations/*.yaml` — Splunk integration scaffolds
+- `docs/_machine/recipes/recipe-schema.json` — per-source recipe schema (E5 Phase 1)
+- `docs/_machine/recipes/index.yaml` — auto-generated recipe index (E5 Phase 1)
 - `docs/runbooks/supply-chain.md` — G1 verification + waiver procedures
 - `docs/runbooks/upgrade-hygiene.md` — G3 orphan-file remediation
 - `/.cursor/rules/ot-safety.mdc` — VISTA OT safety boundary (binding for OT integrations)

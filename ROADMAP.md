@@ -453,6 +453,112 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 
 #### E5. Per-source setup recipes (the matrix) — `M`
 
+> **Status (v1.7-prep, 2026-05-17): E5 Phase 1 SHIPPED.** The
+> recipe **framework** (schema + validator + index emitter + CI
+> gate + docs nav) and **three starter recipes** are in place;
+> the remaining matrix cells fill in as live-Splunk verification
+> time becomes available. Concretely:
+> - **`docs/_machine/recipes/recipe-schema.json`** — JSON
+>   Schema 2020-12 declaring the YAML frontmatter every recipe
+>   MUST carry. Required keys: `schema_version`, `id`,
+>   `source` (id + display_name + pattern), `layer` (id +
+>   display_name), `status` (`verified` | `unverified` |
+>   `deferred`), `last_verified_iso8601`, `verified_against`,
+>   `splunk_apps_required`, `expected_fields`,
+>   `required_formatter_options`, `ot_safety_relevant`. Source
+>   patterns are enum-restricted to the 15 row labels of the
+>   matrix table below; layer ids to the 10 core layer types.
+> - **`scripts/check-recipe-schema.py`** — stdlib + PyYAML
+>   validator that (a) parses every
+>   `docs/recipes/<source>/<layer>.md` frontmatter, (b) asserts
+>   it conforms to the schema, (c) cross-checks the filesystem
+>   path against `id` / `source.id` / `layer.id`, (d) asserts
+>   the six canonical sections (`## 1. Source description`
+>   .. `## 6. Gotchas`) are present in order, (e) asserts the
+>   §2 SPL fence is tagged `spl` AND obeys the SPL
+>   Pipe-Per-Line Rule (mirrors `splunk-conf-and-spl.mdc`),
+>   (f) asserts the §4 JSON fence parses, references only real
+>   options from `formatter-schema.json`, and exactly matches
+>   the frontmatter's `required_formatter_options`,
+>   (g) asserts every `expected_fields[*].name` appears as a
+>   row in the §3 markdown table, (h) asserts that recipes
+>   tagged `ot_safety_relevant: true` mention OT safety in §6
+>   per `/.cursor/rules/ot-safety.mdc`, and (i) regenerates
+>   `index.yaml` under the hood and byte-compares against the
+>   on-disk copy (drift gate).
+> - **`scripts/build-recipe-index.py`** — walks
+>   `docs/recipes/<source>/<layer>.md` and emits the
+>   deterministic, hand-readable
+>   `docs/_machine/recipes/index.yaml`. `--stdout` prints
+>   without writing (used by the drift gate); `--check` exits
+>   non-zero if the on-disk copy is stale; default behaviour
+>   writes and commits-ready. `PyYAML` is the only third-party
+>   dep and ships transitively with `mkdocs-material`.
+> - **`docs/_machine/recipes/index.yaml`** — generated
+>   machine-readable index of every recipe. This is the
+>   structured input that G7 Phase 2 (`llms.txt` emission) was
+>   blocked on; that blocker is now cleared.
+> - **CI gate (`docs-build` job in `.github/workflows/ci.yml`):**
+>   `python3 scripts/check-recipe-schema.py` runs after the
+>   MkDocs install (so PyYAML is present) and before the
+>   strict mkdocs build (so recipe failures surface in a fast,
+>   isolated step). On FAIL: stderr names the recipe + the
+>   violation; the agents.md "common mistakes" table lists the
+>   remediation for each failure mode.
+> - **Three starter recipes** (covering the three most common
+>   Splunk source patterns):
+>   - `docs/recipes/cim-network-traffic/markers.md` — CIM
+>     Network Traffic → markers. Uses `| tstats` on the
+>     accelerated Network_Traffic data model, `| iplocation`
+>     for geocoding, `pointRenderer: cluster`. Apps required:
+>     `Splunk_SA_CIM`, `builtin:iplocation`.
+>   - `docs/recipes/kvstore-latlon/markers.md` — KV Store
+>     (lat/lon collection) → markers. The simplest possible
+>     case: `| inputlookup site_locations | rename site_id AS
+>     id`, `pointRenderer: markers`. Zero apps required.
+>   - `docs/recipes/geo-us-states/choropleth.md` — US states
+>     choropleth via the bundled `us-states` PMTiles preset.
+>     `| stats count BY Region | eval id=upper(...)` to map
+>     state names → USPS two-letter codes (= the tileset's
+>     `promoteId: stusps`). `featureJoinPreset: us-states`,
+>     `enableChoropleth: true`, `palette: viridis`. Zero
+>     apps required.
+>   All three are marked `status: unverified` because the
+>   v1.7-prep agent had no live Splunk REST credentials in
+>   the working directory; each recipe documents the exact
+>   maintainer steps to flip to `verified`.
+> - **`docs/recipes/index.md`** rewritten from placeholder
+>   to a live page with the status table, the schema
+>   reference, the CI gate description, and an
+>   "Adding a new recipe" how-to. `mkdocs.yml` nav grows
+>   from `Recipes: recipes/index.md` (single page) to a
+>   section with one entry per shipped recipe; new recipes
+>   land as one-line nav additions in their PR.
+> - **`docs/_machine/agents.md`** grows §5b "Adding a new
+>   per-source recipe", adds the recipe gate to the §7
+>   pre-commit checklist, and gains five new entries in the
+>   §8 common-mistakes table covering recipe-schema /
+>   index-drift / SPL pipe / formatter-schema cross-check /
+>   §3 table miss.
+> - **G7 Phase 2 unblocked further:** `recipes/index.yaml`
+>   was the last structured input `llms.txt` emission was
+>   waiting on. The G7 Phase 2 backlog now reduces to: write
+>   the `llms.txt` walker (MkDocs `nav:` + recipe index +
+>   integration index + formatter schema).
+> - **Local re-run:**
+>   ```bash
+>   python3 scripts/build-recipe-index.py
+>   python3 scripts/check-recipe-schema.py
+>   ```
+> - **What's NOT in Phase 1 (deferred to E5 Phase 2):** the
+>   remaining ~72 ✓ cells in the matrix below. Each cell
+>   lands as a small isolated PR; the framework is now drift-
+>   gated, so adding a recipe is the smallest possible change.
+>   Verification (flipping `status: unverified` →
+>   `verified` for the three Phase-1 starters) is the
+>   highest-leverage follow-up — needs a maintainer with
+>   `secrets.env` against `rev`.
+
 * **Problem:** Better Map can consume data from ~10 categorically different Splunk source patterns (see table below). A new customer with NetFlow data who wants a heat layer should not have to derive the SPL from first principles. There is currently no recipe documentation; the burden of "what SPL do I write?" falls entirely on the user, who often does not know the field names of their own data, let alone the contract this viz wants.
 * **Design:** Build the recipe matrix as `docs/recipes/<source>/<layer>.md`, where each leaf file is a **complete, copy-paste-runnable** recipe. Every recipe has the same 6-section structure (enforced by a validator script — G2 CI step), so an LLM can ingest the corpus consistently:
 
@@ -955,9 +1061,9 @@ If, and only if, every box below is true, we can credibly call v2.0 "one of the 
 - [ ] Listed on Splunkbase; ≥ 25 reviews; ≥ 4.0 average
 - [ ] ≥ 3 named reference customers willing to be quoted; ≥ 1 in a regulated vertical
 - [~] Documentation site live; ≥ 1k monthly uniques (privacy-preserving analytics) — **Phase 1 ✅** (`mkdocs.yml` + 11 hand-authored pages under `docs/`, strict-mode CI gate `docs-build` in `ci.yml`, GitHub Pages auto-deploy on `main` via `.github/workflows/docs.yml`, published at `fenre.github.io/better_map/`, air-gap-clean per §1a: no Google Fonts, no third-party scripts); Phase 2 (auto-generated formatter / layer / integration pages from `_machine/`, custom domain, privacy-preserving analytics, ≥ 1k monthly uniques target) still pending
-- [ ] **Per-source recipe matrix (E5) ≥ 75 verified ✓ cells published; CI gates that a new layer or new source cannot land without updating the matrix**
-- [ ] **`docs/llms.txt` published per the llms.txt convention; an LLM given just the URL can locate and apply a recipe end-to-end**
-- [ ] **`docs/_machine/` complete: formatter JSON Schema, per-layer YAML, per-integration YAML, recipes index, `agents.md`, OpenAPI for any exposed REST endpoint — each CI-asserted against the implementation it documents** — Phase 1 shipped in v1.7-prep (G7): formatter-schema.json (82 options, drift + coverage gates + D3 axe-core a11y), 8 × integrations/*.yaml, agents.md, README.md; Phase 2 deferred (layers YAML, recipes index blocked on E5, llms.txt **unblocked** by E2 Phase 1, OpenAPI blocked on REST endpoints in v1.8+)
+- [~] **Per-source recipe matrix (E5) ≥ 75 verified ✓ cells published; CI gates that a new layer or new source cannot land without updating the matrix** — **Phase 1 ✅** (framework: `docs/_machine/recipes/recipe-schema.json` JSON Schema 2020-12, `scripts/check-recipe-schema.py` validator + drift gate, `scripts/build-recipe-index.py` index emitter, `docs/_machine/recipes/index.yaml` machine-readable index, CI gate in `ci.yml docs-build` job; three starter recipes shipped — CIM Network Traffic → markers, KV Store → markers, US states → choropleth — all `status: unverified` pending live-Splunk REST access); the remaining ~72 ✓ cells fill in as a maintainer with `secrets.env` against `rev` adds them
+- [ ] **`docs/llms.txt` published per the llms.txt convention; an LLM given just the URL can locate and apply a recipe end-to-end** — **all blockers cleared in v1.7-prep** (E2 Phase 1 + E5 Phase 1); next G7 Phase 2 work item is the `llms.txt` walker that consumes the MkDocs `nav:` tree, `docs/_machine/recipes/index.yaml`, `docs/_machine/integrations/*.yaml`, and `docs/_machine/formatter-schema.json`
+- [ ] **`docs/_machine/` complete: formatter JSON Schema, per-layer YAML, per-integration YAML, recipes index, `agents.md`, OpenAPI for any exposed REST endpoint — each CI-asserted against the implementation it documents** — Phase 1 shipped in v1.7-prep (G7 + E5): formatter-schema.json (82 options, drift + coverage gates + D3 axe-core a11y), 8 × integrations/*.yaml, agents.md, README.md, recipe-schema.json + recipes/index.yaml (E5 Phase 1 — drift-gated, three starter recipes); Phase 2 deferred (layers YAML, llms.txt emission script, OpenAPI blocked on REST endpoints in v1.8+)
 - [ ] 6 video walkthroughs published with English + at least one other locale captions
 - [ ] Repo history: ≥ **50 commits** from ≥ **3 distinct contributors** (replaces the previous draft's "multi-year history" handwave with something actionable)
 - [ ] Public roadmap board (GitHub Projects) with at least the next minor's work-items tracked
