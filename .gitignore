@@ -88,3 +88,10 @@ playwright/.cache/
 # -------------------------------------------------------------
 **/local/
 **/metadata/local.meta
+
+# -------------------------------------------------------------
+# AppInspect local helper (G2-2): venv + per-run staging
+# -------------------------------------------------------------
+.venv-appinspect/
+dist-appinspect/
+dist-appinspect-local/

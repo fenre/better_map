@@ -675,7 +675,7 @@ If, and only if, every box below is true, we can credibly call v2.0 "one of the 
 
 ### 7b. Quality
 
-- [ ] AppInspect cloud-cert green; AppInspect runs in CI on every PR
+- [ ] AppInspect cloud-cert green on Splunkbase (blocked on E1); **AppInspect runs in CI on every PR** ✅ (G2-2: PR-gate cloud+future tags, release-gate adds `--fail-on-warnings`; 0/0/0/0 baseline as of v1.6.2)
 - [ ] Browser matrix green: Chrome / Firefox / Safari / Edge × macOS / Windows / Linux (12 cells, all green)
 - [ ] WCAG 2.2 AA conformance verified (axe-core in CI; manual VoiceOver + NVDA pass)
 - [ ] Telemetry path documented; zero data leaves by default; HEC schema published
