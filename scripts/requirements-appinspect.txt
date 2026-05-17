@@ -1,0 +1,21 @@
+# G2-2 — pinned splunk-appinspect for CI and the local helper.
+#
+# Used by:
+#   * .github/workflows/ci.yml        (appinspect job)
+#   * .github/workflows/release.yml   (AppInspect step)
+#   * scripts/run-appinspect-local.sh (laptop helper)
+#
+# Why pinned to a major range (^4):
+#   - A new major (5.x) may add / remove / re-classify checks. We want
+#     that change to land as a deliberate, reviewable PR (developer bumps
+#     this file + fixes any new findings) rather than as a silent CI
+#     surprise from a hosted-rule update.
+#   - Within the major, patch / minor bumps land automatically via
+#     setup-python's pip-cache miss, so we still benefit from upstream
+#     bugfixes without re-cutting this file.
+#
+# When AppInspect 5.x drops:
+#   1. Bump the constraint to `>=5,<6`.
+#   2. Run `npm run lint:appinspect` locally; fix any new findings.
+#   3. Open a PR titled `chore(deps): bump splunk-appinspect to 5.x`.
+splunk-appinspect>=4,<5

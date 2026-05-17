@@ -177,10 +177,15 @@ jobs:
           cache-dependency-path: better_map/appserver/static/visualizations/better_map/package-lock.json
 
       - name: Set up Python 3.11 (for splunk-appinspect)
+        # `cache-dependency-path` is required for `cache: pip` to compute
+        # a cache key. We point at scripts/requirements-appinspect.txt —
+        # the single source of truth for the AppInspect pin (see file
+        # header for upgrade policy).
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
+          cache-dependency-path: scripts/requirements-appinspect.txt
 
       - name: Install viz dependencies (clean, reproducible)
         working-directory: better_map/appserver/static/visualizations/better_map
@@ -192,15 +197,14 @@ jobs:
         working-directory: better_map/appserver/static/visualizations/better_map
         run: npm run build
 
-      - name: Install splunk-appinspect (pinned major)
-        # `splunk-appinspect` is the official CLI from Splunk. Pinning to
-        # ^4 keeps us within the current major (4.x as of this PR). A new
-        # major may add or remove checks; we treat that as a deliberate
-        # bump via a follow-up PR rather than a silent CI surprise.
+      - name: Install splunk-appinspect (pinned via requirements)
+        # Pin lives in scripts/requirements-appinspect.txt so the cache
+        # key (above) and the install command read the same file. A
+        # version bump is a single-file change with a clear PR diff.
         run: |
           python3 -m venv .venv-appinspect
           .venv-appinspect/bin/pip install --quiet --upgrade pip
-          .venv-appinspect/bin/pip install --quiet "splunk-appinspect>=4,<5"
+          .venv-appinspect/bin/pip install --quiet -r scripts/requirements-appinspect.txt
           .venv-appinspect/bin/splunk-appinspect --version || true
 
       - name: Stage shippable app contents (mirror of release.yml)

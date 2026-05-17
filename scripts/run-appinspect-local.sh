@@ -46,7 +46,8 @@ if [ ! -x "${VENV_DIR}/bin/splunk-appinspect" ]; then
     python3 -m venv "${VENV_DIR}"
     "${VENV_DIR}/bin/pip" install --quiet --upgrade pip
     echo "[appinspect-local] installing splunk-appinspect (~50 MB, one-time) ..."
-    "${VENV_DIR}/bin/pip" install --quiet "splunk-appinspect>=4,<5"
+    # Same shared pin as ci.yml and release.yml.
+    "${VENV_DIR}/bin/pip" install --quiet -r scripts/requirements-appinspect.txt
 fi
 
 # ---------------- ensure visualization.js is built ----------------
