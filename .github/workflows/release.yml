@@ -242,17 +242,21 @@ jobs:
         # If the PR-gate ran AppInspect on the same SHA, this is a re-run
         # against the release-built tarball (defence-in-depth: the binary
         # being released MUST be the binary that was inspected).
+        # `cache-dependency-path` must point at a manifest with pinned
+        # versions — we use the same shared file as ci.yml.
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
+          cache-dependency-path: scripts/requirements-appinspect.txt
 
-      - name: Install splunk-appinspect (pinned major)
-        # Same pin as ci.yml. Treat any 5.x bump as a deliberate PR.
+      - name: Install splunk-appinspect (pinned via requirements)
+        # Same shared pin as ci.yml. See scripts/requirements-appinspect.txt
+        # for the upgrade policy.
         run: |
           python3 -m venv .venv-appinspect
           .venv-appinspect/bin/pip install --quiet --upgrade pip
-          .venv-appinspect/bin/pip install --quiet "splunk-appinspect>=4,<5"
+          .venv-appinspect/bin/pip install --quiet -r scripts/requirements-appinspect.txt
 
       - name: Run splunk-appinspect against the release tarball (G2-2)
         # Cloud + future tags — Splunkbase target. `--max-messages 100`
