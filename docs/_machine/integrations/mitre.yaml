@@ -1,0 +1,65 @@
+# SPDX-License-Identifier: MIT
+# Source of truth: better_map/appserver/static/visualizations/better_map/src/lib/splunk/mitre.js
+meta:
+  version: 1
+  last_modified_iso8601: "2026-05-17"
+  generator: hand-authored
+  source_of_truth_path: better_map/appserver/static/visualizations/better_map/src/lib/splunk/mitre.js
+
+id: mitre
+display_name: "MITRE ATT&CK technique overlay"
+status: experimental
+splunk_app_required: "none (built-in lookup table for ~80 most-common techniques)"
+splunk_version_min: "any"
+
+endpoints_called:
+  - method: GET
+    path: "<extendedLookupUrl>"
+    purpose: "Optional — fetch the full ATT&CK matrix beyond the built-in 80 techniques."
+    auth: "depends on the URL (typically none / public CDN)"
+    note: |
+      Optional. Set `extendedLookupUrl` to a JSON endpoint that returns
+      the remaining technique metadata. The viz ships with an offline
+      lookup for the ~80 most-common Enterprise techniques so dashboards
+      work without network egress.
+
+auth_required: "none for the built-in path; depends on the URL for the extended path"
+
+field_contract:
+  input:
+    - properties.attack_id: "string OR comma-separated list — e.g. 'T1078' or 'T1078,T1199'"
+  output:
+    - properties._attack_decorated:
+        techniques:
+          - id: string         # e.g. T1078
+          - name: string       # e.g. Valid Accounts
+          - tactics:           # list of ATT&CK tactic names
+              - string
+            example: ["Defense Evasion", "Initial Access"]
+    - properties._tooltip_md: "string — markdown body for the markdownPopup widget"
+
+# This integration also EMITS a saved-search annotation block, NOT
+# consuming it — that's the proper way to bind a saved search to ATT&CK
+# techniques per the splunk-mitre-attack skill.
+splunk_savedsearches_conf_emit:
+  key: "action.correlationsearch.annotations"
+  value_shape: |
+    {
+      "mitre_attack": ["<technique_id>", ...]
+    }
+  see_also: "scripts/build-correlation-annotations.* (none today; future)"
+
+tested_against: null  # NOT YET VERIFIED against a live ES correlation-search tenant (Theme C)
+
+bm_ct_1:
+  setEnabled: "stateless module — controlled by the consuming layer (markers / mil2525)"
+  isEnabled: "n/a"
+  reset: "n/a"
+
+references:
+  - description: "MITRE ATT&CK Enterprise matrix"
+    url: "https://attack.mitre.org/matrices/enterprise/"
+  - description: "VISTA MITRE ATT&CK skill (engagement-time best practice)"
+    path: "/.cursor/skills/splunk-mitre-attack/SKILL.md"
+  - description: "Source module"
+    path: "better_map/appserver/static/visualizations/better_map/src/lib/splunk/mitre.js"

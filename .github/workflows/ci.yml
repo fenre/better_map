@@ -127,6 +127,34 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: python3 scripts/check-manifest.py
 
+      - name: Check formatter schema drift (G7)
+        # Regenerates docs/_machine/formatter-schema.json from
+        # formatter.html and FAILs on byte mismatch. On FAIL, run
+        # `python3 scripts/build-formatter-schema.py` and commit the
+        # updated schema in the same PR as the formatter.html change.
+        # The schema is the machine-readable contract that AI agents
+        # consume to set formatter properties correctly — drift means
+        # an agent will set a non-existent option or miss a new one.
+        # ROADMAP §3 G7.
+        working-directory: ${{ github.workspace }}
+        run: python3 scripts/check-formatter-schema.py
+
+      - name: Check formatter schema coverage (G7)
+        # Complements the drift gate with three explicit assertions
+        # that catch failure modes the byte-equality check cannot:
+        #   1. HTML → schema: every data-name in formatter.html
+        #      appears as a property in the schema (catches silent
+        #      parser drops).
+        #   2. Schema → HTML: every property in the schema maps to a
+        #      data-name in formatter.html (catches phantom entries
+        #      from hand-edits).
+        #   3. Duplicate transparency: every duplicate data-name in
+        #      the HTML is recorded in x-meta.known-issues (catches
+        #      stale or missing duplicate records).
+        # ROADMAP §3 G7.
+        working-directory: ${{ github.workspace }}
+        run: python3 scripts/check-formatter-coverage.py
+
       - name: Check npm audit (G1) — fail on high+ without an active waiver
         # G1 supply-chain gate: runs `npm audit --omit=dev --json` in
         # the viz package and FAILs if any finding at severity `high`

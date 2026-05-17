@@ -1,0 +1,69 @@
+# SPDX-License-Identifier: MIT
+# Source of truth: better_map/appserver/static/visualizations/better_map/src/lib/splunk/soar.js
+meta:
+  version: 1
+  last_modified_iso8601: "2026-05-17"
+  generator: hand-authored
+  source_of_truth_path: better_map/appserver/static/visualizations/better_map/src/lib/splunk/soar.js
+
+id: soar
+display_name: "Splunk SOAR (formerly Phantom) — right-click playbook trigger"
+status: experimental
+splunk_app_required: "Splunk SOAR forwarder app (phantom_forward) on the host Splunk"
+splunk_version_min: "SOAR 6.x (any version supported by the forwarder)"
+
+endpoints_called:
+  - method: POST
+    path: "/services/phantom_forward"
+    purpose: "Forward selected features to a SOAR playbook for action."
+    auth: "delegated (Splunk session → forwarder → SOAR API key)"
+    payload:
+      content_type: "application/json"
+      shape:
+        playbook_id: string
+        playbook_name: string
+        container_label: string
+        entities: "array of feature.properties objects"
+
+# IMPORTANT: the visualization NEVER holds SOAR API keys. The host
+# Splunk's SOAR forwarder app handles authentication. This keeps the
+# blast radius small even if the dashboard is compromised — the worst
+# an attacker could do is forward arbitrary entities into pre-approved
+# playbooks (which is exactly what the operator intended).
+auth_required: "Splunk Web session cookie → SOAR forwarder handles upstream auth"
+
+field_contract:
+  input:  # what the viz reads from each selected feature
+    - properties.event_id?: string
+    - properties.entity?:   string
+    - properties.host?:     string
+    - properties.src?:      string
+  output: # what the viz POSTs to /services/phantom_forward
+    playbook_id: string
+    playbook_name: string
+    container_label: string
+    entities: "array<object>"
+
+tested_against: null  # NOT YET VERIFIED against a live SOAR tenant (Theme C)
+
+bm_ct_1:
+  setEnabled: "src/lib/splunk/soar.js exports a setEnabled() that gates the right-click menu visibility."
+  isEnabled: "Returns the current enabled state."
+  reset: "Clears cached forwarder URL + playbook list (forces re-fetch on next enable)."
+
+# OT-SAFETY BOUNDARY (per /.cursor/rules/ot-safety.mdc Rule 3):
+# SOAR playbooks invoked from better_map MUST target IT or IT/OT DMZ
+# assets only — never a Level-0/1/2 asset in the Purdue model. The
+# viz does NOT enforce this server-side; it is the playbook author's
+# responsibility, documented and reviewed at playbook authorship time.
+ot_safety:
+  rule: "ot-safety.mdc Rule 3 — SOAR action target zone IT or IT/OT DMZ only"
+  enforcement: "playbook author + OT engineering review (NOT the viz)"
+
+references:
+  - description: "SOAR forwarder app on Splunkbase"
+    url: "https://splunkbase.splunk.com/app/5613"
+  - description: "VISTA SOAR skill (playbook design)"
+    path: "/.cursor/skills/splunk-soar/SKILL.md"
+  - description: "Source module"
+    path: "better_map/appserver/static/visualizations/better_map/src/lib/splunk/soar.js"

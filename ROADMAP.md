@@ -582,6 +582,17 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 
 #### G7. AI-ingestion-friendly documentation — `M`
 
+> **Status (v1.7-prep, 2026-05-17): G7 Phase 1 SHIPPED.** The machine-readable docs layer is live at `docs/_machine/`:
+> - **`docs/_machine/formatter-schema.json`** — JSON Schema 2020-12 describing all **83 formatter options** (id, type, default, enum values, help text, Splunk property path, custom `x-bm` metadata for tab/heading). Generated from `formatter.html` by `scripts/build-formatter-schema.py`. The one legacy duplicate `data-name="highContrast"` is auto-recorded in `x-meta.known-issues` with last-write-wins resolution; future duplicates fail the gate.
+> - **`docs/_machine/integrations/*.yaml`** — 8 hand-maintained YAMLs (one per Theme C integration: `itsi.yaml`, `soar.yaml`, `rba.yaml`, `aiGeo.yaml`, `mitre.yaml`, `esNotable.yaml`, `purdue.yaml`, `aiAssistant.yaml`). Each declares `meta`, `status` (`experimental` is the v1.7 default), `splunk_app_required`, `splunk_version_min`, `endpoints_called[]` with HTTP method + auth, `field_contract`, `tested_against` (null until live-tenant verification), `bm_ct_1`, and `references`. `purdue.yaml` additionally encodes the OT-safety boundary (Rules 1/2/5/6 from `/.cursor/rules/ot-safety.mdc`).
+> - **`docs/_machine/agents.md`** — operating guide for AI agents working on the repo: the five non-negotiables (formatter schema, manifest, JS↔CSS contract, dashboard token contract, BM-CT-1), where things live, the runtime envelope, how to add a formatter option / integration, the pre-commit checklist, common mistakes and fixes. Modelled on the emerging `AGENTS.md` convention.
+> - **`docs/_machine/README.md`** — explains the `_machine` contract (what's generated vs hand-maintained, what's in Phase 1, what's deferred to Phase 2, stability promise across patch/minor/major releases).
+> - **Two new CI gates** wired into both `ci.yml` and `release.yml`:
+>   - `scripts/check-formatter-schema.py` — byte-equality drift gate (regenerates schema, asserts identity with the checked-in file).
+>   - `scripts/check-formatter-coverage.py` — three explicit assertions the drift gate cannot make: HTML→schema coverage, schema→HTML coverage, duplicate transparency.
+> - **End-to-end verification:** both gates print `[PASS]` locally on the v1.7-prep tree (83 unique data-names, 83 schema properties, 1 duplicate recorded); workflow YAML re-parses; release tarball does NOT ship `docs/_machine/` (rsync `--exclude='docs'` already in place at both packaging sites).
+> - **What's NOT in Phase 1 (tracked for G7 Phase 2):** `llms.txt` / `llms-full.txt` (blocked on E2 MkDocs site), `_machine/layers/<layer-id>.yaml` (independent but de-prioritised behind integrations, where the actual customer questions land), `_machine/recipes/index.yaml` (blocked on E5 recipe matrix — no recipes exist yet), `_machine/openapi-better_map-rest.yaml` (blocked on the REST endpoints it would describe: F1 / G6 / D5 are all v1.8+).
+
 * **Problem:** Customers increasingly ask Cursor / Claude Code / GitHub Copilot / Splunk AI Assistant "set up better_map for my Meraki data." The model needs structured, machine-readable inputs to do that well. Today everything is prose in `README.md` and `CHANGELOG.md`; an LLM can read it but cannot reliably extract the formatter schema, the recipe matrix, or the field contracts. This blocks the dominant onboarding mode for v2.0 customers.
 * **Design:** Build a parallel machine-readable documentation layer that mirrors the human-readable layer (E2) one-to-one. Markdown remains the source of truth for narrative; YAML/JSON Schemas are the source of truth for contracts. The two are kept in sync by a generator script under `docs/_tools/`.
 
@@ -824,7 +835,7 @@ If, and only if, every box below is true, we can credibly call v2.0 "one of the 
 - [ ] Documentation site live; ≥ 1k monthly uniques (privacy-preserving analytics)
 - [ ] **Per-source recipe matrix (E5) ≥ 75 verified ✓ cells published; CI gates that a new layer or new source cannot land without updating the matrix**
 - [ ] **`docs/llms.txt` published per the llms.txt convention; an LLM given just the URL can locate and apply a recipe end-to-end**
-- [ ] **`docs/_machine/` complete: formatter JSON Schema, per-layer YAML, per-integration YAML, recipes index, `agents.md`, OpenAPI for any exposed REST endpoint — each CI-asserted against the implementation it documents**
+- [ ] **`docs/_machine/` complete: formatter JSON Schema, per-layer YAML, per-integration YAML, recipes index, `agents.md`, OpenAPI for any exposed REST endpoint — each CI-asserted against the implementation it documents** — Phase 1 shipped in v1.7-prep (G7): formatter-schema.json (83 options, drift + coverage gates), 8 × integrations/*.yaml, agents.md, README.md; Phase 2 deferred (layers YAML, recipes index blocked on E5, llms.txt blocked on E2, OpenAPI blocked on REST endpoints in v1.8+)
 - [ ] 6 video walkthroughs published with English + at least one other locale captions
 - [ ] Repo history: ≥ **50 commits** from ≥ **3 distinct contributors** (replaces the previous draft's "multi-year history" handwave with something actionable)
 - [ ] Public roadmap board (GitHub Projects) with at least the next minor's work-items tracked

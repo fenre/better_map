@@ -1,0 +1,65 @@
+# SPDX-License-Identifier: MIT
+# Source of truth: better_map/appserver/static/visualizations/better_map/src/lib/splunk/aiAssistant.js
+meta:
+  version: 1
+  last_modified_iso8601: "2026-05-17"
+  generator: hand-authored
+  source_of_truth_path: better_map/appserver/static/visualizations/better_map/src/lib/splunk/aiAssistant.js
+
+id: aiAssistant
+display_name: "Splunk AI Assistant for SPL — natural-language → SPL"
+status: experimental
+splunk_app_required: "Splunk_AI_Assistant_Cloud"
+splunk_version_min: "Splunk Cloud (preferred) or Splunk Enterprise 9.x with cloud-connect enabled"
+
+endpoints_called:
+  - method: POST
+    path: "/servicesNS/-/Splunk_AI_Assistant_Cloud/ai/spl-suggest"
+    purpose: "Translate a natural-language question into an SPL pipeline tailored for the current map context (bbox, time-range, sourcetype hints)."
+    auth: session
+    payload:
+      content_type: application/json
+      shape:
+        question: "string — user prompt"
+        bbox: "[minLng, minLat, maxLng, maxLat]"
+        timeRange:
+          earliest: "string — Splunk time format"
+          latest:   "string — Splunk time format"
+        knownSourceTypes:
+          - string
+    response:
+      shape:
+        spl: "string — single-line or multi-line SPL"
+        explanation: "string — markdown rationale"
+        confidence: "number 0..1"
+        warnings:
+          - string
+
+auth_required: "Splunk Web session cookie + the AI Assistant app's own license/entitlement"
+
+field_contract:
+  input: "free-text user question + map context"
+  output:
+    spl: "string — drop into a dashboard ds.search query"
+    explanation: "string"
+    confidence: "number 0..1"
+
+privacy_and_data_handling:
+  notice: |
+    Identical to aiGeo — BM-ANNOUNCE-1 announce-before-call applies.
+    Outbound requests are audited via `better_map.ai.outbound_request`.
+  redaction_supported: true
+  redaction_mechanism: "same redaction helper as aiGeo (scripts/redact-fields.js)"
+
+tested_against: null  # NOT YET VERIFIED against a live AI Assistant install (Theme C)
+
+bm_ct_1:
+  setEnabled: "src/lib/splunk/aiAssistant.js exports setEnabled() that controls whether the 'Ask AI' control on the panel is interactive."
+  isEnabled: "Returns current enabled state."
+  reset: "Aborts in-flight controllers and clears the last suggested SPL."
+
+references:
+  - description: "Splunk AI Assistant for SPL skill"
+    path: "/.cursor/skills/splunk-ai-assistant-setup/SKILL.md"
+  - description: "Source module"
+    path: "better_map/appserver/static/visualizations/better_map/src/lib/splunk/aiAssistant.js"

@@ -1,0 +1,62 @@
+# SPDX-License-Identifier: MIT
+# Source of truth: better_map/appserver/static/visualizations/better_map/src/lib/splunk/rba.js
+meta:
+  version: 1
+  last_modified_iso8601: "2026-05-17"
+  generator: hand-authored
+  source_of_truth_path: better_map/appserver/static/visualizations/better_map/src/lib/splunk/rba.js
+
+id: rba
+display_name: "Risk-Based Alerting (RBA) — geo risk heatmap"
+status: experimental
+splunk_app_required: "Splunk Enterprise Security (uses ES Risk Framework schema)"
+splunk_version_min: "ES 6.x with Risk Framework enabled"
+
+# RBA integration is offline: the visualization does NOT call REST.
+# Instead it (a) emits an SPL snippet that the dashboard author drops
+# into a `<search>` element, and (b) provides a row-parser that
+# converts the SPL output into the visualization's GeoJSON layer
+# contract. Both surfaces are pure functions.
+endpoints_called: []
+
+auth_required: "n/a — offline helper (no REST surface)"
+
+field_contract:
+  # Input: the SPL snippet riskHeatmapSPL() assumes the standard ES
+  # Risk Framework schema in the `risk` index.
+  spl_input:
+    index: risk
+    fields:
+      - risk_object:       "string — entity (host, src, src_user, …)"
+      - risk_object_type:  "enum — system | user | other"
+      - risk_score:        "number — accumulated risk"
+      - threat_object?:    "string — the IOC / observable"
+      - lat?:              "number — entity location (joined from A&I)"
+      - lng?:              "number — entity location (joined from A&I)"
+
+  # Output: shape produced by parseRiskRows() — a GeoJSON
+  # FeatureCollection consumed by the choropleth or hexbin layer.
+  geojson_output:
+    type: FeatureCollection
+    features:
+      - type: Feature
+        geometry: "{ type: 'Point', coordinates: [lng, lat] }"
+        properties:
+          entity: string
+          riskScore: number
+          severity: "enum — info | low | medium | high | critical"
+
+tested_against: null  # NOT YET VERIFIED against a live ES tenant (Theme C)
+
+bm_ct_1:
+  setEnabled: "n/a — pure helper functions; no runtime toggle."
+  isEnabled: "n/a"
+  reset:     "n/a"
+
+references:
+  - description: "ES Risk Framework documentation"
+    url: "https://docs.splunk.com/Documentation/ES/latest/Admin/Configurerisk"
+  - description: "VISTA RBA skill"
+    path: "/.cursor/skills/splunk-rba/SKILL.md"
+  - description: "Source module"
+    path: "better_map/appserver/static/visualizations/better_map/src/lib/splunk/rba.js"
