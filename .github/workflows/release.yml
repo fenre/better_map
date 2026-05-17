@@ -35,7 +35,10 @@
 # What this workflow does NOT yet do (tracked as ROADMAP §3 G2 follow-ups):
 #   - cosign signing of the .tar.gz (G1 — needs a project-owned cosign cert)
 #   - Splunkbase upload via REST (E1 — needs an approved listing + token)
-#   - AppInspect cloud-cert step (G2-2 — separate PR after this one merges)
+#
+# AppInspect (cloud + future tags) runs inline below in this workflow
+# with `--fail-on-warnings` — a release MUST clear a stricter bar than
+# a PR (PR-gate allows informational warnings; release-gate does not).
 #
 # How to release (manual, one-time per tag):
 #
@@ -233,6 +236,57 @@ jobs:
             exit 1
           fi
           ls -la "$TARBALL" "$SPL"
+
+      - name: Set up Python 3.11 (for splunk-appinspect)
+        # Pulled in only after we have a packaged tarball to inspect.
+        # If the PR-gate ran AppInspect on the same SHA, this is a re-run
+        # against the release-built tarball (defence-in-depth: the binary
+        # being released MUST be the binary that was inspected).
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install splunk-appinspect (pinned major)
+        # Same pin as ci.yml. Treat any 5.x bump as a deliberate PR.
+        run: |
+          python3 -m venv .venv-appinspect
+          .venv-appinspect/bin/pip install --quiet --upgrade pip
+          .venv-appinspect/bin/pip install --quiet "splunk-appinspect>=4,<5"
+
+      - name: Run splunk-appinspect against the release tarball (G2-2)
+        # Cloud + future tags — Splunkbase target. `--max-messages 100`
+        # so the release log carries every offender without truncation.
+        run: |
+          set -eu
+          VERSION="${{ steps.tag.outputs.version }}"
+          TARBALL="better_map-v${VERSION}.tar.gz"
+          mkdir -p dist-appinspect
+          .venv-appinspect/bin/splunk-appinspect inspect \
+            "$TARBALL" \
+            --output-file dist-appinspect/report.json \
+            --data-format json \
+            --max-messages 100 \
+            --included-tags cloud \
+            --included-tags future
+
+      - name: Assert AppInspect result (release-strict, fail on warnings)
+        # Stricter than the PR gate: tagged releases must be zero-error,
+        # zero-failure, zero-future_failure, AND zero-warning. We don't
+        # ship a release on a "yellow" AppInspect run.
+        run: python3 scripts/check-appinspect-results.py \
+            --report dist-appinspect/report.json \
+            --fail-on-warnings
+
+      - name: Upload AppInspect report alongside release artifacts
+        # Useful for post-release audits and Splunkbase submission.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: appinspect-report-v${{ steps.tag.outputs.version }}
+          path: dist-appinspect/report.json
+          retention-days: 90
+          if-no-files-found: warn
 
       - name: Compute SHA-256 checksums
         # Sidecar `.sha256` files in the standard `<hash>  <filename>`

@@ -12,6 +12,7 @@
     "lint:console-noise": "node ../../../../../scripts/check-bundle-console-noise.js",
     "lint:bundle-size": "node ../../../../../scripts/check-bundle-size.js",
     "lint:version-consistency": "node ../../../../../scripts/check-version-consistency.js",
+    "lint:appinspect": "bash ../../../../../scripts/run-appinspect-local.sh",
     "format": "prettier --write \"src/**/*.{js,css,json}\""
   },
   "dependencies": {
