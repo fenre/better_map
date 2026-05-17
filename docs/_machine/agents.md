@@ -138,14 +138,18 @@ directly.
    property path. Helper getters already exist in `src/lib/`.
 4. Run `python3 scripts/build-formatter-schema.py` and commit the
    updated `docs/_machine/formatter-schema.json`.
-5. Local sanity check:
+5. Run `python3 scripts/build-llms-txt.py` and commit the regenerated
+   `docs/llms.txt` — the file embeds the option count and a link to the
+   formatter-schema, so the option-count delta drifts the gate.
+6. Local sanity check:
 
    ```bash
    python3 scripts/check-formatter-schema.py
    python3 scripts/check-formatter-coverage.py
+   python3 scripts/build-llms-txt.py --check
    ```
 
-   Both must print `[PASS]`.
+   All three must print `[PASS]`.
 
 > **Duplicate `data-name`s:** the parser handles them via
 > "last-write-wins" and records the conflict in
@@ -183,6 +187,12 @@ directly.
 5. `status: experimental` is the default until the integration is
    smoke-tested against a live Splunk tenant. Setting `tested_against`
    to a non-null value is the trigger for `status: verified`.
+6. Run `python3 scripts/build-llms-txt.py && python3 scripts/build-llms-txt.py --check`
+   — the new integration appears in the `## Integrations (Splunk)`
+   section of `docs/llms.txt` (display name, status, required Splunk
+   app, JS source path). Commit the regenerated `docs/llms.txt` in the
+   same PR. The CI gate `build-llms-txt.py --check` will reject any
+   drift.
 
 ---
 
@@ -249,16 +259,21 @@ the same expectations. Source of truth:
    6. `## 6. Gotchas` — failure modes, data-shape sharp edges, OT
       safety notes if applicable.
 
-4. **Regenerate the machine-readable index AND run the validator:**
+4. **Regenerate the machine-readable indexes AND run the validators:**
 
    ```bash
    python3 scripts/build-recipe-index.py
    python3 scripts/check-recipe-schema.py
+   python3 scripts/build-llms-txt.py
+   python3 scripts/build-llms-txt.py --check
    ```
 
-   The check-script also re-runs the index builder under the hood and
-   compares byte-for-byte against the on-disk copy — drift means you
-   added a recipe but forgot to commit the regenerated index.
+   The recipe check-script also re-runs the index builder under the
+   hood and compares byte-for-byte against the on-disk copy — drift
+   means you added a recipe but forgot to commit the regenerated index.
+   The same logic applies to `llms.txt`: the new recipe MUST appear
+   under `## Recipes (per-source playbooks)` of `docs/llms.txt`, so
+   commit the regenerated file in the same PR.
 
 5. **(If possible) verify against a live tenant**, then flip
    `status: unverified` → `status: verified`, populate
@@ -332,6 +347,15 @@ node scripts/check-accessibility.js
 # (PyYAML is a hard dep of mkdocs).
 .venv-mkdocs/bin/python3 scripts/check-recipe-schema.py
 
+# llms.txt drift (G7 Phase 2).
+# Regenerates docs/llms.txt from the structured sources of truth
+# (mkdocs.yml nav + _machine/integrations + _machine/recipes/index.yaml
+# + _machine/formatter-schema.json) and FAILS if the on-disk file
+# disagrees. The file ships VERBATIM at site/llms.txt per the
+# llms.txt convention (https://llmstxt.org/). On drift: run
+# `python3 scripts/build-llms-txt.py` and commit. Needs PyYAML.
+.venv-mkdocs/bin/python3 scripts/build-llms-txt.py --check
+
 # Bundle hygiene (run after webpack build)
 node scripts/check-bundle-size.js
 node scripts/check-bundle-console-noise.js
@@ -363,6 +387,7 @@ to fix and the exact command to re-run.
 | `[FAIL] docs/recipes/<src>/<layer>.md: §2 SPL line N has K pipes on one physical line` | SPL Pipe-Per-Line Rule violation — splice the pipes onto their own lines | Reformat the SPL so every `\|` starts a new line in the ```spl ...``` fence; rerun `python3 scripts/check-recipe-schema.py` |
 | `[FAIL] docs/recipes/<src>/<layer>.md: §4 references formatter option(s) that are NOT in formatter-schema.json` | The recipe's §4 JSON sets a property name that doesn't exist on the formatter | Pick a real option (check `docs/_machine/formatter-schema.json`), or add the option to `formatter.html` first via §4 of this guide |
 | `[FAIL] docs/recipes/<src>/<layer>.md: expected_fields entry 'foo' is not present in the §3 markdown table` | Frontmatter promises a field the §3 table doesn't document | Add the field as a row in the §3 Markdown table, OR remove it from `expected_fields` if the SPL no longer produces it |
+| `[FAIL] docs/llms.txt is out of sync vs the structured sources of truth` | You added/edited an integration YAML, a recipe, a nav entry in `mkdocs.yml`, or a formatter option, but forgot to regenerate `docs/llms.txt` | `python3 scripts/build-llms-txt.py && git add docs/llms.txt`. The regenerator is deterministic — no clock-based fields, no random ordering — so a clean rebuild always re-passes the check |
 
 ---
 
@@ -375,7 +400,9 @@ to fix and the exact command to re-run.
   infrastructure shipped in v1.7, lives at
   [`mkdocs.yml`](https://github.com/fenre/better_map/blob/main/mkdocs.yml)
   + the human-readable `docs/` pages OUTSIDE this `_machine/`
-  subtree; Phase 2 G7-driven auto-generation deferred).
+  subtree; the G7 Phase 2 `llms.txt` index ships AT the site root
+  via [`docs/llms.txt`](https://github.com/fenre/better_map/blob/main/docs/llms.txt),
+  drift-gated by `scripts/build-llms-txt.py --check`).
 - Not the customer-facing setup guide. That's E5 — the recipe matrix.
   Phase 1 (framework + three starter recipes) shipped in v1.7-prep;
   the remaining matrix cells (every layer × every source) are
@@ -398,6 +425,8 @@ wins. Open a PR that updates this file.
 - `docs/_machine/integrations/*.yaml` — Splunk integration scaffolds
 - `docs/_machine/recipes/recipe-schema.json` — per-source recipe schema (E5 Phase 1)
 - `docs/_machine/recipes/index.yaml` — auto-generated recipe index (E5 Phase 1)
+- `docs/llms.txt` — agent-discoverable site index (G7 Phase 2), conforming to <https://llmstxt.org/>
+- `scripts/build-llms-txt.py` — generator + `--check` drift gate for the above
 - `docs/runbooks/supply-chain.md` — G1 verification + waiver procedures
 - `docs/runbooks/upgrade-hygiene.md` — G3 orphan-file remediation
 - `/.cursor/rules/ot-safety.mdc` — VISTA OT safety boundary (binding for OT integrations)

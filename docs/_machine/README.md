@@ -42,6 +42,7 @@ GitHub Pages on every push to `main` via
 | `recipes/index.yaml` | E5 Phase 1 — auto-generated index of every recipe in `docs/recipes/<source>/<layer>.md`, with the frontmatter blocks flattened into one stable structure. The structured input for the G7 Phase 2 `llms.txt` emission. | `docs/recipes/<source>/<layer>.md` frontmatter (union of all) | `scripts/check-recipe-schema.py` (re-runs `scripts/build-recipe-index.py` under the hood and asserts byte-for-byte equality with the on-disk copy) |
 | `agents.md` | Operating guide for AI agents working on the repo itself (the five non-negotiables, where things live, common mistakes). | hand-maintained | n/a |
 | `README.md` | This file. | hand-maintained | n/a |
+| `../llms.txt` (lives at `docs/llms.txt`, ships at `site/llms.txt`) | G7 Phase 2 — an `llms.txt`-convention index of every published documentation page, every Splunk integration, every per-source recipe, and every machine-readable scaffold. The single URL `<site>/llms.txt` is the entry point an LLM-aware agent should hit first. | `mkdocs.yml#nav`, `_machine/integrations/*.yaml`, `_machine/recipes/index.yaml`, `_machine/formatter-schema.json` (union of all) | `scripts/build-llms-txt.py --check` (regenerates from the structured sources and byte-compares; CI wires it into the docs-build job) |
 
 ---
 
@@ -52,8 +53,8 @@ artefacts not yet built. They will be added once those land.
 
 | File | Blocked by |
 |---|---|
-| `llms.txt` | ~~E2 — MkDocs site~~ (E2 Phase 1 shipped v1.7; unblocked) + ~~E5 — recipe matrix~~ (E5 Phase 1 shipped v1.7-prep with three starter recipes and `recipes/index.yaml`; the structured input now exists). Emission is the next G7 Phase 2 work item — needs a script that walks the MkDocs `nav:` tree + the recipe index, classifies each page, and emits the `llms.txt` convention |
-| `llms-full.txt` | E2 Phase 1 (done) + E5 Phase 1 (done) + per-page token budget definition |
+| ~~`llms.txt`~~ | ~~E2 — MkDocs site~~ (E2 Phase 1 shipped v1.7) + ~~E5 — recipe matrix~~ (E5 Phase 1 shipped v1.7-prep) + ~~emission script~~ (G7 Phase 2 shipped v1.7-prep — see row in the table above; lives at `docs/llms.txt`, copied verbatim to `site/llms.txt` by MkDocs, drift-gated by `scripts/build-llms-txt.py --check` in CI) |
+| `llms-full.txt` | E2 Phase 1 (done) + E5 Phase 1 (done) + per-page token budget definition. Will require either a markdown-include-style concatenation or a separate render pass that strips MkDocs theme chrome from each rendered page; the per-page token-budget contract has to be agreed first |
 | `layers/<layer-id>.yaml` (one per layer type) | Independent of E2 but de-prioritised behind integrations (where the customer questions actually land) |
 | `recipes/<source>/<layer>.md` (the remaining matrix cells) | ~~E5 framework~~ (Phase 1 shipped) + live-Splunk verification time for each cell (status flips from `unverified` → `verified` as a maintainer with REST access dispatches each SPL). The framework is now drift-gated, so each new recipe lands as a small isolated PR |
 | `openapi-better_map-rest.yaml` | The REST endpoints it would describe (KV-store bookmarks F1, plugin manifest G6, recipe-test webhook D5) are all v1.8 or later |
@@ -91,6 +92,14 @@ under this directory with its own drift gate.
    in `verified_against`); `unverified` means the recipe is
    documentation-only and a maintainer-with-live-tenant should
    confirm before customer delivery.
+7. **As your single-URL entry point:** if you can only hit one URL,
+   hit `<site>/llms.txt`. It's an `llms.txt`-convention Markdown index
+   (small enough to fit comfortably in any context window) of every
+   page on the documentation site, every Splunk integration, every
+   shipped per-source recipe, and every machine-readable scaffold —
+   each with a one-line description and a stable URL. The on-disk
+   source is `docs/llms.txt`; the canonical published URL is
+   <https://fenre.github.io/better_map/llms.txt>.
 
 ---
 
@@ -138,5 +147,5 @@ file here is deterministic given the source of truth.
 - `agents.md` — operating guide for agents
 - `docs/runbooks/supply-chain.md` — G1 verification + waiver procedures
 - `docs/runbooks/upgrade-hygiene.md` — G3 orphan-file remediation
-- [llms.txt convention](https://llmstxt.org/) — Phase 2 will conform to this
+- [llms.txt convention](https://llmstxt.org/) — G7 Phase 2 shipped; `docs/llms.txt` conforms
 - [JSON Schema 2020-12](https://json-schema.org/draft/2020-12/schema) — `formatter-schema.json` dialect

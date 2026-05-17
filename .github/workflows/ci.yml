@@ -584,6 +584,18 @@ jobs:
         # `python3 scripts/build-recipe-index.py` and commit the result.
         run: python3 scripts/check-recipe-schema.py
 
+      - name: Check docs/llms.txt is in sync (G7 Phase 2)
+        # ROADMAP §3 G7 Phase 2 + §7e "llms.txt" box.
+        # Regenerates `docs/llms.txt` from the structured sources of truth
+        # (mkdocs.yml nav, _machine/integrations/*.yaml,
+        # _machine/recipes/index.yaml, _machine/formatter-schema.json)
+        # and exits non-zero if the on-disk file disagrees. The output
+        # ships verbatim at the site root (`site/llms.txt`) per the
+        # llms.txt convention: <https://llmstxt.org/>.
+        # On FAIL, run `python3 scripts/build-llms-txt.py` and commit
+        # the regenerated file.
+        run: python3 scripts/build-llms-txt.py --check
+
       - name: Build documentation site (strict mode)
         # `--strict` is the hammer: any MkDocs warning fails the build.
         # The site renders to `site/` (gitignored) — the GitHub Pages

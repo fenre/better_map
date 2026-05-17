@@ -1,0 +1,90 @@
+# Better Map
+
+> Splunk Dashboard Studio custom map visualization built on MapLibre GL JS — ten layer types, time scrubber, 3D extrusion, H3 hexbin aggregation, vector-tile feature join, cross-panel coordination, indoor floor-plan overlay, and twelve preset Studio dashboards.
+
+Better Map is a Splunk Dashboard Studio v2 custom map visualization built on MapLibre GL JS. The project is documented in two layers: human-readable pages rendered as a Material site (this `llms.txt` indexes them) and a structured machine-readable layer under `docs/_machine/` (JSON Schema for the 82 formatter options, YAML scaffolds for each Splunk integration, YAML index of per-source recipes). Every entry below resolves to a single page; the structured machine-readable files are linked at the bottom for agents that would rather consume the contract directly than read prose.
+
+All URLs below are publicly accessible; the project ships under the MIT licence and the source repo is at <https://github.com/fenre/better_map>.
+
+## Agent guide
+
+- [Agent operating guide](https://fenre.github.io/better_map/_machine/agents/): the five non-negotiables (formatter schema / manifest / CSS contract / dashboard tokens / BM-CT-1), the runtime envelope, how to add a formatter option / integration / recipe, the pre-commit checklist, and the common mistake → fix table.
+- [Machine-readable layer contract](https://fenre.github.io/better_map/_machine/): what each file under `docs/_machine/` documents, what its source of truth is, and which CI gate prevents drift.
+
+## Getting started
+
+- [Overview](https://fenre.github.io/better_map/getting-started/)
+- [Smoke test](https://fenre.github.io/better_map/getting-started/smoke-test/)
+
+## Reference
+
+- [Overview](https://fenre.github.io/better_map/reference/)
+- [Formatter options](https://fenre.github.io/better_map/reference/formatter/): the 82 formatter options exposed by the visualization. The canonical JSON Schema 2020-12 is at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+- [Layer reference](https://fenre.github.io/better_map/reference/layers/)
+- [BM-CT-1 contract](https://fenre.github.io/better_map/reference/bm-ct-1/)
+
+## Runtime envelope (binding)
+
+- [Runtime envelope](https://fenre.github.io/better_map/runtime-envelope/): the binding constraints on what better_map can do (Dashboard Studio v2 only, single AMD bundle, CSP / `connect-src 'self'`, no external fetches outside basemap tiles / air-gapped PMTiles / declared integrations, no Web Workers from cross-origin URLs, no Dashboard Studio v3 `core.*` keys). Read this BEFORE proposing any architectural change.
+
+## Integrations (Splunk)
+
+- [Overview](https://fenre.github.io/better_map/integrations/)
+- [Catalogue](https://fenre.github.io/better_map/integrations/catalogue/)
+
+Each integration also has a machine-readable scaffold under `docs/_machine/integrations/` mirroring the JS module it shadows in `src/lib/splunk/`. The full directory is at <https://github.com/fenre/better_map/tree/main/docs/_machine/integrations>.
+
+- [Splunk AI Assistant for SPL — natural-language → SPL (experimental)](https://github.com/fenre/better_map/blob/main/docs/_machine/integrations/aiAssistant.yaml): requires `Splunk_AI_Assistant_Cloud`. Source: `better_map/appserver/static/visualizations/better_map/src/lib/splunk/aiAssistant.js`.
+- [AI-suggested geo annotations (experimental)](https://github.com/fenre/better_map/blob/main/docs/_machine/integrations/aiGeo.yaml): requires `Splunk AI Assistant for SPL OR generic Splunk Cloud ML Toolkit endpoint`. Source: `better_map/appserver/static/visualizations/better_map/src/lib/splunk/aiGeo.js`.
+- [ES Notable Event — drilldown URL builder + close stub (experimental)](https://github.com/fenre/better_map/blob/main/docs/_machine/integrations/esNotable.yaml): requires `Splunk Enterprise Security`. Source: `better_map/appserver/static/visualizations/better_map/src/lib/splunk/esNotable.js`.
+- [Splunk IT Service Intelligence (ITSI) — service map (experimental)](https://github.com/fenre/better_map/blob/main/docs/_machine/integrations/itsi.yaml): requires `ITSI (SA-ITOA)`. Source: `better_map/appserver/static/visualizations/better_map/src/lib/splunk/itsi.js`.
+- [MITRE ATT&CK technique overlay (experimental)](https://github.com/fenre/better_map/blob/main/docs/_machine/integrations/mitre.yaml): requires `none (built-in lookup table for ~80 most-common techniques)`. Source: `better_map/appserver/static/visualizations/better_map/src/lib/splunk/mitre.js`.
+- [OT Purdue model / IEC 62443 overlay (experimental)](https://github.com/fenre/better_map/blob/main/docs/_machine/integrations/purdue.yaml): requires `none (asset register can come from any Splunk lookup or inline)`. Source: `better_map/appserver/static/visualizations/better_map/src/lib/splunk/purdue.js`.
+- [Risk-Based Alerting (RBA) — geo risk heatmap (experimental)](https://github.com/fenre/better_map/blob/main/docs/_machine/integrations/rba.yaml): requires `Splunk Enterprise Security (uses ES Risk Framework schema)`. Source: `better_map/appserver/static/visualizations/better_map/src/lib/splunk/rba.js`.
+- [Splunk SOAR (formerly Phantom) — right-click playbook trigger (experimental)](https://github.com/fenre/better_map/blob/main/docs/_machine/integrations/soar.yaml): requires `Splunk SOAR forwarder app (phantom_forward) on the host Splunk`. Source: `better_map/appserver/static/visualizations/better_map/src/lib/splunk/soar.js`.
+
+## Recipes (per-source playbooks)
+
+- [Recipes overview](https://fenre.github.io/better_map/recipes/): the recipe contract, the six-section structure, the CI gate, the JSON Schema, and how to add a new recipe. The machine-readable index of every shipped recipe is at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>.
+- [CIM Network Traffic → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/markers/): apps required: Splunk_SA_CIM, builtin:iplocation.
+- [US states (built-in geo lookup) → Choropleth (unverified)](https://fenre.github.io/better_map/recipes/geo-us-states/choropleth/): apps required: none.
+- [KV Store (lat/lon collection) → Markers (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/): apps required: none.
+
+## Runbooks
+
+- [Overview](https://fenre.github.io/better_map/runbooks/)
+- [Supply chain (G1)](https://fenre.github.io/better_map/runbooks/supply-chain/)
+- [Upgrade hygiene (G3)](https://fenre.github.io/better_map/runbooks/upgrade-hygiene/)
+
+## Operations & deployment
+
+- [Performance](https://fenre.github.io/better_map/performance/)
+- [Air-gapped deployment](https://fenre.github.io/better_map/air-gapped/)
+- [Contributing](https://fenre.github.io/better_map/contributing/)
+- [Changelog](https://fenre.github.io/better_map/changelog/)
+- [Roadmap](https://fenre.github.io/better_map/roadmap/)
+
+## Machine-readable layer (`docs/_machine/`)
+
+Every file below is either auto-generated from a source of truth elsewhere in the repo OR hand-maintained with that fact declared in a `meta:` block. Either way the contents are stable enough to be diffed in CI; the corresponding drift gates live in `scripts/check-*.py`. The README is at <https://fenre.github.io/better_map/_machine/>.
+
+- [`formatter-schema.json`](https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json): JSON Schema 2020-12 for the 82 formatter options. Generated from `formatter.html`. Drift gate: `scripts/check-formatter-schema.py`.
+- [`integrations/`](https://github.com/fenre/better_map/tree/main/docs/_machine/integrations): 8 hand-authored YAML scaffolds, one per Splunk integration in `src/lib/splunk/`.
+- [`recipes/recipe-schema.json`](https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/recipe-schema.json): JSON Schema 2020-12 for the YAML frontmatter every recipe MUST carry. Hand-maintained.
+- [`recipes/index.yaml`](https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml): auto-generated index of every recipe under `docs/recipes/`. Drift gate: `scripts/check-recipe-schema.py`.
+- [`agents.md`](https://fenre.github.io/better_map/_machine/agents/): operating guide for AI agents working on the repository itself.
+- [`README.md`](https://fenre.github.io/better_map/_machine/): the `_machine/` contract — what's here, what's not, how to consume it.
+
+## Project meta
+
+- [README](https://github.com/fenre/better_map/blob/main/README.md): user-facing overview, screenshots, installation summary.
+- [Roadmap](https://github.com/fenre/better_map/blob/main/ROADMAP.md): the binding planning document. §1a is the runtime envelope; §3 is the work-item breakdown; §4 is the milestone sequence; §7 is the defensibility checklist.
+- [Changelog](https://github.com/fenre/better_map/blob/main/CHANGELOG.md): per-release summary, in Keep a Changelog format.
+- [LICENSE](https://github.com/fenre/better_map/blob/main/LICENSE): MIT.
+- [Repository](https://github.com/fenre/better_map/tree/main): the canonical source tree.
+
+## Optional
+
+- [Air-gapped PMTiles build](https://github.com/fenre/better_map/blob/main/better_map/appserver/static/visualizations/better_map/AIR-GAPPED-PMTILES.md): advanced operator runbook for fully-offline basemap deployment.
+- [GitHub Actions](https://github.com/fenre/better_map/tree/main/.github/workflows): every CI gate documented in the agents.md pre-commit checklist is wired into one of these workflows.
+- [Cursor rules](https://github.com/fenre/better_map/tree/main/.cursor/rules): repo-local rules for AI agents working in Cursor. Includes the binding OT-safety boundary at `ot-safety.mdc`.
