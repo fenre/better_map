@@ -1,0 +1,40 @@
+# MkDocs Material site build dependencies — ROADMAP §3 E2 Phase 1.
+#
+# This file pins the EXACT versions used by:
+#   - the PR-gate build step in `.github/workflows/ci.yml`
+#     (`mkdocs build --strict`)
+#   - the GitHub Pages deploy in `.github/workflows/docs.yml`
+#   - any contributor running `mkdocs serve` locally
+#
+# Why pin?
+#   The MkDocs ecosystem changes its warning behaviour, theme defaults,
+#   and extension APIs every few minor releases. With `strict: true`
+#   in mkdocs.yml, a transparent floor-version bump can flip a green
+#   PR to red overnight. We pin tight, upgrade on purpose, and the
+#   `actions/setup-python` cache keys off this file.
+#
+# Upgrade procedure:
+#   1. Bump a single line below.
+#   2. Run `pip install -r scripts/requirements-mkdocs.txt && mkdocs build --strict`
+#      locally and read the changelog for any deprecations.
+#   3. Open a PR titled `chore(docs): bump mkdocs-material to X.Y.Z`.
+#      CI will catch any new warnings via --strict.
+#
+# Floor versions are chosen so that:
+#   - mkdocs 1.6+ : ships `not_in_nav` natively (used in mkdocs.yml).
+#   - mkdocs-material 9.6+ : ships `theme.font: false` for air-gap.
+#   - mkdocs-include-markdown-plugin 7.x : supports `base_path` lists
+#     and cross-directory includes (we include README/CHANGELOG/
+#     ROADMAP from the repo root).
+#
+# Pins use `==` and explicit patch versions so the cache key is
+# deterministic. Dependabot's `pip` ecosystem PRs will keep them
+# current.
+
+mkdocs==1.6.1
+mkdocs-material==9.6.18
+mkdocs-include-markdown-plugin==7.1.7
+# PyMdown Extensions ships pymdownx.snippets, .superfences, .tabbed,
+# .tasklist and the rest of the markdown_extensions we wire in
+# mkdocs.yml. Material requires >=10.x.
+pymdown-extensions==10.16.1

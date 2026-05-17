@@ -1,0 +1,225 @@
+# MkDocs Material configuration — better_map documentation site.
+#
+# ROADMAP §3 E2 Phase 1 (infrastructure only): this file stands up the
+# site skeleton — theme, navigation, build options, and CI-enforced
+# strict mode. Phase 2 (G7-driven auto-generation from
+# `docs/_machine/*.yaml` and the JSON Schema, llms.txt emission) lands
+# in follow-up PRs.
+#
+# Air-gap posture (ROADMAP §1a, binding): the site MUST be loadable
+# from a Splunk Cloud customer's CSP-restricted browser without
+# touching any third-party CDN. That means:
+#   - `theme.font: false` — disables Google Fonts (Material's default
+#     loads Roboto from Google). System sans-serif inherits.
+#   - No `extra_javascript` or `extra_css` pulling from external URLs.
+#   - All icons used are Material's built-in SVG set, bundled at build
+#     time.
+# Anyone adding an externally-hosted asset to this site MUST first
+# confirm the host is on the documented Splunk-permissioned list.
+#
+# Build invariants:
+#   - `strict: true` — any warning fails the build. The CI gate
+#     `.github/workflows/ci.yml` runs `mkdocs build --strict`; a
+#     deprecated extension, a bad cross-link, or an orphan file all
+#     surface as PR failures, not as silent site rot.
+#   - `use_directory_urls: true` — `/install/` not `/install.html`,
+#     for stable, share-able URLs.
+#   - `not_in_nav: _machine/**` — keeps the machine-readable layer
+#     out of the sidebar (it's agent-facing, not user-facing) but
+#     accessible by direct URL once Phase 2 wires it up.
+
+site_name: Better Map
+site_description: >-
+  Splunk Dashboard Studio custom map visualization built on MapLibre
+  GL JS — ten layer types, time scrubber, 3D extrusion, H3 hexbin
+  aggregation, vector-tile feature join, cross-panel coordination,
+  indoor floor-plan overlay, and twelve preset Studio dashboards.
+site_url: https://fenre.github.io/better_map/
+site_author: Better Map contributors
+repo_url: https://github.com/fenre/better_map
+repo_name: fenre/better_map
+edit_uri: edit/main/docs/
+copyright: |
+  &copy; 2024&ndash;2026 Better Map contributors. MIT licensed.
+
+# Source of truth lives at the repo root in `docs/`. Both the
+# human-readable site content AND the machine-readable `_machine/`
+# layer live under this directory; the `not_in_nav` block below keeps
+# the latter out of the sidebar but accessible by URL.
+docs_dir: docs
+
+# Build artefacts land under `site/` (gitignored — see .gitignore).
+# The GitHub Pages deploy workflow uploads this directory verbatim.
+site_dir: site
+
+# Strict mode: any MkDocs warning fails the build. This is the CI
+# gate's hammer — a typo in a link, an orphan markdown file, a
+# deprecated config key, or a missing snippet all become PR-blockers.
+strict: true
+
+# Stable, directory-style URLs. `/install/` (not `/install.html`) so
+# we never break inbound links when we restructure pages.
+use_directory_urls: true
+
+theme:
+  name: material
+  language: en
+  # Air-gap: explicitly disable Google Fonts. Material falls back to
+  # the user's system sans-serif. See ROADMAP §1a binding.
+  font: false
+  logo: assets/logo.svg
+  favicon: assets/favicon.svg
+  icon:
+    repo: fontawesome/brands/github
+    edit: material/pencil
+    view: material/eye
+  palette:
+    # System-preference auto. Users with `prefers-color-scheme: dark`
+    # get the slate palette; everyone else gets the light default.
+    - media: '(prefers-color-scheme)'
+      toggle:
+        icon: material/brightness-auto
+        name: Follow system preference
+    - media: '(prefers-color-scheme: light)'
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: '(prefers-color-scheme: dark)'
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference
+  features:
+    # Navigation
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - navigation.indexes
+    - navigation.footer
+    # Search
+    - search.suggest
+    - search.share
+    # Content
+    - content.code.copy
+    - content.code.annotate
+    - content.action.edit
+    - content.action.view
+    - content.tabs.link
+    - content.tooltips
+    # Table of contents
+    - toc.follow
+
+plugins:
+  - search
+  - include-markdown:
+      # Inline content from outside `docs/` (README.md, CHANGELOG.md,
+      # ROADMAP.md, AIR-GAPPED-PMTILES.md) so the canonical files at
+      # the repo root and inside the viz package stay the single
+      # source of truth — no duplication, no drift.
+      preserve_includer_indent: true
+      dedent: false
+      trailing_newlines: true
+      comments: false
+      heading_offset: 0
+      recursive: true
+      encoding: utf-8
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      permalink_title: Anchor link to this section
+  - pymdownx.betterem
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.snippets:
+      # Allow markdown snippets from `docs/_includes/` so future PRs
+      # can DRY up boilerplate (e.g., a reused install banner).
+      check_paths: true
+      base_path:
+        - docs/_includes
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+extra:
+  # Hide the "Made with Material for MkDocs" footer banner. The
+  # MIT-licensed Material theme allows this in non-Insiders builds.
+  generator: false
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/fenre/better_map
+      name: better_map on GitHub
+    - icon: fontawesome/solid/scroll
+      link: https://github.com/fenre/better_map/blob/main/ROADMAP.md
+      name: Roadmap
+  status:
+    deferred: Deferred to a later milestone
+    experimental: Experimental — APIs and behaviour may change
+
+# Keep the machine-readable layer (`docs/_machine/`) out of the
+# user-facing sidebar. It IS still part of the site (so future Phase 2
+# automation can link to `agents.md` as the canonical agent guide),
+# but a human user landing on the docs site doesn't see it in the
+# navigation. The `_includes/` and `assets/` directories are also
+# excluded — they hold partial markdown and theme assets, not pages.
+not_in_nav: |
+  _machine/**
+  _includes/**
+
+# Watch additional files when running `mkdocs serve` so edits to the
+# included root-level docs (README, CHANGELOG, ROADMAP) trigger a
+# rebuild without manually touching a `docs/` page.
+watch:
+  - README.md
+  - CHANGELOG.md
+  - ROADMAP.md
+  - better_map/appserver/static/visualizations/better_map/docs/AIR-GAPPED-PMTILES.md
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - getting-started/index.md
+      - Smoke test: getting-started/smoke-test.md
+  - Runtime envelope: runtime-envelope.md
+  - Reference:
+      - reference/index.md
+      - Formatter options: reference/formatter.md
+      - Layer reference: reference/layers.md
+      - BM-CT-1 contract: reference/bm-ct-1.md
+  - Integrations:
+      - integrations/index.md
+      - Catalogue: integrations/catalogue.md
+  - Recipes: recipes/index.md
+  - Performance: performance.md
+  - Air-gapped deployment: air-gapped.md
+  - Runbooks:
+      - runbooks/index.md
+      - 'Supply chain (G1)': runbooks/supply-chain.md
+      - 'Upgrade hygiene (G3)': runbooks/upgrade-hygiene.md
+  - Contributing: contributing.md
+  - Changelog: changelog.md
+  - Roadmap: roadmap.md
