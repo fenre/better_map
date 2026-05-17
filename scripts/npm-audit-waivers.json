@@ -1,0 +1,5 @@
+{
+  "_comment": "G1 — npm audit waiver file for better_map runtime deps (ROADMAP §3 G1, §7d). Every entry MUST carry a real reason (why is this finding not exploitable in better_map?) and an `expires` ISO-8601 date no further than 90 days from the `added` date (per ROADMAP §3 G1: 'document waivers with expiry dates'). On the expiry date the gate FAILs again; the waiver MUST be re-justified or the underlying CVE actually fixed. The initial v1.7 release ships zero waivers.",
+  "_schema_comment": "Waivers list. Each entry: { ghsa_id, package, severity, reason, owner, added, expires }. `ghsa_id` is the GitHub Security Advisory id reported by npm audit; `package` is the offending dep; `severity` mirrors npm's classification; `reason` MUST justify non-exploitability with reference to specific code paths; `expires` is when the waiver auto-revokes.",
+  "waivers": []
+}

@@ -107,6 +107,7 @@ SHIP_EXCLUDES_REL = {
     "appserver/static/visualizations/better_map/webpack.config.js",
     "appserver/static/visualizations/better_map/.eslintrc.cjs",
     "appserver/static/visualizations/better_map/.eslintignore",
+    "appserver/static/visualizations/better_map/.npmrc",
     "appserver/static/visualizations/better_map/harness.json",
     # docs/ exclude already catches AIR-GAPPED-PMTILES.md
     # scripts/ exclude already catches build-pmtiles.sh

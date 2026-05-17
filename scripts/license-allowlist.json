@@ -1,0 +1,47 @@
+{
+  "_comment": "G1 — License allowlist for better_map runtime dependencies (ROADMAP §3 G1, §7d). The shipped Splunk app redistributes every prod dependency, so every entry that lands in node_modules under --omit=dev MUST resolve to a license on this list, either directly or via the dual-license disjunction rule below. Dev-only deps (eslint, webpack, vitest, etc.) are NOT checked because they never ship to a customer Splunk install. Edit policy: adding a license SPDX id here is a security/legal review decision — open an issue describing the dep and why the existing allowlist is insufficient.",
+  "allowed_spdx": [
+    "MIT",
+    "MIT-0",
+    "ISC",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "BSD",
+    "0BSD",
+    "CC0-1.0",
+    "CC-BY-4.0",
+    "Unlicense",
+    "BlueOak-1.0.0",
+    "Python-2.0",
+    "EDL-1.0"
+  ],
+  "_dual_license_pick_comment": "For a dependency declared as (A OR B), we pick the SPDX id from this map and treat it as the effective license. The choice MUST appear in `allowed_spdx`. This is how we handle MPL/EPL-style copyleft packages that ship with a permissive alternative.",
+  "dual_license_pick": {
+    "(MPL-2.0 OR Apache-2.0)": "Apache-2.0",
+    "(Apache-2.0 OR MPL-2.0)": "Apache-2.0",
+    "(EDL-1.0 OR EPL-1.0)": "EDL-1.0",
+    "(EPL-1.0 OR EDL-1.0)": "EDL-1.0",
+    "(MIT OR CC0-1.0)": "MIT",
+    "(CC0-1.0 OR MIT)": "MIT"
+  },
+  "_typo_normalization_comment": "Upstream package.json files occasionally have typos in the SPDX id. Map the typo to the intended id here; the resulting id MUST be on allowed_spdx. Document every entry with evidence (URL).",
+  "typo_normalization": {
+    "BDS-3-Clause": "BSD-3-Clause"
+  },
+  "_known_good_comment": "Packages whose package.json `license` field is missing, empty, or non-SPDX. We MUST have looked at the actual LICENSE file in the upstream repo and confirmed it matches the SPDX id we assert here. Each entry carries provenance so future reviewers can re-verify. Keep the list small; prefer asking upstream to fix their package.json over adding entries here.",
+  "known_good": {
+    "@mapbox/jsonlint-lines-primitives": {
+      "license": "MIT",
+      "evidence": "https://github.com/mapbox/jsonlint/blob/master/LICENSE — the project is a fork of zaach/jsonlint which is MIT; upstream package.json omits the field. Confirmed against the LICENSE file in the repo.",
+      "added": "2026-05-17",
+      "added_by": "G1"
+    },
+    "arc": {
+      "license": "BSD-2-Clause",
+      "evidence": "https://github.com/scijs/arc/blob/master/LICENSE — declares 'BSD' in package.json; LICENSE file is the BSD-2-Clause template ('The BSD 2-Clause License'). Treating the declaration as BSD-2-Clause.",
+      "added": "2026-05-17",
+      "added_by": "G1"
+    }
+  }
+}

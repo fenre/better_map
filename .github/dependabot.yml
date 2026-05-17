@@ -1,0 +1,101 @@
+# Dependabot — better_map (ROADMAP §3 G1, §7d).
+#
+# Closes the §7d box:
+#   - [ ] Dependabot enabled; weekly auto-PRs merging on CI green
+#
+# Two npm package.json files exist: the repo-root one (commitlint/husky
+# tooling only) and the viz one (the actual shipped runtime deps).
+# Both get watched. GitHub Actions workflows also get a weekly bump
+# so we catch deprecated runners or pinned action versions falling
+# out of date.
+#
+# Grouping policy:
+#   - Patch + minor bumps on devDependencies are grouped into ONE PR
+#     to cut review overhead (these are background-noise updates).
+#   - Patch + minor bumps on runtime (prod) dependencies are grouped
+#     SEPARATELY because they carry actual customer impact.
+#   - Major bumps stay un-grouped: every major requires a deliberate
+#     review (SemVer says breaking change is possible).
+#
+# Open-PR limit per ecosystem: 5. Above that Dependabot stops opening
+# new PRs to avoid swamping a small reviewer pool; once the queue drains
+# new bumps appear again.
+#
+# Commit messages follow the project's Conventional Commits convention
+# (the commitlint CI gate enforces this on every PR); the `chore(deps):`
+# prefix matches the existing pattern.
+
+version: 2
+updates:
+  # --- npm: repo-root tooling (commitlint/husky) -----------------------
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps-root)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "root-tooling"
+    groups:
+      root-tooling-minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"
+
+  # --- npm: viz package (runtime + dev) --------------------------------
+  - package-ecosystem: "npm"
+    directory: "/better_map/appserver/static/visualizations/better_map"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps-viz)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "viz"
+    groups:
+      viz-prod-minor-and-patch:
+        applies-to: version-updates
+        dependency-type: "production"
+        update-types:
+          - "minor"
+          - "patch"
+      viz-dev-minor-and-patch:
+        applies-to: version-updates
+        dependency-type: "development"
+        update-types:
+          - "minor"
+          - "patch"
+
+  # --- GitHub Actions: workflow runner / action versions ---------------
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(deps-ci)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    groups:
+      github-actions-minor-and-patch:
+        applies-to: version-updates
+        update-types:
+          - "minor"
+          - "patch"

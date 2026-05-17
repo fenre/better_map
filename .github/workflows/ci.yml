@@ -1,6 +1,7 @@
 # CI — better_map Splunk custom visualization
 #
-# Scope: ROADMAP §3 G2 foundation + §3 G3 manifest + §3 G8 + §7b Q-1 +
+# Scope: ROADMAP §3 G1 (npm-audit + license-allowlist + osv-scanner
+# gates) + §3 G2 foundation + §3 G3 manifest + §3 G8 + §7b Q-1 +
 # §7b Q-1B + §7b Q-2 + §7b Q-3 + REL-1 version-consistency check +
 # G2-2 AppInspect gate + T-1 vitest unit-test scaffold (PR pipeline).
 # This workflow lints the JS, runs the JS↔CSS contract lint, parses
@@ -8,19 +9,22 @@
 # cross-checks every `$better_map.*$` dashboard token against widget
 # producer literals in `src/lib/**/*.js` (Q-1B; SPATIAL-1 defence in
 # depth), asserts the release manifest matches the source tree (G3;
-# orphan-file defence in depth), runs the vitest unit-test suite,
-# builds the webpack production bundle, runs the production-bundle
-# console-noise check, runs the bundle-size budget check against the
-# §7b table, verifies the three version sources (app.conf /
-# package.json / HUD_VERSION) agree, sanity-checks the build
-# artifacts, validates incoming PR commit messages against
-# Conventional Commits, and runs Splunk AppInspect against the staged
-# Splunk-app archive (cloud+future tags) to defend against AppInspect
-# regressions before they reach a release tag.
+# orphan-file defence in depth), gates on npm-audit / license-allowlist /
+# osv-scanner findings against the runtime dep tree (G1; supply-chain
+# defence in depth), runs the vitest unit-test suite, builds the
+# webpack production bundle, runs the production-bundle console-noise
+# check, runs the bundle-size budget check against the §7b table,
+# verifies the three version sources (app.conf / package.json /
+# HUD_VERSION) agree, sanity-checks the build artifacts, validates
+# incoming PR commit messages against Conventional Commits, and runs
+# Splunk AppInspect against the staged Splunk-app archive (cloud+future
+# tags) to defend against AppInspect regressions before they reach a
+# release tag.
 # It does NOT (yet) run the live dispatch test. That gate is tracked
 # as a v1.7 follow-up under ROADMAP §3 G2 (D5).
 # Release automation lives in `.github/workflows/release.yml` and runs
-# on `v*` tag pushes (see ROADMAP §3 G2 REL-1).
+# on `v*` tag pushes (see ROADMAP §3 G2 REL-1); SBOM generation and
+# cosign keyless signing land in that workflow.
 
 name: CI
 
@@ -122,6 +126,87 @@ jobs:
         # consumes this manifest. ROADMAP §3 G3.
         working-directory: ${{ github.workspace }}
         run: python3 scripts/check-manifest.py
+
+      - name: Check npm audit (G1) — fail on high+ without an active waiver
+        # G1 supply-chain gate: runs `npm audit --omit=dev --json` in
+        # the viz package and FAILs if any finding at severity `high`
+        # or `critical` is NOT covered by an in-date waiver in
+        # `scripts/npm-audit-waivers.json`. Waivers expire automatically
+        # (≤ 90 days from `added`), forcing re-justification rather
+        # than indefinite suppression. The v1.7 baseline ships zero
+        # waivers. See ROADMAP §3 G1 + §7d.
+        working-directory: ${{ github.workspace }}
+        run: python3 scripts/check-npm-audit.py
+
+      - name: Check license allowlist (G1) — only MIT/BSD/Apache/CC0/ISC family
+        # G1 supply-chain gate: walks every runtime (--omit=dev)
+        # dependency installed under node_modules, normalizes the
+        # SPDX license id (handles dual-license disjunctions, upstream
+        # typos, and known-good packages whose package.json omits the
+        # field), and FAILs if any dep cannot resolve to an SPDX id on
+        # `scripts/license-allowlist.json#allowed_spdx`. Defends
+        # against accidentally pulling in a copyleft transitive dep
+        # that would block Splunkbase or large-enterprise legal review.
+        # See ROADMAP §3 G1 + §7d.
+        working-directory: ${{ github.workspace }}
+        run: python3 scripts/check-license-allowlist.py
+
+      - name: Install OSV-Scanner (G1) — second-opinion vulnerability scanner
+        # Pinned via env so the version is a single-line PR diff to bump.
+        # Installs the official Linux x86_64 release binary into a
+        # tool dir on $PATH. Verified by a `--version` echo before use.
+        # We deliberately do NOT use the upstream reusable workflow
+        # (`google/osv-scanner-action/.github/workflows/osv-scanner-reusable*.yml`)
+        # because it routes findings into GitHub's Security tab via
+        # SARIF — that's the right home for the scheduled scan we add
+        # later, but for a PR gate we want a hard, in-line, grep-able
+        # FAIL with a stable JSON report.
+        env:
+          OSV_SCANNER_VERSION: 'v2.3.8'
+        run: |
+          set -eu
+          mkdir -p "${RUNNER_TEMP}/osv-bin"
+          curl -sLfo "${RUNNER_TEMP}/osv-bin/osv-scanner" \
+            "https://github.com/google/osv-scanner/releases/download/${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64"
+          chmod +x "${RUNNER_TEMP}/osv-bin/osv-scanner"
+          echo "${RUNNER_TEMP}/osv-bin" >> "$GITHUB_PATH"
+          "${RUNNER_TEMP}/osv-bin/osv-scanner" --version
+
+      - name: Run OSV-Scanner against the viz lockfile (G1)
+        # `|| true` because OSV-Scanner exits non-zero on ANY finding
+        # (info+). We want a severity-threshold-aware gate so that
+        # `low` / `moderate` findings inform but don't block. The
+        # downstream `check-osv-report.py` reads the JSON and FAILs on
+        # high+ severity that isn't already waived in
+        # `scripts/npm-audit-waivers.json` (shared waiver file with the
+        # npm-audit gate — one CVE, one decision). `--output-file` is
+        # the supported flag from osv-scanner v2.x; the older `--output`
+        # alias is deprecated and will be removed.
+        working-directory: ${{ github.workspace }}
+        run: |
+          set -eu
+          osv-scanner --format=json \
+            --lockfile=./better_map/appserver/static/visualizations/better_map/package-lock.json \
+            --output-file=osv-report.json || true
+          test -s osv-report.json
+          echo 'OSV-Scanner JSON report written; size:'
+          wc -c osv-report.json
+
+      - name: Assert OSV-Scanner findings (G1, severity high+, shared waivers)
+        working-directory: ${{ github.workspace }}
+        run: python3 scripts/check-osv-report.py osv-report.json
+
+      - name: Upload OSV-Scanner JSON report (G1)
+        # Saved for post-merge audit + Splunkbase submission. Short
+        # retention because every PR produces one; the value is in
+        # the latest main-branch run.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: osv-scanner-report-${{ github.sha }}
+          path: osv-report.json
+          retention-days: 14
+          if-no-files-found: warn
 
       - name: Run unit tests (vitest, T-1 scaffold)
         # Executes src/lib/**/*.test.js under jsdom. Currently covers
@@ -270,6 +355,7 @@ jobs:
             --exclude='webpack.config.js' \
             --exclude='.eslintrc.cjs' \
             --exclude='.eslintignore' \
+            --exclude='.npmrc' \
             --exclude='harness.json' \
             --exclude='AIR-GAPPED-PMTILES.md' \
             --exclude='build-pmtiles.sh' \

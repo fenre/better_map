@@ -1,6 +1,7 @@
 # Release — better_map Splunk custom visualization
 #
-# Scope: ROADMAP §3 G2 — release automation v0.
+# Scope: ROADMAP §3 G2 — release automation v1. G1 supply-chain
+# hardening (CycloneDX SBOM + cosign keyless signing) now lives here.
 #
 # Triggered on push of any tag matching `v*` (e.g. `v1.7.0`, `v2.0.0-rc1`).
 # Produces a GitHub Release with the canonical Splunk app archive
@@ -33,8 +34,19 @@
 #      and attach the four artifacts.
 #
 # What this workflow does NOT yet do (tracked as ROADMAP §3 G2 follow-ups):
-#   - cosign signing of the .tar.gz (G1 — needs a project-owned cosign cert)
 #   - Splunkbase upload via REST (E1 — needs an approved listing + token)
+#
+# G1 supply-chain steps that DO land in this workflow (ROADMAP §3 G1, §7d):
+#   - PR-gate quality checks (npm audit, license-allowlist, OSV-Scanner)
+#     re-run against the tagged commit for defence-in-depth (a release
+#     MUST clear the same bar a PR clears).
+#   - CycloneDX SBOM generated for the runtime dep tree and shipped as a
+#     release artifact (`better_map-vX.Y.Z.sbom.json`).
+#   - Cosign keyless signature over the .tar.gz, .spl, and SBOM. Uses
+#     the GitHub OIDC token; no project-owned cosign key required. The
+#     signature is a `.cosign.bundle` file (signature + cert + Rekor
+#     transparency-log entry, all in one). Customers verify with the
+#     command published in `docs/runbooks/supply-chain.md`.
 #
 # AppInspect (cloud + future tags) runs inline below in this workflow
 # with `--fail-on-warnings` — a release MUST clear a stricter bar than
@@ -66,10 +78,18 @@ on:
     tags:
       - 'v*'
 
-# Releases need write access to contents (to create the Release) but no
-# write access to the codebase itself — never push back to main from here.
+# Permissions:
+#   contents: write    — needed by `gh release create` to publish the
+#                        Release. Never used to push back to main.
+#   id-token: write    — needed by sigstore/cosign-installer's keyless
+#                        flow: cosign exchanges the runner's OIDC token
+#                        for a Fulcio-issued short-lived certificate.
+#                        Without this permission `cosign sign-blob`
+#                        cannot generate a signature. See
+#                        https://docs.sigstore.dev/cosign/openid_signing/
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   build-and-release:
@@ -138,6 +158,42 @@ jobs:
         # the tarball contents. ROADMAP §3 G3.
         run: python3 scripts/check-manifest.py
 
+      - name: Check npm audit (G1) — high+ blocking, shared waivers
+        # Defence-in-depth re-run of the PR gate. Same script, same
+        # waiver file. A waiver that was valid at PR-merge time may
+        # have EXPIRED by the time the release tag fires (waivers cap
+        # at 90 days per G1 policy) — that's intentional. ROADMAP §3 G1.
+        run: python3 scripts/check-npm-audit.py
+
+      - name: Check license allowlist (G1) — MIT/BSD/Apache/CC0/ISC family
+        # Re-run with the release-time install tree (npm ci runs in the
+        # step above so we know node_modules matches the lockfile we're
+        # about to publish). ROADMAP §3 G1.
+        run: python3 scripts/check-license-allowlist.py
+
+      - name: Install OSV-Scanner (G1) — second-opinion vulnerability scanner
+        env:
+          OSV_SCANNER_VERSION: 'v2.3.8'
+        run: |
+          set -eu
+          mkdir -p "${RUNNER_TEMP}/osv-bin"
+          curl -sLfo "${RUNNER_TEMP}/osv-bin/osv-scanner" \
+            "https://github.com/google/osv-scanner/releases/download/${OSV_SCANNER_VERSION}/osv-scanner_linux_amd64"
+          chmod +x "${RUNNER_TEMP}/osv-bin/osv-scanner"
+          echo "${RUNNER_TEMP}/osv-bin" >> "$GITHUB_PATH"
+          "${RUNNER_TEMP}/osv-bin/osv-scanner" --version
+
+      - name: Run OSV-Scanner against the viz lockfile (G1)
+        run: |
+          set -eu
+          osv-scanner --format=json \
+            --lockfile=./better_map/appserver/static/visualizations/better_map/package-lock.json \
+            --output-file=osv-report.json || true
+          test -s osv-report.json
+
+      - name: Assert OSV-Scanner findings (G1)
+        run: python3 scripts/check-osv-report.py osv-report.json
+
       - name: Build webpack production bundle
         working-directory: better_map/appserver/static/visualizations/better_map
         run: npm run build
@@ -187,6 +243,7 @@ jobs:
             --exclude='webpack.config.js' \
             --exclude='.eslintrc.cjs' \
             --exclude='.eslintignore' \
+            --exclude='.npmrc' \
             --exclude='harness.json' \
             --exclude='AIR-GAPPED-PMTILES.md' \
             --exclude='build-pmtiles.sh' \
@@ -320,6 +377,102 @@ jobs:
           cat "${TARBALL}.sha256"
           cat "${SPL}.sha256"
 
+      - name: Generate CycloneDX SBOM for runtime dependencies (G1)
+        # @cyclonedx/cyclonedx-npm is the official CycloneDX SBOM
+        # generator for npm projects. We pin the major (^4) and let
+        # npx pull the latest minor/patch so we benefit from bug
+        # fixes without an explicit dep on the repo-root package.json.
+        # --omit dev: only redistributed deps (runtime) appear in the
+        # SBOM, which matches the license + npm audit scope.
+        # --output-format JSON: industry-standard SBOM format that
+        # Splunkbase legal review consumes; the spec version is
+        # CycloneDX 1.6 (the tool's default as of v4.2.x).
+        # --validate: rejects the output if it doesn't pass the
+        # CycloneDX schema. Defence against a future tool regression
+        # shipping malformed JSON. Customers can re-validate with
+        # `cyclonedx-cli validate` or any CycloneDX-aware tool.
+        working-directory: better_map/appserver/static/visualizations/better_map
+        run: |
+          set -eu
+          VERSION="${{ steps.tag.outputs.version }}"
+          npx --yes @cyclonedx/cyclonedx-npm@^4 \
+            --omit dev \
+            --output-format JSON \
+            --validate \
+            --output-file ../../../../../better_map-v${VERSION}.sbom.json
+          ls -la "../../../../../better_map-v${VERSION}.sbom.json"
+
+      - name: SHA-256 checksum the SBOM
+        run: |
+          set -eu
+          VERSION="${{ steps.tag.outputs.version }}"
+          SBOM="better_map-v${VERSION}.sbom.json"
+          sha256sum "$SBOM" > "${SBOM}.sha256"
+          cat "${SBOM}.sha256"
+
+      - name: Install cosign (Sigstore) for keyless signing (G1)
+        # Sigstore's keyless flow uses the GitHub Actions OIDC token to
+        # request a short-lived signing certificate from Fulcio (no
+        # long-lived private key kept by the project). The signing
+        # event is recorded in the Rekor public transparency log so
+        # customers can verify it offline. Pinning the installer + the
+        # cosign version makes the security boundary auditable.
+        uses: sigstore/cosign-installer@v3.7.0
+        with:
+          cosign-release: 'v2.4.1'
+
+      - name: Sign release artifacts with cosign keyless (G1)
+        # `--yes`            skip the "are you sure" prompt (CI is non-interactive).
+        # `--bundle`         emit a single .cosign.bundle file containing the
+        #                    signature, the signing certificate, and the Rekor
+        #                    transparency-log inclusion proof. One file per
+        #                    artifact: customers download artifact + bundle
+        #                    + this workflow's identity and verify offline.
+        # We sign three artifacts:
+        #   - the tarball (the canonical install media)
+        #   - the .spl alias (Splunkbase historically wanted .spl; identical
+        #     bytes to the .tar.gz but customers verify whichever they
+        #     downloaded)
+        #   - the SBOM (so customers know the SBOM is the one this workflow
+        #     generated, not a tampered version)
+        run: |
+          set -eu
+          VERSION="${{ steps.tag.outputs.version }}"
+          TARBALL="better_map-v${VERSION}.tar.gz"
+          SPL="better_map-v${VERSION}.spl"
+          SBOM="better_map-v${VERSION}.sbom.json"
+          for f in "$TARBALL" "$SPL" "$SBOM"; do
+            cosign sign-blob --yes \
+              --bundle "${f}.cosign.bundle" \
+              "$f"
+            echo "signed: $f -> ${f}.cosign.bundle"
+          done
+
+      - name: Verify cosign signatures (G1 self-check)
+        # Defence-in-depth: round-trip what we just signed BEFORE
+        # publishing the release. If the bundle doesn't verify against
+        # this workflow's identity (org/repo + workflow path + tag ref),
+        # something went wrong in the sign step and we'd rather fail the
+        # release than ship an unverifiable bundle. Customers run the
+        # same command from docs/runbooks/supply-chain.md.
+        env:
+          # Identity regex: this exact workflow file on this repo, at
+          # the ref that triggered the run (the tag).
+          CERT_ID_REGEX: '^https://github\.com/${{ github.repository }}/\.github/workflows/release\.yml@${{ github.ref }}$'
+        run: |
+          set -eu
+          VERSION="${{ steps.tag.outputs.version }}"
+          for f in "better_map-v${VERSION}.tar.gz" "better_map-v${VERSION}.spl" "better_map-v${VERSION}.sbom.json"; do
+            echo "::group::verify $f"
+            cosign verify-blob \
+              --bundle "${f}.cosign.bundle" \
+              --certificate-identity-regexp "$CERT_ID_REGEX" \
+              --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+              "$f"
+            echo "verified: $f"
+            echo "::endgroup::"
+          done
+
       - name: Create GitHub Release with auto-generated notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -329,17 +482,25 @@ jobs:
         # `--verify-tag` ensures we are publishing the exact tag the
         # workflow was triggered by (no race window where main moves
         # ahead of the tag between trigger and publish).
+        # The asset list now carries 9 files: tarball + .spl + SBOM +
+        # one .sha256 sidecar each + one .cosign.bundle each.
         run: |
           set -eu
           VERSION="${{ steps.tag.outputs.version }}"
           TAG="${{ steps.tag.outputs.tag }}"
           TARBALL="better_map-v${VERSION}.tar.gz"
           SPL="better_map-v${VERSION}.spl"
+          SBOM="better_map-v${VERSION}.sbom.json"
           gh release create "$TAG" \
             "$TARBALL" \
             "${TARBALL}.sha256" \
+            "${TARBALL}.cosign.bundle" \
             "$SPL" \
             "${SPL}.sha256" \
+            "${SPL}.cosign.bundle" \
+            "$SBOM" \
+            "${SBOM}.sha256" \
+            "${SBOM}.cosign.bundle" \
             --title "$TAG" \
             --generate-notes \
             --verify-tag
