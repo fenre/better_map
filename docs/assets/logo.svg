@@ -1,0 +1,21 @@
+<!--
+  better_map docs site logo.
+  Stylised teardrop map-pin set inside a circular tile-edge ring, in
+  a flat duotone palette compatible with both Material's light and
+  slate (dark) themes. Pure SVG, no external font, no raster
+  fallback  fits the air-gap posture (ROADMAP §1a).
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 64 64"
+  role="img"
+  aria-label="Better Map logo"
+>
+  <title>Better Map</title>
+  <circle cx="32" cy="32" r="30" fill="none" stroke="currentColor" stroke-width="3" stroke-opacity="0.45" />
+  <path
+    d="M32 14c-7.18 0-13 5.82-13 13 0 9.75 13 23 13 23s13-13.25 13-23c0-7.18-5.82-13-13-13z"
+    fill="currentColor"
+  />
+  <circle cx="32" cy="27" r="5" fill="#ffffff" />
+</svg>

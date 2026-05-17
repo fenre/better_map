@@ -95,3 +95,14 @@ playwright/.cache/
 .venv-appinspect/
 dist-appinspect/
 dist-appinspect-local/
+
+# -------------------------------------------------------------
+# MkDocs (E2): build artefacts and the local-only Python venv.
+# `site/` is the rendered HTML output (`mkdocs build`), GitHub
+# Pages-deployed by `.github/workflows/docs.yml` straight off
+# CI — never committed. `.venv-mkdocs/` is a maintainer
+# convenience for `mkdocs serve` previews; CI uses an
+# ephemeral venv each run.
+# -------------------------------------------------------------
+site/
+.venv-mkdocs/

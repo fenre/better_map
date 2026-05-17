@@ -1,0 +1,120 @@
+# Docs deploy — publish the MkDocs Material site to GitHub Pages.
+#
+# Scope: ROADMAP §3 E2 Phase 1 — companion to the `docs-build` job
+# in `ci.yml`. CI proves the site BUILDS on every PR; this workflow
+# DEPLOYS the site on every push to `main` (and on a manual
+# `workflow_dispatch` invocation).
+#
+# Why a separate workflow file:
+#   - GitHub Pages deployment requires the special `pages: write` and
+#     `id-token: write` permissions, plus the `github-pages`
+#     environment, plus the `actions/deploy-pages` action. Grouping
+#     all three with the CI gates would force ci.yml to declare
+#     broader permissions than its other jobs need (least privilege).
+#   - A docs-only push to main (e.g. a typo fix) shouldn't have to
+#     wait for the whole CI matrix. This workflow re-runs the strict
+#     `mkdocs build` (still under 30s) and deploys.
+#   - Future Phase 2 work (G7-driven auto-generation, llms.txt
+#     emission) will hang off this workflow as additional steps,
+#     keeping docs-publishing cleanly isolated from code-shipping.
+#
+# Air-gap note: this workflow PUBLISHES the site to public GitHub
+# Pages. Customers who run Better Map air-gapped do NOT need this
+# workflow — the `docs/` markdown tree ships in the repo and renders
+# directly on github.com. Air-gapped customers can also run
+# `mkdocs build` locally against a cloned repo if they want a
+# searchable HTML mirror inside their VPC. See `docs/air-gapped.md`.
+
+name: Docs
+
+on:
+  push:
+    branches: [main]
+    # Re-deploy only when something user-visible on the site
+    # changes. Code-only pushes leave the rendered HTML byte-identical
+    # so there's nothing to publish. The `docs-build` gate in ci.yml
+    # still runs on every push to `main` (it's not filtered) so
+    # site-build regressions are caught either way.
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'scripts/requirements-mkdocs.txt'
+      - 'CHANGELOG.md'
+      - 'ROADMAP.md'
+      - 'README.md'
+      - 'better_map/appserver/static/visualizations/better_map/docs/**'
+      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+
+# Concurrency: never publish two builds of the same branch at once.
+# The default `cancel-in-progress: false` is intentional — a
+# half-deployed Pages site is worse than waiting an extra ~30s for
+# the previous deploy to settle.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+# Least-privilege permissions:
+#   - `contents: read`     — checkout
+#   - `pages:    write`    — required by actions/deploy-pages
+#   - `id-token: write`    — required to mint the OIDC token Pages
+#                            uses to verify the deployer's identity
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    name: Build MkDocs site
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: scripts/requirements-mkdocs.txt
+
+      - name: Install MkDocs + theme + plugins (pinned via requirements)
+        run: |
+          python3 -m pip install --quiet --upgrade pip
+          python3 -m pip install --quiet -r scripts/requirements-mkdocs.txt
+          mkdocs --version
+
+      - name: Build documentation site (strict mode)
+        # Strict build — same gate as ci.yml's docs-build job. This is
+        # belt-and-braces: ci.yml already gates on `mkdocs build
+        # --strict` on every PR, so this can't FAIL on main unless
+        # someone bypasses CI. If it does, the failure stops deploy
+        # before publishing a known-broken site.
+        run: mkdocs build --strict
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload site/ as a Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # The `github-pages` environment is auto-created by GitHub on
+    # first Pages deploy. Linking it here lets the GitHub UI show
+    # the published URL in the Actions run summary and in the
+    # repo's "Environments" tab.
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

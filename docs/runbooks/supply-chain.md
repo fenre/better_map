@@ -111,7 +111,7 @@ JSON SBOM produced by `@cyclonedx/cyclonedx-npm@^4` against the runtime
 dependency tree (the lockfile under `--omit=dev`). As of v1.7.0 the
 better_map runtime tree resolves to **186 components**, all
 permissively licensed (per
-[scripts/license-allowlist.json](../../scripts/license-allowlist.json)).
+[`scripts/license-allowlist.json`](https://github.com/fenre/better_map/blob/main/scripts/license-allowlist.json)).
 
 Scope:
 
@@ -135,7 +135,7 @@ Per dependency the SBOM records:
 - **Splunkbase legal review**: drop into the legal review packet as
   evidence of the redistributable third-party content. Every license id
   is on better_map's
-  [allowlist](../../scripts/license-allowlist.json).
+  [allowlist](https://github.com/fenre/better_map/blob/main/scripts/license-allowlist.json).
 
 ---
 
@@ -156,7 +156,7 @@ G8 JS↔CSS contract, REL-1 version consistency, vitest unit tests).
 
 ## Managing CVE waivers
 
-Waivers live in [`scripts/npm-audit-waivers.json`](../../scripts/npm-audit-waivers.json)
+Waivers live in [`scripts/npm-audit-waivers.json`](https://github.com/fenre/better_map/blob/main/scripts/npm-audit-waivers.json)
 and are honoured by BOTH the npm-audit gate and the OSV-Scanner gate (one
 CVE, one waiver, one decision).
 

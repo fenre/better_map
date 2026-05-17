@@ -8,9 +8,15 @@ documentation. Its purpose is to give AI agents (Cursor, Claude Code,
 Copilot, Codex, the Splunk AI Assistant) structured, byte-stable inputs
 they can consume without having to parse prose.
 
-It is the partner of the human-readable layer (`README.md`,
-`CHANGELOG.md`, `ROADMAP.md`, and — once shipped — the MkDocs site
-under `/docs/` per ROADMAP §3 E2).
+It is the partner of the human-readable layer: the repo-root
+`README.md` / `CHANGELOG.md` / `ROADMAP.md` files **and** the
+MkDocs Material documentation site (E2 Phase 1, shipped v1.7) whose
+configuration lives at
+[`mkdocs.yml`](https://github.com/fenre/better_map/blob/main/mkdocs.yml)
+and whose sources live under the human-readable `docs/` pages
+OUTSIDE this `_machine/` subtree. The MkDocs site auto-publishes to
+GitHub Pages on every push to `main` via
+[`.github/workflows/docs.yml`](https://github.com/fenre/better_map/blob/main/.github/workflows/docs.yml).
 
 > **Contract:** every file here is either generated from a source of
 > truth elsewhere in the repo, or hand-maintained with that fact
@@ -44,8 +50,8 @@ artefacts not yet built. They will be added once those land.
 
 | File | Blocked by |
 |---|---|
-| `llms.txt` | E2 — MkDocs site (need a stable URL tree to index) |
-| `llms-full.txt` | E2 + per-page token budget |
+| `llms.txt` | ~~E2 — MkDocs site~~ (E2 Phase 1 shipped v1.7; unblocked. Emission is the first item on the G7 Phase 2 backlog — needs a script that walks the MkDocs `nav:` tree, classifies each page, and emits the `llms.txt` convention) |
+| `llms-full.txt` | E2 Phase 1 (done) + per-page token budget definition |
 | `layers/<layer-id>.yaml` (one per layer type) | Independent of E2 but de-prioritised behind integrations (where the customer questions actually land) |
 | `recipes/index.yaml` | E5 — the recipe matrix (no recipes exist yet) |
 | `openapi-better_map-rest.yaml` | The REST endpoints it would describe (KV-store bookmarks F1, plugin manifest G6, recipe-test webhook D5) are all v1.8 or later |

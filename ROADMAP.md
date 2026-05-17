@@ -332,6 +332,75 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 
 #### E2. Documentation site — `M`
 
+> **Status (v1.7-prep, 2026-05-17): E2 Phase 1 SHIPPED.** A
+> production-ready MkDocs Material site stands up off the repo's
+> `docs/` tree and auto-publishes to GitHub Pages on every push to
+> `main`. Concretely:
+> - **`mkdocs.yml`** — Material theme with `font: false` (no Google
+>   Fonts — air-gap binding per §1a), system-preference colour
+>   palette (light / slate / auto), navigation tabs + sections +
+>   indexes + footer, search.suggest + share, code-copy +
+>   code-annotate, content.action.edit/view, table-of-contents,
+>   `strict: true` (any warning fails the build),
+>   `use_directory_urls: true`, eleven top-level navigation
+>   sections, `not_in_nav: _machine/** _includes/**` (keeps the
+>   machine-readable layer out of the user-facing sidebar but
+>   accessible by direct URL once G7 Phase 2 wires it up),
+>   `include-markdown` plugin (`recursive: true`) so
+>   `CHANGELOG.md` and `ROADMAP.md` mirror onto the site without
+>   duplication.
+> - **`scripts/requirements-mkdocs.txt`** — exact pins for `mkdocs`
+>   1.6.1, `mkdocs-material` 9.5.46, `mkdocs-include-markdown-plugin`
+>   6.2.2, `pymdown-extensions` 10.12. Mirrors the
+>   `scripts/requirements-appinspect.txt` pattern (single-file pin,
+>   CI cache key + install command both read it).
+> - **Eleven content pages** authored under `docs/` covering Home,
+>   Getting started (install + smoke test), Runtime envelope,
+>   Reference (formatter / layers / BM-CT-1), Integrations (index +
+>   catalogue for the eight `_machine/integrations/*.yaml`),
+>   Recipes placeholder (E5 hook), Performance, Air-gapped
+>   deployment, Runbooks (index + the two shipped runbooks for
+>   G1/G3), Contributing, Changelog (mirrors `CHANGELOG.md`),
+>   Roadmap (mirrors this file). Every page links forward to the
+>   machine-readable source of truth where one exists.
+> - **CI gate (`docs-build` job in `.github/workflows/ci.yml`):**
+>   `mkdocs build --strict` runs on every PR. Caught real bugs on
+>   the first run — `docs/runbooks/supply-chain.md` had three
+>   `../../scripts/*.json` relative links that resolved at the
+>   GitHub-rendered repo path but escaped the site root; rewritten
+>   to `https://github.com/...` URLs. ~30s on cold cache; ~10s on
+>   warm pip cache. The built `site/` is uploaded as a 14-day
+>   artifact for offline triage.
+> - **GitHub Pages deploy workflow (`.github/workflows/docs.yml`):**
+>   re-runs the strict build on every push to `main` (filtered by
+>   `paths:` so a code-only commit doesn't pay for a no-op deploy)
+>   and publishes via `actions/deploy-pages@v4`. Least-privilege
+>   permissions (`contents: read`, `pages: write`, `id-token:
+>   write`); pinned to the `github-pages` environment so the
+>   Actions run summary shows the published URL.
+> - **`.gitignore`** updated for the build artefact (`site/`) and
+>   the local-only `mkdocs serve` venv (`.venv-mkdocs/`).
+> - **G7 Phase 2 unblocked:** with a stable URL tree now in place,
+>   the `llms.txt` / `llms-full.txt` emission tracked under §3 G7
+>   ("What's NOT here yet") is no longer blocked.
+> - **Local re-run:**
+>   ```bash
+>   python3 -m venv .venv-mkdocs
+>   .venv-mkdocs/bin/pip install -r scripts/requirements-mkdocs.txt
+>   .venv-mkdocs/bin/mkdocs build --strict   # CI mirror
+>   .venv-mkdocs/bin/mkdocs serve            # live-reload preview at :8000
+>   ```
+> - **What's NOT in Phase 1 (deferred to E2 Phase 2 + G7 Phase 2):**
+>   auto-generated pages from `docs/_machine/formatter-schema.json`
+>   (the Formatter reference page currently summarises the
+>   high-traffic options and points at the schema for the full
+>   set); per-source recipe pages (E5 dependency); `llms.txt`
+>   emission script; i18n plugin (no second language to ship yet);
+>   privacy-preserving analytics (no decision yet on the analytics
+>   vendor; the strict-mode build forbids any script tag from a
+>   third-party host); custom domain (currently published at
+>   `fenre.github.io/better_map/`).
+
 * **Problem:** README is 735 lines, CHANGELOG is 1396. Hard to navigate. No search. No structured way to plug in the per-source recipes (E5) or the machine-readable schemas (G7).
 * **Design:** Stand up an MkDocs Material site at `https://better-map.dev` (or under a Splunk-owned subdomain) — **infrastructure only; content scope lives in E5 and G7.** Site skeleton sections:
   - Getting started (install via Splunkbase, install offline, smoke-test panel)
@@ -348,6 +417,8 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
   - Privacy-preserving analytics only (Plausible or GoatCounter — no Google Analytics, per §1a CSP posture and Splunk-customer norms)
 * **Prereqs:** None; ships in parallel with E5 and G7 which populate it.
 * **Accept:** Site live; every public API page generated from a machine-readable source under `docs/_machine/` so a human edit cannot drift from the implementation; navigable search works offline; loads correctly on Splunk Cloud's allow-listed CDN list (no third-party fonts, no Google CDN scripts).
+* **Phase 1 (shipped, see status block above):** infrastructure — MkDocs Material site, eleven hand-authored pages, strict-mode PR gate, GitHub Pages deploy on `main`, the air-gap binding (no Google Fonts, no third-party scripts).
+* **Phase 2 (planned, blocked on G7 Phase 2):** auto-generated Formatter / Layer / Integration reference pages from `docs/_machine/`, `llms.txt` emission, per-source recipe matrix (E5 dependency), privacy-preserving analytics decision, custom domain.
 
 #### E3. Video walkthroughs — `S`
 
@@ -625,7 +696,7 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   - `scripts/check-formatter-schema.py` — byte-equality drift gate (regenerates schema, asserts identity with the checked-in file).
 >   - `scripts/check-formatter-coverage.py` — three explicit assertions the drift gate cannot make: HTML→schema coverage, schema→HTML coverage, duplicate transparency.
 > - **End-to-end verification:** both gates print `[PASS]` locally on the v1.7-prep tree (83 unique data-names, 83 schema properties, 1 duplicate recorded); workflow YAML re-parses; release tarball does NOT ship `docs/_machine/` (rsync `--exclude='docs'` already in place at both packaging sites).
-> - **What's NOT in Phase 1 (tracked for G7 Phase 2):** `llms.txt` / `llms-full.txt` (blocked on E2 MkDocs site), `_machine/layers/<layer-id>.yaml` (independent but de-prioritised behind integrations, where the actual customer questions land), `_machine/recipes/index.yaml` (blocked on E5 recipe matrix — no recipes exist yet), `_machine/openapi-better_map-rest.yaml` (blocked on the REST endpoints it would describe: F1 / G6 / D5 are all v1.8+).
+> - **What's NOT in Phase 1 (tracked for G7 Phase 2):** `llms.txt` / `llms-full.txt` (**unblocked in v1.7-prep by E2 Phase 1**; emission script — walk the MkDocs `nav:` tree, classify each page, emit the llms.txt convention — is the first item on the G7 Phase 2 backlog), `_machine/layers/<layer-id>.yaml` (independent but de-prioritised behind integrations, where the actual customer questions land), `_machine/recipes/index.yaml` (blocked on E5 recipe matrix — no recipes exist yet), `_machine/openapi-better_map-rest.yaml` (blocked on the REST endpoints it would describe: F1 / G6 / D5 are all v1.8+).
 
 * **Problem:** Customers increasingly ask Cursor / Claude Code / GitHub Copilot / Splunk AI Assistant "set up better_map for my Meraki data." The model needs structured, machine-readable inputs to do that well. Today everything is prose in `README.md` and `CHANGELOG.md`; an LLM can read it but cannot reliably extract the formatter schema, the recipe matrix, or the field contracts. This blocks the dominant onboarding mode for v2.0 customers.
 * **Design:** Build a parallel machine-readable documentation layer that mirrors the human-readable layer (E2) one-to-one. Markdown remains the source of truth for narrative; YAML/JSON Schemas are the source of truth for contracts. The two are kept in sync by a generator script under `docs/_tools/`.
@@ -680,7 +751,7 @@ Goal: prove that v1.6 actually works under real load, close the operational-rigo
 | D5. End-to-end test suite (dispatch + Playwright) | D | 5 |
 | C1–C8. Eight Splunk integrations verified | C | 6×S (12) + 2×M (10) = 22 |
 | E1. Splunkbase listing | E | 5 |
-| E2. Documentation site infrastructure | E | 5 |
+| **E2. Documentation site infrastructure (Phase 1 SHIPPED)** | E | 5 |
 | **E5. Per-source setup recipes (the matrix — ~75 cells)** | **E** | **5** |
 | **G7. AI-ingestion-friendly documentation layer** | **G** | **5** |
 | **Sub-total** | — | **67 d** |
@@ -866,10 +937,10 @@ If, and only if, every box below is true, we can credibly call v2.0 "one of the 
 
 - [ ] Listed on Splunkbase; ≥ 25 reviews; ≥ 4.0 average
 - [ ] ≥ 3 named reference customers willing to be quoted; ≥ 1 in a regulated vertical
-- [ ] Documentation site live; ≥ 1k monthly uniques (privacy-preserving analytics)
+- [~] Documentation site live; ≥ 1k monthly uniques (privacy-preserving analytics) — **Phase 1 ✅** (`mkdocs.yml` + 11 hand-authored pages under `docs/`, strict-mode CI gate `docs-build` in `ci.yml`, GitHub Pages auto-deploy on `main` via `.github/workflows/docs.yml`, published at `fenre.github.io/better_map/`, air-gap-clean per §1a: no Google Fonts, no third-party scripts); Phase 2 (auto-generated formatter / layer / integration pages from `_machine/`, custom domain, privacy-preserving analytics, ≥ 1k monthly uniques target) still pending
 - [ ] **Per-source recipe matrix (E5) ≥ 75 verified ✓ cells published; CI gates that a new layer or new source cannot land without updating the matrix**
 - [ ] **`docs/llms.txt` published per the llms.txt convention; an LLM given just the URL can locate and apply a recipe end-to-end**
-- [ ] **`docs/_machine/` complete: formatter JSON Schema, per-layer YAML, per-integration YAML, recipes index, `agents.md`, OpenAPI for any exposed REST endpoint — each CI-asserted against the implementation it documents** — Phase 1 shipped in v1.7-prep (G7): formatter-schema.json (83 options, drift + coverage gates), 8 × integrations/*.yaml, agents.md, README.md; Phase 2 deferred (layers YAML, recipes index blocked on E5, llms.txt blocked on E2, OpenAPI blocked on REST endpoints in v1.8+)
+- [ ] **`docs/_machine/` complete: formatter JSON Schema, per-layer YAML, per-integration YAML, recipes index, `agents.md`, OpenAPI for any exposed REST endpoint — each CI-asserted against the implementation it documents** — Phase 1 shipped in v1.7-prep (G7): formatter-schema.json (82 options, drift + coverage gates + D3 axe-core a11y), 8 × integrations/*.yaml, agents.md, README.md; Phase 2 deferred (layers YAML, recipes index blocked on E5, llms.txt **unblocked** by E2 Phase 1, OpenAPI blocked on REST endpoints in v1.8+)
 - [ ] 6 video walkthroughs published with English + at least one other locale captions
 - [ ] Repo history: ≥ **50 commits** from ≥ **3 distinct contributors** (replaces the previous draft's "multi-year history" handwave with something actionable)
 - [ ] Public roadmap board (GitHub Projects) with at least the next minor's work-items tracked

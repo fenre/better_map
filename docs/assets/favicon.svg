@@ -1,0 +1,18 @@
+<!--
+  better_map favicon. Same map-pin glyph as logo.svg, simplified for
+  16/32 px rendering (no outer ring, solid fill, hole punched through
+  the centre for legibility at favicon scale).
+-->
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 64 64"
+  role="img"
+  aria-label="Better Map favicon"
+>
+  <title>Better Map</title>
+  <path
+    d="M32 6c-10.5 0-19 8.5-19 19 0 14.25 19 33 19 33s19-18.75 19-33c0-10.5-8.5-19-19-19z"
+    fill="#5B66E8"
+  />
+  <circle cx="32" cy="25" r="7" fill="#ffffff" />
+</svg>
