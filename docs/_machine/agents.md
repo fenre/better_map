@@ -267,6 +267,7 @@ to fix and the exact command to re-run.
 | `FATAL — Executable doesn't exist at .../chrome-headless-shell` | First run on this machine; Playwright's Chromium isn't installed yet | `cd better_map/appserver/static/visualizations/better_map && npx playwright install chromium` |
 | `Aborted with N warnings in strict mode!` (MkDocs) | A new doc page introduced a broken cross-link, an orphan markdown file, or a deprecated MkDocs config key | Read the warning lines above the abort — each names the file + link target. Fix the link (relative within `docs/`, absolute `https://github.com/.../blob/main/...` for repo-root files), or remove the orphan from `nav:` in `mkdocs.yml`. Rerun `.venv-mkdocs/bin/mkdocs build --strict`. |
 | `ImportError: No module named 'mkdocs'` (first run of `mkdocs build`) | The MkDocs venv hasn't been created yet | `python3 -m venv .venv-mkdocs && .venv-mkdocs/bin/pip install -r scripts/requirements-mkdocs.txt` |
+| `Get Pages site failed` / `Create Pages site failed: Resource not accessible by integration` (docs deploy workflow) | Brand-new repo where GitHub Pages was never enabled; workflow `GITHUB_TOKEN` cannot self-bootstrap Pages (the REST `enable-pages-for-repository` endpoint requires PAT-level perms) | One-time, with maintainer credentials: `gh api -X POST /repos/<owner>/<repo>/pages -f build_type=workflow` — then re-run the docs workflow. From then on `actions/configure-pages`' `enablement: true` no-ops and the deploy is fully turnkey |
 
 ---
 

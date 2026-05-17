@@ -378,6 +378,23 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   permissions (`contents: read`, `pages: write`, `id-token:
 >   write`); pinned to the `github-pages` environment so the
 >   Actions run summary shows the published URL.
+>   `actions/configure-pages@v5` runs with `enablement: true` so a
+>   fresh fork or clone-then-transfer self-bootstraps Pages on
+>   first deploy.
+> - **Live site:** **<https://fenre.github.io/better_map/>** —
+>   verified HTTP 200 on 2026-05-17 after the bootstrap deploy
+>   (`gh run view 26001312801`).
+> - **One-time maintainer bootstrap (recorded so the next agent
+>   doesn't relearn it):** the `GITHUB_TOKEN` minted for a workflow
+>   does NOT have permission to call the REST
+>   `enable-pages-for-repository` endpoint (it 403s with
+>   `Resource not accessible by integration`). On a brand-new repo
+>   where Pages was never enabled, the maintainer (or an agent with
+>   a PAT) must call it once via `gh api -X POST /repos/<owner>/<repo>/pages
+>   -f build_type=workflow`. After that, `actions/configure-pages`'s
+>   `enablement: true` no-ops on every subsequent run and the
+>   workflow is fully turnkey. For fenre/better_map this was done
+>   on 2026-05-17; for forks, this is the only manual step.
 > - **`.gitignore`** updated for the build artefact (`site/`) and
 >   the local-only `mkdocs serve` venv (`.venv-mkdocs/`).
 > - **G7 Phase 2 unblocked:** with a stable URL tree now in place,
