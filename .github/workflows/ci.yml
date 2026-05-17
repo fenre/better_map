@@ -1,18 +1,21 @@
 # CI — better_map Splunk custom visualization
 #
-# Scope: ROADMAP §3 G2 foundation + §3 G8 + §7b Q-1 + §7b Q-2 + §7b Q-3
-# + REL-1 version-consistency check + G2-2 AppInspect gate + T-1
-# vitest unit-test scaffold (PR pipeline). This workflow lints the JS,
-# runs the JS↔CSS contract lint, parses every dashboard XML + its
-# embedded Dashboard Studio JSON definition, runs the vitest unit-test
-# suite, builds the webpack production bundle, runs the production-
-# bundle console-noise check, runs the bundle-size budget check
-# against the §7b table, verifies the three version sources
-# (app.conf / package.json / HUD_VERSION) agree, sanity-checks the
-# build artifacts, validates incoming PR commit messages against
-# Conventional Commits, and runs Splunk AppInspect against the staged
-# Splunk-app archive (cloud+future tags) to defend against AppInspect
-# regressions before they reach a release tag.
+# Scope: ROADMAP §3 G2 foundation + §3 G8 + §7b Q-1 + §7b Q-1B +
+# §7b Q-2 + §7b Q-3 + REL-1 version-consistency check + G2-2
+# AppInspect gate + T-1 vitest unit-test scaffold (PR pipeline). This
+# workflow lints the JS, runs the JS↔CSS contract lint, parses every
+# dashboard XML + its embedded Dashboard Studio JSON definition,
+# cross-checks every `$better_map.*$` dashboard token against widget
+# producer literals in `src/lib/**/*.js` (Q-1B; SPATIAL-1 defence in
+# depth), runs the vitest unit-test suite, builds the webpack
+# production bundle, runs the production-bundle console-noise check,
+# runs the bundle-size budget check against the §7b table, verifies
+# the three version sources (app.conf / package.json / HUD_VERSION)
+# agree, sanity-checks the build artifacts, validates incoming PR
+# commit messages against Conventional Commits, and runs Splunk
+# AppInspect against the staged Splunk-app archive (cloud+future
+# tags) to defend against AppInspect regressions before they reach a
+# release tag.
 # It does NOT (yet) run the live dispatch test. That gate is tracked
 # as a v1.7 follow-up under ROADMAP §3 G2 (D5).
 # Release automation lives in `.github/workflows/release.yml` and runs
@@ -90,6 +93,20 @@ jobs:
         # "unescaped & in <label>" class of bug. ROADMAP §3 G2 + §7b.
         working-directory: ${{ github.workspace }}
         run: python3 scripts/check-dashboard-xml-json.py
+
+      - name: Check dashboard ↔ widget token contract (Q-1B)
+        # Defends against the SPATIAL-1 regression class: a dashboard
+        # references `$better_map.<name>$` but no widget emits that
+        # token. Walks every dashboard for `better_map.*` token
+        # consumers, scans src/lib/**/*.js (non-test) for matching
+        # string literals, FAILs if any consumer has no producer.
+        # Pre-fix on SPATIAL-1 this would have failed with
+        # `orphan token: better_map.spatial_query`. Verified by an
+        # acceptance test against the regressed source tree on the
+        # branch that introduced this gate. ROADMAP §1c gap 16 +
+        # Theme G follow-up.
+        working-directory: ${{ github.workspace }}
+        run: python3 scripts/check-dashboard-tokens.py
 
       - name: Run unit tests (vitest, T-1 scaffold)
         # Executes src/lib/**/*.test.js under jsdom. Currently covers
