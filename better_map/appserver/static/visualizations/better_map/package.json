@@ -13,6 +13,7 @@
     "lint:bundle-size": "node ../../../../../scripts/check-bundle-size.js",
     "lint:version-consistency": "node ../../../../../scripts/check-version-consistency.js",
     "lint:appinspect": "bash ../../../../../scripts/run-appinspect-local.sh",
+    "lint:a11y": "node ../../../../../scripts/check-accessibility.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -32,10 +33,12 @@
     "supercluster": "^8.0.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.11.3",
     "@vitest/coverage-v8": "^2.1.9",
     "css-loader": "^7.1.0",
     "eslint": "^8.57.0",
     "jsdom": "^25.0.1",
+    "playwright": "1.60.0",
     "prettier": "^3.4.0",
     "style-loader": "^4.0.0",
     "vitest": "^2.1.9",

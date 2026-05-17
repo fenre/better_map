@@ -303,14 +303,14 @@
     },
     "highContrast": {
       "default": false,
-      "description": "Increases contrast on layer outlines, labels, and selection rings.",
-      "title": "High contrast mode",
+      "description": "Replace translucent backgrounds with solid black/white widget chrome. Helps WCAG AAA contrast for low-vision users.",
+      "title": "High-contrast mode",
       "type": "boolean",
       "x-bm": {
         "control": "select",
-        "heading": "Accessibility",
+        "heading": "Accessibility & localization",
         "splunk-property-path": "display.visualizations.custom.better_map.better_map.highContrast",
-        "tab": "style"
+        "tab": "data"
       }
     },
     "idField": {
@@ -453,36 +453,6 @@
         "tab": "data"
       },
       "x-placeholder": "lon | lng | longitude | x"
-    },
-    "mapLabelLanguage": {
-      "default": "auto",
-      "description": "Switches MapLibre label fields to match the chosen language when the tileset supports it.",
-      "enum": [
-        "auto",
-        "en",
-        "es",
-        "fr",
-        "de",
-        "ja",
-        "zh"
-      ],
-      "title": "Map label language",
-      "type": "string",
-      "x-bm": {
-        "control": "select",
-        "heading": "Accessibility",
-        "splunk-property-path": "display.visualizations.custom.better_map.better_map.mapLabelLanguage",
-        "tab": "style"
-      },
-      "x-enum-labels": {
-        "auto": "Browser locale",
-        "de": "German",
-        "en": "English",
-        "es": "Spanish",
-        "fr": "French",
-        "ja": "Japanese",
-        "zh": "Chinese"
-      }
     },
     "markerColor": {
       "default": "#8dd3c7",
@@ -1144,17 +1114,7 @@
   "type": "object",
   "x-meta": {
     "generator": "scripts/build-formatter-schema.py",
-    "known-issues": {
-      "_note": "Splunk's custom-viz framework processes the formatter in document order; for each duplicate, the LATER <input>/<select> wins. Cleanup tracked as a v1.7 housekeeping follow-up under G7.",
-      "duplicate-data-names": [
-        {
-          "first": "tab=data heading='Accessibility & localization'",
-          "name": "highContrast",
-          "second": "tab=style heading='Accessibility'"
-        }
-      ]
-    },
-    "option-count": 83,
+    "option-count": 82,
     "source-of-truth": "better_map/appserver/static/visualizations/better_map/formatter.html",
     "splunk-property-namespace": "display.visualizations.custom.better_map.better_map",
     "tabs": {

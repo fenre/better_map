@@ -3,12 +3,12 @@
   "app_version": "1.6.3",
   "generator": "scripts/build-manifest.py",
   "file_count": 32,
-  "total_size_bytes": 2542881,
+  "total_size_bytes": 2542535,
   "files": [
     {
       "path": "README/savedsearches.conf.spec",
-      "sha256": "91fd2627bce3eb2d9da186e11862bbc0ffdfd27759840784aa2ee1c97d04c906",
-      "size_bytes": 15836
+      "sha256": "bab1b501f2e06e9f5479cbd85a2f7b957c4de6beb10461b88947272285723be1",
+      "size_bytes": 16031
     },
     {
       "path": "appserver/static/appIcon.png",
@@ -37,8 +37,8 @@
     },
     {
       "path": "appserver/static/visualizations/better_map/formatter.html",
-      "sha256": "6b62e02035c8786d5f0c4b9ee9e2d205f3d9d246d6bccce2af95e31885b33c55",
-      "size_bytes": 41899
+      "sha256": "ff1c051a57f4f25e9ac89113d1304309577abdb6d30852251baf52ff4563aa76",
+      "size_bytes": 41358
     },
     {
       "path": "appserver/static/visualizations/better_map/icon.png",

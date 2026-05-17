@@ -266,10 +266,44 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 
 #### D3. Accessibility audit — `S`
 
+> **Status (v1.7-prep, 2026-05-17): D3 Phase 1 SHIPPED.** axe-core
+> WCAG 2.2 AA gate now runs on every PR. Concretely:
+> - **`scripts/check-accessibility.js`** loads `formatter.html`
+>   (wrapped in a minimal HTML5 page so axe sees document landmarks)
+>   in headless Chromium via Playwright and runs axe-core against
+>   `wcag2a + wcag2aa + wcag21a + wcag21aa + wcag22aa`. Zero
+>   violations is the bar; `incomplete` findings surface for
+>   release-prep review but do NOT fail the gate. Three rules
+>   (`page-has-heading-one`, `landmark-one-main`, `region`) are
+>   disabled with in-source justification because the formatter is a
+>   fragment rendered inside Splunk's host page chrome.
+> - **CI wiring:** `.github/workflows/ci.yml` installs Playwright's
+>   Chromium via `npx playwright install --with-deps chromium`, runs
+>   the audit, and uploads `reports/accessibility-report.json` as a
+>   14-day artifact for offline triage.
+> - **Pre-existing a11y debt fixed:** the formerly duplicate
+>   `<select data-name="highContrast">` (lines 677–700 of
+>   `formatter.html`) was removed — it triggered axe's
+>   `duplicate-id-aria` (critical) and `form-field-multiple-labels`
+>   findings. The orphan `mapLabelLanguage` option (declared in the
+>   formatter, never read by any JS code path, functionally
+>   redundant with `labelLanguage`) was dropped in the same change.
+>   Formatter option count: **82** (was 83); duplicate-data-names
+>   list in `formatter-schema.json` is now empty.
+> - **Local re-run:** `node scripts/check-accessibility.js` (first
+>   run only: `cd better_map/appserver/static/visualizations/better_map && npx playwright install chromium`).
+> - **What's NOT in Phase 1:** axe-core across the 12 showcase
+>   dashboards rendered by a real Splunk instance (deferred to D5
+>   when the Docker-compose harness lands); manual screen-reader
+>   sweep with VoiceOver + NVDA (manual acceptance step before E1).
+
 * **Problem:** `prefers-reduced-motion` is respected, but full WCAG 2.2 AA conformance untested. Keyboard navigation, screen-reader labels, focus management for popups, colour contrast on all themes.
 * **Design:** Run axe-core via Playwright on each showcase. Manual screen-reader pass with VoiceOver and NVDA. Fix everything that comes up.
 * **Prereqs:** D2 harness.
 * **Accept:** Zero axe violations at WCAG AA level. Screen-reader users can navigate the popups, the time scrubber, and the control panel.
+* **Phase 1 (shipped, see status block above):** PR-gate on `formatter.html` only (the one HTML surface that doesn't need a Splunk renderer). Catches the largest class of regressions an author can introduce — a duplicate `id`, a missing `<label for="...">`, an unlabeled `<select>`, a colour contrast regression — at the moment the PR opens.
+* **Phase 2 (deferred to D5):** same axe-core engine wrapped in Playwright against the 12 showcase dashboards inside a real Splunk Enterprise container. Blocked on the Docker-compose harness D5 is building.
+* **Phase 3 (manual, pre-E1):** VoiceOver (macOS) + NVDA (Windows) sweep of the showcases, recorded as a checklist in `docs/runbooks/accessibility.md`.
 
 #### D4. Error telemetry — `M`
 
@@ -583,7 +617,7 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 #### G7. AI-ingestion-friendly documentation — `M`
 
 > **Status (v1.7-prep, 2026-05-17): G7 Phase 1 SHIPPED.** The machine-readable docs layer is live at `docs/_machine/`:
-> - **`docs/_machine/formatter-schema.json`** — JSON Schema 2020-12 describing all **83 formatter options** (id, type, default, enum values, help text, Splunk property path, custom `x-bm` metadata for tab/heading). Generated from `formatter.html` by `scripts/build-formatter-schema.py`. The one legacy duplicate `data-name="highContrast"` is auto-recorded in `x-meta.known-issues` with last-write-wins resolution; future duplicates fail the gate.
+> - **`docs/_machine/formatter-schema.json`** — JSON Schema 2020-12 describing all **82 formatter options** (id, type, default, enum values, help text, Splunk property path, custom `x-bm` metadata for tab/heading). Generated from `formatter.html` by `scripts/build-formatter-schema.py`. Originally G7 Phase 1 shipped at 83 options with one legacy duplicate `data-name="highContrast"` auto-recorded in `x-meta.known-issues`; D3 Phase 1 (v1.7) removed that duplicate (it was an axe-core `duplicate-id-aria` finding) along with the orphan `mapLabelLanguage` control, and the duplicate-data-names list is now empty. Any future duplicate fails both `check-formatter-coverage.py` AND `check-accessibility.js`.
 > - **`docs/_machine/integrations/*.yaml`** — 8 hand-maintained YAMLs (one per Theme C integration: `itsi.yaml`, `soar.yaml`, `rba.yaml`, `aiGeo.yaml`, `mitre.yaml`, `esNotable.yaml`, `purdue.yaml`, `aiAssistant.yaml`). Each declares `meta`, `status` (`experimental` is the v1.7 default), `splunk_app_required`, `splunk_version_min`, `endpoints_called[]` with HTTP method + auth, `field_contract`, `tested_against` (null until live-tenant verification), `bm_ct_1`, and `references`. `purdue.yaml` additionally encodes the OT-safety boundary (Rules 1/2/5/6 from `/.cursor/rules/ot-safety.mdc`).
 > - **`docs/_machine/agents.md`** — operating guide for AI agents working on the repo: the five non-negotiables (formatter schema, manifest, JS↔CSS contract, dashboard token contract, BM-CT-1), where things live, the runtime envelope, how to add a formatter option / integration, the pre-commit checklist, common mistakes and fixes. Modelled on the emerging `AGENTS.md` convention.
 > - **`docs/_machine/README.md`** — explains the `_machine` contract (what's generated vs hand-maintained, what's in Phase 1, what's deferred to Phase 2, stability promise across patch/minor/major releases).
@@ -642,7 +676,7 @@ Goal: prove that v1.6 actually works under real load, close the operational-rigo
 | G3. Upgrade hygiene + migration tests | G | 2 |
 | D1. AppInspect re-cert | D | 2 |
 | D2. Browser compatibility matrix | D | 2 |
-| D3. Accessibility audit | D | 2 |
+| **D3. Accessibility audit (Phase 1 SHIPPED)** | D | 2 |
 | D5. End-to-end test suite (dispatch + Playwright) | D | 5 |
 | C1–C8. Eight Splunk integrations verified | C | 6×S (12) + 2×M (10) = 22 |
 | E1. Splunkbase listing | E | 5 |
@@ -787,7 +821,7 @@ If, and only if, every box below is true, we can credibly call v2.0 "one of the 
 
 - [ ] AppInspect cloud-cert green on Splunkbase (blocked on E1); **AppInspect runs in CI on every PR** ✅ (G2-2: PR-gate cloud+future tags, release-gate adds `--fail-on-warnings`; 0/0/0/0 baseline as of v1.6.2)
 - [ ] Browser matrix green: Chrome / Firefox / Safari / Edge × macOS / Windows / Linux (12 cells, all green)
-- [ ] WCAG 2.2 AA conformance verified (axe-core in CI; manual VoiceOver + NVDA pass)
+- [~] WCAG 2.2 AA conformance verified — **Phase 1 ✅** (`scripts/check-accessibility.js` runs axe-core on `formatter.html` as a PR gate, 0 violations / 0 incomplete; legacy `highContrast` duplicate + orphan `mapLabelLanguage` removed); Phase 2 (showcase dashboards under D5) and Phase 3 (manual VoiceOver + NVDA, pre-E1) still pending
 - [ ] Telemetry path documented; zero data leaves by default; HEC schema published
 - [ ] No regression of the v1.5.2 BM-CT-1 contract (all controls expose `setEnabled / isEnabled / reset`)
 - [ ] **JS↔CSS contract lint (G8) green: every class created in `src/lib/**/*.js` has a rule in `visualization.css` or an allowlist entry; reverting to the v1.6.0 stylesheet reproducibly fails the lint**

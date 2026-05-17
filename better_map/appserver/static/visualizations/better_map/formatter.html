@@ -673,28 +673,17 @@
             <input id="bm-hexbinOpacity" type="number" min="0" max="1" step="0.05" data-name="hexbinOpacity" placeholder="0.55" />
             <p class="splunk-formatter-help">0.0 - 1.0</p>
         </div>
-
-        <h3 class="splunk-formatter-heading">Accessibility</h3>
-        <div class="splunk-formatter-row">
-            <label for="bm-highContrast">High contrast mode</label>
-            <select id="bm-highContrast" data-name="highContrast">
-                <option value="false" selected>Off</option>
-                <option value="true">On</option>
-            </select>
-            <p class="splunk-formatter-help">Increases contrast on layer outlines, labels, and selection rings.</p>
-        </div>
-        <div class="splunk-formatter-row">
-            <label for="bm-mapLabelLanguage">Map label language</label>
-            <select id="bm-mapLabelLanguage" data-name="mapLabelLanguage">
-                <option value="auto" selected>Browser locale</option>
-                <option value="en">English</option>
-                <option value="es">Spanish</option>
-                <option value="fr">French</option>
-                <option value="de">German</option>
-                <option value="ja">Japanese</option>
-                <option value="zh">Chinese</option>
-            </select>
-            <p class="splunk-formatter-help">Switches MapLibre label fields to match the chosen language when the tileset supports it.</p>
-        </div>
+        <!--
+            v1.7 D3 (a11y): the former "Accessibility" section in this tab
+            duplicated `data-name="highContrast"` (and shipped an orphan
+            `mapLabelLanguage` control that no JS code path consumed). The
+            canonical high-contrast toggle lives in the
+            "Data configurations > Accessibility & localization" section
+            above; the canonical map label-language toggle is `labelLanguage`
+            in the same section. Both render exactly once now, satisfying
+            WCAG 2.4.6 (Headings and Labels), WCAG 1.3.1 (Info and
+            Relationships), and the axe-core `duplicate-id-aria` /
+            `form-field-multiple-labels` rules.
+        -->
     </section>
 </div>
