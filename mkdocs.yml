@@ -221,6 +221,7 @@ nav:
       - 'CIM Network Traffic — H3 hexbin': recipes/cim-network-traffic/h3.md
       - 'CIM Network Traffic — markers': recipes/cim-network-traffic/markers.md
       - 'CIM Network Traffic — paths': recipes/cim-network-traffic/paths.md
+      - 'CIM Performance (CPU / memory / facilities) — H3 hexbin': recipes/cim-performance/h3.md
       - 'CIM Performance (CPU / memory / facilities) — markers': recipes/cim-performance/markers.md
       - 'CSV lookup (geo points) — H3 hexbin': recipes/csv-lookup-geo/h3.md
       - 'CSV lookup (geo points) — supercluster': recipes/csv-lookup-geo/supercluster.md
@@ -235,7 +236,9 @@ nav:
       - 'Meraki (Cisco vendor TA) — H3 hexbin': recipes/meraki/h3.md
       - 'Meraki (Cisco vendor TA) — markers': recipes/meraki/markers.md
       - 'NetFlow / sFlow / IPFIX — H3 hexbin': recipes/netflow-sflow-ipfix/h3.md
+      - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — heatmap': recipes/ot-datastreamer/heat.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — markers': recipes/ot-datastreamer/markers.md
+      - 'Splunk Stream (wire data) — heatmap': recipes/splunk-stream/heat.md
       - 'Splunk Stream (wire data) — markers': recipes/splunk-stream/markers.md
       - 'US states — 3D extrusion': recipes/geo-us-states/extrusion-3d.md
       - 'US states — choropleth': recipes/geo-us-states/choropleth.md
