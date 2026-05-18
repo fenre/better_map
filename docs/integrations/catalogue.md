@@ -22,6 +22,64 @@ Each integration follows the same shape:
 For the full machine-readable surface, read the corresponding YAML
 under [`docs/_machine/integrations/`](https://github.com/fenre/better_map/tree/main/docs/_machine/integrations).
 
+## Integration matrix at a glance
+
+<!-- BEGIN AUTOGEN: integrations-matrix -->
+
+_The matrix table and endpoint detail below are auto-generated from [`docs/_machine/integrations/*.yaml`](https://github.com/fenre/better_map/tree/main/docs/_machine/integrations) by `scripts/build-reference-pages.py`. Do not edit the auto-managed section by hand — run the script and commit the regenerated file._
+
+**Total: 8 integrations · 8 experimental · 0 live-tenant verified (Theme C in flight).**
+
+| Integration | Status | Splunk app required | Splunk version min | REST endpoints | Auth | OT-safety | Live-tenant tested? | Source YAML |
+|---|---|---|---|---|---|---|---|---|
+| `aiAssistant` — Splunk AI Assistant for SPL — natural-language → SPL | experimental | Splunk_AI_Assistant_Cloud | Splunk Cloud (preferred) or Splunk Enterprise 9.x with cloud-connect enabled | 1 | session | — | no | [`aiAssistant.yaml`](https://github.com/fenre/better_map/blob/main/docs/_machine/integrations/aiAssistant.yaml) |
+| `aiGeo` — AI-suggested geo annotations | experimental | Splunk AI Assistant for SPL OR generic Splunk Cloud ML Toolkit endpoint | any Splunk Cloud / Enterprise stack with a reachable AI endpoint | 1 | bearer | — | no | [`aiGeo.yaml`](https://github.com/fenre/better_map/blob/main/docs/_machine/integrations/aiGeo.yaml) |
+| `esNotable` — ES Notable Event — drilldown URL builder + close stub | experimental | Splunk Enterprise Security | ES 6.x | 2 | session | — | no | [`esNotable.yaml`](https://github.com/fenre/better_map/blob/main/docs/_machine/integrations/esNotable.yaml) |
+| `itsi` — Splunk IT Service Intelligence (ITSI) — service map | experimental | ITSI (SA-ITOA) | ITSI 4.x | 1 | session | — | no | [`itsi.yaml`](https://github.com/fenre/better_map/blob/main/docs/_machine/integrations/itsi.yaml) |
+| `mitre` — MITRE ATT&CK technique overlay | experimental | none (built-in lookup table for ~80 most-common techniques) | any | 1 | depends on the URL (typically none / public CDN) | — | no | [`mitre.yaml`](https://github.com/fenre/better_map/blob/main/docs/_machine/integrations/mitre.yaml) |
+| `purdue` — OT Purdue model / IEC 62443 overlay | experimental | none (asset register can come from any Splunk lookup or inline) | any | 1 | session | yes (4 rules) | no | [`purdue.yaml`](https://github.com/fenre/better_map/blob/main/docs/_machine/integrations/purdue.yaml) |
+| `rba` — Risk-Based Alerting (RBA) — geo risk heatmap | experimental | Splunk Enterprise Security (uses ES Risk Framework schema) | ES 6.x with Risk Framework enabled | 0 (offline helper) | n/a (offline) | — | no | [`rba.yaml`](https://github.com/fenre/better_map/blob/main/docs/_machine/integrations/rba.yaml) |
+| `soar` — Splunk SOAR (formerly Phantom) — right-click playbook trigger | experimental | Splunk SOAR forwarder app (phantom_forward) on the host Splunk | SOAR 6.x (any version supported by the forwarder) | 1 | delegated (Splunk session → forwarder → SOAR API key) | yes | no | [`soar.yaml`](https://github.com/fenre/better_map/blob/main/docs/_machine/integrations/soar.yaml) |
+
+### Endpoint detail
+
+_One bullet per REST endpoint the visualization calls. Offline-only integrations are listed too, with a note._
+
+#### `aiAssistant` — Splunk AI Assistant for SPL — natural-language → SPL
+
+- `POST /servicesNS/-/Splunk_AI_Assistant_Cloud/ai/spl-suggest` (auth: session) — Translate a natural-language question into an SPL pipeline tailored for the current map context (bbox, time-range, sourcetype hints).
+
+#### `aiGeo` — AI-suggested geo annotations
+
+- `POST <aiEndpoint>` (auth: bearer) — Send a feature collection + free-text question; receive structured annotations (labels, clusters, narrative).
+
+#### `esNotable` — ES Notable Event — drilldown URL builder + close stub
+
+- `POST /services/notable_update` (auth: session) — Mark a notable closed, change urgency, reassign owner.
+- `GET-NAVIGATE /app/SplunkEnterpriseSecuritySuite/incident_review?form.search=...notable_id={{event_id}}` (auth: session) — Pivot the user from a map feature to the ES Incident Review workflow pre-filtered for that notable.
+
+#### `itsi` — Splunk IT Service Intelligence (ITSI) — service map
+
+- `GET /servicesNS/-/SA-ITOA/itoa_interface/service` (auth: session) — List ITSI services with dependency graph metadata.
+
+#### `mitre` — MITRE ATT&CK technique overlay
+
+- `GET <extendedLookupUrl>` (auth: depends on the URL (typically none / public CDN)) — Optional — fetch the full ATT&CK matrix beyond the built-in 80 techniques.
+
+#### `purdue` — OT Purdue model / IEC 62443 overlay
+
+- `GET /servicesNS/-/<app>/data/lookups/asset_register.csv` (auth: session) — Fetch the asset register lookup that maps host/asset_id → Purdue level + safety flag.
+
+#### `rba` — Risk-Based Alerting (RBA) — geo risk heatmap
+
+- _No outbound REST surface (offline helper). Auth: n/a — offline helper (no REST surface)._
+
+#### `soar` — Splunk SOAR (formerly Phantom) — right-click playbook trigger
+
+- `POST /services/phantom_forward` (auth: delegated (Splunk session → forwarder → SOAR API key)) — Forward selected features to a SOAR playbook for action.
+
+<!-- END AUTOGEN: integrations-matrix -->
+
 ## AI Assistant (`aiAssistant.yaml`)
 
 - **What it does** — Routes free-text user prompts in the ⌘K palette

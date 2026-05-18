@@ -199,22 +199,42 @@ directly.
 5. `status: experimental` is the default until the integration is
    smoke-tested against a live Splunk tenant. Setting `tested_against`
    to a non-null value is the trigger for `status: verified`.
-6. Run both index regenerators:
+6. Run the three regenerators (one auto-managed reference page +
+   both llms files):
 
    ```bash
+   python3 scripts/build-reference-pages.py # integrations matrix in catalogue.md
    python3 scripts/build-llms-txt.py        # short index
    python3 scripts/build-llms-full-txt.py   # body-inclusive sibling
+   python3 scripts/build-reference-pages.py --check
    python3 scripts/build-llms-txt.py --check
    python3 scripts/build-llms-full-txt.py --check
    ```
 
-   The new integration appears in the `## Integrations (Splunk)`
-   section of `docs/llms.txt` (display name, status, required Splunk
-   app, JS source path) AND in Appendix A of `docs/llms-full.txt`
-   with its endpoints, field-contract keys, BM-CT-1 slot mapping and
-   references. Commit both regenerated files in the same PR. Both CI
-   gates (`build-llms-txt.py --check` and
-   `build-llms-full-txt.py --check`) will reject any drift.
+   The new integration appears in THREE places that all derive from
+   the same `docs/_machine/integrations/<id>.yaml` source of truth:
+
+   - `docs/integrations/catalogue.md` — a new row in the
+     `Integration matrix at a glance` section (the auto-managed
+     region between `<!-- BEGIN AUTOGEN: integrations-matrix -->`
+     and the matching `END` marker), AND a new `#### <id>` block in
+     the `Endpoint detail` subsection. The hand-authored prose
+     blocks (one `##` heading per integration, below the markers)
+     are NOT auto-managed — author them by hand using the existing
+     blocks as the template.
+   - `docs/llms.txt` — under `## Integrations (Splunk)` with
+     display name, status, required Splunk app, JS source path.
+   - `docs/llms-full.txt` — under Appendix A with endpoints,
+     field-contract keys, BM-CT-1 slot mapping and references, AND
+     the auto-managed matrix above is now part of the inlined
+     `catalogue.md` page body.
+
+   Commit all four regenerated files (`catalogue.md`, `llms.txt`,
+   `llms-full.txt`, and any updated `formatter.md` if you also
+   touched the formatter) in the same PR. All three CI drift gates
+   (`build-reference-pages.py --check`,
+   `build-llms-txt.py --check`, `build-llms-full-txt.py --check`)
+   will reject any drift.
 
 ---
 
@@ -489,14 +509,19 @@ node scripts/check-accessibility.js
 .venv-mkdocs/bin/python3 scripts/build-llms-full-txt.py --check
 
 # Auto-generated reference page drift (E2 Phase 2).
-# Regenerates the managed regions inside docs/reference/*.md from the
-# machine schema (currently: the 82-option enumeration in
-# formatter.md, inside the BEGIN/END AUTOGEN: formatter-enumeration
-# marker pair) and FAILS if the on-disk file disagrees. Hand-authored
-# narrative OUTSIDE the markers is preserved. On drift: run
-# `python3 scripts/build-reference-pages.py` and commit. Pure stdlib —
-# no extra deps needed.
-python3 scripts/build-reference-pages.py --check
+# Regenerates the managed regions inside the human-readable pages
+# from their structured sources of truth:
+#   - docs/reference/formatter.md (formatter-enumeration region)
+#     from docs/_machine/formatter-schema.json — the 82-option
+#     enumeration grouped by Dashboard Studio tab + heading.
+#   - docs/integrations/catalogue.md (integrations-matrix region)
+#     from docs/_machine/integrations/*.yaml — the at-a-glance
+#     matrix table + endpoint detail subsection.
+# Hand-authored narrative OUTSIDE the BEGIN/END AUTOGEN markers is
+# preserved. On drift: run `python3 scripts/build-reference-pages.py`
+# and commit. Needs PyYAML for the integrations matrix; the MkDocs
+# venv above already provides it.
+.venv-mkdocs/bin/python3 scripts/build-reference-pages.py --check
 
 # Bundle hygiene (run after webpack build)
 node scripts/check-bundle-size.js
@@ -533,6 +558,8 @@ to fix and the exact command to re-run.
 | `[FAIL] docs/llms-full.txt is out of sync vs the structured sources of truth` | You edited a page in `docs/**/*.md`, an integration YAML, the recipe index, a nav entry in `mkdocs.yml`, or the included root files (`README.md`, `CHANGELOG.md`, `ROADMAP.md`), but forgot to regenerate `docs/llms-full.txt` (the body-inclusive sibling of `llms.txt`) | `python3 scripts/build-llms-full-txt.py && git add docs/llms-full.txt`. Same deterministic contract as `llms.txt`: same input → same byte-for-byte output |
 | `[FAIL] docs/llms-full.txt is ~N estimated tokens, over the 200,000 hard cap` | A page (or a newly included root file) pushed the total beyond the binding 200k-token LLM context budget | Trim the largest contributor (the `[WARN]` lines name the worst per-page offenders) OR raise the budget in `scripts/build-llms-full-txt.py` (`TOTAL_FAIL_TOKENS`) with an explicit roadmap-review entry — the budget is a binding contract, not a soft suggestion |
 | `[FAIL] docs/reference/formatter.md is out of sync vs the structured sources of truth` | You added/edited/removed a `formatter.html` control, or otherwise changed the formatter schema, but forgot to regenerate the auto-managed section of `docs/reference/formatter.md` | `python3 scripts/build-reference-pages.py && git add docs/reference/formatter.md`. The script only touches the region BETWEEN the `<!-- BEGIN AUTOGEN: formatter-enumeration -->` and `<!-- END AUTOGEN: formatter-enumeration -->` markers; hand-authored narrative outside the markers is preserved |
+| `[FAIL] docs/integrations/catalogue.md is out of sync vs the structured sources of truth` | You added/edited/removed an integration under `docs/_machine/integrations/*.yaml` (status, splunk_app_required, endpoints, auth, ot_safety, tested_against) but forgot to regenerate the auto-managed matrix section of `docs/integrations/catalogue.md` | `python3 scripts/build-reference-pages.py && git add docs/integrations/catalogue.md`. The script only touches the region BETWEEN the `<!-- BEGIN AUTOGEN: integrations-matrix -->` and `<!-- END AUTOGEN: integrations-matrix -->` markers; the eight `## <integration>` prose blocks below the markers are hand-authored and survive re-generation |
+| `[FAIL] docs/integrations/catalogue.md has no `<!-- BEGIN AUTOGEN: integrations-matrix -->` markers` | The catalogue page lost its managed-region marker pair (e.g. someone deleted them while editing prose). The script refuses to "guess" where to put the auto-gen output | Add the marker pair back at the spot where the auto-generated matrix + endpoint detail should live (canonically: right after the intro bullet list and before the first `## <integration>` heading), then rerun `python3 scripts/build-reference-pages.py` |
 | `[FAIL] docs/reference/<file>.md has no `<!-- BEGIN AUTOGEN: <id> -->` / `<!-- END AUTOGEN: <id> -->` markers` | The reference page lost its managed-region marker pair (e.g. someone deleted them while editing prose). The script refuses to "guess" where to put the auto-gen output | Add the marker pair back at the spot where the auto-generated content should live, then rerun `python3 scripts/build-reference-pages.py` |
 | `demo.test.js > registers exactly the three v1.7 presets — Expected 3, received 4` | You added a fourth preset to `src/lib/demo/index.js` but forgot to bump the test that locks the count + IDs in order | Update the assertion in `src/lib/__tests__/demo.test.js` (search for "v1.7 presets"). The lock is intentional — silent preset additions break the formatter dropdown and `savedsearches.conf.spec` contract; the failing test forces you to update all three together |
 | Showcase dashboard renders three empty maps where the demos should be | The viz bundle was built BEFORE the new demo preset was wired into `src/lib/demo/index.js`, so the runtime registry doesn't contain it (the dashboard option `demoPreset: foo` finds no match → falls back to SPL → SPL is the trivial placeholder → empty map) | `cd better_map/appserver/static/visualizations/better_map && npm run build`; reload the dashboard with cache busting (cmd-shift-R / ctrl-shift-R). Confirm `loadDemoPreset('foo')` returns non-null from a browser devtools console invocation |
@@ -557,11 +584,14 @@ to fix and the exact command to re-run.
   ships next to it, drift-gated by
   `scripts/build-llms-full-txt.py --check` and bounded by a hard
   200k-estimated-token budget; the E2 Phase 2 auto-generated
-  reference enumerations live INSIDE the hand-authored reference
-  pages (currently:
+  enumerations live INSIDE the hand-authored human-readable pages
+  (currently:
   [`docs/reference/formatter.md`](https://github.com/fenre/better_map/blob/main/docs/reference/formatter.md)
-  inside the `<!-- BEGIN AUTOGEN: formatter-enumeration -->` markers),
-  drift-gated by `scripts/build-reference-pages.py --check`).
+  inside the `<!-- BEGIN AUTOGEN: formatter-enumeration -->`
+  markers, AND
+  [`docs/integrations/catalogue.md`](https://github.com/fenre/better_map/blob/main/docs/integrations/catalogue.md)
+  inside the `<!-- BEGIN AUTOGEN: integrations-matrix -->`
+  markers), drift-gated by `scripts/build-reference-pages.py --check`).
 - Not the customer-facing setup guide. That's E5 — the recipe matrix.
   Phase 1 (framework + three starter recipes) shipped in v1.7-prep;
   the remaining matrix cells (every layer × every source) are
@@ -588,7 +618,7 @@ wins. Open a PR that updates this file.
 - `docs/llms-full.txt` — body-inclusive sibling of `llms.txt` (G7 Phase 2 follow-up): every page in `mkdocs.yml` `nav:` concatenated with stable `# === BEGIN/END ===` delimiters, plus an integrations matrix (Appendix A) and recipes matrix (Appendix B). Bounded by a hard 200k-estimated-token budget so the output stays inside the context window of every practical LLM. Ships verbatim at `site/llms-full.txt` alongside `site/llms.txt`
 - `scripts/build-llms-txt.py` — generator + `--check` drift gate for the short `llms.txt`
 - `scripts/build-llms-full-txt.py` — generator + `--check` drift gate for the body-inclusive `llms-full.txt`. Same deterministic contract: no clock-based fields, page emission order follows `mkdocs.yml` `nav:`, MkDocs Material chrome is stripped at render time
-- `scripts/build-reference-pages.py` — generator + `--check` drift gate for the auto-managed regions inside `docs/reference/*.md` (E2 Phase 2 — currently the 82-option enumeration in `formatter.md`)
+- `scripts/build-reference-pages.py` — generator + `--check` drift gate for the auto-managed regions inside the human-readable pages (E2 Phase 2 — currently the 82-option enumeration in `docs/reference/formatter.md` AND the integrations matrix + endpoint detail in `docs/integrations/catalogue.md`)
 - `better_map/appserver/static/visualizations/better_map/src/lib/demo/` — v1.7 demo data pack: deterministic generators for three showcase presets (fleet telemetry, smart-building IoT, cyber incidents) backing the `demoPreset` formatter dropdown. See §5c for the contract.
 - `better_map/default/data/ui/views/better_map_showcase.xml` — v1.7 showcase dashboard exercising all three demo presets in one view; renders with zero live Splunk data
 - `docs/runbooks/supply-chain.md` — G1 verification + waiver procedures
