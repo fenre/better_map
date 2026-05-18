@@ -228,6 +228,7 @@ nav:
       - 'CIM Performance (CPU / memory / facilities) — H3 hexbin': recipes/cim-performance/h3.md
       - 'CIM Performance (CPU / memory / facilities) — markers': recipes/cim-performance/markers.md
       - 'CSV lookup (geo points) — H3 hexbin': recipes/csv-lookup-geo/h3.md
+      - 'CSV lookup (geo points) — markers': recipes/csv-lookup-geo/markers.md
       - 'CSV lookup (geo points) — supercluster': recipes/csv-lookup-geo/supercluster.md
       - 'CSV lookup (geo polygons) — polygons': recipes/csv-lookup-geo/polygons.md
       - 'CSV lookup (region metrics) — vector-tile join': recipes/csv-lookup-geo/vector-tile-join.md
@@ -236,6 +237,7 @@ nav:
       - 'Cisco ThousandEyes (agent fleet) — markers': recipes/thousandeyes/markers.md
       - 'Cisco ThousandEyes (path visualization) — paths': recipes/thousandeyes/paths.md
       - 'ES Risk-Based Alerting (risk index) — H3 hexbin': recipes/es-risk/h3.md
+      - 'ES Risk-Based Alerting (risk index) — heatmap': recipes/es-risk/heat.md
       - 'ES Risk-Based Alerting (risk index) — markers': recipes/es-risk/markers.md
       - 'ITSI service health (KPI base searches) — markers': recipes/itsi-kpi-base/markers.md
       - 'KV Store (lat/lon) — heatmap': recipes/kvstore-latlon/heat.md
