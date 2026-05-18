@@ -115,6 +115,22 @@ PER_PAGE_WARN_TOKENS = 50_000
 TOTAL_WARN_TOKENS = 150_000
 TOTAL_FAIL_TOKENS = 200_000
 
+# Recipe trim contract — see strip_recipe_advisory() and the G7 wave
+# 4a follow-up ROADMAP block. Recipe pages under `docs/recipes/<source>/<layer>.md`
+# carry the bulk of their author guidance in §6 Gotchas and a
+# trailing "## Verification status" section. Those sections are
+# human-targeted advisory content; the LLM-actionable contract
+# (frontmatter + §1 Source description + §2 SPL recipe + §3 Expected
+# fields + §4 Recommended formatter config + §5 Screenshot) is fully
+# self-contained without them. Trimming §6 onward saves ~1.5-2k
+# tokens per recipe in llms-full.txt and keeps headroom for the
+# remaining ~63 ✓ matrix cells. The unabridged recipe is one click
+# away via the per-page block's URL header; this trim does NOT
+# affect the published MkDocs site, llms.txt, or
+# docs/_machine/recipes/index.yaml — only the body emitted into
+# llms-full.txt.
+_RECIPE_TRIM_AT = re.compile(r"^## 6\.\s+Gotchas\s*$", re.MULTILINE)
+
 
 # ----------------------------------------------------- mkdocs.yml parse
 
@@ -250,6 +266,49 @@ _ADMONITION_PATTERN = re.compile(
     r"^!!!\s+([a-zA-Z]+)(?:\s+\"([^\"]+)\")?\s*$",
     re.MULTILINE,
 )
+
+
+def is_recipe_page(relpath: str) -> bool:
+    """True when `docs/<relpath>` is a per-source/per-layer recipe page.
+
+    Recipe pages live at `docs/recipes/<source>/<layer>.md`. The
+    matrix index page at `docs/recipes/index.md` is NOT a recipe
+    page (it's the auto-generated matrix), so we exclude it.
+    """
+    if not relpath.startswith("recipes/"):
+        return False
+    if relpath == "recipes/index.md":
+        return False
+    return relpath.endswith(".md")
+
+
+def strip_recipe_advisory(body: str, page_url: str) -> str:
+    """Trim recipe page body at `## 6. Gotchas` and append a URL pointer.
+
+    §6 Gotchas and the trailing `## Verification status` section are
+    human-targeted advisory content. An LLM consuming the recipe
+    needs the frontmatter, §1 Source description, §2 SPL recipe,
+    §3 Expected fields, §4 Recommended formatter config, and §5
+    Screenshot (typically a one-line stub) — all of which precede
+    §6. The advisory content is recoverable via the URL pointer
+    appended below for any agent that's debugging a recipe and
+    needs the gotchas.
+
+    If the recipe does not have a `## 6. Gotchas` heading (no
+    current recipe is missing one, but the helper is defensive),
+    the body is returned unchanged.
+    """
+    match = _RECIPE_TRIM_AT.search(body)
+    if not match:
+        return body
+    trimmed = body[: match.start()].rstrip() + "\n"
+    pointer = (
+        "\n"
+        "_§6 Gotchas and the trailing Verification status section "
+        f"are omitted from llms-full.txt for token-budget; read "
+        f"them in the full recipe at <{page_url}>._\n"
+    )
+    return trimmed + pointer
 
 
 def strip_chrome(body: str) -> str:
@@ -396,6 +455,8 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
         raw = source_file.read_text(encoding="utf-8")
         expanded = resolve_includes(raw, source_file)
         cleaned = strip_chrome(expanded).rstrip() + "\n"
+        if is_recipe_page(relpath):
+            cleaned = strip_recipe_advisory(cleaned, url)
         buf.write(cleaned)
         per_page_chars[relpath] = len(cleaned)
         buf.write(f"\n# === END: {url} ===\n")

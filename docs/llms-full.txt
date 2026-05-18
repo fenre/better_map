@@ -1644,94 +1644,7 @@ brute-force corpus seeded into the test tenant — see
 [`tools/splunk-compose/`](https://github.com/fenre/better_map/tree/main/tools/splunk-compose)
 once D5 ships._
 
-## 6. Gotchas
-
-- **CIM data-model acceleration MUST be enabled** on the
-  `Authentication` data model for `summariesonly=true` to return
-  anything. Confirm in Settings → Data models → Authentication →
-  Acceleration. If accel is OFF, the dashboard panel returns
-  ZERO results (the correct, fail-safe behaviour). If you cannot
-  enable acceleration in your tenant, change the recipe to
-  `summariesonly=false` (much slower; not recommended for any
-  panel that auto-refreshes).
-- **`tag=authentication` membership.** If your IdP / VPN events
-  are NOT being tagged for the data model (a common Splunk
-  Cloud finding — bring-your-own-app pipelines often skip
-  `eventtypes.conf` and `tags.conf`), they will be invisible to
-  this recipe. Check `| tstats count WHERE
-  \`cim_Authentication_indexes\` tag=authentication BY
-  sourcetype`. Any sourcetype you EXPECT to see that does NOT
-  appear is a CIM-compliance gap, NOT a Better Map bug — fix
-  the TA / `eventtypes.conf` and re-run.
-- **`failure_count >= 5` threshold is workload-dependent.** A
-  500-employee company sees ~50 legitimate "wrong password"
-  failures a day. A 50,000-employee company sees ~5,000. Tune
-  the threshold so the "Top 500" list is dominated by
-  ATTACKERS, not by Monday-morning Active-Directory password-
-  reset traffic. The RBA (Risk-Based Alerting) skill has a more
-  sophisticated formula (`failure_count / dc(user)` ratio,
-  `count by app`, etc.) — see [`~/.cursor/skills/splunk-rba/SKILL.md`](https://github.com/fenre/better_map/blob/main/docs/recipes/cim-authentication/markers.md).
-- **MaxMind database licensing.** Splunk Enterprise ships with
-  the free MaxMind GeoLite2 database. For higher accuracy /
-  commercial use, swap in MaxMind GeoIP2 via the Splunk admin
-  UI. The recipe is unchanged — `iplocation` reads whichever
-  database is configured.
-- **Time range.** The recipe hard-codes `earliest=-24h
-  latest=now` so it works in a panel without a dashboard time
-  picker. Replace with `earliest=$earliest$ latest=$latest$`
-  once you wire the recipe into a dashboard with a time-range
-  input.
-- **VPN / proxy egress IPs distort the picture.** A heavy
-  enterprise VPN concentrator emits failures from a single
-  publish IP — every "China password-spray" marker may turn out
-  to be your contractor laptop fleet behind a single VPN POP.
-  Add `NOT src IN ("198.51.100.0/24")` or join against a known-
-  good corporate IP allow-list before rendering. The RBA
-  framework's `corporate_ip` lookup is the standard pattern.
-- **`distinct_users` is the password-spray flag.** When the
-  popup shows "417 failures across 23 users" you are almost
-  certainly looking at password-spray (low-and-slow attempts
-  against many accounts, one password each). When the popup
-  shows "417 failures across 1 user" you are looking at brute-
-  force (or a stuck mobile client; check before paging the
-  on-call). Both warrant investigation; treat differently.
-- **PII / GDPR posture.** Per ROADMAP §1a (binding), Better Map
-  NEVER sends event data outside `splunkd:8089`. `iplocation`
-  runs server-side against the local MaxMind database — no
-  outbound geocoding API call. `src` IPs are pseudonymous; do
-  NOT join against `identities.csv` (the ES Asset & Identity
-  framework lookup) in this recipe — the username column
-  would land in a public-facing dashboard and surface PII.
-- **No OT safety dependency.** This recipe is pure IT
-  identity-and-access. If your tenant ALSO logs OT operator
-  console logins (RSLogix, FactoryTalk View, Wonderware InTouch,
-  Siemens TIA Portal) under the `Authentication` data model,
-  filter THOSE sourcetypes out of THIS panel (`NOT sourcetype IN
-  ("rslogix:audit", "factorytalk:*")`) and put them in a
-  DEDICATED recipe with explicit OT-safety annotations per
-  [`/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc)
-  Rule 6 — a failed login to an HMI on a SIS bypass is a
-  safety-relevant signal, not an IT credential-abuse signal.
-
-## Verification status
-
-`status: unverified` in the frontmatter — the SPL is structurally
-sound, follows the documented Splunk CIM Authentication contract,
-and uses only shipping Splunk built-ins (`tstats`, `iplocation`,
-`Splunk_SA_CIM`). It has not been dispatched against the
-v1.7-prep lab tenant in this PR because non-interactive admin
-auth is not present in the agent workspace. A maintainer with
-REST auth to a CIM-accelerated tenant should:
-
-1. Run the recipe SPL with `summariesonly=false` first to confirm
-   the Authentication data model has data for the queried time
-   range and `action="failure"` is populated.
-2. Re-run with `summariesonly=true` (the recipe shape) to confirm
-   acceleration is alive and returns the same shape.
-3. Tune `failure_count >= 5` for the tenant's baseline noise
-   floor (see Gotchas).
-4. Update the frontmatter to `status: verified`, fill in
-   `verified_against`, and submit a follow-up PR.
+_§6 Gotchas and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-authentication/markers/ ===
 
@@ -1878,66 +1791,7 @@ D5). The harness will render every recipe's panel against a
 preloaded sample dataset and check in the resulting PNGs alongside
 the recipe markdown._
 
-## 6. Gotchas
-
-- **CIM data-model acceleration MUST be enabled** on the
-  `Network_Traffic` data model for `summariesonly=true` to return
-  anything. Confirm in Settings → Data models → Network Traffic →
-  Acceleration. If accel is OFF, the dashboard panel returns ZERO
-  results (the correct, fail-safe behaviour). If you cannot
-  enable acceleration in your tenant, change the recipe to
-  `summariesonly=false` (much slower; not recommended for any
-  panel that auto-refreshes).
-- **MaxMind database licensing.** Splunk Enterprise ships with the
-  free MaxMind GeoLite2 database. For higher accuracy / commercial
-  use, swap in MaxMind GeoIP2 via the Splunk admin UI. The recipe
-  is unchanged — `iplocation` reads whichever database is
-  configured.
-- **Time range.** The recipe hard-codes `earliest=-24h latest=now`
-  so it works in a panel without a dashboard time picker. Replace
-  with `earliest=$earliest$ latest=$latest$` once you wire the
-  recipe into a dashboard with a time-range input.
-- **`tag=network communicate` membership.** If your data is
-  classified for the data model under DIFFERENT tags (some
-  Splunk Cloud tenants override the CIM tag stanzas), check
-  `| eventtypes` for your sourcetype and re-tag if needed. This
-  is a CIM-compliance issue, not a Better Map issue.
-- **`Null Island` cluster.** Forgot the `where isnotnull(lat) AND
-  isnotnull(lon)` filter? Every private IP renders at `(0, 0)`.
-  The cluster off the coast of Ghana is your private RFC-1918
-  traffic. Add the filter; the SOC team will thank you.
-- **PII / GDPR posture.** Per ROADMAP §1a (binding), Better Map
-  NEVER sends event data outside `splunkd:8089`. `iplocation`
-  runs server-side against the local MaxMind database — no
-  outbound geocoding API call. If your tenant blocks
-  `Splunk_SA_CIM` for compliance reasons, this recipe will not
-  work; switch to a hand-curated `outputlookup` of allow-listed
-  destination IPs.
-- **No OT safety dependency.** This recipe is pure IT network
-  traffic. If your `Network_Traffic` data model ALSO ingests
-  passive DPI of an OT zone (Cisco Cyber Vision, Claroty), filter
-  THOSE sourcetypes out of this panel (`NOT sourcetype IN
-  ("cisco:cv:*", "claroty:*")`) and put them in a DEDICATED
-  recipe with explicit OT-safety annotations per
-  [`/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc)
-  Rule 6.
-
-## Verification status
-
-`status: unverified` in the frontmatter — the SPL is structurally
-sound, follows the documented Splunk CIM contract, and uses only
-shipping Splunk built-ins (`tstats`, `iplocation`, `Splunk_SA_CIM`).
-It has not been dispatched against the v1.7-prep lab tenant in this
-PR because non-interactive admin auth is not present in the agent
-workspace. A maintainer with REST auth to a CIM-accelerated tenant
-should:
-
-1. Run the recipe SPL with `summariesonly=false` first to confirm
-   the data model has data for the queried time range.
-2. Re-run with `summariesonly=true` (the recipe shape) to confirm
-   acceleration is alive and returns the same shape.
-3. Update the frontmatter to `status: verified`, fill in
-   `verified_against`, and submit a follow-up PR.
+_§6 Gotchas and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-network-traffic/markers/ ===
 
@@ -2139,88 +1993,7 @@ particularly screenshot-worthy — the great-circle arcs between
 geocoded src/dest pairs read as a recognisable "the Internet"
 visual at any zoom level._
 
-## 6. Gotchas
-
-- **The two-rows-per-flow shape is the entire trick.** If you
-  copy the SPL and simplify it to "one row per flow with
-  src_lat/src_lon/dest_lat/dest_lon columns", the paths layer
-  renders nothing — it consumes the (`pathIdField`,
-  `timeField`, `lat`, `lon`) tuple and assumes ONE point per
-  row. The `mvappend` + `mvexpand` pair is non-negotiable for
-  this layer. The same pattern appears in the [Splunk Lantern
-  flow-visualisation article](https://lantern.splunk.com/Splunk_Platform/UCE/Use_cases/Visualizing_network_flows)
-  for the standard Splunk choropleth flow-map panel.
-- **`head 100` is mandatory.** Without it the SPL returns
-  ~`O(unique_src × unique_dest)` rows — easily 10,000+ on a
-  busy perimeter — and the paths layer chokes (GPU pressure
-  from 20,000+ great-circle vertices plus optional arrowheads).
-  100 is the sweet spot per ROADMAP §7c (paths layer render
-  budget). Raise carefully and watch the perf HUD.
-- **The directional-asymmetry surprise.** This recipe groups
-  by `(src, dest)` and treats each direction as a separate
-  arc. A long-lived TCP connection generates two flow records
-  — one for `A→B` and one for `B→A` — which produces TWO
-  parallel arcs that overlap. If your audience finds this
-  busy, add `| eval pair=if(src<dest, src."__".dest,
-  dest."__".src)` AFTER the geocoding to canonicalize the
-  pair and `stats sum(total_bytes) AS total_bytes,
-  latest(src_lat) AS … BY pair` to collapse.
-- **CIM data-model acceleration MUST be enabled** — same
-  caveat as the markers recipe. Confirm in Settings → Data
-  models → Network Traffic → Acceleration.
-- **MaxMind database licensing** — same as the markers
-  recipe. `iplocation` reads whichever database the admin
-  configured.
-- **Private-range src enrichment.** A flow from
-  `10.20.30.40` (your corporate VLAN) to a public dest IP has
-  `src_lat=NULL` because MaxMind cannot geocode RFC-1918
-  space. The `where isnotnull(src_lat)` filter drops these,
-  meaning the panel UNDERSTATES the volume of corporate-to-
-  Internet flows. For a recipe that paints every internal
-  src at "the corporate office", join `src` against an asset
-  lookup (`Asset_Identity_Resolver`-style) BEFORE
-  `iplocation` and substitute the office's hand-coded lat/lon
-  via `eval src_lat=coalesce(office_lat, src_lat)`. This is
-  the standard ES Asset & Identity pattern — see
-  [`~/.cursor/skills/splunk-enterprise-security/SKILL.md`](https://github.com/fenre/better_map/blob/main/docs/recipes/cim-network-traffic/paths.md).
-- **Time range** — hard-coded `earliest=-24h latest=now` so
-  the recipe works without a dashboard time picker. Replace
-  with `earliest=$earliest$ latest=$latest$` once wired in.
-- **PII / GDPR posture** — identical to the markers recipe;
-  `iplocation` is server-side, no outbound API call. Internal
-  src IPs that geocode to "the corporate office" do NOT leak
-  the office street address — only the city centroid that
-  MaxMind hands back.
-- **No OT safety dependency.** This recipe is pure IT network
-  traffic. If your tenant's `Network_Traffic` data model ALSO
-  ingests passive DPI of an OT zone (Cisco Cyber Vision,
-  Claroty), filter those sourcetypes OUT of this recipe and
-  put them in a DEDICATED OT-paths recipe per [`/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc)
-  Rule 6. An animated arc from a PLC to a public IP is a
-  potential exfiltration / C2 indicator — surfacing it on the
-  same map as legitimate user web traffic dilutes the signal.
-
-## Verification status
-
-`status: unverified` in the frontmatter — the SPL is structurally
-sound, uses only shipping Splunk built-ins (`tstats`,
-`iplocation`, `mvappend`/`mvexpand`, `Splunk_SA_CIM`), and the
-mvappend/mvexpand pattern is documented Splunk SPL. It has not
-been dispatched against the v1.7-prep lab tenant in this PR
-because non-interactive admin auth is not present in the agent
-workspace. A maintainer with REST auth to a CIM-accelerated
-tenant should:
-
-1. Run the recipe SPL with `summariesonly=false | head 5` first
-   to confirm the data model has data for the queried time
-   range AND that the mvappend/mvexpand fan-out is producing
-   the expected two-rows-per-pair shape.
-2. Re-run with `summariesonly=true` and the full SPL to confirm
-   the rendered panel shape matches.
-3. Verify the paths layer renders ~100 arcs without GPU
-   stutter against the formatter config in §4.
-4. Update the frontmatter to `status: verified`, fill in
-   `verified_against`, and submit a follow-up PR.
+_§6 Gotchas and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/paths/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-network-traffic/paths/ ===
 
@@ -2385,89 +2158,7 @@ preset (`demoPreset: "iot-smart-building"` — D6 SHIPPED) demonstrates
 floor-shape polygons rendered with the same options if you don't
 have an asset-zones lookup handy._
 
-## 6. Gotchas
-
-- **CSV escaping inside GeoJSON.** A GeoJSON polygon string
-  contains nested double-quotes. CSV requires that those be
-  escaped per RFC 4180: surround the field value in `"..."` and
-  double every internal `"`. The `| outputlookup` bootstrap above
-  does this correctly because `eval` quotes are runtime values;
-  when authoring the CSV by hand or exporting from QGIS, validate
-  by `| inputlookup asset_zones.csv | head 1 | eval g=geojson |
-  table g` — if you see literal `\"` in the output, the file is
-  double-escaped (`"`-inside-`"` was written as `\"` instead of
-  `""`). Fix at export time, not in SPL.
-- **Coordinate order.** GeoJSON is `[longitude, latitude]`.
-  WKT is `longitude latitude`. Most non-GIS data sources will
-  give you `latitude, longitude` order — that's wrong for both
-  geometry forms and will plot every polygon in the Atlantic
-  Ocean or near Antarctica. Flip with a quick `eval` if you
-  have only point pairs; for polygons re-export from the GIS
-  tool with the right axis order set.
-- **Polygon closure.** GeoJSON `Polygon` rings MUST close — the
-  first and last coordinate pair MUST be identical. QGIS exports
-  this correctly; hand-authored polygons sometimes don't, and
-  Better Map's MapLibre renderer silently drops unclosed
-  geometries. Validate with `| inputlookup asset_zones.csv |
-  eval first=substr(geojson, 1, 200) | table id, first` and look
-  for the first/last coordinate pair to match.
-- **Lookup file size.** Splunk's default
-  `[lookup] max_memtable_bytes = 25000000` (25 MB) is the lookup
-  RAM ceiling. A CSV with 500 detailed building polygons can
-  push 50 MB. If your lookup is bigger, switch to a KV Store
-  collection with `replicate = true` — the trade-off is loss of
-  git-diff friendliness for unbounded size. Document the choice
-  in the
-  [`splunk-lookups` skill](https://github.com/fenre/better_map/blob/main/.cursor/rules/splunk-lookups.mdc)
-  decision-tree pattern.
-- **Polygon-fill clipping.** MapLibre clips polygon fills at the
-  tile edge; very large polygons (e.g. a whole-country geofence)
-  rendered at city zoom show seams at vector-tile boundaries.
-  This is a MapLibre engine behaviour; the workaround is to
-  pre-clip large polygons into smaller pieces before storing in
-  the CSV. For the typical asset-zone / branch-territory use
-  case, polygons are small enough that this isn't a problem.
-- **No OT safety dependency, BUT.** If your `asset_zones` lookup
-  ALSO contains entries for SIS-related boundaries (control-
-  room geofences, hazardous-zone perimeters, BPCS-vs-SIS
-  separation lines), follow
-  [`/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc)
-  Rules 1 + 5 — flag those rows with a `safety_related: true`
-  column and render them in a DEDICATED, visually distinct layer
-  with a hand-curated popup that says "READ ONLY — SIS-defined
-  boundary, no action permitted from this panel." Better Map MUST
-  NOT be the surface that takes action against an SIS-related
-  asset, including via drilldown into a SOAR playbook keyed off
-  the polygon's `zone_id`.
-
-## Verification status
-
-`status: unverified` in the frontmatter — the SPL is structurally
-sound and follows the documented CSV-lookup and GeoJSON contracts
-(see references) but it has not been dispatched against a real
-`asset_zones.csv` lookup in the v1.7-prep development cycle (the
-lab tenant does not have a populated zones lookup). A maintainer
-with write access to a Splunk dev tenant should:
-
-1. Run the one-time setup `| outputlookup asset_zones.csv` once,
-   OR drop a hand-authored CSV with the documented schema into
-   `<app>/lookups/asset_zones.csv` and add a matching
-   `[asset_zones]` stanza in `transforms.conf`.
-2. Run the panel SPL and confirm ≥ 2 rows return with the five
-   documented fields, the GeoJSON validates as a `Polygon` or
-   `MultiPolygon`, and the panel renders the polygons inside the
-   map viewport.
-3. Update the frontmatter to `status: verified`, fill in
-   `verified_against` (e.g. "Splunk Enterprise 10.0 against a
-   12-zone asset-boundary CSV exported from QGIS"), and submit a
-   follow-up PR. The CI gate `scripts/check-recipe-schema.py`
-   will accept the change without touching the schema.
-
-The D5 Phase 1 harness (`docker/`) makes this a 5-minute round-trip
-once an operator has a polygons CSV to point it at — drop the file
-into `docker/staging/better_map/lookups/`, re-run
-`bash docker/scripts/bootstrap.sh`, dispatch the panel — see the
-[local Splunk harness operator guide](https://github.com/fenre/better_map/blob/main/docs/development/local-splunk-harness.md).
+_§6 Gotchas and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/polygons/>._
 
 # === END: https://fenre.github.io/better_map/recipes/csv-lookup-geo/polygons/ ===
 
@@ -2674,120 +2365,7 @@ so this recipe will be the first to validate against an
 ES-licensed verification tenant rather than the default D5 lab
 environment._
 
-## 6. Gotchas
-
-- **A&I lookups need lat/lon columns — they do NOT ship that
-  way.** `identity_lookup_expanded` and `asset_lookup_by_str`
-  default-ship with no geographic columns. The customer's ES
-  admin has to extend the underlying `identities.csv` and
-  `assets.csv` with `lat` and `long` columns (the ES schema
-  uses `long`, not `lon` — see next gotcha) and re-import. If
-  your tenant has not done this, this recipe returns ZERO
-  results — see "Geocode-by-IP fallback" below for the
-  alternative shape.
-- **A&I schema uses `long` (not `lon` or `longitude`).** ES's
-  identity / asset CSV columns are named `lat` and `long` by
-  convention (matching the rest of the splunk-enterprise-
-  security skill). Better Map auto-detect looks for `lon` /
-  `longitude` / `long`, so `long` IS recognised — but the SPL
-  renames `long AS identity_lon` for clarity. If you copy the
-  recipe and shortcut the rename, the lookup ALIAS in
-  `transforms.conf` decides what the field is actually called
-  in the result set; verify with `| inputlookup
-  identity_lookup_expanded | head 1` against your tenant.
-- **`source_search` cardinality can be huge.** A noisy
-  detection (every endpoint EDR alert, every Windows event)
-  can produce hundreds of risk events per entity per day. The
-  `values()` aggregator returns the SET, which is bounded —
-  but the popup will render a long comma-list. If your
-  detection portfolio is large, consider replacing
-  `values(source_search)` with
-  `dc(source_search) AS contributing_search_count` and
-  surfacing the count instead of the list.
-- **Geocode-by-IP fallback.** If your A&I lookups have no
-  lat/lon, the only geographic signal available from the
-  `risk` index alone is when `risk_object_type="system"` AND
-  `risk_object` happens to be an IP address. In that case
-  substitute the A&I lookup with:
-
-  ```spl
-  | where risk_object_type="system" AND match(risk_object, "^\d+\.\d+\.\d+\.\d+$")
-  | iplocation risk_object
-  | where isnotnull(lat) AND isnotnull(lon)
-  ```
-
-  This loses every `risk_object_type="user"` entity (no IP to
-  geocode), so the panel becomes "where are my risky systems?"
-  not "where are my risky entities?" — a meaningfully narrower
-  story.
-- **`risk` index acceleration.** ES does NOT accelerate the
-  `risk` index by default (it is a summary index, not a raw
-  data source). A 24 h `stats sum(risk_score)` is usually fast
-  enough (the `risk` index is small — RBA was designed for
-  thousands of events per day, not millions). If your install
-  generates >100k risk events per day, the recipe will slow
-  down; consider scheduling a daily summary search that
-  pre-aggregates to `risk_summary` and pointing the panel at
-  the summary instead.
-- **MITRE technique field semantics.** `annotations.mitre_attack{}`
-  is a multi-value field. The `{}` syntax matters — it tells
-  `tstats` to flatten the JSON array into a multi-value field.
-  In some ES versions the field is `annotations.mitre_attack`
-  (no `{}`), in others it is `MitreAttack` (camelCase). Run
-  `| risk | head 1` against your tenant to confirm the column
-  name in YOUR data; substitute in the SPL if needed.
-- **Time range.** Hard-coded `earliest=-24h latest=now` so the
-  panel works without a dashboard time picker. The 24 h window
-  matches the default RBA scoring horizon — match the panel
-  window to the RIR window in your tenant, otherwise the panel
-  shows entities that have already been notable'd or that
-  haven't aggregated long enough to be interesting.
-- **PII / GDPR posture.** Per ROADMAP §1a, Better Map never
-  sends event data outside `splunkd:8089`. `risk_object`
-  values for `risk_object_type="user"` are by definition PII
-  (usernames / emails). If the panel will be viewed by an
-  audience without "see risky users" authorisation, restrict
-  via Splunk RBAC (role-based search-time filtering on the
-  `risk` index) OR pre-hash the `risk_object` in SPL
-  (`eval risk_object=md5(risk_object)`). Do NOT rely on the
-  client-side panel to hide PII — the SPL result set IS the
-  source of truth.
-- **No OT safety dependency.** This recipe is pure IT identity-
-  and-system risk. If your ES install ALSO scores OT-zone
-  entities (passive DPI alerts from Cisco Cyber Vision feeding
-  ES correlation searches), keep them in a SEPARATE recipe
-  with `ot_safety_relevant: true` per
-  [`/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc)
-  Rule 6 — a risky PLC needs a fundamentally different
-  response than a risky laptop, and the panel should reflect
-  that.
-
-## Verification status
-
-`status: unverified` in the frontmatter — the SPL is structurally
-sound, matches the documented ES RBA contract from
-[`~/.cursor/skills/splunk-rba/SKILL.md`](https://github.com/fenre/better_map/blob/main/docs/recipes/es-risk/markers.md)
-and the A&I lookup conventions in
-[`~/.cursor/skills/splunk-enterprise-security/SKILL.md`](https://github.com/fenre/better_map/blob/main/docs/recipes/es-risk/markers.md),
-but it has NOT been dispatched against a tenant carrying both ES
-licence AND a lat/lon-extended A&I lookup. The v1.7-prep lab
-tenant is search-only without ES. A maintainer with REST auth to
-an ES-licensed tenant with RBA active and A&I extended with
-lat/lon should:
-
-1. Verify the A&I extension is in place: `| inputlookup
-   identity_lookup_expanded | where isnotnull(lat) | stats
-   count`.
-2. Confirm the `risk` index has data: `` | `risk` earliest=-24h
-   | stats count ``.
-3. Run the recipe SPL and confirm the panel renders at least 1
-   marker per known-risky entity.
-4. Tune the `where total_risk >= 50` threshold to the tenant's
-   RIR threshold (see Gotchas).
-5. Update the frontmatter to `status: verified`, fill in
-   `verified_against` (include `splunk_app:
-   "SplunkEnterpriseSecuritySuite"`), and submit a follow-up
-   PR.
+_§6 Gotchas and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/es-risk/markers/ ===
 
@@ -3004,110 +2582,7 @@ scope for the v1.7 D5 deliverable, so this recipe (like the
 validated against an ITSI-licensed verification tenant rather
 than the default D5 lab environment._
 
-## 6. Gotchas
-
-- **`info_lat` / `info_lon` are NOT default ITSI service
-  attributes.** ITSI ships with no geographic attribute model
-  for services; the operator has to add `info_lat` and
-  `info_lon` as custom service attributes via the ITSI UI
-  (Configuration → Service Templates → custom attributes) or
-  by bulk-loading via the ITSI REST API. If your tenant has
-  not done this, this recipe returns ZERO results — see
-  "Entity-attribute fallback" below for the alternative shape.
-- **ITSI version drift in the `info` field.** Some ITSI 4.x
-  installs store custom attributes inline on the service KV
-  store record (`info_lat` is a direct field); 4.13+ stores
-  them inside a nested `info` JSON blob (the lookup auto-
-  flattens with `info_lat` as the resolved column name). The
-  recipe assumes the auto-flattened shape. If `| inputlookup
-  itsi_services | head 1` shows an `info` column containing
-  raw JSON, switch to `| spath input=info path=lat output=lat
-  | spath input=info path=lon output=lon` before the lookup.
-- **Entity-attribute fallback.** If services aren't geocoded
-  but ENTITIES are (the `itsi_entities` collection has
-  per-entity location data, which is more common —
-  datacenter / rack / room labels are an entity attribute),
-  invert the recipe: aggregate `itsi_summary` BY
-  `entity_key` instead of `itsi_service_id`, lookup against
-  `itsi_entities`, and render one marker PER ENTITY rather
-  than per service. The visual story is different ("which
-  hosts are unhealthy?" vs "which services are unhealthy?")
-  but the SPL transformation is straightforward.
-- **`SHKPI-` event delivery lag.** ITSI's service-health
-  aggregator runs SLIGHTLY after the underlying KPI searches
-  finish (the aggregator subscribes to the KPI search-job
-  completion bus). On a busy SH the aggregator can lag 30-60
-  seconds. The 15 min `earliest=-15m` window absorbs this; do
-  not narrow below 10 min in high-volume tenants.
-- **`alert_level` numeric encoding varies.** The default ITSI
-  severity map is 0=Info, 1=Normal, 2=Low, 3=Medium, 4=High,
-  5=Critical. Custom severity templates can extend this (a
-  6-level "Catastrophic" or a 0-level "Unknown"). If your
-  install uses a custom severity template, adjust the
-  palette in §4 to match. `index=itsi_summary | stats values(alert_level)`
-  enumerates the in-use values.
-- **`itsi_services` lookup name.** The recipe assumes the
-  default ITSI collection name. Some installs rename
-  collections (Splunk Cloud multi-tenant deployments
-  sometimes prefix with the customer code, e.g.
-  `acme_itsi_services`). Confirm with `| rest
-  /servicesNS/-/-/storage/collections/config | search
-  collection=*itsi*`.
-- **The join subsearch is the most-expensive line.** A
-  tenant with 500 services × 20 KPIs each × 15 min × 5 min
-  cadence = 30,000 events to evaluate. The subsearch IS
-  bounded (`alert_level>=4` filters first) but is the
-  performance ceiling. If your tenant exceeds this, replace
-  the join with a precomputed summary search that emits one
-  row per service-with-critical-KPIs every minute and join
-  against THAT.
-- **Time range.** Hard-coded `earliest=-15m latest=now` so
-  the panel works without a dashboard time picker and stays
-  scoped to "current health, not historical". Avoid
-  parameterising — this panel is a "right now" view; an
-  hour-old health score is a different question (use a
-  trend chart, not a marker map).
-- **PII / GDPR posture.** Per ROADMAP §1a, Better Map never
-  sends event data outside `splunkd:8089`. Service titles
-  can embed organisational structure (`Payments - Acme
-  Bank - EU - DR site`); this surfaces in popups. If service
-  titles are themselves regulated information, restrict via
-  Splunk RBAC on the `itsi_summary` index OR rename services
-  to anonymous identifiers in the SPL `eval` step.
-- **No OT safety dependency.** This recipe is pure IT
-  service-health. If your ITSI install ALSO monitors OT-zone
-  services (an SIS health-roll-up KPI, a Modbus telegram-rate
-  KPI), filter those services OUT of THIS recipe (`NOT
-  itsi_service_id IN ("svc_sis_*")`) and put them in a
-  DEDICATED recipe with `ot_safety_relevant: true` per
-  [`/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc)
-  Rule 6 — an unhealthy SIS service warrants a fundamentally
-  different operator response than an unhealthy IT service,
-  and they should not visually compete on the same map.
-
-## Verification status
-
-`status: unverified` in the frontmatter — the SPL is structurally
-sound, matches the documented ITSI `itsi_summary` schema and
-service KV store collection contract from
-[`~/.cursor/skills/splunk-itsi/SKILL.md`](https://github.com/fenre/better_map/blob/main/docs/recipes/itsi-kpi-base/markers.md),
-but it has NOT been dispatched against a tenant carrying both
-ITSI licence AND services with populated `info_lat`/`info_lon`
-attributes. The v1.7-prep lab tenant is search-only without
-ITSI. A maintainer with REST auth to an ITSI-licensed tenant
-should:
-
-1. Verify the `itsi_services` collection has at least one
-   service with `info_lat` and `info_lon` populated:
-   `| inputlookup itsi_services | where isnotnull(info_lat) |
-   stats count`.
-2. Confirm `itsi_summary` has data: `index=itsi_summary kpi_id="SHKPI-*"
-   earliest=-15m | stats count BY itsi_service_id`.
-3. Run the recipe SPL and confirm the panel renders at least 1
-   marker per geocoded service.
-4. Update the frontmatter to `status: verified`, fill in
-   `verified_against` (include `splunk_app: "SA-ITOA"`), and
-   submit a follow-up PR.
+_§6 Gotchas and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/ ===
 
@@ -3245,59 +2720,7 @@ D5). Until then, a maintainer can reproduce the panel by pasting the
 SPL above into a Dashboard Studio map panel with Better Map as the
 visualization and applying the formatter JSON in §4._
 
-## 6. Gotchas
-
-- **Field types in KV Store collections.** `lat` and `lon` MUST be
-  declared as `number` in your `collections.conf` stanza. If they
-  default to `string`, Better Map's auto-swap heuristic
-  (`autoSwap`) cannot fire, AND `dataFitness.js` will silently drop
-  rows whose lat/lon can't be parsed as numbers. Always validate
-  with `| inputlookup site_locations | fieldsummary lat lon` and
-  confirm `numeric_count` matches the row count.
-- **KV Store replication.** On a search-head cluster, KV writes go
-  through the captain; reads are local. If a recently-`outputlookup`-ed
-  row does not appear in the panel within a second or two, force a
-  collection refresh via `| inputlookup site_locations | append [|
-  makeresults | eval foo=1] | head 1` (the no-op forces a fresh read).
-- **`id` is reserved.** Better Map auto-picks `id` (and a handful
-  of CIM-style siblings: `feature_id`, `iso`, `iso2`, `iso3`,
-  `admin1`, `state`, `country`) as the identifier for drilldown
-  and cross-panel coordination. If your KV-Store column is called
-  `site_id`, the `| rename site_id AS id` in the SPL above is
-  essential — otherwise the auto-detect falls back to the first
-  ID-shaped column it finds, which is usually wrong.
-- **Time-cursor compatibility.** Because KV Store rows have no
-  `_time`, the Better Map time scrubber widget has no effect on
-  this panel. If the dashboard wires the scrubber to other panels
-  (e.g. a time-correlated event layer), this panel will simply
-  not respond — which is the correct behaviour for a "fixed sites"
-  layer.
-- **No OT safety dependency.** This is a pure IT/inventory layer.
-  If your `site_locations` collection ALSO contains entries for
-  SIS-related assets (Level-0/1/2 in the Purdue model), follow
-  [`/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc)
-  Rules 1 + 5 — flag those rows with a `safety_related: true` column
-  and render them in a DEDICATED layer with a hand-curated marker
-  style + popup that says "READ ONLY — SIS asset, no action permitted
-  from this panel." Better Map MUST NOT be the surface that takes
-  action against an SIS asset.
-
-## Verification status
-
-`status: unverified` in the frontmatter — the SPL is structurally
-sound and follows the documented KV-Store and SPL contracts, but it
-has not been dispatched against a real `site_locations` collection
-in the v1.7-prep development cycle (the lab tenant does not have a
-`site_locations` collection populated). A maintainer with write
-access to a Splunk dev tenant should:
-
-1. Run the one-time setup `| outputlookup site_locations` once.
-2. Run the panel SPL and confirm three rows return with the five
-   documented fields.
-3. Update the frontmatter to `status: verified`, fill in
-   `verified_against`, and submit a follow-up PR. The CI gate
-   `scripts/check-recipe-schema.py` will accept the change without
-   touching the schema.
+_§6 Gotchas and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/ ===
 
@@ -3506,123 +2929,7 @@ organization, or (b) a synthetic device-inventory generator
 seeded with realistic lat/lng / model / status distributions —
 the latter is more reproducible and is the planned approach._
 
-## 6. Gotchas
-
-- **`lng` vs `lon` is the #1 mistake.** Meraki's REST API and
-  the TA both emit the field as **`lng`** (three letters).
-  Better Map's auto-detect only looks for `lon` / `longitude`
-  / `long`. Forget the `rename lng AS lon` and the panel
-  renders nothing; no error, just an empty map. The same
-  trap exists in any vendor TA whose source API uses
-  three-letter abbreviations (some BMS / building automation
-  TAs use `lng`; Google Maps API uses `lng`; OpenStreetMap
-  uses `lon`). The standing rule is "rename to canonical
-  `lat`/`lon` at the END of the SPL, before `fields`".
-- **`Splunk_TA_cisco_meraki` must be installed AND the
-  `devices` input enabled.** This is NOT a vanilla-Splunk
-  recipe — the TA is mandatory. The
-  [`cisco-meraki-ta-setup` skill](https://github.com/fenre/better_map/blob/main/docs/recipes/meraki/markers.md)
-  documents the complete install + configure flow including
-  the secret-handling pattern (API key never leaves a
-  temporary file on the operator workstation).
-- **Devices without a Dashboard location are invisible.**
-  Meraki devices ship from the factory with `lat=null,
-  lng=null` and only get coordinates AFTER the operator
-  drags them onto the map in the Meraki Dashboard. Greenfield
-  deployments routinely have 20-30% of devices unlocated for
-  the first few weeks. Add a companion panel with the SPL
-  `index=meraki sourcetype="meraki:devices" earliest=-1h |
-  dedup serial sortby -_time | where isnull(lat) OR
-  isnull(lng) | stats count` and a callout — "Devices
-  awaiting location: <count>" — so the operator sees the
-  inventory drift instead of assuming the map is complete.
-- **MV cameras can have privacy-flag-restricted `lat`/`lng`.**
-  Some EU deployments hide MV camera locations from the
-  REST API even when set in the Dashboard (GDPR-driven
-  default). MV serials simply won't appear on the map. To
-  confirm: `index=meraki sourcetype="meraki:devices"
-  productType="camera" earliest=-1h | dedup serial sortby
-  -_time | table serial, name, lat, lng`. If `lat`/`lng`
-  are null for ALL MV but populated for MR / MS / MX, you're
-  hitting the privacy flag; this is correct behaviour and
-  cannot be worked around at the TA / SPL layer.
-- **Polling cadence vs panel auto-refresh.** The `devices`
-  input default polling cadence is 600 s. A panel that
-  auto-refreshes every 30 s will run 20 times against the
-  SAME snapshot — no value added, just Splunk load. Tune
-  panel refresh to match the input cadence (10 min) for a
-  better signal-to-load ratio.
-- **`status` enum values.** The Meraki REST API returns
-  `online` / `alerting` / `offline` / `dormant` plus the
-  occasional `null` we already `coalesce`. If you map
-  colours by status, account for all five (the `coalesce`
-  introduces `"unknown"`). The most-confusing value is
-  `dormant` — the Meraki definition is "device has been
-  offline >7 days, has been marked semi-permanently absent
-  from inventory views"; the operator decision is "does my
-  panel show dormant the same as offline (probably yes for
-  a NetOps overview) or differently (probably yes for an
-  asset-management view)". Document the choice in the
-  panel description.
-- **Time range.** The recipe hard-codes
-  `earliest=-1h latest=now` to keep the dedup window small
-  and fast. Replace with `earliest=$earliest$
-  latest=$latest$` once you wire the recipe into a
-  dashboard with a time-range input — but constrain the
-  upper bound: a 30-day dedup is expensive AND not
-  meaningful for an "is this device online RIGHT NOW?"
-  panel.
-- **No CIM mapping.** `meraki:devices` is inventory data, not
-  an event-stream sourcetype. The Cisco Meraki TA maps OTHER
-  sourcetypes (`meraki:webhook`, `meraki:apirequestshistory`,
-  syslog) to the CIM Network Traffic / Alerts / Authentication
-  data models, but device inventory has no CIM home. That is
-  why this recipe queries the raw sourcetype directly instead
-  of going through `| tstats FROM datamodel=…` like the
-  CIM-data-model recipes do.
-- **PII / GDPR posture.** Meraki device names sometimes embed
-  user identity (`"AP - John Smith desk"`). The `name` column
-  flows into popups. If this is a GDPR concern, swap the
-  popup binding to `network_name` (room/site label) instead
-  of the `name` (specific-device label) and exclude `name`
-  from `fields` at the end of the SPL.
-- **No OT safety dependency.** Meraki devices are IT
-  networking gear. The MT environmental sensor line (MT10,
-  MT12, MT14, MT20, MT30) is IoT but NOT SIS-related (no
-  safety-instrumented logic; the MT sensors monitor server-
-  room temperature and ambient conditions, NOT process-
-  safety variables). If your tenant integrates Meraki with
-  an OT-zone monitoring program, route THOSE MT sensors to
-  a dedicated `ot-datastreamer` recipe (per
-  [`/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc)
-  Rule 6) rather than mixing them with the corporate
-  Meraki inventory shown on this panel.
-
-## Verification status
-
-`status: unverified` in the frontmatter — the SPL is structurally
-sound, matches the documented `meraki:devices` field shape from
-[`~/.cursor/skills/cisco-meraki-ta-setup/SKILL.md`](https://github.com/fenre/better_map/blob/main/docs/recipes/meraki/markers.md)
-and the [`cisco-products` skill](https://github.com/fenre/better_map/blob/main/docs/recipes/meraki/markers.md),
-and uses only Splunk built-ins plus the documented `lng`-from-Meraki-
-API field name. It has not been dispatched against the v1.7-prep
-lab tenant in this PR because (a) non-interactive admin auth is
-not present in the agent workspace, and (b) the lab tenant does
-not currently have a real Meraki organization registered. A
-maintainer with REST auth to a Splunk tenant that HAS
-`Splunk_TA_cisco_meraki` installed and a configured Meraki
-account should:
-
-1. Confirm `index=meraki sourcetype="meraki:devices" earliest=-1h
-   | stats count` returns >0.
-2. Confirm `lat` and `lng` are populated for at least one device
-   (`| where isnotnull(lat) AND isnotnull(lng) | head 1`).
-3. Run the full recipe SPL and confirm the panel renders the
-   expected number of markers (compare to the device count in
-   the Meraki Dashboard map view — they MUST match).
-4. Update the frontmatter to `status: verified`, fill in
-   `verified_against` (include `splunk_app:
-   "Splunk_TA_cisco_meraki"`), and submit a follow-up PR.
+_§6 Gotchas and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/meraki/markers/ ===
 
@@ -3773,83 +3080,7 @@ showcase dashboards both demonstrate hexbin renderings (against
 demo data via the D6 `demoPreset: "cyber-incidents"` dropdown) if
 you don't have NetFlow data on hand._
 
-## 6. Gotchas
-
-- **NetFlow sampling.** Most production NetFlow exporters sample
-  at 1:1000 or 1:4000 (one of every 1000-4000 flows is reported)
-  for cost reasons. The `bytes` value in the indexed record is
-  the SAMPLED value, NOT the wire-level total. If the panel must
-  show "true total bytes", multiply by the sampling rate (the
-  `Splunk_TA_netflow` event carries `sampling_interval`):
-  `| eval value=bytes*sampling_interval`. If the panel is for
-  relative comparison ("is destination A hotter than destination
-  B"), the sample-rate cancels and the SPL above is correct.
-- **sFlow vs NetFlow byte semantics.** sFlow's `bytes` is sampled
-  packet counts × the sample interval × the per-flow average
-  packet size; NetFlow v9/IPFIX reports per-flow octet totals
-  directly. If you have a mix of both, normalise upstream in
-  `transforms.conf` or you'll over-attribute volume to sFlow-
-  reporting devices. The
-  [`splunk-network-explorer` skill](https://github.com/fenre/better_map/blob/main/.cursor/rules/splunk-network-explorer.mdc)
-  documents the normalisation pattern.
-- **`iplocation` performance at scale.** Same warning as the
-  Splunk Stream recipe: `iplocation` is per-row on a search-head;
-  millions of rows × `iplocation` will dominate the panel cost.
-  Always `stats` before `iplocation` (the SPL above does this).
-  For panels that auto-refresh every minute against a busy
-  perimeter, summary-index the post-`iplocation` result via a
-  scheduled saved search and have the dashboard read the summary.
-- **Hex resolution vs row count.** Resolution 3 with < 50 rows
-  looks empty (most cells black). Resolution 5 with > 200,000
-  rows starts pushing browser memory (200k+ hex cells, each with
-  per-cell aggregate state). Rule of thumb: pick the lowest
-  resolution that gives ≥ 10× as many ROWS as you have CELLS in
-  the visible area — keeps the panel meaningful and fast.
-- **No OT safety dependency, BUT.** Same posture as the
-  splunk-stream recipe: NetFlow IS a sanctioned passive collection
-  method for OT (no active probes; one of the methods called out
-  in
-  [`/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc)
-  Rule 1) but the resulting `dest_ip` set will contain Level-0/1/2
-  PLCs and HMIs in an OT-instrumented environment. A hex-bin map
-  of OT flows is fine for situational awareness; do NOT wire it
-  to a SOAR or drilldown that could send a write back to those
-  devices (Rule 3).
-- **`Splunk_TA_netflow` deployment surface.** The TA is a Splunk-
-  side parser; it expects pre-collected NetFlow records in
-  `monitor://` or HEC. The collector itself (the thing that
-  receives UDP NetFlow on port 2055 and writes the indexed
-  format) is separate — Cisco's
-  [Network Explorer skill](https://github.com/fenre/better_map/blob/main/.cursor/rules/splunk-network-explorer.mdc)
-  documents the reference flow. Don't expect this recipe to "just
-  work" against a stock Splunk install with no collector wired in.
-
-## Verification status
-
-`status: unverified` in the frontmatter — the SPL is structurally
-sound and follows the documented NetFlow / sFlow / IPFIX patterns
-(see references) but it has not been dispatched against a real
-`cisco:netflow` index in the v1.7-prep development cycle (the lab
-tenant does not have a NetFlow collector deployed). A maintainer
-with a Splunk tenant carrying NetFlow data should:
-
-1. Run the SPL against `index=netflow sourcetype="cisco:netflow"`
-   (adjust the index/sourcetype names to match the install — sFlow
-   sources commonly use `sourcetype="sflow"`).
-2. Confirm the panel returns ≥ 100 rows over a 1-hour window with
-   all six documented fields populated.
-3. Render the panel at resolutions 2, 3, 4 to confirm the panel
-   degrades gracefully (Better Map's H3 layer should never show
-   browser jank or per-cell errors). If it does, drop a
-   reproduction case in the
-   [hexbin layer source](https://github.com/fenre/better_map/blob/main/better_map/appserver/static/visualizations/better_map/src/lib/layers/hexbin.js)
-   PR queue.
-4. Update the frontmatter to `status: verified`, fill in
-   `verified_against` (e.g. "Splunk Enterprise 10.0 with
-   Splunk_TA_netflow 4.0.0 against a 4-edge-router NetFlow v9
-   collector"), and submit a follow-up PR. The CI gate
-   `scripts/check-recipe-schema.py` will accept the change without
-   touching the schema.
+_§6 Gotchas and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/h3/>._
 
 # === END: https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/h3/ ===
 
@@ -4075,128 +3306,7 @@ Purdue-level and safety-related annotations on the site lookup
 are real operator-curated values rather than synthesised
 ones._
 
-## 6. Gotchas
-
-- **`edge_hub_sites.csv` schema (REQUIRED).** This recipe
-  depends on a hand-curated CSV lookup with this exact column
-  set:
-
-  | column | type | required | description |
-  |---|---|:-:|---|
-  | `host` | string | yes | Edge Hub appliance serial (`ACT-...`) — the join key |
-  | `hub_name` | string | yes | Human-readable hub name; used as popup label |
-  | `lat` | number | yes | WGS-84 decimal latitude of physical install |
-  | `lon` | number | yes | WGS-84 decimal longitude of physical install |
-  | `zone_purdue_level` | string | yes | `L0`, `L1`, `L2`, `L3`, `L3.5` (DMZ), `L4`, `L5` per the asset-register-template |
-  | `safety_related` | boolean | yes | `true` if the hub forwards any SIS-related signal; `false` otherwise |
-  | `site_id` | string | no | Optional site grouping (`HOU-EAST`, `LON-NORTH`) for cross-panel filtering |
-
-  The CSV is OPERATOR-MAINTAINED — there is no automated way
-  to derive these values from the Edge Hub itself. New hub
-  deployments require a CSV update; this is a documented
-  manual step in the
-  [splunk-oti-datastreamer skill](https://github.com/fenre/better_map/blob/main/docs/recipes/ot-datastreamer/markers.md).
-- **OT safety — `safety_related=true` rows are READ-ONLY
-  mirrored from the customer's Safety Requirements
-  Specification (SRS).** Per
-  [`/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc)
-  Rule 5, VISTA NEVER authors the SRS — the `safety_related`
-  column in `edge_hub_sites.csv` is a copy of the
-  customer-supplied SIS-asset register, NOT a value Better
-  Map / Splunk derives. If your tenant is missing a Safety
-  Annex (per the OT-safety rule's "Safety Annex MUST exist
-  if any `safety_related=Y` row exists" gate), STOP — get
-  the customer's OT engineering team to author the SRS and
-  the matching Annex first, then return to this recipe.
-- **OT safety — passive collection ONLY.** Per the same rule
-  Rule 1, every Edge Hub forwarding `safety_related=Y`
-  signals MUST use a passive collection method (SPAN port,
-  network TAP, vendor-supplied one-way diode, OPC UA
-  read-only subscription on pre-approved tags, vendor-permitted
-  syslog forwarding). This recipe surfaces hubs visually but
-  does NOT enforce the passive constraint at the SPL layer
-  — the constraint is enforced at the `Splunk_TA_oti`
-  collector / Edge Hub configuration layer. The Protocol
-  Matrix Template documents per-hub which method is in use.
-- **OT safety — never disable, suppress, or filter a
-  `safety_related` signal.** Per Rule 2, even if a hub's
-  event volume looks excessive, do NOT drop its events via
-  props/transforms/nullQueue. If the panel is too busy with
-  safety hub markers, FILTER the PANEL (`NOT safety_related="true"`)
-  not the underlying events. The Built Content Catalog must
-  record any panel-level filtering of safety signals and the
-  OT engineering approval for it.
-- **OT safety — SOAR scope ends at the IT / IT-OT DMZ.** Per
-  Rule 3, any SOAR playbook that uses THIS panel as a
-  trigger (e.g. "hub offline → auto-restart") MUST stop at
-  the IT zone. A playbook may notify the OT operator (IT
-  zone action — fine) but MUST NOT auto-issue any command
-  to the hub itself (Level-2 zone target — banned). Use
-  this panel for visualization; use the OT operator's own
-  ticketing system for response.
-- **Index naming drift.** Some installs rename
-  `edge_hub_*` to `oti_*` (older OTI Datastreamer
-  versions) or `splunk_edge_*` (newer ones). Confirm with
-  `| eventcount summarize=false index=* | search index=*edge* OR index=*oti*`
-  and substitute the index wildcard in line 1.
-- **Hubs in multiple indexes — protocol column ambiguity.**
-  A single Edge Hub commonly forwards to MULTIPLE
-  `edge_hub_*` indexes (a hub configured for both Modbus
-  and OPC UA contributes to both). The `mvindex(..., 0)`
-  picks the first protocol — ARBITRARY ORDER. If the
-  operator needs to see all protocols per hub, replace
-  the `eval protocol` lines with
-  `| eval protocol=mvjoin(mvfilter(match('indexes', "^edge_hub_")), ",")`
-  and accept that the popup column gets longer.
-- **Time range.** Hard-coded `earliest=-1h latest=now`. The
-  1 h window matches industrial telemetry cadences (most
-  PLCs report at 1–10 s intervals, so an hour is hundreds
-  of events per hub even in low-volume environments). Avoid
-  narrowing below 15 min — KPI evaluation lag at the
-  collector can cause false-positive "hub offline" alerts.
-- **PII / GDPR posture.** Edge Hub event content is
-  industrial telemetry (temperatures, pressures, register
-  values) — not PII. The HUB inventory itself (site name,
-  Purdue level) can reveal sensitive customer architecture
-  information; for regulated customers, consider
-  pseudonymising `hub_name` in the SPL `eval` step or
-  restricting panel visibility via Splunk RBAC. Per ROADMAP
-  §1a, Better Map never sends event data outside
-  `splunkd:8089`.
-
-## Verification status
-
-`status: unverified` in the frontmatter — the SPL is structurally
-sound, matches the documented Edge Hub index/sourcetype shape
-from [`~/.cursor/skills/splunk-edge-hub/SKILL.md`](https://github.com/fenre/better_map/blob/main/docs/recipes/ot-datastreamer/markers.md)
-and uses only Splunk built-ins plus the operator-maintained
-site lookup pattern from the splunk-oti-datastreamer skill. It
-has not been dispatched against the v1.7-prep lab tenant in
-this PR because (a) the lab tenant has no Edge Hub fleet and
-(b) per the
-[`/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc)
-Safety Annex contract, verification of an OT-safety-relevant
-recipe SHOULD be done against a customer pilot tenant (E4)
-with real operator-curated site annotations rather than a
-synthetic generator. A maintainer with REST auth to a tenant
-carrying `Splunk_TA_oti` AND a populated `edge_hub_sites.csv`
-should:
-
-1. Confirm the site lookup is in place: `| inputlookup
-   edge_hub_sites.csv | stats count`.
-2. Confirm Edge Hub data is flowing: `index=edge_hub_*
-   earliest=-1h | stats count BY index`.
-3. Run the recipe SPL and confirm the panel renders one
-   marker per registered + transmitting hub.
-4. Cross-check the `safety_related` column values against
-   the customer's Safety Requirements Specification —
-   discrepancies must be resolved with OT engineering BEFORE
-   the panel goes into a customer dashboard.
-5. Update the frontmatter to `status: verified`, fill in
-   `verified_against` (include `splunk_app: "Splunk_TA_oti"`
-   and a non-PII tenant identifier per the
-   `splunk_tenant_name_hash` contract), and submit a follow-up
-   PR.
+_§6 Gotchas and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/ot-datastreamer/markers/ ===
 
@@ -4346,82 +3456,7 @@ applying the formatter JSON in §4. The cyber-incidents demo preset
 renders a structurally similar view if you don't have Stream data on
 hand._
 
-## 6. Gotchas
-
-- **`bytes_out` semantics.** Stream's `bytes_out` is bytes FROM the
-  source TO the destination, i.e. egress from your network. For a
-  "data exfiltration" map this is the right metric. If you want
-  total session size, use `bytes_total = bytes_in + bytes_out` —
-  but that double-counts a download (which inflates the marker for
-  every CDN endpoint your users hit). Stick with `bytes_out` for
-  security panels.
-- **MaxMind GeoLite2 freshness.** Splunk ships GeoLite2 but its
-  refresh cadence is tied to the Splunk release train, not
-  MaxMind's. If a tenant's geolocation accuracy matters, refresh
-  the database via `splunk cmd splunkd cmd geoip-update` or point
-  `iplocation` at a fresher MaxMind/GeoIP2 file via the
-  `transforms.conf` `[geoip]` stanza — see the
-  [`splunk-stream` skill](https://github.com/fenre/better_map/blob/main/.cursor/rules/splunk-stream-setup.mdc).
-- **TLS 1.3 SNI encryption (ECH).** Encrypted Client Hello hides
-  the SNI from Stream. The decoder will populate
-  `server_name="(encrypted)"` for affected sessions; the marker
-  still plots because `dest_ip` is on the wire, but you lose the
-  identity of the destination service. There is no Stream-side
-  workaround — the right answer is to source SNI from the DNS-
-  resolution path (`stream:dns`) and join on `dest_ip` in SPL.
-- **`stream:tls` privacy / compliance.** Wire-data capture is a
-  GDPR / HIPAA scope expander on most customers' compliance
-  surface. The
-  [`splunk-compliance` skill](https://github.com/fenre/better_map/blob/main/.cursor/rules/splunk-compliance.mdc)
-  documents the controls — at minimum, route `wire_data` to its
-  own index with restricted RBAC, mask `src_ip` for non-IR users,
-  and document the data-retention period in the customer's data
-  inventory. Better Map renders what it receives; the SPL above
-  does NOT mask `src_ip`.
-- **No OT safety dependency, BUT.** This recipe is IT-only by
-  design. If your Stream forwarders are mirrored against an
-  OT/ICS environment, the
-  [`/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc)
-  Rules 1 + 2 apply: Stream IS the canonical passive collection
-  method for OT (no active probes) but the resulting `dest_ip`
-  set will contain Level-0/1/2 PLCs and HMIs, and a map panel of
-  those endpoints MUST NOT be wired to any SOAR / drilldown that
-  could send a write back. Render-only is fine; render-and-act
-  is not. Use the dedicated `cyber-vision` recipe wave (E5 Phase
-  3) for OT-aware wire-data presentation.
-- **`iplocation` performance at scale.** On indexer-side
-  acceleration `iplocation` is cheap. On a search-head distributed
-  search it is per-row — millions of rows × `iplocation` becomes
-  the dominant cost of the panel. Always `stats` before
-  `iplocation` (the SPL above does this — reduces N session events
-  to N distinct destinations) and consider summary-indexing the
-  result if the panel auto-refreshes more often than every 5
-  minutes.
-
-## Verification status
-
-`status: unverified` in the frontmatter — the SPL is structurally
-sound and follows the documented Splunk Stream contracts (see
-references) but it has not been dispatched against a real `stream:tls`
-index in the v1.7-prep development cycle (the lab tenant does not
-have Splunk Stream forwarders deployed). A maintainer with a Splunk
-tenant carrying Stream data should:
-
-1. Run the SPL against `index=wire_data sourcetype="stream:tls"`
-   (adjust the index name to match the install).
-2. Confirm the panel returns ≥ 100 rows over a 24-hour window with
-   all eight documented fields populated for the non-RFC-1918
-   destinations.
-3. Update the frontmatter to `status: verified`, fill in
-   `verified_against` (e.g. "Splunk Enterprise 10.0 with
-   Splunk_TA_stream 9.0.1 against a 5-host SPAN aggregate"), and
-   submit a follow-up PR. The CI gate
-   `scripts/check-recipe-schema.py` will accept the change without
-   touching the schema.
-
-The D5 Phase 1 harness (`docker/`) makes this a 2-minute round-trip
-once an operator has Stream data to point it at — see the
-[local Splunk harness operator guide](https://github.com/fenre/better_map/blob/main/docs/development/local-splunk-harness.md).
+_§6 Gotchas and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/splunk-stream/markers/ ===
 
@@ -4570,64 +3605,7 @@ D5). Until then, a maintainer can reproduce the panel by pasting the
 SPL above into a Dashboard Studio map panel with Better Map as the
 visualization and applying the formatter JSON in §4._
 
-## 6. Gotchas
-
-- **The bundled `us-states.pmtiles` is the 50 states + DC.** It
-  does NOT include Puerto Rico, Guam, US Virgin Islands, American
-  Samoa, Northern Mariana Islands. If your data includes events
-  from those territories, they will silently render with the
-  unmatched-grey fallback fill (no polygon to join). For US +
-  territories, either ship a custom PMTiles tileset and point
-  `featureJoinUrl` at it, or filter the territory rows out of
-  the SPL.
-- **District of Columbia is `DC` (not `WA`).** "Washington" in
-  `Region` could be either Washington State or "Washington, D.C."
-  The recipe's `case(...)` explicitly maps "District of Columbia"
-  → `DC` so the catch-all `substr(..., 1, 2)` doesn't mis-classify
-  it. If your raw data calls it "Washington DC" or "D.C.", add
-  another explicit branch.
-- **Alaska + Hawaii zoom behaviour.** A true geographic projection
-  zooms way out to fit Alaska in the same frame as the lower 48.
-  Better Map's default camera zooms to the data bounding box of
-  the joined polygons. If you don't want Alaska's presence to
-  pull the camera back, drop `id="AK"` rows from the SPL for a
-  "lower 48" view.
-- **Choropleth is not heat.** Choropleth shades pre-defined
-  polygons by an aggregate value (good for "count by state").
-  Heat is a KDE / kernel density estimate over point data (good
-  for "where are individual events densely concentrated"). Using
-  a choropleth for what is actually heat data produces the
-  modifiable areal unit problem (MAUP) — California always looks
-  dominant because it is geographically the largest western
-  state, NOT because more events happened there. Bin by H3 hex
-  (`pointRenderer: hexbin`) for area-neutral density
-  visualizations.
-- **No OT safety dependency.** This is a per-state aggregation
-  layer. If the source data CONTAINS events from SIS-related
-  assets (Level-0/1/2), they would be aggregated invisibly into
-  the per-state count — which may be a control-plane visibility
-  issue but is not a safety-action issue, since Better Map never
-  takes action against any asset surfaced through this panel.
-
-## Verification status
-
-`status: unverified` in the frontmatter — the SPL is structurally
-sound and uses only Splunk built-ins. It has not been dispatched
-against the v1.7-prep lab tenant in this PR because non-interactive
-admin auth is not present in the agent workspace. A maintainer
-with REST auth should:
-
-1. Confirm the bundled tileset exists:
-   `ls better_map/appserver/static/visualizations/better_map/presets/us-states.pmtiles`
-   (shipped with the app since v1.6.0; if missing on your install,
-   the AppInspect packaging step lost it — re-package per
-   [`scripts/check-manifest.py`](https://github.com/fenre/better_map/blob/main/scripts/check-manifest.py)).
-2. Run the recipe SPL and confirm at least one row is returned
-   (any Splunk install with `_internal` retention has
-   `splunkd_ui_access` events; the geocode hit rate depends on
-   the management network's NAT posture).
-3. Update the frontmatter to `status: verified`, fill in
-   `verified_against`, and submit a follow-up PR.
+_§6 Gotchas and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/geo-us-states/choropleth/>._
 
 # === END: https://fenre.github.io/better_map/recipes/geo-us-states/choropleth/ ===
 
@@ -9067,6 +8045,44 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   and trimming to YAML frontmatter + §1 + §2 (excluding
 >   the §6 gotchas) would halve its weight without losing
 >   the LLM-actionable content.
+
+> **Status (v1.7-prep, 2026-05-18): G7 Phase 2 follow-up
+> SHIPPED — recipe-page §6 Gotchas trim in
+> `build-llms-full-txt.py`.** The wave 3 SHIPPED block called
+> out that `docs/llms-full.txt` was at ~149k estimated tokens
+> (99 % of the 150k WARN) and that wave 4 would trip the warn
+> without intervention. The original recommendation was to
+> trim "Appendix B" but inspection of the script showed the
+> heavyweight contribution is actually the per-page emission
+> of each recipe's body (Appendix B is just metadata
+> distillation from `_machine/recipes/index.yaml`). The
+> implemented fix targets the actual culprit: a new
+> `strip_recipe_advisory()` helper detects recipe pages
+> (`docs/recipes/<source>/<layer>.md`, excluding the
+> auto-generated `docs/recipes/index.md` matrix) and trims
+> their body in `llms-full.txt` at `## 6. Gotchas`, replacing
+> the trimmed content with a one-line italicised pointer to
+> the unabridged page URL. The trim is **non-destructive**:
+> the published MkDocs site, `docs/llms.txt`, and
+> `docs/_machine/recipes/index.yaml` are all unaffected; only
+> the body that appears inside `llms-full.txt` is shortened.
+> Result: 148,892 → 135,419 estimated tokens (a 13,473-token
+> saving, 9.0 % of the budget). With 12 recipes shipped the
+> per-recipe saving averages 1,123 tokens; wave 4 (3 more
+> recipes) projects to ~141k tokens (still under WARN), wave 5
+> to ~147k (still under WARN), wave 6 to ~153k (just over WARN
+> — at which point another trim pass or a threshold bump
+> becomes necessary). The trimmed sections (§6 Gotchas + the
+> trailing `## Verification status` section) remain available
+> via the per-page URL pointer for any agent that's debugging
+> a recipe and needs the gotchas — they are not deleted, just
+> not duplicated into the one-shot dump. The script change is
+> ~25 lines: a compiled regex constant, a `is_recipe_page()`
+> predicate, a `strip_recipe_advisory()` transformer, and a
+> single wiring line inside the per-page emission loop. All
+> CI gates pass (recipe schema, formatter schema, formatter
+> coverage, llms.txt sync, llms-full.txt sync at the new
+> reduced size, mkdocs --strict).
 
 * **Problem:** Better Map can consume data from ~10 categorically different Splunk source patterns (see table below). A new customer with NetFlow data who wants a heat layer should not have to derive the SPL from first principles. There is currently no recipe documentation; the burden of "what SPL do I write?" falls entirely on the user, who often does not know the field names of their own data, let alone the contract this viz wants.
 * **Design:** Build the recipe matrix as `docs/recipes/<source>/<layer>.md`, where each leaf file is a **complete, copy-paste-runnable** recipe. Every recipe has the same 6-section structure (enforced by a validator script — G2 CI step), so an LLM can ingest the corpus consistently:

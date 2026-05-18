@@ -1171,6 +1171,44 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   the §6 gotchas) would halve its weight without losing
 >   the LLM-actionable content.
 
+> **Status (v1.7-prep, 2026-05-18): G7 Phase 2 follow-up
+> SHIPPED — recipe-page §6 Gotchas trim in
+> `build-llms-full-txt.py`.** The wave 3 SHIPPED block called
+> out that `docs/llms-full.txt` was at ~149k estimated tokens
+> (99 % of the 150k WARN) and that wave 4 would trip the warn
+> without intervention. The original recommendation was to
+> trim "Appendix B" but inspection of the script showed the
+> heavyweight contribution is actually the per-page emission
+> of each recipe's body (Appendix B is just metadata
+> distillation from `_machine/recipes/index.yaml`). The
+> implemented fix targets the actual culprit: a new
+> `strip_recipe_advisory()` helper detects recipe pages
+> (`docs/recipes/<source>/<layer>.md`, excluding the
+> auto-generated `docs/recipes/index.md` matrix) and trims
+> their body in `llms-full.txt` at `## 6. Gotchas`, replacing
+> the trimmed content with a one-line italicised pointer to
+> the unabridged page URL. The trim is **non-destructive**:
+> the published MkDocs site, `docs/llms.txt`, and
+> `docs/_machine/recipes/index.yaml` are all unaffected; only
+> the body that appears inside `llms-full.txt` is shortened.
+> Result: 148,892 → 135,419 estimated tokens (a 13,473-token
+> saving, 9.0 % of the budget). With 12 recipes shipped the
+> per-recipe saving averages 1,123 tokens; wave 4 (3 more
+> recipes) projects to ~141k tokens (still under WARN), wave 5
+> to ~147k (still under WARN), wave 6 to ~153k (just over WARN
+> — at which point another trim pass or a threshold bump
+> becomes necessary). The trimmed sections (§6 Gotchas + the
+> trailing `## Verification status` section) remain available
+> via the per-page URL pointer for any agent that's debugging
+> a recipe and needs the gotchas — they are not deleted, just
+> not duplicated into the one-shot dump. The script change is
+> ~25 lines: a compiled regex constant, a `is_recipe_page()`
+> predicate, a `strip_recipe_advisory()` transformer, and a
+> single wiring line inside the per-page emission loop. All
+> CI gates pass (recipe schema, formatter schema, formatter
+> coverage, llms.txt sync, llms-full.txt sync at the new
+> reduced size, mkdocs --strict).
+
 * **Problem:** Better Map can consume data from ~10 categorically different Splunk source patterns (see table below). A new customer with NetFlow data who wants a heat layer should not have to derive the SPL from first principles. There is currently no recipe documentation; the burden of "what SPL do I write?" falls entirely on the user, who often does not know the field names of their own data, let alone the contract this viz wants.
 * **Design:** Build the recipe matrix as `docs/recipes/<source>/<layer>.md`, where each leaf file is a **complete, copy-paste-runnable** recipe. Every recipe has the same 6-section structure (enforced by a validator script — G2 CI step), so an LLM can ingest the corpus consistently:
 
