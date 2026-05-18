@@ -221,6 +221,7 @@ nav:
       - 'CIM Authentication — heatmap': recipes/cim-authentication/heat.md
       - 'CIM Authentication — markers': recipes/cim-authentication/markers.md
       - 'CIM Network Traffic — H3 hexbin': recipes/cim-network-traffic/h3.md
+      - 'CIM Network Traffic — heatmap': recipes/cim-network-traffic/heat.md
       - 'CIM Network Traffic — markers': recipes/cim-network-traffic/markers.md
       - 'CIM Network Traffic — paths': recipes/cim-network-traffic/paths.md
       - 'CIM Network Traffic — supercluster': recipes/cim-network-traffic/supercluster.md
@@ -245,6 +246,7 @@ nav:
       - 'Meraki (Cisco vendor TA) — markers': recipes/meraki/markers.md
       - 'NetFlow / sFlow / IPFIX — H3 hexbin': recipes/netflow-sflow-ipfix/h3.md
       - 'NetFlow / sFlow / IPFIX — heatmap': recipes/netflow-sflow-ipfix/heat.md
+      - 'NetFlow / sFlow / IPFIX — markers': recipes/netflow-sflow-ipfix/markers.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — heatmap': recipes/ot-datastreamer/heat.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — markers': recipes/ot-datastreamer/markers.md
       - 'Splunk Stream (wire data) — heatmap': recipes/splunk-stream/heat.md

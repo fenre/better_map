@@ -2536,6 +2536,134 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   CHANGELOG iteration if a new release adds a
 >   large `## [VERSION]` section before then.
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 12 SHIPPED
+> (2 more recipes — recipe count 36 → 38, heat layer-type usage
+> 6 → 7, markers usage 12 → 13, layer-type coverage 9 / 10
+> unchanged, source-pattern coverage 8 / 8 unchanged).** Wave 12
+> is the first wave to ship at the new sustainable **2-recipes-per-
+> wave cadence** the wave 12 token-trim status block (below)
+> establishes — the prior 3-recipes-per-wave cadence would have
+> breached the 175k WARN ceiling. Wave 12 was originally planned
+> for 3 candidates in the wave 11 status block's "Wave 12
+> candidates" subsection (`cim-network-traffic/heat`,
+> `netflow-sflow-ipfix/markers`, `csv-lookup-geo/markers`); the
+> first two ship in this wave and **`csv-lookup-geo/markers`
+> defers to wave 13** to land inside the new token budget.
+> Two new recipes ship:
+> - **`docs/recipes/cim-network-traffic/heat.md`** —
+>   `splunk-cim` source pattern (already shipped in 8 prior
+>   recipes; this is the 5th recipe for the `cim-network-traffic`
+>   source row, joining the existing markers, h3, paths, and
+>   supercluster), `heat` layer (now 7 total uses across the
+>   matrix). The aggregate-density complement to the existing
+>   cim-network-traffic markers + h3 + paths recipes: same CIM-
+>   accelerated `Network_Traffic` data model, same `iplocation`
+>   geocoding of destination IPs, same per-destination aggregation
+>   — but the aggregate is `sum(All_Traffic.bytes)` (byte volume)
+>   rather than `count` (event frequency), with the canonical
+>   `eventstats max + log10 eval` log-scale normalisation pattern
+>   inherited from the splunk-stream/heat + netflow-sflow-ipfix/
+>   heat siblings (linear normalisation would collapse 90 % of
+>   destinations to invisible because byte volumes span 6+
+>   orders of magnitude in real networks). Targets NetOps
+>   capacity dashboards and executive bandwidth-cost briefings.
+>   6 expected fields including the heat-layer-required `weight`
+>   driven from log-normalised `byte_count`. §6 Gotchas: log-scale
+>   IS intentional, layer choice matrix (markers vs heatmap vs
+>   H3), hyperscaler concentration in Ashburn, `sum(bytes)`
+>   semantics (sum of `bytes_in + bytes_out` per CIM contract),
+>   MaxMind licensing, PII posture (per-destination byte counts
+>   identify user behaviour even though destination IPs are not
+>   themselves PII), and the OT-passive-DPI carve-out (Rule 6).
+>   Brings the `cim-network-traffic` source row to **5 recipes
+>   — the densest single source row** in the matrix.
+> - **`docs/recipes/netflow-sflow-ipfix/markers.md`** —
+>   `splunk-vendor-ta` source pattern, `markers` layer (now 13
+>   total uses across the matrix). The per-destination drilldown
+>   complement to the existing netflow-sflow-ipfix h3 + heat
+>   recipes: same `Splunk_TA_netflow` ingestion, same
+>   `iplocation` geocoding, but each remote endpoint renders as
+>   a discrete marker sized by byte volume rather than aggregated
+>   into hex cells or smoothed into heat blobs. The SPL adds a
+>   `top_protocol` derivation via a `case` chain over `protocol`
+>   + `dest_port` multi-values (handles tcp/443, tcp/80, udp/443,
+>   tcp/other, udp/other, other) so the popup can answer
+>   "what kind of traffic is this destination?" without a
+>   second-level lookup. Targets NetOps capacity-planning
+>   investigation, security investigation (where did the
+>   compromised host exfiltrate?), and chargeback / billing
+>   ("which destinations does this department's CIDR talk to?").
+>   7 expected fields including `top_protocol`. §6 Gotchas:
+>   the three-layer choice matrix (markers vs heatmap vs h3),
+>   `bytes` semantics across NetFlow / sFlow / IPFIX exporters
+>   (Cisco IOS-XE per-record vs sFlow sampled vs IPFIX
+>   template-flexible — sFlow needs sampling-rate multiplication),
+>   `dc(src_ip)` cardinality under NAT, intentionally coarse
+>   protocol classification (richer needs a service-catalogue
+>   lookup), hyperscaler-cluster overlap, `Splunk_TA_netflow`
+>   field-name drift across TA versions (`dest_ip` vs `dest`),
+>   time-range scaling, MaxMind licensing, the join-with-`src_ip`
+>   PII compounding risk (this panel deliberately omits `src_ip`),
+>   and the OT-zone passive-mirror carve-out (Rule 1 + Rule 6 —
+>   a marker for "10 GB egress from PLC-04 to an external IP"
+>   is a safety-impacting finding that must surface via the
+>   OT-zone runbook, not alongside CDN traffic in a NetOps
+>   panel). Brings the `netflow-sflow-ipfix` source row to 3
+>   recipes (markers + heat + h3 — the complete triplet).
+> - **No framework changes.** Both recipes pass the unchanged
+>   `scripts/check-recipe-schema.py` (now 38 recipes valid, 0
+>   verified, 38 unverified / deferred); auto-regen of
+>   `docs/_machine/recipes/index.yaml` (now 38 entries),
+>   `docs/recipes/index.md` matrix (now 38 rows), `docs/llms.txt`
+>   (now references 38 recipes), and `docs/llms-full.txt`.
+>   `mkdocs.yml` nav grows two lines (alphabetical insertion
+>   between the existing cim-network-traffic and netflow-sflow-
+>   ipfix recipes). `mkdocs build --strict` is clean.
+> - **Coverage delta:** matrix coverage rises from 36 to 38
+>   recipes (~48 % → ~51 % of the ~75 ✓ cells); source-pattern
+>   coverage stays at 8 / 8 = COMPLETE; layer-type coverage
+>   stays at 9 / 10 (only `indoor` layer remains, blocked on
+>   v1.8+). Per-source row counts now:
+>   **`cim-network-traffic` 5 (NEW: heat)** — DENSEST ROW;
+>   `csv-lookup-geo` 4; `cim-authentication` 3, `kvstore-latlon`
+>   3, `meraki` 3, **`netflow-sflow-ipfix` 3 (NEW: markers —
+>   COMPLETE markers+heat+h3 TRIPLET)**;
+>   `cim-alerts` 2, `cim-performance` 2, `cyber-vision` 2,
+>   `es-risk` 2, `geo-us-states` 2, `ot-datastreamer` 2,
+>   `splunk-stream` 2, `thousandeyes` 2;
+>   `itsi-kpi-base` 1. Layer-type usage now:
+>   **`markers` 13 (NEW: 12 → 13)**, h3 9,
+>   **`heat` 7 (NEW: 6 → 7)**, `paths` 2, `supercluster` 3,
+>   `vector-tile-join` 1, `polygons` 1, `choropleth` 1,
+>   `extrusion-3d` 1.
+> - **Wave 13 candidates** (cell-fill regime continues at the
+>   new 2-recipes-per-wave cadence): (a) `csv-lookup-geo/markers`
+>   — explicit markers recipe for the most common pattern
+>   (deferred from wave 12; the source row has 4 recipes but
+>   none are markers, which is conspicuously missing for the
+>   most universal source pattern); (b) `es-risk/heat` —
+>   heatmap of risk events for SOC leadership dashboards
+>   (currently has markers + h3, missing heat). Both are
+>   projected ~2.6k tokens each; plus the wave 13 status block
+>   at ~3-4k (self-stripping) = ~5.2k total cost. Lands at
+>   ~179.8k — **just over 175k WARN**, will need either Wave
+>   13 to be paired with another small token-trim (Appendix A
+>   compaction is the natural next lever, pre-investigated in
+>   the wave 12 token-trim status block), OR Wave 13 to ship
+>   only 1 recipe instead of 2. Re-measure at wave 13 prep.
+> - **Token budget watch.** With wave 12 landing at
+>   **~174.6k estimated tokens** (~437 tokens of headroom to
+>   the 175k WARN — the tightest landing of any wave to date,
+>   intentionally so given the new 2-per-wave cadence), the
+>   pre-investigated next-trim levers from the wave 12 trim
+>   status block become operationally critical. The most ROI-
+>   adjacent lever is Appendix A compaction (~1.2k reclaim,
+>   same matrix-table pattern as the wave 12 Appendix B trim
+>   that just landed); a more disruptive lever is summarising
+>   the largest closed work-items in `roadmap.md` (G7 alone is
+>   ~7.5k tokens). Wave 13 will trigger one of these before
+>   shipping its recipe slate.
+
 > **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 12 token-trim
 > SHIPPED — Appendix B (per-source recipe matrix) compaction in
 > `scripts/build-llms-full-txt.py`.** Background: after wave 11
@@ -3244,7 +3372,7 @@ Goal: prove that v1.6 actually works under real load, close the operational-rigo
 | C1–C8. Eight Splunk integrations verified | C | 6×S (12) + 2×M (10) = 22 |
 | E1. Splunkbase listing | E | 5 |
 | **E2. Documentation site (Phase 1 SHIPPED; Phase 2 in progress — formatter, integrations, recipes auto-gen all SHIPPED)** | E | 5 |
-| **E5. Per-source setup recipes (the matrix — ~75 cells) (Phase 1 framework SHIPPED + Phase 2 waves 1+2+3+4+5+6+7+8+9+10+11 SHIPPED — 36 / ~75 cells, source-pattern coverage 8 / 8 COMPLETE, layer-type coverage 9 / 10; only `indoor` layer remains, blocked on v1.8+)** | **E** | **5** |
+| **E5. Per-source setup recipes (the matrix — ~75 cells) (Phase 1 framework SHIPPED + Phase 2 waves 1+2+3+4+5+6+7+8+9+10+11+12 SHIPPED — 38 / ~75 cells, source-pattern coverage 8 / 8 COMPLETE, layer-type coverage 9 / 10; only `indoor` layer remains, blocked on v1.8+)** | **E** | **5** |
 | **G7. AI-ingestion-friendly documentation layer (Phase 1 SHIPPED; Phase 2 — `llms.txt` SHIPPED; Phase 2 follow-up — `llms-full.txt` SHIPPED)** | **G** | **5** |
 | **Sub-total** | — | **69 d** |
 | Buffer (20 % for slip, lab access, surprise scope) | — | **14 d** |

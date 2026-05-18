@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 36
+recipe_count: 38
 recipes:
 - id: cim-alerts--h3
   source:
@@ -339,6 +339,60 @@ recipes:
   - description: hexbin layer source (binning + colour ramp + opacity contract)
     path: better_map/appserver/static/visualizations/better_map/src/lib/layers/hexbin.js
   path: docs/recipes/cim-network-traffic/h3.md
+- id: cim-network-traffic--heat
+  source:
+    id: cim-network-traffic
+    display_name: CIM Network Traffic
+    pattern: splunk-cim
+  layer:
+    id: heat
+    display_name: Heatmap
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_SA_CIM
+    optional: false
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: 203.0.113.45
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '37.7749'
+  - name: lon
+    type: number
+    example: '-122.4194'
+  - name: dest_country
+    type: string
+    example: US
+  - name: byte_count
+    type: integer
+    example: '184320000'
+  - name: weight
+    type: number
+    example: '0.84'
+    drives_formatter_option: heatmapOpacity
+  required_formatter_options:
+  - pointRenderer
+  - heatmapOpacity
+  - heatmapRadius
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, different layer (markers)
+    path: docs/recipes/cim-network-traffic/markers.md
+  - description: Companion recipe — same source, different layer (H3 hexbin)
+    path: docs/recipes/cim-network-traffic/h3.md
+  - description: Splunk CIM skill — Network Traffic data model field reference
+    path: ~/.cursor/skills/splunk-cim/SKILL.md
+  - description: Layer reference — heat
+    path: docs/reference/layers.md
+  - description: Formatter schema — heatmapOpacity, heatmapRadius
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/cim-network-traffic/heat.md
 - id: cim-network-traffic--markers
   source:
     id: cim-network-traffic
@@ -1513,6 +1567,60 @@ recipes:
   - description: heatmap layer source (weighted GL heatmap layer)
     path: better_map/appserver/static/visualizations/better_map/src/lib/layers/heatmap.js
   path: docs/recipes/netflow-sflow-ipfix/heat.md
+- id: netflow-sflow-ipfix--markers
+  source:
+    id: netflow-sflow-ipfix
+    display_name: NetFlow / sFlow / IPFIX (flow records)
+    pattern: splunk-vendor-ta
+  layer:
+    id: markers
+    display_name: Markers
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_TA_netflow
+    optional: false
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: 203.0.113.45
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '37.7749'
+  - name: lon
+    type: number
+    example: '-122.4194'
+  - name: dest_country
+    type: string
+    example: US
+  - name: bytes
+    type: number
+    example: '184320000'
+  - name: flow_count
+    type: integer
+    example: '1284'
+  - name: top_protocol
+    type: string
+    example: tcp/443
+  required_formatter_options:
+  - pointRenderer
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, different layer (H3 hexbin)
+    path: docs/recipes/netflow-sflow-ipfix/h3.md
+  - description: Companion recipe — same source, different layer (heatmap)
+    path: docs/recipes/netflow-sflow-ipfix/heat.md
+  - description: Splunk Network Explorer skill — NetFlow / sFlow / IPFIX collection patterns
+    path: ~/.cursor/skills/splunk-network-explorer/SKILL.md
+  - description: Layer reference — markers
+    path: docs/reference/layers.md
+  - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
+    path: docs/reference/bm-ct-1.md
+  path: docs/recipes/netflow-sflow-ipfix/markers.md
 - id: ot-datastreamer--heat
   source:
     id: ot-datastreamer
