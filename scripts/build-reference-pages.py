@@ -15,19 +15,24 @@ Everything OUTSIDE those marker pairs is hand-authored and survives
 re-generation untouched.  Everything BETWEEN them is replaced wholesale
 on every run.
 
-Target sections (v1.7-prep, E2 Phase 2 first cut):
+Target sections (v1.7-prep, E2 Phase 2):
 
 * ``docs/reference/formatter.md`` — section ``formatter-enumeration``
   enumerates ALL formatter options grouped by `x-bm.tab` →
   `x-bm.heading`, with type / default / range / enum / description.
   Source: ``docs/_machine/formatter-schema.json``.
+* ``docs/integrations/catalogue.md`` — section ``integrations-matrix``
+  emits a single at-a-glance comparison table across all
+  ``docs/_machine/integrations/<id>.yaml`` files (status, required
+  Splunk app, version min, REST endpoint count, auth model,
+  OT-safety flag, live-tenant test status, machine-file link),
+  followed by a per-integration endpoint detail subsection. The
+  hand-authored prose blocks BELOW the marker pair (one ``##``
+  heading per integration) are preserved verbatim.
 
-Subsequent cuts (E2 Phase 2 follow-up PRs, NOT this script's first
-release) will add:
+Subsequent cuts (E2 Phase 2 follow-up PRs, NOT shipped here) will
+add:
 
-* ``docs/integrations/catalogue.md`` — one auto section per
-  ``docs/_machine/integrations/<id>.yaml`` summarising
-  endpoints_called, auth_required, splunk_app_required, status.
 * ``docs/recipes/index.md`` — auto-rendered matrix table from
   ``docs/_machine/recipes/index.yaml``.
 
@@ -55,6 +60,10 @@ from typing import Any, Callable
 REPO_ROOT = Path(__file__).resolve().parents[1]
 FORMATTER_SCHEMA = REPO_ROOT / "docs" / "_machine" / "formatter-schema.json"
 FORMATTER_DOC = REPO_ROOT / "docs" / "reference" / "formatter.md"
+INTEGRATIONS_DIR = REPO_ROOT / "docs" / "_machine" / "integrations"
+INTEGRATIONS_DOC = REPO_ROOT / "docs" / "integrations" / "catalogue.md"
+GITHUB_BLOB_BASE = "https://github.com/fenre/better_map/blob/main"
+GITHUB_TREE_BASE = "https://github.com/fenre/better_map/tree/main"
 
 # Marker convention (regex-safe, single line each).
 BEGIN_RE_TEMPLATE = r"<!-- BEGIN AUTOGEN: {sid} -->"
@@ -211,6 +220,245 @@ def render_formatter_enumeration() -> str:
     return buf.getvalue().rstrip() + "\n"
 
 
+# --------------------------------------------------- integrations renderer
+
+
+def _load_yaml(path: Path) -> dict[str, Any]:
+    """Load a YAML file using PyYAML if available, else a vendored fallback.
+
+    The fallback covers the (tiny) subset of YAML used in
+    ``docs/_machine/integrations/*.yaml`` — flow mappings, block lists
+    of scalars, nested mappings, and ``key: value`` scalars. It is the
+    same approach the other ``scripts/build-llms-*.py`` files use so
+    the CI image does not need a hard PyYAML dependency.
+    """
+    try:
+        import yaml  # type: ignore
+
+        return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    except ImportError:  # pragma: no cover — fallback path
+        return _vendored_yaml(path.read_text(encoding="utf-8"))
+
+
+def _vendored_yaml(text: str) -> dict[str, Any]:
+    """Minimal YAML subset parser — keys we need only.
+
+    We never write back to YAML so this is read-only and tolerant.
+    For anything richer (nested-list-of-dicts), we fall back to
+    treating the field as a raw string so the table cell still
+    renders. Production CI runs with PyYAML, so this branch is
+    exercised mainly by developers on a clean venv.
+    """
+    out: dict[str, Any] = {}
+    current_key: str | None = None
+    buf: list[str] = []
+    for raw in text.splitlines():
+        if raw.startswith("#") or not raw.strip():
+            continue
+        if not raw.startswith(" "):
+            if current_key is not None:
+                out[current_key] = "\n".join(buf).strip()
+                buf = []
+            if ":" in raw:
+                key, _, val = raw.partition(":")
+                val = val.strip()
+                if val:
+                    out[key.strip()] = val.strip("\"'")
+                    current_key = None
+                else:
+                    current_key = key.strip()
+        else:
+            buf.append(raw)
+    if current_key is not None:
+        out[current_key] = "\n".join(buf).strip()
+    return out
+
+
+def _yaml_list_count(value: Any) -> int:
+    if isinstance(value, list):
+        return len(value)
+    return 0
+
+
+def _summarise_auth(integration: dict[str, Any]) -> str:
+    """Compact auth-model description for the matrix cell."""
+    endpoints = integration.get("endpoints_called") or []
+    if not endpoints:
+        return "n/a (offline)"
+    modes: list[str] = []
+    for ep in endpoints:
+        if not isinstance(ep, dict):
+            continue
+        mode = str(ep.get("auth", "")).strip()
+        if mode and mode not in modes:
+            modes.append(mode)
+    if not modes:
+        return "—"
+    return ", ".join(modes)
+
+
+def _summarise_ot_safety(integration: dict[str, Any]) -> str:
+    """Render the OT-safety column.
+
+    ``ot_safety`` blocks are present only on integrations that have an
+    explicit safety contract (e.g. purdue, soar). When absent we emit
+    an en-dash to keep the column dense.
+    """
+    block = integration.get("ot_safety")
+    if not isinstance(block, dict):
+        return "—"
+    rules = block.get("rules_applicable") or []
+    if isinstance(rules, list) and rules:
+        return f"yes ({len(rules)} rule{'s' if len(rules) != 1 else ''})"
+    return "yes"
+
+
+def _summarise_tested(integration: dict[str, Any]) -> str:
+    value = integration.get("tested_against")
+    if value in (None, "", "null"):
+        return "no"
+    if isinstance(value, str):
+        return _escape_table_cell(value)
+    return "yes"
+
+
+def _machine_file_link(path: Path) -> str:
+    rel = path.relative_to(REPO_ROOT).as_posix()
+    return f"[`{path.name}`]({GITHUB_BLOB_BASE}/{rel})"
+
+
+def render_integrations_catalogue() -> str:
+    """Render the at-a-glance integrations matrix + endpoint detail.
+
+    Reads every ``docs/_machine/integrations/*.yaml``, emits:
+
+    1. A one-line ``Total: N integrations · …`` summary.
+    2. A single Markdown table with one row per integration.
+    3. An "Endpoint detail" subsection listing every REST endpoint
+       grouped by integration (so a reader can grep the rendered
+       docs page for "POST /services/phantom_forward" and find which
+       integration owns it).
+
+    Order is stable: sorted by YAML filename (matches ``llms-full.txt``
+    Appendix A ordering).
+    """
+    yaml_files = sorted(INTEGRATIONS_DIR.glob("*.yaml"))
+    integrations: list[tuple[Path, dict[str, Any]]] = []
+    for path in yaml_files:
+        try:
+            data = _load_yaml(path)
+        except Exception as exc:  # noqa: BLE001 — script-internal
+            raise SystemExit(
+                f"[FAIL] could not parse {path.relative_to(REPO_ROOT)}: {exc}"
+            ) from exc
+        if not isinstance(data, dict):
+            raise SystemExit(
+                f"[FAIL] {path.relative_to(REPO_ROOT)} did not parse as a mapping"
+            )
+        integrations.append((path, data))
+
+    if not integrations:
+        raise SystemExit(
+            "[FAIL] no integration YAMLs found under docs/_machine/integrations/"
+        )
+
+    statuses = [str(d.get("status", "?")) for _, d in integrations]
+    status_counts: dict[str, int] = {}
+    for s in statuses:
+        status_counts[s] = status_counts.get(s, 0) + 1
+    tested_count = sum(
+        1
+        for _, d in integrations
+        if d.get("tested_against") not in (None, "", "null")
+    )
+
+    buf = io.StringIO()
+    buf.write(
+        "_The matrix table and endpoint detail below are auto-generated from "
+        f"[`docs/_machine/integrations/*.yaml`]({GITHUB_TREE_BASE}/docs/_machine/integrations) "
+        "by `scripts/build-reference-pages.py`. Do not edit the auto-managed "
+        "section by hand — run the script and commit the regenerated file._\n\n"
+    )
+
+    summary_parts = [f"{len(integrations)} integrations"]
+    for status in ("experimental", "beta", "stable", "deprecated"):
+        if status in status_counts:
+            summary_parts.append(f"{status_counts[status]} {status}")
+    for status, count in status_counts.items():
+        if status not in {"experimental", "beta", "stable", "deprecated"}:
+            summary_parts.append(f"{count} {status}")
+    summary_parts.append(
+        f"{tested_count} live-tenant verified"
+        if tested_count
+        else "0 live-tenant verified (Theme C in flight)"
+    )
+    buf.write(f"**Total: {' · '.join(summary_parts)}.**\n\n")
+
+    # Matrix table.
+    buf.write(
+        "| Integration | Status | Splunk app required | Splunk version min | "
+        "REST endpoints | Auth | OT-safety | Live-tenant tested? | Source YAML |\n"
+    )
+    buf.write("|---|---|---|---|---|---|---|---|---|\n")
+    for path, data in integrations:
+        endpoints = data.get("endpoints_called") or []
+        endpoint_count = _yaml_list_count(endpoints)
+        endpoint_cell = (
+            f"{endpoint_count}"
+            if endpoint_count
+            else "0 (offline helper)"
+        )
+        row = (
+            _escape_table_cell(
+                f"`{data.get('id', path.stem)}` — {data.get('display_name', '')}"
+            ),
+            _escape_table_cell(data.get("status", "?")),
+            _escape_table_cell(data.get("splunk_app_required", "?")),
+            _escape_table_cell(data.get("splunk_version_min", "?")),
+            endpoint_cell,
+            _escape_table_cell(_summarise_auth(data)),
+            _escape_table_cell(_summarise_ot_safety(data)),
+            _escape_table_cell(_summarise_tested(data)),
+            _machine_file_link(path),
+        )
+        buf.write("| " + " | ".join(row) + " |\n")
+    buf.write("\n")
+
+    # Endpoint detail subsection — one h4 per integration that has
+    # endpoints; offline helpers get a single bullet stating so.
+    buf.write("### Endpoint detail\n\n")
+    buf.write(
+        "_One bullet per REST endpoint the visualization calls. "
+        "Offline-only integrations are listed too, with a note._\n\n"
+    )
+    for path, data in integrations:
+        display = str(data.get("display_name") or data.get("id") or path.stem)
+        slug = str(data.get("id") or path.stem)
+        buf.write(f"#### `{slug}` — {display}\n\n")
+        endpoints = data.get("endpoints_called") or []
+        if not endpoints:
+            note = data.get("auth_required") or "n/a"
+            buf.write(
+                f"- _No outbound REST surface (offline helper). Auth: {note}._\n\n"
+            )
+            continue
+        for ep in endpoints:
+            if not isinstance(ep, dict):
+                continue
+            method = str(ep.get("method", "GET")).upper()
+            ep_path = str(ep.get("path", ""))
+            auth = str(ep.get("auth", "")).strip()
+            purpose = str(ep.get("purpose", "")).strip()
+            auth_suffix = f" (auth: {auth})" if auth else ""
+            line = f"- `{method} {ep_path}`{auth_suffix}"
+            if purpose:
+                line += f" — {purpose}"
+            buf.write(line + "\n")
+        buf.write("\n")
+
+    return buf.getvalue().rstrip() + "\n"
+
+
 # ----------------------------------------------------- managed-region IO
 
 
@@ -287,6 +535,11 @@ def _regions() -> list[ManagedRegion]:
             section_id="formatter-enumeration",
             render=render_formatter_enumeration,
         ),
+        ManagedRegion(
+            target=INTEGRATIONS_DOC,
+            section_id="integrations-matrix",
+            render=render_integrations_catalogue,
+        ),
     ]
 
 
@@ -334,7 +587,9 @@ def main() -> int:
             return 1
         print(
             f"[PASS] {len(projected)} reference page(s) in sync with "
-            f"{FORMATTER_SCHEMA.relative_to(REPO_ROOT)}."
+            "their structured sources of truth "
+            f"({FORMATTER_SCHEMA.relative_to(REPO_ROOT)}, "
+            f"{INTEGRATIONS_DIR.relative_to(REPO_ROOT)}/)."
         )
         return 0
 
