@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 40
+recipe_count: 42
 recipes:
 - id: cim-alerts--h3
   source:
@@ -63,6 +63,62 @@ recipes:
   - description: Formatter schema — hexbinAggregate, hexbinResolution, hexbinOpacity
     path: docs/_machine/formatter-schema.json
   path: docs/recipes/cim-alerts/h3.md
+- id: cim-alerts--heat
+  source:
+    id: cim-alerts
+    display_name: CIM Alerts
+    pattern: splunk-cim
+  layer:
+    id: heat
+    display_name: Heatmap
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_SA_CIM
+    optional: false
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: web-prod-04.example.com
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '47.6062'
+  - name: lon
+    type: number
+    example: '-122.3321'
+  - name: alert_count
+    type: integer
+    example: '47'
+  - name: max_severity
+    type: string
+    example: critical
+  - name: weight
+    type: number
+    example: '0.84'
+    drives_formatter_option: heatmapOpacity
+  required_formatter_options:
+  - pointRenderer
+  - heatmapOpacity
+  - heatmapRadius
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, different layer (markers)
+    path: docs/recipes/cim-alerts/markers.md
+  - description: Companion recipe — same source, different layer (H3 hexbin)
+    path: docs/recipes/cim-alerts/h3.md
+  - description: Splunk CIM skill — Alerts data model field reference
+    path: ~/.cursor/skills/splunk-cim/SKILL.md
+  - description: Splunk ES skill — notable events + correlation searches generate CIM Alerts
+    path: ~/.cursor/skills/splunk-enterprise-security/SKILL.md
+  - description: Layer reference — heat
+    path: docs/reference/layers.md
+  - description: Formatter schema — heatmapOpacity, heatmapRadius
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/cim-alerts/heat.md
 - id: cim-alerts--markers
   source:
     id: cim-alerts
@@ -922,6 +978,65 @@ recipes:
   - description: Formatter schema — hexbinAggregate, hexbinResolution, hexbinOpacity
     path: docs/_machine/formatter-schema.json
   path: docs/recipes/cyber-vision/h3.md
+- id: cyber-vision--heat
+  source:
+    id: cyber-vision
+    display_name: Cisco Cyber Vision (components + vulnerabilities)
+    pattern: splunk-vendor-ta
+  layer:
+    id: heat
+    display_name: Heatmap
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: TA-cisco-cybervision
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: PLC-FLOOR3-A02
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '29.7604'
+  - name: lon
+    type: number
+    example: '-95.3698'
+  - name: max_cvss
+    type: number
+    example: '9.8'
+  - name: cve_count
+    type: integer
+    example: '12'
+  - name: safety_related
+    type: boolean
+    example: 'true'
+  - name: weight
+    type: number
+    example: '0.94'
+    drives_formatter_option: heatmapOpacity
+  required_formatter_options:
+  - pointRenderer
+  - heatmapOpacity
+  - heatmapRadius
+  ot_safety_relevant: true
+  references:
+  - description: Companion recipe — same source, different layer (markers)
+    path: docs/recipes/cyber-vision/markers.md
+  - description: Companion recipe — same source, different layer (H3 hexbin)
+    path: docs/recipes/cyber-vision/h3.md
+  - description: cisco-products skill — Cisco Cyber Vision sourcetypes, components/flows/events/vulnerabilities
+    path: ~/.cursor/skills/cisco-products/SKILL.md
+  - description: cisco-splunk-integration skill — Cyber Vision passive DPI, API endpoints, integration patterns
+    path: ~/.cursor/skills/cisco-splunk-integration/SKILL.md
+  - description: Cursor rule — ot-safety.mdc (passive DPI is the reference design, Rule 1)
+    path: .cursor/rules/ot-safety.mdc
+  - description: Layer reference — heat
+    path: docs/reference/layers.md
+  - description: Formatter schema — heatmapOpacity, heatmapRadius
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/cyber-vision/heat.md
 - id: cyber-vision--markers
   source:
     id: cyber-vision

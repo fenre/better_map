@@ -2536,6 +2536,95 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   CHANGELOG iteration if a new release adds a
 >   large `## [VERSION]` section before then.
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 14 SHIPPED
+> (2 more recipes — recipe count 40 → 42, layer-type coverage
+> 9 / 10 unchanged, source-pattern coverage 8 / 8 unchanged,
+> heat layer usage 8 → 10, markers layer usage 14 unchanged).**
+> Wave 14 completes TWO source-row triplets in a single PR:
+> - **`cim-alerts/heat`** — completes the cim-alerts triplet
+>   (markers from wave 6, h3 from wave 11, heat from wave 14).
+>   The heat layer is the right shape for SOC LEADERSHIP /
+>   board-deck rendering (smooth global alert-pressure
+>   landscape) as distinct from the markers layer (analyst
+>   investigation) and H3 (per-region drilldown). Reuses the
+>   canonical `eventstats max + log10 eval normalise` heat-
+>   weight pattern shared across every heat recipe in the
+>   matrix — log scale is intentional because ES tenant
+>   alert counts span 2-3 orders of magnitude.
+> - **`cyber-vision/heat`** — completes the cyber-vision
+>   triplet (markers from wave 4b, h3 from wave 11, heat from
+>   wave 14). `ot_safety_relevant: true`. The recipe uses a
+>   `cve_intensity = max_cvss × cve_count` scalarisation so
+>   the heatmap weight captures BOTH severity AND breadth of
+>   CVE exposure in a single field. Carries the strongest OT-
+>   safety §6 Gotchas of any cyber-vision recipe — the heat
+>   layer's smoothing makes safety_related=Y signal MORE OPAQUE
+>   than markers or H3, so the recipe explicitly recommends
+>   pairing with the markers companion for SIS-asset triage
+>   AND offers an `| where safety_related="false"` filter
+>   pattern for tenants that need a "non-SIS CVE pressure"
+>   view that won't mask safety-relevant data.
+> Coverage matrix after wave 14:
+> - **Source-pattern coverage: 8 / 8 (COMPLETE)** unchanged.
+> - **Layer-type coverage: 9 / 10** unchanged (`indoor`
+>   remains blocked on v1.8+ image-overlay layer kind).
+> - **Cell fill: 42 / ~75 (~56 %)** — up from 40 / ~75.
+> - **Heat layer footprint: 10 recipes** (was 8) —
+>   cim-network-traffic, netflow-sflow-ipfix, splunk-stream,
+>   ot-datastreamer, meraki, kvstore-latlon,
+>   cim-authentication, es-risk, cim-alerts, cyber-vision.
+>   **Heat layer footprint now MATCHES the cim-* triplet
+>   completeness pattern** across the SOC stack
+>   (alerts + authentication + network-traffic now all have
+>   markers + h3 + heat siblings) AND completes the
+>   OT-cyber heat coverage (cyber-vision joins ot-datastreamer
+>   in the OT triplet's heat row).
+> - **Markers layer footprint:** 14 recipes — unchanged
+>   (still the most-deployed layer; heat closes the gap to
+>   10 / 14 = 71 % parity).
+> - **Triplet completion**: cim-alerts ✅ (NEW),
+>   cim-authentication ✅ (wave 10), cim-network-traffic ✅
+>   (wave 12), cyber-vision ✅ (NEW), es-risk ✅ (wave 13),
+>   meraki ✅ (wave 10), netflow-sflow-ipfix ✅ (wave 12).
+>   **Seven completed triplets** out of the 14-source matrix
+>   — every source covered with markers + h3 + heat
+>   coexisting on the same dashboard via BM-CT-1 layer
+>   toggles, demonstrating the layer-contract design at
+>   full triplet granularity.
+> Token budget after wave 14 recipes:
+> - llms-full.txt: **~171,119 / 175,000** (~3,881 tokens of
+>   WARN headroom remaining). Wave 14 added 6,149 tokens
+>   for the 2 recipes (slightly above the 2.5k estimate
+>   because cyber-vision/heat carries comprehensive OT-
+>   safety §6 Gotchas — that surface is non-negotiable per
+>   `ot-safety.mdc` Rule 6).
+> - **WAVE 15 REQUIRES A TOKEN-TRIM PR FIRST.** The
+>   remaining 3,881 tokens of headroom cannot accommodate
+>   even one more recipe at the wave 14 cost level.
+>   Wave 15 candidates (post-token-trim): `cim-performance/
+>   heat` (completes cim-performance triplet, would make
+>   8 / 8 SOC-stack triplets complete), `itsi-kpi-base/h3`
+>   (begins itsi triplet — currently markers-only at 1 / 4),
+>   `splunk-stream/h3` (begins splunk-stream triplet —
+>   currently markers + heat, needs h3 for the SOC
+>   stand-up shape).
+> - **Wave 15 token-trim levers** (next ROI targets in
+>   descending order — see the wave 13 token-trim §
+>   "Next potential trim levers" comment for the full menu):
+>   (a) `docs/reference/formatter.md` Appendix-A
+>   enumeration (~4.7k tokens — could move to URL pointer
+>   behind a per-row table); (b) `docs/CI-GATES.md`
+>   summary (4.2k); (c) `docs/recipes/index.md` matrix
+>   per-row Apps + Verified cells could compact (4.1k).
+>   Pick (a) or (b) for wave 15 prereq: ~4.5k reclaim
+>   funds 2 more wave 15 recipes with 2-3k of remaining
+>   headroom.
+> Test plan: all 5 docs gates green locally — recipe schema
+> (42 valid, 0 verified), llms.txt sync, llms-full.txt sync
+> + budget (~171k / 175k, 3.9k WARN headroom), reference
+> pages sync (3 in sync incl. recipes matrix auto-regen),
+> `mkdocs build --strict` clean.
+
 > **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 13 SHIPPED
 > (2 more recipes — recipe count 38 → 40, layer-type coverage
 > 9 / 10 unchanged, source-pattern coverage 8 / 8 unchanged,
