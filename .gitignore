@@ -84,6 +84,17 @@ playwright/.cache/
 .eslintcache
 
 # -------------------------------------------------------------
+# Python build/runtime caches (scripts/ is Python; CI runs them
+# directly via python3 so no compiled artefacts are needed at
+# rest, but local debug imports — e.g. importlib.util.spec_from_
+# file_location — populate scripts/__pycache__/ as a side effect)
+# -------------------------------------------------------------
+__pycache__/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+
+# -------------------------------------------------------------
 # Splunk local-state (NEVER ship; AppInspect rejects)
 # -------------------------------------------------------------
 **/local/

@@ -46,16 +46,19 @@ This script:
 
 Budget contract (derived from the ``llms-full.txt`` body of the
 spec, recalibrated in E5 Phase 2 wave 6 against actual 18-recipe
-corpus):
+corpus; further extended in wave 8 by also trimming historical
+``> **Status (...): E5 Phase 2 wave N SHIPPED`` and ``G7 Phase 2
+follow-up #N SHIPPED`` blockquotes from ``roadmap.md`` — see
+``strip_roadmap_status_blocks`` below):
 
   * Per-page warning at **50,000 estimated tokens** — one page should
     not dominate the corpus.
   * Total warning at **175,000 estimated tokens** — the agent still
     has 25k of headroom inside a 200k context window. The original
-    150k threshold was a guess pre-data; with 18 recipes shipped and
+    150k threshold was a guess pre-data; with 24 recipes shipped and
     measured per-recipe marginal cost of ~3.3k tokens (post-trim),
-    175k matches the actual ~155k baseline + 20k headroom for the
-    next ~5-6 recipes before the next recalibration is warranted.
+    175k matches the actual baseline + ~5-6 recipes of headroom
+    before the next recalibration is warranted.
   * Total HARD FAIL at **200,000 estimated tokens** — output is
     deliberately unusable past this. Add a follow-up PR that elides
     less-important pages OR raise the budget after explicit roadmap
@@ -138,6 +141,30 @@ TOTAL_FAIL_TOKENS = 200_000
 # llms-full.txt. When D5 ships and §5 carries actual screenshot data
 # (not stubs), revisit whether to move the trim point back to §6.
 _RECIPE_TRIM_AT = re.compile(r"^## 5\.\s+Screenshot\s*$", re.MULTILINE)
+
+# Roadmap status-block trim contract — see strip_roadmap_status_blocks()
+# and the E5 Phase 2 wave 8 ROADMAP block. ROADMAP.md is the project's
+# rolling change log; under E5 / G7 each shipped wave appends a
+# `> **Status (vX-prep, YYYY-MM-DD): E5 Phase 2 wave N SHIPPED ...`
+# blockquote (or `G7 Phase 2 follow-up #N SHIPPED ...`). These blocks
+# are write-once human progress notes and their LIVE state
+# (recipe count, layer-type coverage, source-pattern coverage) is
+# duplicated in (a) the E5 row of the headline goals table at the
+# top of ROADMAP.md, and (b) `docs/recipes/index.md` which the
+# auto-generator keeps in sync. By the time wave 7 shipped, eight
+# such blockquotes accounted for ~20-30k tokens in llms-full.txt
+# — the largest single non-recipe content source. Trimming them
+# preserves the on-disk ROADMAP.md (unchanged for human readers) and
+# the MkDocs site (full ROADMAP.md still renders) while reclaiming
+# the budget for new recipes. Match anchor is line-prefix-based so
+# the regex never crosses out of the blockquote into adjacent prose.
+_ROADMAP_STATUS_BLOCK = re.compile(
+    r"^> \*\*Status \(v[\d.]+-prep, \d{4}-\d{2}-\d{2}\): "
+    r"(?:E5 Phase 2 wave \d+|G7 Phase 2 follow-up)"
+    r"[^\n]*\n"
+    r"(?:>[^\n]*\n)*",
+    re.MULTILINE,
+)
 
 
 # ----------------------------------------------------- mkdocs.yml parse
@@ -228,11 +255,27 @@ def resolve_includes(body: str, base_file: Path, depth: int = 0) -> str:
     If a future page uses an unsupported option, the directive is
     expanded as a plain include and the surrounding option string
     is dropped (a no-op for ``comments=false``, harmless for
-    ``heading-offset=1``). Recursion is bounded at 4 levels to
-    guard against accidental include cycles.
+    ``heading-offset=1``).
+
+    Recursion is bounded at 1 level — the only legitimate include
+    pattern in this project is one wrapper page (``changelog.md`` or
+    ``roadmap.md``) that pulls one root-level Markdown file
+    (``CHANGELOG.md`` or ``ROADMAP.md``). Any depth > 1 indicates a
+    DOCUMENTATION TRAP: the included Markdown body contains literal
+    ``{% include-markdown ... %}`` text (e.g. inside a code-fenced
+    example or a quoted explanation), and `_INCLUDE_PATTERN` is not
+    fenced-code-aware so it would match and recursively re-expand
+    the file. The wave-8 G7 follow-up #3 status block tripped this
+    when it described the include mechanism in prose; lowering the
+    guard from 4 to 1 turns the trap into a fast failure (the
+    duplicate include text survives in the body but is not
+    recursively expanded) rather than a 5x corpus blow-up that
+    only surfaces as a `TOTAL_FAIL_TOKENS` violation downstream.
+    If a future page legitimately needs a deeper include chain, the
+    guard can be raised; the comment is here as the breadcrumb.
     """
-    if depth > 4:
-        return body  # cycle guard
+    if depth > 1:
+        return body  # depth guard (see docstring)
 
     def _substitute(match: re.Match[str]) -> str:
         rel = match.group(1)
@@ -326,6 +369,43 @@ def strip_recipe_advisory(body: str, page_url: str) -> str:
         f"token-budget; read them in the full recipe at <{page_url}>._\n"
     )
     return trimmed + pointer
+
+
+def is_roadmap_page(relpath: str) -> bool:
+    """True when `docs/<relpath>` is the roadmap page.
+
+    Only the top-level `docs/roadmap.md` qualifies — this is the page
+    that uses `{% include-markdown "ROADMAP.md" %}` to pull the
+    project's rolling change log into the docs site.
+    """
+    return relpath == "roadmap.md"
+
+
+def strip_roadmap_status_blocks(body: str) -> tuple[str, int]:
+    """Strip historical E5/G7 wave SHIPPED status blockquotes.
+
+    Returns (cleaned body, number of blocks removed). Each block matches
+    `> **Status (v...-prep, YYYY-MM-DD): E5 Phase 2 wave N SHIPPED ...`
+    or the analogous `G7 Phase 2 follow-up #N SHIPPED` pattern and runs
+    until the first line that does NOT start with `> ` (the
+    blockquote ends). Adjacent blank lines collapse via the existing
+    `re.sub(r"\\n{3,}", "\\n\\n", out)` pass in `strip_chrome` so the
+    surrounding prose stays well-formed.
+
+    The on-disk ROADMAP.md is unchanged — the trim runs only against
+    the in-memory body before it lands in llms-full.txt. The MkDocs
+    site continues to render every status block for human readers via
+    the unaltered `{% include-markdown "ROADMAP.md" %}` include.
+    """
+    blocks_removed = 0
+
+    def _drop(_match: re.Match[str]) -> str:
+        nonlocal blocks_removed
+        blocks_removed += 1
+        return ""
+
+    cleaned = _ROADMAP_STATUS_BLOCK.sub(_drop, body)
+    return cleaned, blocks_removed
 
 
 def strip_chrome(body: str) -> str:
@@ -471,6 +551,8 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
 
         raw = source_file.read_text(encoding="utf-8")
         expanded = resolve_includes(raw, source_file)
+        if is_roadmap_page(relpath):
+            expanded, _blocks = strip_roadmap_status_blocks(expanded)
         cleaned = strip_chrome(expanded).rstrip() + "\n"
         if is_recipe_page(relpath):
             cleaned = strip_recipe_advisory(cleaned, url)
