@@ -77,11 +77,18 @@ better_map/                         ← the app root that ships to Splunk
 
 ```text
 .github/
-├── workflows/ci.yml                ← PR pipeline
-├── workflows/release.yml           ← tag-triggered release (signs with cosign, ships SBOM)
+├── workflows/ci.yml                ← PR pipeline (25 gates across 4 jobs)
+├── workflows/release.yml           ← tag-triggered release (17 gates,
+│                                     PR-gate parity + 4 release-only
+│                                     contracts: REL-1 --tag,
+│                                     AppInspect --fail-on-warnings,
+│                                     SBOM, cosign keyless sign + verify)
+├── workflows/docs.yml              ← push-to-main MkDocs strict + Pages deploy
 └── dependabot.yml                  ← weekly npm + github-actions updates
 
 docs/
+├── CI-GATES.md                     ← authoritative gate inventory + PR×release matrix
+├── COMPAT-MATRIX.md                ← D2 customer-facing browser-compat matrix
 ├── _machine/                       ← G7 machine-readable docs (this file lives here)
 │   ├── README.md                   ← contract for the _machine layer
 │   ├── agents.md                   ← you are here
@@ -93,6 +100,14 @@ docs/
 
 scripts/                            ← CI gates + build/release helpers + runbooks
 ```
+
+**Gate inventory.** [`docs/CI-GATES.md`](../CI-GATES.md) is the single
+source of truth for "what runs when, what does each gate catch, and
+what's the local-repro command". The G2 close-out audit (2026-05-18)
+asserted PR-gate ↔ release-gate parity — every PR-time runtime check
+also runs on every `v*` tag, with explicit exemptions documented under
+"Known gaps". If you add or remove a CI step, update
+[`docs/CI-GATES.md`](../CI-GATES.md) in the same PR.
 
 ---
 
@@ -614,6 +629,8 @@ to fix and the exact command to re-run.
 
 | Symptom | Most likely cause | Fix |
 |---|---|---|
+| Any `[FAIL]` from a CI step you don't recognise | The gate inventory in [`docs/CI-GATES.md`](../CI-GATES.md) has one row per gate with the source-of-truth file, the failure mode, and a local-repro command. Match the failing step name in the GitHub Actions UI to the # column in the matrix | Open [`docs/CI-GATES.md`](../CI-GATES.md), find the gate by step name, copy the local-repro command from the matrix, run it locally, iterate until green |
+| A CI step fires on every PR but NOT on `v*` tag releases (or vice versa) | The PR-gate ↔ release-gate parity is documented in [`docs/CI-GATES.md`](../CI-GATES.md) §2 (release matrix). If a real gap exists (i.e. the gate is missing from the release matrix AND isn't in "Known gaps"), this is a defence-in-depth regression that should be closed in the same PR | Add the missing step to `release.yml` mirroring its `ci.yml` shape. Update [`docs/CI-GATES.md`](../CI-GATES.md) matrix + the relevant ROADMAP §3 status block in the same commit |
 | `[FAIL] formatter-schema.json mismatch` | You edited `formatter.html` and forgot to regenerate | `python3 scripts/build-formatter-schema.py && git add docs/_machine/formatter-schema.json` |
 | `[FAIL] HTML → schema coverage failed` | Your new `data-name` got dropped by the parser (often: malformed `<select>` tag) | Validate the HTML around the new option; rerun the builder |
 | `[FAIL] orphan token: better_map.<name>` | A widget emits to one token name, the dashboard consumes a different one | Align the names — the dashboard's `$better_map.x$` is the contract; rename in the widget |
@@ -779,6 +796,8 @@ contract above.
 
 ## 11. References
 
+- `docs/CI-GATES.md` — authoritative CI gate inventory: every check that fires on PR, on push-to-main, and on `v*` tag; the PR-gate ↔ release-gate parity contract; per-gate source-of-truth + local-repro command + failure-mode tables. ALWAYS update this file when you add or remove a CI step
+- `ROADMAP.md` §3 G2 — design + status for CI/CD infrastructure (the workflow files implement G2; CI-GATES.md is its operator-facing inventory)
 - `ROADMAP.md` §3 G7 — design intent for the machine-readable docs layer
 - `docs/_machine/README.md` — explains the `_machine` contract
 - `docs/_machine/formatter-schema.json` — generated formatter schema

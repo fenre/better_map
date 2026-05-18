@@ -9,7 +9,10 @@
 #
 # What this workflow does:
 #   1. Re-run every PR-gate quality check against the tagged commit
-#      (a release MUST clear the same bar a PR clears, no exceptions).
+#      (a release MUST clear the same bar a PR clears, no exceptions —
+#      enforced under PR #41 + the G2 close-out audit; see
+#      docs/CI-GATES.md for the per-gate matrix and intentional parity
+#      contract between ci.yml and this file).
 #   2. Assert all four version sources agree on the tag (REL-1 contract):
 #        - app.conf [launcher] version
 #        - app.conf [install]  build
@@ -22,19 +25,29 @@
 #   4. Re-run Q-2 (console noise) + Q-3 (bundle size) against the fresh
 #      bundle — defends against the "different bundle in CI vs release"
 #      class of bug.
-#   5. Package the better_map/ directory as a tarball, clean of macOS
+#   5. Re-run D2 browser-compat (formatter + bundle AMD-eval × chromium
+#      + firefox + webkit) and D3 accessibility (axe-core on
+#      formatter.html) against the fresh bundle — same defence-in-depth
+#      posture as #4, scoped to runtime/UX regressions a tag from a
+#      non-main commit could otherwise introduce.
+#   6. Package the better_map/ directory as a tarball, clean of macOS
 #      artifacts and with deterministic permissions (per
 #      splunk-app-packaging.mdc).
-#   6. Produce BOTH `better_map-vX.Y.Z.tar.gz` AND its `.spl` alias.
+#   7. Produce BOTH `better_map-vX.Y.Z.tar.gz` AND its `.spl` alias.
 #      Splunkbase and AppInspect both accept either extension; we ship
 #      both so consumers don't have to rename.
-#   7. Compute SHA-256 for each artifact and attach as a sidecar file.
-#   8. Create a GitHub Release using GitHub's auto-generated body
+#   8. Compute SHA-256 for each artifact and attach as a sidecar file.
+#   9. Create a GitHub Release using GitHub's auto-generated body
 #      (conventional-commits-aware as of the commitlint rollout in PR #1)
 #      and attach the four artifacts.
 #
 # What this workflow does NOT yet do (tracked as ROADMAP §3 G2 follow-ups):
 #   - Splunkbase upload via REST (E1 — needs an approved listing + token)
+#   - Docs-build gates (recipe schema, llms.txt, llms-full.txt,
+#     reference-pages, MkDocs strict) — LOW stakes because docs are
+#     excluded from the release tarball (rsync `--exclude='docs'`) and
+#     are gated separately on push-to-main via docs.yml. See gap #1 in
+#     docs/CI-GATES.md "Known gaps".
 #
 # G1 supply-chain steps that DO land in this workflow (ROADMAP §3 G1, §7d):
 #   - PR-gate quality checks (npm audit, license-allowlist, OSV-Scanner)
@@ -205,6 +218,18 @@ jobs:
       - name: Assert OSV-Scanner findings (G1)
         run: python3 scripts/check-osv-report.py osv-report.json
 
+      - name: Run unit tests (vitest, T-1 scaffold)
+        # G2 close-out audit (PR after #41) — defence-in-depth re-run
+        # of the PR-gate vitest suite. popupSanitizer.js carries 71
+        # security-critical cases (every popup HTML string, every map
+        # URL, and every image src flows through one of its exports);
+        # a release built from a non-main commit must NOT skip them.
+        # See docs/CI-GATES.md release-matrix #12.
+        env:
+          CI: 'true'
+        working-directory: better_map/appserver/static/visualizations/better_map
+        run: npm test
+
       - name: Build webpack production bundle
         working-directory: better_map/appserver/static/visualizations/better_map
         run: npm run build
@@ -214,6 +239,94 @@ jobs:
 
       - name: Check bundle-size budget (Q-3)
         run: node scripts/check-bundle-size.js
+
+      - name: Read Playwright version from package-lock (D2 + D3 cache key)
+        # Same pattern as ci.yml: the cache below is keyed on the EXACT
+        # Playwright version pulled into the viz package, so a version
+        # bump in package-lock.json forces a clean re-install. Reuses
+        # the same `runner.os-playwright-<version>` key as ci.yml so
+        # the PR-gate's warm cache (populated at PR-merge time) carries
+        # straight through to the tag-gate without paying the cold
+        # download cost again.
+        id: playwright-version
+        working-directory: ${{ github.workspace }}
+        run: |
+          v=$(node -e "console.log(require('./better_map/appserver/static/visualizations/better_map/package-lock.json').packages['node_modules/playwright'].version)")
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "Playwright lockfile version: $v"
+
+      - name: Cache Playwright browser binaries (D2 + D3)
+        # Cache key is identical to ci.yml so cache hits cross workflows.
+        # See ci.yml for the full rationale; the short version: cold
+        # install of all three engine families takes ~10 min, warm hit
+        # is 0 s.
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install Playwright browsers (D2 + D3 — only on cache miss)
+        # Skipped on cache hits — browsers are already on disk under
+        # ~/.cache/ms-playwright from the previous run with the same
+        # Playwright version (typically the PR that merged into the
+        # tagged commit, since tags are cut from main HEAD).
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install chromium firefox webkit
+
+      - name: Install Playwright system deps (D2 + D3 — always)
+        # System libraries live outside the cached ~/.cache/ms-playwright
+        # tree, so they MUST re-`apt-get install` on every runner. apt
+        # is fast on warm runners (~10 s).
+        run: npx playwright install-deps chromium firefox webkit
+
+      - name: Check accessibility (D3 — axe-core on formatter.html)
+        # G2 close-out audit (PR after #41) — defence-in-depth re-run of
+        # the PR-gate D3 axe-core audit against the fresh bundle. ZERO
+        # WCAG 2.0 A/AA + 2.1 A/AA + 2.2 AA violations is the bar.
+        # JSON report is uploaded for offline triage. See ROADMAP §3 D3
+        # + docs/CI-GATES.md release-matrix #16.
+        run: node scripts/check-accessibility.js
+
+      - name: Upload accessibility report (D3)
+        # `always()` so the report is downloadable even on failure.
+        # 90-day retention matches the AppInspect-report retention for
+        # release artefacts (PR runs use 14 days; releases keep evidence
+        # longer for post-publication audits).
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: accessibility-report-v${{ steps.tag.outputs.version }}
+          path: reports/accessibility-report.json
+          retention-days: 90
+          if-no-files-found: warn
+
+      - name: Check browser compatibility (D2 — formatter.html + visualization.js in chromium + firefox + webkit)
+        # G2 close-out audit (PR after #41) — defence-in-depth re-run of
+        # the PR-gate D2 Phase 1 (formatter.html load test) AND Phase 1.5
+        # (visualization.js AMD-eval test) against the fresh bundle. The
+        # bundle being released MUST parse + execute under WebKit and
+        # Firefox; without this gate a tag from a non-main commit could
+        # silently ship a bundle that breaks in Safari / iOS. See
+        # ROADMAP §3 D2 + docs/COMPAT-MATRIX.md + docs/CI-GATES.md
+        # release-matrix #17.
+        run: node scripts/check-browser-compat.js
+
+      - name: Upload browser-compat report (D2)
+        # `always()` so the full per-engine error list + three screenshots
+        # are available for offline triage. 90-day retention matches the
+        # release accessibility report.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-compat-report-v${{ steps.tag.outputs.version }}
+          path: |
+            reports/browser-compat-report.json
+            reports/browser-compat/
+          retention-days: 90
+          if-no-files-found: warn
 
       - name: Stage shippable app contents (exclude dev-only files)
         # rsync the better_map/ tree into a staging dir with everything

@@ -228,6 +228,7 @@ nav:
       - 'Supply chain (G1)': runbooks/supply-chain.md
       - 'Upgrade hygiene (G3)': runbooks/upgrade-hygiene.md
       - Development:
+          - 'CI gate inventory (G2)': CI-GATES.md
           - 'Local Splunk harness (D5)': development/local-splunk-harness.md
           - 'Browser compatibility matrix (D2)': COMPAT-MATRIX.md
   - Contributing: contributing.md
