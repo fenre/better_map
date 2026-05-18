@@ -2536,6 +2536,89 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   CHANGELOG iteration if a new release adds a
 >   large `## [VERSION]` section before then.
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 12 token-trim
+> SHIPPED — Appendix B (per-source recipe matrix) compaction in
+> `scripts/build-llms-full-txt.py`.** Background: after wave 11
+> landed `llms-full.txt` carried **~172.4k estimated tokens**, leaving
+> only **~2.6k of headroom** to the 175k WARN ceiling — not enough
+> for even a single new ~2.6k-token recipe, and the wave 11 status
+> block itself called out that wave 12 onwards REQUIRED a paired
+> token-trim PR. The wave 11 deferred-design note identified Appendix
+> B as the natural next lever; this PR ships that compaction.
+>
+> Top contributors in pre-wave-12 `llms-full.txt`:
+> (a) `roadmap.md` body 43,231 tokens (25.1 % — already trimmed
+> in wave 8 via the SHIPPED-blockquote stripper);
+> (b) Appendix B 5,334 tokens (3.1 % — second-largest non-page
+> contributor after the ROADMAP);
+> (c) `reference/formatter.md` 4,690 tokens;
+> (d) `CI-GATES.md` 4,235 tokens;
+> (e) `recipes/index.md` 4,001 tokens;
+> (f) `changelog.md` 3,900 tokens (already trimmed in wave 10).
+>
+> Format change: the appendix renders as a single matrix table
+> instead of per-recipe sections with bulleted `Expected fields:`
+> lists. The pre-wave-12 per-section format carried ~150 tokens
+> per recipe, ~70 % of which was the `expected_fields` list —
+> a list that is fully duplicated in §3 of each recipe page body,
+> retained verbatim in `llms-full.txt` under the wave-4a
+> `## 5. Screenshot` trim. The matrix preserves the agent-actionable
+> lookup contract (recipe ID, source → layer label, status, apps
+> required, verified-against metadata, page link) without the
+> duplication. Agents that need the field contract follow the
+> per-row Page link, which lands on the body block that already
+> contains §3 in this same file.
+>
+> Implementation: a single edit to the `# Recipes appendix` block
+> of `render()` in `scripts/build-llms-full-txt.py`; the recipe
+> ingestion side (`collect_recipes()` reading
+> `docs/_machine/recipes/index.yaml`) is unchanged. The module
+> docstring's budget-contract paragraph is extended with the
+> wave-12 entry alongside the prior wave-8 (roadmap status block)
+> and wave-10 (CHANGELOG older-versions) entries. An inline
+> format-contract comment above the appendix write block documents
+> the design rationale so a future contributor restoring the
+> per-recipe sections without first reading the ROADMAP gets a
+> source-side breadcrumb.
+>
+> Measured outcome: `llms-full.txt` shrinks from **~172.4k → ~169.4k
+> estimated tokens** (Appendix B alone: **5,334 → 2,274 tokens**,
+> a 57 % reduction in that block); headroom to the 175k WARN
+> ceiling grows from ~2.6k to **~5.6k tokens**. Local CI is green
+> across all gates: `build-llms-full-txt.py --check`,
+> `build-llms-txt.py --check`, `build-recipe-index.py --check`,
+> `build-reference-pages.py --check`, `check-recipe-schema.py`,
+> `check-formatter-schema.py`, `check-formatter-coverage.py`, and
+> `mkdocs build --strict`. The on-disk recipe pages, the published
+> MkDocs site, `llms.txt`, and `docs/_machine/recipes/index.yaml`
+> are all unchanged — the trim runs only against the in-memory
+> appendix render before it lands in `llms-full.txt`.
+>
+> Wave-12 recipe headroom: with ~5.6k headroom and recipes
+> averaging ~2.6k tokens each (body + matrix row), wave 12 can
+> safely ship **2 recipes** without breaching WARN
+> (~169.4k + 5.2k = ~174.6k, ~400 tokens under the ceiling).
+> Shipping 3 would land at ~177.2k (~2.2k over the WARN ceiling
+> — soft warn, not a hard fail, but against the spirit of the
+> budget contract). The new sustainable cadence from here is
+> **2 recipes per wave** unless another token-trim lever ships
+> first; the wave 11 candidate slate is adjusted accordingly in
+> the wave 11 status block's "Wave 12 candidates" subsection
+> (one of the three originally-planned recipes will defer to
+> wave 13).
+>
+> Next levers (when wave 13+ pushes back near WARN):
+> (a) compact Appendix A (integrations matrix, currently 2,329
+> tokens for 8 entries — same matrix-table pattern would reclaim
+> ~1.2k); (b) elide the table-of-contents at the top of
+> `llms-full.txt` (currently 1,151 tokens — every entry is
+> recoverable from the `# === BEGIN: <url> ===` separators that
+> follow); (c) summarise the largest closed work-items in
+> `roadmap.md` (G7 alone is 7,540 tokens of historical exposition
+> now that G7 Phase 2 is shipped). None of these are needed yet;
+> document them here so the next trim PR has a pre-investigated
+> menu.
+
 > **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 11 SHIPPED
 > (3 more recipes — recipe count 33 → 36, H3 layer-type usage
 > 7 → 9, markers usage 11 → 12, layer-type coverage 9 / 10
