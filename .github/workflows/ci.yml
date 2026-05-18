@@ -596,6 +596,20 @@ jobs:
         # the regenerated file.
         run: python3 scripts/build-llms-txt.py --check
 
+      - name: Check auto-generated reference pages are in sync (E2 Phase 2)
+        # ROADMAP §3 E2 Phase 2 + §3 G7 Phase 2.
+        # Regenerates the managed regions inside `docs/reference/*.md`
+        # (currently just the 82-option enumeration in formatter.md)
+        # from the machine schema and exits non-zero if any on-disk
+        # file disagrees. Managed regions live between the marker pair:
+        #   <!-- BEGIN AUTOGEN: <section-id> -->
+        #   ...content owned by the script; do NOT edit by hand...
+        #   <!-- END AUTOGEN: <section-id> -->
+        # Narrative outside the markers is hand-authored and survives.
+        # On FAIL, run `python3 scripts/build-reference-pages.py` and
+        # commit the regenerated file(s).
+        run: python3 scripts/build-reference-pages.py --check
+
       - name: Build documentation site (strict mode)
         # `--strict` is the hammer: any MkDocs warning fails the build.
         # The site renders to `site/` (gitignored) — the GitHub Pages
