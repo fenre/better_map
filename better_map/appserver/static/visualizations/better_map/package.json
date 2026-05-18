@@ -35,18 +35,18 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.11.3",
-    "@vitest/coverage-v8": "^2.1.9",
+    "@vitest/coverage-v8": "^4.1.6",
     "css-loader": "^7.1.0",
     "eslint": "^8.57.0",
     "jsdom": "^25.0.1",
     "playwright": "1.60.0",
     "prettier": "^3.4.0",
     "style-loader": "^4.0.0",
-    "vitest": "^2.1.9",
+    "vitest": "^4.1.6",
     "webpack": "^5.97.0",
     "webpack-cli": "^7.0.2"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.12.0"
   }
 }

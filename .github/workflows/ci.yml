@@ -67,7 +67,7 @@ jobs:
       - name: Set up Node.js 18 (matches viz engines.node)
         uses: actions/setup-node@v6
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: better_map/appserver/static/visualizations/better_map/package-lock.json
 
@@ -458,10 +458,10 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v6
 
-      - name: Set up Node.js 18 (matches viz engines.node)
+      - name: Set up Node.js 22 (matches viz engines.node)
         uses: actions/setup-node@v6
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: better_map/appserver/static/visualizations/better_map/package-lock.json
 
@@ -580,10 +580,10 @@ jobs:
           # commitlint needs the full PR history to lint every commit.
           fetch-depth: 0
 
-      - name: Set up Node.js 18
+      - name: Set up Node.js 22
         uses: actions/setup-node@v6
         with:
-          node-version: '18'
+          node-version: '22'
 
       - name: Install commitlint
         # Pinned majors. Conventional config + CLI only; husky is dev-only

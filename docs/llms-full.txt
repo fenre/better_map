@@ -3588,6 +3588,20 @@ commit's docs render before they go live"; the release gate proves
 defined, including bars stricter than the PR gate." A release MUST
 clear the same bar a PR clears — no exceptions.
 
+## Runtime versions
+
+CI pins **Node.js 22** (Active LTS) across every job in `ci.yml` and
+`release.yml`. The viz package declares `engines.node: ">=20.12.0"`,
+which is the lower bound imposed by `vitest` v4 (its bundled
+`rolldown` calls `styleText` from `node:util`, an export landed in
+Node 20.12.0 — March 2024). Contributors on Node 18 will see an
+`npm install` warning and `npm test` will fail with `SyntaxError:
+'styleText' is not exported from 'node:util'` — bump locally to
+Node 20.12+ (recommended 22 LTS to match CI).
+
+Python is pinned to **3.11** (matches the Splunk AppInspect virtualenv
+and the upstream AppInspect cloud-cert environment).
+
 ## Why this document exists
 
 The G2 design (`ROADMAP.md` §3 G2) called out a single ~10-line
