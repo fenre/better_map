@@ -1,0 +1,115 @@
+# D5 — Local Splunk Enterprise harness for end-to-end smoke testing.
+#
+# Boots a single Splunk Enterprise container against which a maintainer
+# can install a freshly-built better_map tarball, dispatch every
+# dashboard's SPL via REST, and (in D5 Phase 2) drive the rendered viz
+# in a real browser with Playwright. The container is reproducible from
+# this file plus docker/.env (gitignored — see docker/.env.example).
+#
+# Quick start (operator-facing detail in
+# docs/development/local-splunk-harness.md):
+#
+#   cp docker/.env.example docker/.env
+#   # edit docker/.env to set SPLUNK_PASSWORD + SPLUNK_HEC_TOKEN
+#   bash docker/scripts/bootstrap.sh   # boot, install app, write secrets.env
+#   python3 scripts/dispatch-test.py   # smoke-test every dashboard
+#   bash docker/scripts/teardown.sh    # `docker compose down -v`
+#
+# Why one Splunk container, not a matrix:
+# ---------------------------------------
+# Phase 1 ships a single instance for the dev-loop smoke test (the
+# 2026-05-16 hand-driven deploy validated this is enough to catch the
+# CDATA / visualizations.conf / SPL parse-error class of bugs). The
+# version matrix (Splunk Enterprise 10.2 + 10.3) the ROADMAP §3 D5
+# design calls for arrives in D5 Phase 2 along with the Playwright UI
+# layer — that cut requires a self-hosted runner decision (per the
+# §3 risk note: Splunk Enterprise in docker is ≥4 GB RAM; GitHub's
+# free runners OOM) so it is correctly deferred.
+#
+# Why splunk/splunk (not splunkmono or a custom Dockerfile):
+# ----------------------------------------------------------
+# `splunk/splunk` is the vendor's official image, maintained by
+# Splunk and used by Splunk Connect / SC4S / customer labs. It runs
+# the splunk-ansible playbook on first boot, accepts well-known env
+# vars (SPLUNK_PASSWORD, SPLUNK_HEC_TOKEN, SPLUNK_START_ARGS), and
+# emits a deterministic ${SPLUNK_HOME}/var/log/splunk/splunkd.log
+# the bootstrap script can grep for "Ansible playbook complete".
+# Building a custom Dockerfile is more lab-fragile and offers no
+# benefit for this use case.
+#
+# Why bind-mount staging/ into /staging:
+# --------------------------------------
+# The splunkd:8089 `POST /services/apps/local` endpoint does NOT
+# accept multipart/form-data — see
+# ~/.cursor/skills/splunk-remote-app-deploy/SKILL.md for the full
+# write-up. It only accepts URL-encoded `name=<path>` + `filename=true`
+# where <path> is a path on the SPLUNK SERVER'S filesystem. For a
+# remote splunkd that means an HTTP side-car or scp; for a local
+# Docker container that means a bind-mount, which is the simplest
+# and most reliable option. `docker/staging/` is the bridge.
+
+services:
+  splunk:
+    # Pin tag via SPLUNK_IMAGE_TAG in docker/.env (default below is
+    # the current stable mainline). To verify behaviour against a
+    # specific release train (10.2.x, 10.3.x), override the tag and
+    # re-run the bootstrap script.
+    image: "splunk/splunk:${SPLUNK_IMAGE_TAG:-latest}"
+    container_name: better_map_splunk
+    hostname: splunk
+    # The first boot runs the splunk-ansible playbook which initialises
+    # ${SPLUNK_HOME}, accepts the licence, sets the admin password,
+    # creates the HEC token, and tails splunkd in the foreground. It
+    # takes ~60–120 s on a warm laptop; the healthcheck below tracks it.
+    environment:
+      SPLUNK_START_ARGS: --accept-license
+      SPLUNK_PASSWORD: "${SPLUNK_PASSWORD:?docker/.env must set SPLUNK_PASSWORD (>=8 chars)}"
+      SPLUNK_HEC_TOKEN: "${SPLUNK_HEC_TOKEN:?docker/.env must set SPLUNK_HEC_TOKEN (uuid4)}"
+      # Disable browser-side auth-rate-limit during dev so the
+      # bootstrap script can hammer /services/server/info while
+      # waiting for first-boot completion.
+      SPLUNK_LICENSE_URI: Free
+    ports:
+      # 8000 — Splunk Web (UI). Browse to http://localhost:8000 with
+      #        admin / ${SPLUNK_PASSWORD} after bootstrap completes.
+      - "${SPLUNK_WEB_PORT:-8000}:8000"
+      # 8089 — splunkd management REST. The bootstrap script + the
+      #        dispatch-test rig + every Phase 2.5 live-data validator
+      #        talk to splunkd here.
+      - "${SPLUNK_MGMT_PORT:-8089}:8089"
+      # 8088 — HTTP Event Collector (HEC). Used by Phase 2.5 live-data
+      #        simulators + recipe verification work to push synthetic
+      #        events into Splunk indexes.
+      - "${SPLUNK_HEC_PORT:-8088}:8088"
+    volumes:
+      # Persistent etc + var so app installs + indexes survive
+      # `docker compose stop`. `docker compose down -v` wipes both.
+      - splunk_etc:/opt/splunk/etc
+      - splunk_var:/opt/splunk/var
+      # Staging directory the bootstrap script writes the freshly-
+      # built better_map tarball into. Splunk sees the same files at
+      # /staging on its filesystem, so the POST /services/apps/local
+      # call uses `name=/staging/better_map-local.tar.gz` (avoiding
+      # the multipart-upload gotcha entirely).
+      - ./staging:/staging:ro
+    healthcheck:
+      # /services/server/info responds 200 only after splunkd is
+      # fully initialised AND has accepted the admin login. Polling
+      # this endpoint is how the bootstrap script knows it can stop
+      # waiting.
+      test: ["CMD-SHELL", "curl -ksSf https://localhost:8089/services/server/info -u admin:${SPLUNK_PASSWORD} >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    restart: unless-stopped
+
+volumes:
+  # Named volumes (not bind mounts) so they live in Docker's storage,
+  # not the repo. The `docker compose down -v` flag in teardown.sh
+  # drops them; without -v they persist across boots, which is what
+  # you want during a normal dev session.
+  splunk_etc:
+    name: better_map_splunk_etc
+  splunk_var:
+    name: better_map_splunk_var
