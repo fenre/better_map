@@ -43,6 +43,7 @@ GitHub Pages on every push to `main` via
 | `agents.md` | Operating guide for AI agents working on the repo itself (the five non-negotiables, where things live, common mistakes). | hand-maintained | n/a |
 | `README.md` | This file. | hand-maintained | n/a |
 | `../llms.txt` (lives at `docs/llms.txt`, ships at `site/llms.txt`) | G7 Phase 2 — an `llms.txt`-convention index of every published documentation page, every Splunk integration, every per-source recipe, and every machine-readable scaffold. The single URL `<site>/llms.txt` is the entry point an LLM-aware agent should hit first. | `mkdocs.yml#nav`, `_machine/integrations/*.yaml`, `_machine/recipes/index.yaml`, `_machine/formatter-schema.json` (union of all) | `scripts/build-llms-txt.py --check` (regenerates from the structured sources and byte-compares; CI wires it into the docs-build job) |
+| `../llms-full.txt` (lives at `docs/llms-full.txt`, ships at `site/llms-full.txt`) | G7 Phase 2 follow-up — the body-inclusive sibling of `llms.txt`. Concatenates every page in `mkdocs.yml` `nav:` (with `include-markdown` directives resolved inline so ROADMAP / CHANGELOG bodies appear under their wrapper pages), strips MkDocs Material chrome (icon shortcodes, grid-card wrappers, attr-lists, admonitions → blockquotes), and appends Appendix A (integrations matrix) and Appendix B (recipes matrix). Hard token budget: 200,000 estimated tokens (warn at 150k, per-page warn at 50k) — sized to fit the context window of every practical LLM. | `mkdocs.yml#nav` + the body of every `docs/**/*.md` page + the included root files (`README.md`, `CHANGELOG.md`, `ROADMAP.md`) + `_machine/integrations/*.yaml` + `_machine/recipes/index.yaml` | `scripts/build-llms-full-txt.py --check` (regenerates from the same structured sources and byte-compares; CI wires it into the docs-build job, immediately after the `llms.txt` gate) |
 | (managed regions inside `../reference/*.md`) | E2 Phase 2 — auto-generated tables that live INSIDE the hand-authored human-readable reference pages. Currently: the 83-option formatter enumeration table set in [`docs/reference/formatter.md`](https://github.com/fenre/better_map/blob/main/docs/reference/formatter.md) (grouped by Dashboard Studio tab → in-tab heading, with type, default, enum / range, and help text per option). The content lives between `<!-- BEGIN AUTOGEN: <section-id> -->` / `<!-- END AUTOGEN: <section-id> -->` marker pairs; hand-authored narrative outside the markers is preserved verbatim. | `_machine/formatter-schema.json` (currently) — future cuts will extend to `_machine/integrations/*.yaml` and `_machine/recipes/index.yaml` | `scripts/build-reference-pages.py --check` (regenerates the managed regions and byte-compares; CI wires it into the docs-build job) |
 | (runtime, not under `_machine/`) `better_map/appserver/static/visualizations/better_map/src/lib/demo/` — v1.7 demo data pack | Three deterministic generators (`fleet-telemetry`, `iot-smart-building`, `cyber-incidents`) backing the `demoPreset` formatter option. The viz substitutes the generated dataset for the SPL result when the option is non-`none`, so the viz showcases its full feature surface on any panel — even one whose query returns zero rows. Not parsed by any agent today, but the formatter option IS in `formatter-schema.json` and the recipe for adding a fourth preset lives in `agents.md` §5c. | hand-maintained source code | `src/lib/__tests__/demo.test.js` (Vitest — field schema stability, row-count bands, palette membership) |
 
@@ -57,7 +58,7 @@ artefacts not yet built. They will be added once those land.
 |---|---|
 | ~~`llms.txt`~~ | ~~E2 — MkDocs site~~ (E2 Phase 1 shipped v1.7) + ~~E5 — recipe matrix~~ (E5 Phase 1 shipped v1.7-prep) + ~~emission script~~ (G7 Phase 2 shipped v1.7-prep — see row in the table above; lives at `docs/llms.txt`, copied verbatim to `site/llms.txt` by MkDocs, drift-gated by `scripts/build-llms-txt.py --check` in CI) |
 | ~~auto-generated reference enumerations inside `docs/reference/*.md`~~ | ~~E2 Phase 2 — formatter enumeration shipped v1.7-prep~~ (see row in the table above; `docs/reference/formatter.md` now carries an auto-managed `formatter-enumeration` region rendered by `scripts/build-reference-pages.py` from `_machine/formatter-schema.json`, drift-gated in CI). The same framework will extend to `docs/integrations/catalogue.md` (auto sections from `_machine/integrations/*.yaml`) and `docs/recipes/index.md` (auto matrix from `_machine/recipes/index.yaml`) in follow-up PRs. |
-| `llms-full.txt` | E2 Phase 1 (done) + E5 Phase 1 (done) + per-page token budget definition. Will require either a markdown-include-style concatenation or a separate render pass that strips MkDocs theme chrome from each rendered page; the per-page token-budget contract has to be agreed first |
+| ~~`llms-full.txt`~~ | ~~Per-page token budget definition and theme-chrome stripping~~ (G7 Phase 2 follow-up shipped v1.7-prep — see row in the table above; lives at `docs/llms-full.txt`, copied verbatim to `site/llms-full.txt` by MkDocs, drift-gated by `scripts/build-llms-full-txt.py --check` in CI, bounded by a hard 200k-estimated-token budget with per-page warn at 50k and total warn at 150k) |
 | `layers/<layer-id>.yaml` (one per layer type) | Independent of E2 but de-prioritised behind integrations (where the customer questions actually land) |
 | `recipes/<source>/<layer>.md` (the remaining matrix cells) | ~~E5 framework~~ (Phase 1 shipped) + live-Splunk verification time for each cell (status flips from `unverified` → `verified` as a maintainer with REST access dispatches each SPL). The framework is now drift-gated, so each new recipe lands as a small isolated PR |
 | `openapi-better_map-rest.yaml` | The REST endpoints it would describe (KV-store bookmarks F1, plugin manifest G6, recipe-test webhook D5) are all v1.8 or later |
@@ -103,6 +104,21 @@ under this directory with its own drift gate.
    each with a one-line description and a stable URL. The on-disk
    source is `docs/llms.txt`; the canonical published URL is
    <https://fenre.github.io/better_map/llms.txt>.
+
+8. **As your single-URL FULL-BODY entry point:** if you would rather
+   one-shot the project than follow links (or you are operating
+   under a CSP that forbids follow-up fetches), hit
+   `<site>/llms-full.txt` instead. Same scope as `llms.txt`, but
+   every linked page is inlined under a stable
+   `# === BEGIN: <url> ===` / `# === END: <url> ===` block, with
+   include-markdown directives expanded so the ROADMAP and CHANGELOG
+   bodies appear under their wrapper pages. The integrations matrix
+   and recipe matrix appear as Appendix A / Appendix B so the field
+   contracts live inline. Bounded by a hard 200k-estimated-token
+   budget so the output stays inside the context window of every
+   practical LLM. The on-disk source is `docs/llms-full.txt`; the
+   canonical published URL is
+   <https://fenre.github.io/better_map/llms-full.txt>.
 
 ---
 
