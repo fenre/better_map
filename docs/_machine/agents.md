@@ -144,9 +144,13 @@ directly.
    the `Full option enumeration` section, inside the
    `formatter-enumeration` managed region. Narrative outside the
    markers is hand-authored and survives re-generation.
-6. Run `python3 scripts/build-llms-txt.py` and commit the regenerated
-   `docs/llms.txt` — the file embeds the option count and a link to
-   the formatter-schema, so the option-count delta drifts the gate.
+6. Run `python3 scripts/build-llms-txt.py` and
+   `python3 scripts/build-llms-full-txt.py`, then commit both
+   `docs/llms.txt` and `docs/llms-full.txt`. The short index embeds
+   the option count and a link to the formatter-schema; the
+   body-inclusive sibling expands every page on the site (including
+   the auto-generated reference page you just regenerated). Both
+   are byte-for-byte drift-gated in CI.
 7. Local sanity check:
 
    ```bash
@@ -154,6 +158,7 @@ directly.
    python3 scripts/check-formatter-coverage.py
    python3 scripts/build-reference-pages.py --check
    python3 scripts/build-llms-txt.py --check
+   python3 scripts/build-llms-full-txt.py --check
    ```
 
    All four must print `[PASS]`.
@@ -194,12 +199,22 @@ directly.
 5. `status: experimental` is the default until the integration is
    smoke-tested against a live Splunk tenant. Setting `tested_against`
    to a non-null value is the trigger for `status: verified`.
-6. Run `python3 scripts/build-llms-txt.py && python3 scripts/build-llms-txt.py --check`
-   — the new integration appears in the `## Integrations (Splunk)`
+6. Run both index regenerators:
+
+   ```bash
+   python3 scripts/build-llms-txt.py        # short index
+   python3 scripts/build-llms-full-txt.py   # body-inclusive sibling
+   python3 scripts/build-llms-txt.py --check
+   python3 scripts/build-llms-full-txt.py --check
+   ```
+
+   The new integration appears in the `## Integrations (Splunk)`
    section of `docs/llms.txt` (display name, status, required Splunk
-   app, JS source path). Commit the regenerated `docs/llms.txt` in the
-   same PR. The CI gate `build-llms-txt.py --check` will reject any
-   drift.
+   app, JS source path) AND in Appendix A of `docs/llms-full.txt`
+   with its endpoints, field-contract keys, BM-CT-1 slot mapping and
+   references. Commit both regenerated files in the same PR. Both CI
+   gates (`build-llms-txt.py --check` and
+   `build-llms-full-txt.py --check`) will reject any drift.
 
 ---
 
@@ -272,7 +287,9 @@ the same expectations. Source of truth:
    python3 scripts/build-recipe-index.py
    python3 scripts/check-recipe-schema.py
    python3 scripts/build-llms-txt.py
+   python3 scripts/build-llms-full-txt.py
    python3 scripts/build-llms-txt.py --check
+   python3 scripts/build-llms-full-txt.py --check
    ```
 
    The recipe check-script also re-runs the index builder under the
@@ -280,7 +297,12 @@ the same expectations. Source of truth:
    means you added a recipe but forgot to commit the regenerated index.
    The same logic applies to `llms.txt`: the new recipe MUST appear
    under `## Recipes (per-source playbooks)` of `docs/llms.txt`, so
-   commit the regenerated file in the same PR.
+   commit the regenerated file in the same PR. The same logic also
+   applies to `llms-full.txt`: the new recipe MUST appear in
+   Appendix B (with status, required apps, expected-fields summary)
+   and the page body MUST appear under its `# === BEGIN: <url> ===`
+   block (the script walks the same `mkdocs.yml` `nav:` the
+   short-index generator does).
 
 5. **(If possible) verify against a live tenant**, then flip
    `status: unverified` → `status: verified`, populate
@@ -360,12 +382,13 @@ tracking, or `cyber-incidents-ot` for IT-OT DMZ traffic):
    sells the story in two sentences.  Extend the layout `height`
    to fit.
 
-7. **Regenerate the manifest + reference page + llms.txt**:
+7. **Regenerate the manifest + reference page + both llms files**:
 
    ```bash
    python3 scripts/build-manifest.py
    python3 scripts/build-reference-pages.py
    python3 scripts/build-llms-txt.py
+   python3 scripts/build-llms-full-txt.py
    ```
 
 8. Run the §7 pre-commit checklist; the demo tests must show
@@ -454,6 +477,17 @@ node scripts/check-accessibility.js
 # `python3 scripts/build-llms-txt.py` and commit. Needs PyYAML.
 .venv-mkdocs/bin/python3 scripts/build-llms-txt.py --check
 
+# llms-full.txt drift (G7 Phase 2 follow-up).
+# Regenerates docs/llms-full.txt — the body-inclusive sibling that
+# concatenates every page in mkdocs.yml `nav:` (with include-markdown
+# directives resolved inline so the ROADMAP/CHANGELOG bodies appear
+# under their wrapper pages) plus Appendix A (integrations matrix)
+# and Appendix B (recipes matrix). Carries a hard 200k-token budget
+# (warn at 150k) so the output stays inside the context window of
+# every practical LLM. The file ships VERBATIM at site/llms-full.txt.
+# On drift: run `python3 scripts/build-llms-full-txt.py` and commit.
+.venv-mkdocs/bin/python3 scripts/build-llms-full-txt.py --check
+
 # Auto-generated reference page drift (E2 Phase 2).
 # Regenerates the managed regions inside docs/reference/*.md from the
 # machine schema (currently: the 82-option enumeration in
@@ -496,6 +530,8 @@ to fix and the exact command to re-run.
 | `[FAIL] docs/recipes/<src>/<layer>.md: §4 references formatter option(s) that are NOT in formatter-schema.json` | The recipe's §4 JSON sets a property name that doesn't exist on the formatter | Pick a real option (check `docs/_machine/formatter-schema.json`), or add the option to `formatter.html` first via §4 of this guide |
 | `[FAIL] docs/recipes/<src>/<layer>.md: expected_fields entry 'foo' is not present in the §3 markdown table` | Frontmatter promises a field the §3 table doesn't document | Add the field as a row in the §3 Markdown table, OR remove it from `expected_fields` if the SPL no longer produces it |
 | `[FAIL] docs/llms.txt is out of sync vs the structured sources of truth` | You added/edited an integration YAML, a recipe, a nav entry in `mkdocs.yml`, or a formatter option, but forgot to regenerate `docs/llms.txt` | `python3 scripts/build-llms-txt.py && git add docs/llms.txt`. The regenerator is deterministic — no clock-based fields, no random ordering — so a clean rebuild always re-passes the check |
+| `[FAIL] docs/llms-full.txt is out of sync vs the structured sources of truth` | You edited a page in `docs/**/*.md`, an integration YAML, the recipe index, a nav entry in `mkdocs.yml`, or the included root files (`README.md`, `CHANGELOG.md`, `ROADMAP.md`), but forgot to regenerate `docs/llms-full.txt` (the body-inclusive sibling of `llms.txt`) | `python3 scripts/build-llms-full-txt.py && git add docs/llms-full.txt`. Same deterministic contract as `llms.txt`: same input → same byte-for-byte output |
+| `[FAIL] docs/llms-full.txt is ~N estimated tokens, over the 200,000 hard cap` | A page (or a newly included root file) pushed the total beyond the binding 200k-token LLM context budget | Trim the largest contributor (the `[WARN]` lines name the worst per-page offenders) OR raise the budget in `scripts/build-llms-full-txt.py` (`TOTAL_FAIL_TOKENS`) with an explicit roadmap-review entry — the budget is a binding contract, not a soft suggestion |
 | `[FAIL] docs/reference/formatter.md is out of sync vs the structured sources of truth` | You added/edited/removed a `formatter.html` control, or otherwise changed the formatter schema, but forgot to regenerate the auto-managed section of `docs/reference/formatter.md` | `python3 scripts/build-reference-pages.py && git add docs/reference/formatter.md`. The script only touches the region BETWEEN the `<!-- BEGIN AUTOGEN: formatter-enumeration -->` and `<!-- END AUTOGEN: formatter-enumeration -->` markers; hand-authored narrative outside the markers is preserved |
 | `[FAIL] docs/reference/<file>.md has no `<!-- BEGIN AUTOGEN: <id> -->` / `<!-- END AUTOGEN: <id> -->` markers` | The reference page lost its managed-region marker pair (e.g. someone deleted them while editing prose). The script refuses to "guess" where to put the auto-gen output | Add the marker pair back at the spot where the auto-generated content should live, then rerun `python3 scripts/build-reference-pages.py` |
 | `demo.test.js > registers exactly the three v1.7 presets — Expected 3, received 4` | You added a fourth preset to `src/lib/demo/index.js` but forgot to bump the test that locks the count + IDs in order | Update the assertion in `src/lib/__tests__/demo.test.js` (search for "v1.7 presets"). The lock is intentional — silent preset additions break the formatter dropdown and `savedsearches.conf.spec` contract; the failing test forces you to update all three together |
@@ -513,11 +549,16 @@ to fix and the exact command to re-run.
   infrastructure shipped in v1.7, lives at
   [`mkdocs.yml`](https://github.com/fenre/better_map/blob/main/mkdocs.yml)
   + the human-readable `docs/` pages OUTSIDE this `_machine/`
-  subtree; the G7 Phase 2 `llms.txt` index ships AT the site root
-  via [`docs/llms.txt`](https://github.com/fenre/better_map/blob/main/docs/llms.txt),
-  drift-gated by `scripts/build-llms-txt.py --check`; the E2 Phase 2
-  auto-generated reference enumerations live INSIDE the
-  hand-authored reference pages (currently:
+  subtree; the G7 Phase 2 `llms.txt` short index ships AT the site
+  root via [`docs/llms.txt`](https://github.com/fenre/better_map/blob/main/docs/llms.txt),
+  drift-gated by `scripts/build-llms-txt.py --check`; its
+  body-inclusive sibling
+  [`docs/llms-full.txt`](https://github.com/fenre/better_map/blob/main/docs/llms-full.txt)
+  ships next to it, drift-gated by
+  `scripts/build-llms-full-txt.py --check` and bounded by a hard
+  200k-estimated-token budget; the E2 Phase 2 auto-generated
+  reference enumerations live INSIDE the hand-authored reference
+  pages (currently:
   [`docs/reference/formatter.md`](https://github.com/fenre/better_map/blob/main/docs/reference/formatter.md)
   inside the `<!-- BEGIN AUTOGEN: formatter-enumeration -->` markers),
   drift-gated by `scripts/build-reference-pages.py --check`).
@@ -544,7 +585,9 @@ wins. Open a PR that updates this file.
 - `docs/_machine/recipes/recipe-schema.json` — per-source recipe schema (E5 Phase 1)
 - `docs/_machine/recipes/index.yaml` — auto-generated recipe index (E5 Phase 1)
 - `docs/llms.txt` — agent-discoverable site index (G7 Phase 2), conforming to <https://llmstxt.org/>
-- `scripts/build-llms-txt.py` — generator + `--check` drift gate for the above
+- `docs/llms-full.txt` — body-inclusive sibling of `llms.txt` (G7 Phase 2 follow-up): every page in `mkdocs.yml` `nav:` concatenated with stable `# === BEGIN/END ===` delimiters, plus an integrations matrix (Appendix A) and recipes matrix (Appendix B). Bounded by a hard 200k-estimated-token budget so the output stays inside the context window of every practical LLM. Ships verbatim at `site/llms-full.txt` alongside `site/llms.txt`
+- `scripts/build-llms-txt.py` — generator + `--check` drift gate for the short `llms.txt`
+- `scripts/build-llms-full-txt.py` — generator + `--check` drift gate for the body-inclusive `llms-full.txt`. Same deterministic contract: no clock-based fields, page emission order follows `mkdocs.yml` `nav:`, MkDocs Material chrome is stripped at render time
 - `scripts/build-reference-pages.py` — generator + `--check` drift gate for the auto-managed regions inside `docs/reference/*.md` (E2 Phase 2 — currently the 82-option enumeration in `formatter.md`)
 - `better_map/appserver/static/visualizations/better_map/src/lib/demo/` — v1.7 demo data pack: deterministic generators for three showcase presets (fleet telemetry, smart-building IoT, cyber incidents) backing the `demoPreset` formatter dropdown. See §5c for the contract.
 - `better_map/default/data/ui/views/better_map_showcase.xml` — v1.7 showcase dashboard exercising all three demo presets in one view; renders with zero live Splunk data

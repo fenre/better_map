@@ -596,6 +596,22 @@ jobs:
         # the regenerated file.
         run: python3 scripts/build-llms-txt.py --check
 
+      - name: Check docs/llms-full.txt is in sync (G7 Phase 2 — body-inclusive sibling)
+        # ROADMAP §3 G7 Phase 2 follow-up + §7e "llms-full.txt" box.
+        # Regenerates `docs/llms-full.txt` from the same structured
+        # sources as `llms.txt` PLUS the body of every page in
+        # `mkdocs.yml` `nav:` (with include-markdown directives
+        # resolved inline so the ROADMAP / CHANGELOG bodies appear
+        # under their wrapper pages). Exits non-zero if the on-disk
+        # file disagrees OR if the total exceeds the hard 200k-token
+        # budget. The output ships verbatim at the site root
+        # (`site/llms-full.txt`) per the llms.txt convention:
+        # <https://llmstxt.org/>. On FAIL, run
+        # `python3 scripts/build-llms-full-txt.py` and commit the
+        # regenerated file (or trim a page if the budget is the
+        # cause of the FAIL).
+        run: python3 scripts/build-llms-full-txt.py --check
+
       - name: Check auto-generated reference pages are in sync (E2 Phase 2)
         # ROADMAP §3 E2 Phase 2 + §3 G7 Phase 2.
         # Regenerates the managed regions inside `docs/reference/*.md`
