@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 9
+recipe_count: 12
 recipes:
 - id: cim-authentication--markers
   source:
@@ -201,6 +201,65 @@ recipes:
   - description: polygons layer source (geojson + wkt field auto-detect contract)
     path: better_map/appserver/static/visualizations/better_map/src/lib/layers/polygons.js
   path: docs/recipes/csv-lookup-geo/polygons.md
+- id: es-risk--markers
+  source:
+    id: es-risk
+    display_name: ES Risk-Based Alerting (risk index)
+    pattern: splunk-premium-es
+  layer:
+    id: markers
+    display_name: Markers
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: SplunkEnterpriseSecuritySuite
+    optional: false
+  - id: Splunk_SA_CIM
+    optional: false
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: alice@example.com
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '47.6062'
+  - name: lon
+    type: number
+    example: '-122.3321'
+  - name: risk_object
+    type: string
+    example: alice@example.com
+  - name: risk_object_type
+    type: string
+    example: user
+  - name: total_risk
+    type: integer
+    example: '147'
+    drives_formatter_option: markerColor
+  - name: techniques
+    type: string
+    example: T1059.001,T1547.001
+  required_formatter_options:
+  - pointRenderer
+  - idField
+  - markerColor
+  ot_safety_relevant: false
+  references:
+  - description: splunk-rba skill — Risk-Based Alerting framework (risk index schema, rules, RIRs)
+    path: ~/.cursor/skills/splunk-rba/SKILL.md
+  - description: splunk-enterprise-security skill — Asset & Identity framework, identities.csv schema
+    path: ~/.cursor/skills/splunk-enterprise-security/SKILL.md
+  - description: splunk-mitre-attack skill — annotations.mitre_attack contract
+    path: ~/.cursor/skills/splunk-mitre-attack/SKILL.md
+  - description: Layer reference — markers
+    path: docs/reference/layers.md
+  - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
+    path: docs/reference/bm-ct-1.md
+  path: docs/recipes/es-risk/markers.md
 - id: geo-us-states--choropleth
   source:
     id: geo-us-states
@@ -235,6 +294,59 @@ recipes:
   - description: featureJoin layer (us-states PMTiles preset; promoteId=stusps)
     path: better_map/appserver/static/visualizations/better_map/src/lib/layers/featureJoin.js
   path: docs/recipes/geo-us-states/choropleth.md
+- id: itsi-kpi-base--markers
+  source:
+    id: itsi-kpi-base
+    display_name: ITSI service health (KPI base searches)
+    pattern: splunk-premium-itsi
+  layer:
+    id: markers
+    display_name: Markers
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: SA-ITOA
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: svc_payments_eu
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '53.5511'
+  - name: lon
+    type: number
+    example: '9.9937'
+  - name: service_title
+    type: string
+    example: Payments (EU region)
+  - name: health_score
+    type: integer
+    example: '78'
+    drives_formatter_option: markerColor
+  - name: alert_level
+    type: integer
+    example: '3'
+  - name: critical_kpi_count
+    type: integer
+    example: '1'
+  required_formatter_options:
+  - pointRenderer
+  - idField
+  - markerColor
+  ot_safety_relevant: false
+  references:
+  - description: splunk-itsi skill — itsi_summary schema, SHKPI- service health, entity attributes
+    path: ~/.cursor/skills/splunk-itsi/SKILL.md
+  - description: splunk-itsi-content skill — ITSI service / KPI / entity content packaging
+    path: ~/.cursor/skills/splunk-itsi-content/SKILL.md
+  - description: Layer reference — markers
+    path: docs/reference/layers.md
+  - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
+    path: docs/reference/bm-ct-1.md
+  path: docs/recipes/itsi-kpi-base/markers.md
 - id: kvstore-latlon--markers
   source:
     id: kvstore-latlon
@@ -378,6 +490,65 @@ recipes:
   - description: hexbin layer source (binning + colour ramp + opacity contract)
     path: better_map/appserver/static/visualizations/better_map/src/lib/layers/hexbin.js
   path: docs/recipes/netflow-sflow-ipfix/h3.md
+- id: ot-datastreamer--markers
+  source:
+    id: ot-datastreamer
+    display_name: OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet)
+    pattern: splunk-edge-hub
+  layer:
+    id: markers
+    display_name: Markers
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_TA_oti
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: ACT-076-1823-0086
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '29.7604'
+  - name: lon
+    type: number
+    example: '-95.3698'
+  - name: hub_name
+    type: string
+    example: houston-plant-east-bldg-3
+  - name: protocol
+    type: string
+    example: modbus
+  - name: zone_purdue_level
+    type: string
+    example: L3
+  - name: last_seen_minutes_ago
+    type: integer
+    example: '2'
+    drives_formatter_option: markerColor
+  required_formatter_options:
+  - pointRenderer
+  - idField
+  - markerColor
+  ot_safety_relevant: true
+  references:
+  - description: splunk-edge-hub skill — Edge Hub indexes, sourcetypes, protocol-specific sources
+    path: ~/.cursor/skills/splunk-edge-hub/SKILL.md
+  - description: splunk-oti-datastreamer skill — OTI Datastreamer ingest pipeline, HEC tuning
+    path: ~/.cursor/skills/splunk-oti-datastreamer/SKILL.md
+  - description: splunk-edge-hub-protocols skill — Modbus, OPC-UA, MQTT, SNMP, BACnet protocol details
+    path: ~/.cursor/skills/splunk-edge-hub-protocols/SKILL.md
+  - description: splunk-oti-data-model skill — Operational_Telemetry data model conventions
+    path: ~/.cursor/skills/splunk-oti-data-model/SKILL.md
+  - description: Cursor rule — ot-safety.mdc (passive collection, SIS read-only, Purdue boundary)
+    path: .cursor/rules/ot-safety.mdc
+  - description: Layer reference — markers
+    path: docs/reference/layers.md
+  - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
+    path: docs/reference/bm-ct-1.md
+  path: docs/recipes/ot-datastreamer/markers.md
 - id: splunk-stream--markers
   source:
     id: splunk-stream
