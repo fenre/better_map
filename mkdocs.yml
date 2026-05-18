@@ -219,9 +219,12 @@ nav:
       - 'CIM Network Traffic — markers': recipes/cim-network-traffic/markers.md
       - 'CIM Network Traffic — paths': recipes/cim-network-traffic/paths.md
       - 'CSV lookup (geo polygons) — polygons': recipes/csv-lookup-geo/polygons.md
+      - 'ES Risk-Based Alerting (risk index) — markers': recipes/es-risk/markers.md
+      - 'ITSI service health (KPI base searches) — markers': recipes/itsi-kpi-base/markers.md
       - 'KV Store (lat/lon) — markers': recipes/kvstore-latlon/markers.md
       - 'Meraki (Cisco vendor TA) — markers': recipes/meraki/markers.md
       - 'NetFlow / sFlow / IPFIX — H3 hexbin': recipes/netflow-sflow-ipfix/h3.md
+      - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — markers': recipes/ot-datastreamer/markers.md
       - 'Splunk Stream (wire data) — markers': recipes/splunk-stream/markers.md
       - 'US states — choropleth': recipes/geo-us-states/choropleth.md
   - Performance: performance.md
