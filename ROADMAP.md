@@ -1761,6 +1761,148 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   are intentionally unfilled — e.g., `cim-alerts/heat`
 >   makes no semantic sense for severity-discrete data).
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 7 SHIPPED
+> (3 more recipes — recipe count 21 → 24, layer-type
+> coverage stays at 9 / 10, source-pattern coverage stays at
+> 8 / 8 COMPLETE).** First wave under the "cell-fill"
+> tracking regime announced at the end of wave 6. All three
+> recipes are NEW (source, layer) cells against ALREADY-
+> shipped sources and ALREADY-shipped layers — no new
+> framework, no new source, no new layer, no token-budget
+> mitigation needed beyond the routine `llms-full.txt`
+> regen. Three new recipes:
+> - **`docs/recipes/cim-network-traffic/h3.md`** —
+>   `splunk-cim` source pattern (already shipped in
+>   markers + paths), `h3` layer (already shipped in
+>   csv-lookup-geo + netflow-sflow-ipfix). The strategic /
+>   executive complement to the existing CIM Network
+>   Traffic markers + paths recipes: instead of one
+>   marker per destination IP (markers) or one polyline
+>   per source-dest pair (paths), aggregates per-
+>   destination bytes into H3 hex cells coloured by total
+>   byte volume. SPL is the canonical CIM tstats
+>   `summariesonly=true` pattern (mirrors the markers
+>   recipe but with `sum(All_Traffic.bytes) AS bytes,
+>   count AS event_count` instead of just `count`).
+>   Targets executive / SOC-leadership "where, geographically,
+>   is most of my egress concentrated?" panels. 6 expected
+>   fields. §6 Gotchas: CIM acceleration required,
+>   `bytes` vs `bytes_out` semantic split, MaxMind
+>   licensing, hex resolution vs row count rubric,
+>   Null Island warning, time range parameterisation,
+>   PII / GDPR posture (hex layer is BROADER than markers
+>   — generally lower-risk for privacy-sensitive
+>   deployments), explicit OT-safety filter for tenants
+>   that ingest passive DPI of an OT zone into the same
+>   `Network_Traffic` data model. Brings the
+>   `cim-network-traffic` source row to 3 recipes
+>   (markers + paths + h3).
+> - **`docs/recipes/cim-authentication/heat.md`** —
+>   `splunk-cim` source pattern, `heat` layer (already
+>   shipped in `kvstore-latlon`). The aggregate-density
+>   complement to the existing CIM Authentication
+>   markers recipe: instead of one marker per source IP
+>   (markers), aggregates per-source failed-auth counts
+>   into a weighted heatmap normalised by
+>   `eventstats max(failure_count) + eval weight=
+>   failure_count / max_failure_count`. Targets SOC-
+>   leadership / executive identity-attack-pressure
+>   dashboards (NOT investigator views — markers is still
+>   the right layer for "show me each attacker
+>   individually"). 6 expected fields. §6 Gotchas:
+>   CIM acceleration required, log-scale alternative
+>   for orders-of-magnitude weight distributions,
+>   heatmap-vs-markers decision matrix, false-positive
+>   threshold tuning (5+ failures / IP / 24h, raise for
+>   noisier tenants), VPN / proxy egress IP distortion,
+>   PII / GDPR posture (BROADER aggregation = LOWER risk
+>   than markers), explicit OT-safety filter for tenants
+>   that log SIS / HMI logins under the same
+>   `Authentication` data model. Brings the
+>   `cim-authentication` source row to 2 recipes
+>   (markers + heat).
+> - **`docs/recipes/meraki/h3.md`** — `splunk-vendor-ta`
+>   source pattern (already shipped in 4 prior recipes),
+>   `h3` layer (now 4 total). The fleet-density
+>   complement to the existing Meraki markers recipe:
+>   instead of one marker per device (markers),
+>   aggregates devices into H3 hex cells coloured by
+>   device count, with `is_alerting` / `is_offline`
+>   pre-computed flags so cell popups also carry
+>   alerting / offline counts. Targets NetOps leadership
+>   / account-planning views of multi-site fleets.
+>   6 expected fields including the per-device `value=1`
+>   constant that the hex layer SUMs into per-cell device
+>   counts. §6 Gotchas: same `lng` → `lon` Meraki API
+>   trap as the markers recipe (still the #1 mistake;
+>   the recipe rename happens at the END before `stats
+>   BY lat, lon`), TA + `devices` input prerequisites,
+>   missing-location panel companion, hex resolution
+>   guidance (res 4 for country-level, res 5 for metro,
+>   res 3 for continental), `value=1` per row vs
+>   `hexbinAggregate: "count"` design choice, MV camera
+>   privacy flag, polling cadence vs auto-refresh,
+>   PII / GDPR posture (hex collapses identifying device
+>   names into anonymous counts — LOWER risk than
+>   markers), explicit OT-safety filter for tenants that
+>   integrate Meraki with an OT-zone monitoring program.
+>   Brings the `meraki` source row to 2 recipes (markers
+>   + h3).
+> - **No framework changes.** All three recipes pass the
+>   unchanged `scripts/check-recipe-schema.py` (now 24
+>   recipes valid, 0 verified, 24 unverified / deferred);
+>   auto-regen of `docs/_machine/recipes/index.yaml` (now
+>   24 entries), `docs/recipes/index.md` matrix (now 24
+>   rows), `docs/llms.txt` (now references 24 recipes),
+>   and `docs/llms-full.txt` (~169.8k estimated tokens
+>   with the §5 trim + 175k WARN from wave 6's token
+>   recalibration active — comfortably under the 175k
+>   WARN, 84.9 % of the 200k HARD-FAIL). `mkdocs.yml`
+>   nav grows three lines (one per new recipe; existing
+>   source IDs keep their alphabetical-by-display-name
+>   convention). `mkdocs build --strict` is clean.
+> - **Coverage delta:** matrix coverage rises from 21 to
+>   24 recipes (28 % → 32 % of the ~75 ✓ cells); source
+>   pattern coverage stays at 8 / 8 = COMPLETE;
+>   layer-type coverage stays at 9 / 10. Per-source row
+>   counts now: `csv-lookup-geo` 4, `geo-us-states` 2,
+>   `cim-network-traffic` 3 (NEW: h3), `cim-authentication`
+>   2 (NEW: heat), `cim-performance` 1, `cim-alerts` 1,
+>   `cyber-vision` 1, `es-risk` 1, `itsi-kpi-base` 1,
+>   `kvstore-latlon` 2, `meraki` 2 (NEW: h3),
+>   `netflow-sflow-ipfix` 1, `ot-datastreamer` 1,
+>   `splunk-stream` 1, `thousandeyes` 1.
+> - **Wave 8 candidates** (continuing the cell-fill
+>   regime, all against shipped sources + shipped layers,
+>   no framework changes needed): (a) `splunk-stream/heat`
+>   — wire-data attack-pressure heatmap, mirrors the
+>   `cim-authentication/heat` shape against the Stream
+>   sourcetypes (`stream:tcp`, `stream:http`); (b)
+>   `ot-datastreamer/heat` — sensor density heatmap
+>   (NOTE: must carry the same `ot_safety_relevant: true`
+>   flag as the markers recipe and explicit OT-safety
+>   filtering); (c) `cim-performance/h3` — server fleet
+>   density hex aggregation, mirrors the `meraki/h3`
+>   shape against CPU / memory / facilities metrics.
+>   All three are projected ~3k tokens each post-§5 trim,
+>   well within the new 175k WARN headroom.
+> - **Token budget watch.** With wave 7 landing at 169.8k
+>   estimated tokens, headroom to the 175k WARN is ~5.2k,
+>   and headroom to the 200k HARD-FAIL is ~30k. At
+>   ~3k / recipe cost, wave 8 will land at ~178.8k — JUST
+>   above the WARN. The WARN exists to surface decisions
+>   that would otherwise be invisible; this is by design,
+>   and the planned response is to (a) accept the WARN
+>   for wave 8 and re-evaluate, OR (b) extend the §5
+>   trim to also drop the wave 6 status block from
+>   ROADMAP.md (the wave 7 block above is ~3k tokens
+>   that the LLM does not need at every search — the
+>   live recipe count + matrix coverage is in
+>   `recipes/index.md` which is more compact). The
+>   HARD-FAIL at 200k is the actual safety rail and
+>   continues to hold across wave 8 + wave 9 even
+>   without additional trim.
+
 * **Problem:** Better Map can consume data from ~10 categorically different Splunk source patterns (see table below). A new customer with NetFlow data who wants a heat layer should not have to derive the SPL from first principles. There is currently no recipe documentation; the burden of "what SPL do I write?" falls entirely on the user, who often does not know the field names of their own data, let alone the contract this viz wants.
 * **Design:** Build the recipe matrix as `docs/recipes/<source>/<layer>.md`, where each leaf file is a **complete, copy-paste-runnable** recipe. Every recipe has the same 6-section structure (enforced by a validator script — G2 CI step), so an LLM can ingest the corpus consistently:
 
@@ -2224,7 +2366,7 @@ Goal: prove that v1.6 actually works under real load, close the operational-rigo
 | C1–C8. Eight Splunk integrations verified | C | 6×S (12) + 2×M (10) = 22 |
 | E1. Splunkbase listing | E | 5 |
 | **E2. Documentation site (Phase 1 SHIPPED; Phase 2 in progress — formatter, integrations, recipes auto-gen all SHIPPED)** | E | 5 |
-| **E5. Per-source setup recipes (the matrix — ~75 cells) (Phase 1 framework SHIPPED + Phase 2 waves 1+2+3+4+5+6 SHIPPED — 21 / ~75 cells, source-pattern coverage 8 / 8 COMPLETE, layer-type coverage 9 / 10; only `indoor` layer remains, blocked on v1.8+)** | **E** | **5** |
+| **E5. Per-source setup recipes (the matrix — ~75 cells) (Phase 1 framework SHIPPED + Phase 2 waves 1+2+3+4+5+6+7 SHIPPED — 24 / ~75 cells, source-pattern coverage 8 / 8 COMPLETE, layer-type coverage 9 / 10; only `indoor` layer remains, blocked on v1.8+)** | **E** | **5** |
 | **G7. AI-ingestion-friendly documentation layer (Phase 1 SHIPPED; Phase 2 — `llms.txt` SHIPPED; Phase 2 follow-up — `llms-full.txt` SHIPPED)** | **G** | **5** |
 | **Sub-total** | — | **69 d** |
 | Buffer (20 % for slip, lab access, surprise scope) | — | **14 d** |
@@ -2412,7 +2554,7 @@ If, and only if, every box below is true, we can credibly call v2.0 "one of the 
 - [ ] Listed on Splunkbase; ≥ 25 reviews; ≥ 4.0 average
 - [ ] ≥ 3 named reference customers willing to be quoted; ≥ 1 in a regulated vertical
 - [~] Documentation site live; ≥ 1k monthly uniques (privacy-preserving analytics) — **Phase 1 ✅** (`mkdocs.yml` + 11 hand-authored pages under `docs/`, strict-mode CI gate `docs-build` in `ci.yml`, GitHub Pages auto-deploy on `main` via `.github/workflows/docs.yml`, published at `fenre.github.io/better_map/`, air-gap-clean per §1a: no Google Fonts, no third-party scripts); **Phase 2 in progress** — formatter reference page now carries an auto-generated 82-option enumeration (16 tables, all `(tab, heading)` buckets) regenerated from `docs/_machine/formatter-schema.json` by `scripts/build-reference-pages.py` and drift-gated in CI; still pending: auto-generated sections inside `docs/integrations/catalogue.md` and `docs/recipes/index.md`, custom domain, privacy-preserving analytics, ≥ 1k monthly uniques target
-- [~] **Per-source recipe matrix (E5) ≥ 75 verified ✓ cells published; CI gates that a new layer or new source cannot land without updating the matrix** — **Phase 1 ✅ + Phase 2 waves 1+2+3+4+5+6 ✅** (framework: `docs/_machine/recipes/recipe-schema.json` JSON Schema 2020-12, `scripts/check-recipe-schema.py` validator + drift gate, `scripts/build-recipe-index.py` index emitter, `docs/_machine/recipes/index.yaml` machine-readable index, CI gate in `ci.yml docs-build` job; twenty-one recipes shipped covering 8 / 8 source patterns (COMPLETE pattern coverage — every `source.pattern` enum value now has at least one recipe) and 9 / 10 layer types — CIM Alerts → markers, CIM Network Traffic → markers, CIM Network Traffic → paths, CIM Authentication → markers, CIM Performance → markers, KV Store → markers, KV Store → heatmap, US states → choropleth, US states → 3D extrusion, Splunk Stream → markers, NetFlow / sFlow / IPFIX → H3 hexbin, CSV-lookup-geo → polygons, CSV-lookup-geo → supercluster, CSV-lookup-geo → H3 hexbin, CSV-lookup-geo → vector-tile join, Cisco Meraki → markers, Cisco Cyber Vision → markers, Cisco ThousandEyes → paths, ES Risk-Based Alerting → markers, ITSI service health → markers, OT Datastreamer / Edge Hub → markers — all `status: unverified` pending live-Splunk REST access against a tenant carrying the appropriate sourcetype and licence); the remaining ~54 ✓ cells fill in as subsequent waves at 3-5 recipes per PR. Only 1 of 10 layer types remains undemonstrated: `indoor` (blocked on v1.8+ image-overlay layer kind)
+- [~] **Per-source recipe matrix (E5) ≥ 75 verified ✓ cells published; CI gates that a new layer or new source cannot land without updating the matrix** — **Phase 1 ✅ + Phase 2 waves 1+2+3+4+5+6+7 ✅** (framework: `docs/_machine/recipes/recipe-schema.json` JSON Schema 2020-12, `scripts/check-recipe-schema.py` validator + drift gate, `scripts/build-recipe-index.py` index emitter, `docs/_machine/recipes/index.yaml` machine-readable index, CI gate in `ci.yml docs-build` job; twenty-four recipes shipped covering 8 / 8 source patterns (COMPLETE pattern coverage — every `source.pattern` enum value now has at least one recipe) and 9 / 10 layer types — CIM Alerts → markers, CIM Network Traffic → markers, CIM Network Traffic → paths, CIM Network Traffic → H3 hexbin, CIM Authentication → markers, CIM Authentication → heatmap, CIM Performance → markers, KV Store → markers, KV Store → heatmap, US states → choropleth, US states → 3D extrusion, Splunk Stream → markers, NetFlow / sFlow / IPFIX → H3 hexbin, CSV-lookup-geo → polygons, CSV-lookup-geo → supercluster, CSV-lookup-geo → H3 hexbin, CSV-lookup-geo → vector-tile join, Cisco Meraki → markers, Cisco Meraki → H3 hexbin, Cisco Cyber Vision → markers, Cisco ThousandEyes → paths, ES Risk-Based Alerting → markers, ITSI service health → markers, OT Datastreamer / Edge Hub → markers — all `status: unverified` pending live-Splunk REST access against a tenant carrying the appropriate sourcetype and licence); the remaining ~51 ✓ cells fill in as subsequent waves at 3-5 recipes per PR. Only 1 of 10 layer types remains undemonstrated: `indoor` (blocked on v1.8+ image-overlay layer kind)
 - [x] **`docs/llms.txt` published per the llms.txt convention; an LLM given just the URL can locate and apply a recipe end-to-end** — SHIPPED in v1.7-prep (G7 Phase 2). `docs/llms.txt` is regenerated by `scripts/build-llms-txt.py` from `mkdocs.yml` `nav:`, `docs/_machine/recipes/index.yaml`, `docs/_machine/integrations/*.yaml`, and `docs/_machine/formatter-schema.json`. MkDocs copies it verbatim to `site/llms.txt`; the published URL is <https://fenre.github.io/better_map/llms.txt>. Drift-gated in CI by `scripts/build-llms-txt.py --check`. The end-to-end "agent given the URL → finds a recipe → applies it" flow now works for the three E5 Phase 1 starter recipes
 - [~] **`docs/_machine/` complete: formatter JSON Schema, per-layer YAML, per-integration YAML, recipes index, `agents.md`, OpenAPI for any exposed REST endpoint — each CI-asserted against the implementation it documents** — Phases 1 + 2 partially shipped in v1.7-prep (G7 + E5 + E2): formatter-schema.json (82 options, drift + coverage gates + D3 axe-core a11y), 8 × integrations/*.yaml, agents.md, README.md, recipe-schema.json + recipes/index.yaml (E5 Phase 1 — drift-gated, three starter recipes), llms.txt + build-llms-txt.py (G7 Phase 2 — drift-gated), llms-full.txt + build-llms-full-txt.py (G7 Phase 2 follow-up — body-inclusive sibling, drift-gated + hard 200k-estimated-token budget), build-reference-pages.py (E2 Phase 2 — managed-region regenerator now driving THREE managed regions: the 82-option enumeration in `docs/reference/formatter.md`, the 8-row integrations matrix + endpoint detail in `docs/integrations/catalogue.md`, AND the recipes matrix in `docs/recipes/index.md`, all three drift-gated; all original E2 Phase 2 auto-gen targets shipped); still open: per-layer YAML (layers/*.yaml), OpenAPI (blocked on REST endpoints in v1.8+)
 - [ ] 6 video walkthroughs published with English + at least one other locale captions

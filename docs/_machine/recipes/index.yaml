@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 21
+recipe_count: 24
 recipes:
 - id: cim-alerts--markers
   source:
@@ -65,6 +65,60 @@ recipes:
   - description: Sibling — CIM Authentication markers (source-IP geocoding for credential abuse)
     path: docs/recipes/cim-authentication/markers.md
   path: docs/recipes/cim-alerts/markers.md
+- id: cim-authentication--heat
+  source:
+    id: cim-authentication
+    display_name: CIM Authentication
+    pattern: splunk-cim
+  layer:
+    id: heat
+    display_name: Heatmap
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_SA_CIM
+    optional: false
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: 203.0.113.45
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '52.3676'
+  - name: lon
+    type: number
+    example: '4.9041'
+  - name: src_country
+    type: string
+    example: NL
+  - name: failure_count
+    type: integer
+    example: '417'
+  - name: weight
+    type: number
+    example: '0.84'
+    drives_formatter_option: heatmapOpacity
+  required_formatter_options:
+  - pointRenderer
+  - heatmapOpacity
+  - heatmapRadius
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, different layer (markers)
+    path: docs/recipes/cim-authentication/markers.md
+  - description: Splunk CIM skill — Authentication data model field reference
+    path: ~/.cursor/skills/splunk-cim/SKILL.md
+  - description: Splunk ES skill — risk-based alerting context for credential abuse
+    path: ~/.cursor/skills/splunk-enterprise-security/SKILL.md
+  - description: Layer reference — heat
+    path: docs/reference/layers.md
+  - description: Formatter schema — heatmapOpacity, heatmapRadius
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/cim-authentication/heat.md
 - id: cim-authentication--markers
   source:
     id: cim-authentication
@@ -119,6 +173,60 @@ recipes:
   - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
     path: docs/reference/bm-ct-1.md
   path: docs/recipes/cim-authentication/markers.md
+- id: cim-network-traffic--h3
+  source:
+    id: cim-network-traffic
+    display_name: CIM Network Traffic
+    pattern: splunk-cim
+  layer:
+    id: h3
+    display_name: H3 hexbin
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_SA_CIM
+    optional: false
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: 203.0.113.45
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '37.7749'
+  - name: lon
+    type: number
+    example: '-122.4194'
+  - name: value
+    type: number
+    example: '184320000'
+  - name: dest_country
+    type: string
+    example: US
+  - name: event_count
+    type: integer
+    example: '847'
+  required_formatter_options:
+  - pointRenderer
+  - hexbinAggregate
+  - hexbinResolution
+  - hexbinOpacity
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, different layer (markers)
+    path: docs/recipes/cim-network-traffic/markers.md
+  - description: Companion recipe — same source, different layer (paths)
+    path: docs/recipes/cim-network-traffic/paths.md
+  - description: Splunk CIM skill — Network Traffic data model field reference
+    path: ~/.cursor/skills/splunk-cim/SKILL.md
+  - description: Layer reference — H3 hexbin layer (resolution + aggregation contract)
+    path: docs/reference/layers.md
+  - description: hexbin layer source (binning + colour ramp + opacity contract)
+    path: better_map/appserver/static/visualizations/better_map/src/lib/layers/hexbin.js
+  path: docs/recipes/cim-network-traffic/h3.md
 - id: cim-network-traffic--markers
   source:
     id: cim-network-traffic
@@ -773,6 +881,58 @@ recipes:
   - description: dataFitness.js alias auto-detect (lat/lon/id auto-picked)
     path: better_map/appserver/static/visualizations/better_map/src/lib/dataFitness.js
   path: docs/recipes/kvstore-latlon/markers.md
+- id: meraki--h3
+  source:
+    id: meraki
+    display_name: Cisco Meraki (devices)
+    pattern: splunk-vendor-ta
+  layer:
+    id: h3
+    display_name: H3 hexbin
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_TA_cisco_meraki
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: Q2XX-XXXX-XXXX
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '37.7749'
+  - name: lon
+    type: number
+    example: '-122.4194'
+  - name: value
+    type: integer
+    example: '47'
+  - name: alerting_count
+    type: integer
+    example: '3'
+  - name: offline_count
+    type: integer
+    example: '1'
+  required_formatter_options:
+  - pointRenderer
+  - hexbinAggregate
+  - hexbinResolution
+  - hexbinOpacity
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, different layer (markers)
+    path: docs/recipes/meraki/markers.md
+  - description: cisco-meraki-ta-setup skill — TA install, indexes, account config, input types
+    path: ~/.cursor/skills/cisco-meraki-ta-setup/SKILL.md
+  - description: cisco-products skill — Meraki sourcetypes, fields, sample queries
+    path: ~/.cursor/skills/cisco-products/SKILL.md
+  - description: Layer reference — H3 hexbin layer (resolution + aggregation contract)
+    path: docs/reference/layers.md
+  - description: hexbin layer source (binning + colour ramp + opacity contract)
+    path: better_map/appserver/static/visualizations/better_map/src/lib/layers/hexbin.js
+  path: docs/recipes/meraki/h3.md
 - id: meraki--markers
   source:
     id: meraki
