@@ -2288,6 +2288,70 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   well into wave 11-12 even without additional
 >   trim.
 
+> **Status (v1.7-prep, 2026-05-18): G7 Phase 2 follow-up #4
+> SHIPPED — historical CHANGELOG version-section trim in
+> `build-llms-full-txt.py`.** The wave 9 status block (above)
+> noted that wave 9 landed at ~172k estimated tokens with
+> only ~3k headroom to the 175k WARN, and projected that
+> wave 10's ~9-11k cost would push the corpus to ~181-183k
+> — squarely over WARN. The wave 9 plan called for either
+> the long-queued Appendix B summarisation (~4.5k savings
+> measured, not the ~15-20k originally projected) or a new
+> lever. Re-measuring the top contributors to `llms-full.txt`
+> after wave 9 shipped showed the real ranking is:
+> `roadmap.md` ~27.9k → `changelog.md` ~19.6k → `appendix:recipes`
+> ~4.5k. So the second-biggest non-recipe contributor is
+> CHANGELOG.md, not Appendix B — and the same trim shape
+> that worked for ROADMAP.md status blocks (keep the live
+> head, point to the full file for tail) applies cleanly to
+> the Keep-a-Changelog `## [VERSION] - DATE` section
+> structure. So follow-up #4 trims it:
+> - **What changed:** a new `_CHANGELOG_VERSION_HEADING`
+>   regex plus `strip_changelog_old_versions()` helper in
+>   `scripts/build-llms-full-txt.py`. The strip runs in
+>   `render()` BEFORE `strip_chrome()` (same order as the
+>   ROADMAP status-block strip — chrome cleanup tidies the
+>   joined seam). The regex matches `^## \[<version>\] - <date>$`
+>   headings; the helper keeps the top `_CHANGELOG_KEEP_VERSIONS`
+>   (currently 3) sections fully and replaces everything
+>   below with (a) a one-line pointer to the canonical
+>   CHANGELOG.md at the docs site URL + the repo URL, and
+>   (b) a bullet list of `[VERSION] - DATE` titles for the
+>   trimmed sections so an agent inspecting `llms-full.txt`
+>   still sees WHICH older versions exist (just not their
+>   body). The on-disk `CHANGELOG.md` is unchanged and the
+>   MkDocs site still renders every version via the
+>   mkdocs-include-markdown plugin directive in
+>   `docs/changelog.md` (which pulls `../CHANGELOG.md`
+>   inline) — the trim is a llms-full.txt-only transform
+>   applied to the already-expanded body, same pattern as
+>   follow-up #3.
+> - **Token-budget impact:** wave 9's ~172k landed → post-trim
+>   baseline drops to ~156.3k against the unchanged 175k
+>   WARN (measured against the as-shipped CHANGELOG.md with
+>   18 version sections; the trim reclaims 14 of them,
+>   keeping 1.6.2 / 1.6.1 / 1.6.0). That's ~18.7k headroom =
+>   ~9 more recipes at ~2.1k each before the next
+>   recalibration. Wave 10 at ~9-11k now lands at ~165-167k
+>   — comfortably below WARN.
+> - **Forward maintenance:** every new release adds one new
+>   `## [VERSION]` section at the top of CHANGELOG.md. The
+>   trim keeps the top-3, so each release naturally rotates
+>   the oldest of the kept three out of the in-corpus body
+>   (still recoverable via the pointer). The
+>   `_CHANGELOG_KEEP_VERSIONS = 3` constant is the lever to
+>   widen the kept window if the release cadence slows and
+>   3 versions stop covering "the current cycle"; widen with
+>   care because per-version weight averages ~1.1k tokens.
+> - **What's NOT in this prep (still deferred to a future
+>   recalibration):** Appendix B summarisation remains the
+>   next lever if the per-recipe pace accelerates past the
+>   ~9-recipe headroom this trim opens. The measured cost
+>   of Appendix B is now known to be ~4.5k tokens (much
+>   smaller than the ~15-20k originally projected) so the
+>   ROI is correspondingly smaller; it stays queued for the
+>   wave 12-13 horizon.
+
 * **Problem:** Better Map can consume data from ~10 categorically different Splunk source patterns (see table below). A new customer with NetFlow data who wants a heat layer should not have to derive the SPL from first principles. There is currently no recipe documentation; the burden of "what SPL do I write?" falls entirely on the user, who often does not know the field names of their own data, let alone the contract this viz wants.
 * **Design:** Build the recipe matrix as `docs/recipes/<source>/<layer>.md`, where each leaf file is a **complete, copy-paste-runnable** recipe. Every recipe has the same 6-section structure (enforced by a validator script — G2 CI step), so an LLM can ingest the corpus consistently:
 
