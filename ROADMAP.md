@@ -314,6 +314,90 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 
 #### D5. End-to-end test suite — `M`
 
+> **Status (v1.7-prep, 2026-05-18): D5 Phase 1 SHIPPED.** The repo
+> now ships a Docker-Compose Splunk Enterprise harness plus a
+> dispatch-test rig that smoke-tests every Dashboard Studio
+> dashboard's SPL against a live splunkd. Concretely:
+> - **`docker/docker-compose.yml`** — single Splunk Enterprise
+>   container (`splunk/splunk:${SPLUNK_IMAGE_TAG:-latest}`), ports
+>   8000 (UI), 8088 (HEC), 8089 (REST), named volumes
+>   `better_map_splunk_etc` + `better_map_splunk_var` for state,
+>   bind-mount `./staging:/staging:ro` so the install step can use
+>   the URL-encoded `name=/staging/...` pattern instead of multipart
+>   (multipart is rejected by splunkd:8089 — see
+>   `~/.cursor/skills/splunk-remote-app-deploy/SKILL.md`). Curl-
+>   based healthcheck against `/services/server/info` with a
+>   60 s start-period and 30 retries. Fail-fast `${VAR:?}` syntax
+>   on `SPLUNK_PASSWORD` and `SPLUNK_HEC_TOKEN`.
+> - **`docker/.env.example`** + `.gitignore` entry for `docker/.env`
+>   (operator copies `.env.example`, fills in
+>   `SPLUNK_PASSWORD` ≥ 8 chars + a uuid4 `SPLUNK_HEC_TOKEN`,
+>   optional port + image-tag overrides).
+> - **`docker/scripts/bootstrap.sh`** — idempotent ~440 LOC.
+>   Validates prerequisites, boots the container, polls splunkd
+>   until 200 OK on `/services/server/info` (10-minute deadline),
+>   mints a 30-day REST bearer token via `splunk add token`
+>   (graceful fallback for both `splunk _internal call` XML and
+>   the simpler CLI output formats), builds the app tarball (the
+>   rsync + chmod + tar block mirrors lines 53–87 of
+>   `scripts/run-appinspect-local.sh` — keep in sync; refactor to
+>   a shared `scripts/build-app-tarball.sh` is left for a follow-
+>   up), POSTs to `/services/apps/local` with `name=<container
+>   path>` `filename=true` `update=true`, restarts splunkd and
+>   waits for it back up, writes `secrets.env` at the repo root
+>   chmod 600 with `SPLUNK_HOST=localhost` + `SPLUNK_PORT=8089` +
+>   the minted `SPLUNK_TOKEN` + HEC settings + `SPLUNK_INSECURE=1`.
+>   Supports `--skip-install` (boot only) and `--skip-build` (use
+>   existing tarball).
+> - **`docker/scripts/teardown.sh`** — `docker compose down -v`
+>   (drops state) plus clears `docker/staging/` and removes
+>   `secrets.env` ONLY if it points at `localhost` (preserves a
+>   hand-edited remote-tenant config). Supports `--keep-volumes`
+>   to preserve state across a stop/start.
+> - **`scripts/dispatch-test.py`** — ~340 LOC, stdlib-only (urllib
+>   + xml + json + dataclasses), zero pip deps. Same XML/JSON
+>   parse logic as `scripts/check-dashboard-xml-json.py` so the
+>   two stay in semantic sync. Walks
+>   `better_map/default/data/ui/views/*.xml`, extracts every
+>   `ds.search` `options.query` from the Dashboard Studio CDATA
+>   JSON (66 queries across 13 dashboards as of cut),
+>   `POST /servicesNS/nobody/better_map/search/jobs`
+>   `search=<spl>` `exec_mode=normal` `earliest_time=-24h@h`
+>   `latest_time=now`, polls the returned sid until `isDone=true`
+>   (per-query 60 s timeout, overridable with `--timeout`),
+>   classifies the messages array into info / warn / error / fatal,
+>   prints a per-dashboard PASS / WARN / FAIL report, exits 0/1.
+>   Pre-flight `GET /services/server/info` so a stale token
+>   surfaces as one clear failure not 13 noisy 401s. `--filter
+>   <regex>` narrows to a single dashboard; `--verbose` prints all
+>   queries and all info/warn messages.
+> - **Operator doc** at
+>   `docs/development/local-splunk-harness.md` — quick start,
+>   step-by-step description of what bootstrap.sh + dispatch-
+>   test.py do, talking to a remote Splunk instead of the local
+>   harness, common failure modes, the "why CI integration is
+>   deferred" explanation, cleanup. Wired into `mkdocs.yml` `nav:`
+>   under a new "Development" group; passes `mkdocs build
+>   --strict`.
+> - **Agent contract** at `docs/_machine/agents.md` §10 — when to
+>   run the harness, the contract (what each file does, what's
+>   gitignored), things you MUST NOT do (commit `docker/.env` or
+>   `docker/staging/` or `secrets.env`; change the install POST
+>   to multipart; wire into free GitHub Actions runners — Splunk
+>   needs ≥4 GB and the runners have 7 GB total), plus a new
+>   "Dashboard-changed lane" block in §7 directing maintainers
+>   to run `bash docker/scripts/bootstrap.sh && python3
+>   scripts/dispatch-test.py` before any PR touching
+>   `default/data/ui/views/*.xml`.
+> - **What's NOT in Phase 1:** Playwright in-browser rendering
+>   (Phase 2), version matrix (Splunk 10.2 × 10.3 — Phase 2,
+>   requires the self-hosted-runner decision from the §3 D5 risk
+>   note), CI integration (Phase 2 — see "Why CI integration is
+>   deferred" in the operator doc). Phase 1 captures the runtime-
+>   behaviour gap the static gates leave open at a fraction of
+>   the runner-sizing cost; Phase 2 closes the visual-rendering
+>   gap that only a real browser can.
+
 * **Problem:** No automated test ever exercises a real Splunk REST install + dashboard render. The 2026-05-16 lab deploy worked but was driven by hand; a missing CDATA closing tag, a typo in `visualizations.conf`, or an SPL parse error in a new showcase would not be caught until a human user opens the dashboard.
 * **Design:** Docker-compose with Splunk Enterprise (matrix: 10.2, 10.3) + the freshly built tarball + an HEC token. Playwright drives a real browser at `localhost:8000` and asserts each showcase renders, each layer toggles, each scrubber control works, and the BM-CT-1 reset button returns the viz to the documented initial state. The dispatch-test from the 2026-05-16 deploy (one SPL per dashboard, fatal/error scan) is the lightweight pre-flight; Playwright is the heavy in-browser check. Run on every PR via GitHub Actions.
 * **Prereqs:** D2 harness, G2 CI/CD.
@@ -988,7 +1072,7 @@ Goal: prove that v1.6 actually works under real load, close the operational-rigo
 | D1. AppInspect re-cert | D | 2 |
 | D2. Browser compatibility matrix | D | 2 |
 | **D3. Accessibility audit (Phase 1 SHIPPED)** | D | 2 |
-| D5. End-to-end test suite (dispatch + Playwright) | D | 5 |
+| **D5. End-to-end test suite (Phase 1 SHIPPED — Docker harness + dispatch test; Phase 2 — Playwright + CI matrix — deferred to self-hosted runner decision)** | D | 5 |
 | **D6. Demo data pack & one-click showcase mode (SHIPPED)** | D | 2 |
 | C1–C8. Eight Splunk integrations verified | C | 6×S (12) + 2×M (10) = 22 |
 | E1. Splunkbase listing | E | 5 |
@@ -1139,6 +1223,7 @@ If, and only if, every box below is true, we can credibly call v2.0 "one of the 
 - [ ] **JS↔CSS contract lint (G8) green: every class created in `src/lib/**/*.js` has a rule in `visualization.css` or an allowlist entry; reverting to the v1.6.0 stylesheet reproducibly fails the lint**
 - [ ] **Dashboard XML/JSON parse check green: every `default/data/ui/views/*.xml` parses, every embedded JSON definition parses** ✅ (Q-1, PR #2)
 - [ ] **Dashboard ↔ widget token contract green: every `$better_map.*$` token referenced by a dashboard has a matching string-literal producer in `src/lib/**/*.js`** ✅ (Q-1B, defends against SPATIAL-1 regression class)
+- [~] **Dashboard SPL dispatch test green: every Dashboard Studio `ds.search` query completes against a live splunkd with zero error/fatal messages — Phase 1 ✅** (D5 Phase 1 — Docker-Compose Splunk harness at `docker/`, maintainer-driven gate via `bash docker/scripts/bootstrap.sh && python3 scripts/dispatch-test.py`, 66 queries across 13 dashboards as of cut; full CI integration is Phase 2 — deferred to the self-hosted-runner decision in the §3 D5 risk note)
 - [ ] **Release manifest matches source tree (G3): `default/_better_map_manifest.json` checked in; `scripts/check-manifest.py` CI gate PR-blocking; operator runbook `scripts/find-orphans.sh` SSHes into a deployed install and reports orphans (grouped + size-summed) — verified against `rev` 2026-05-17 with 50,994 orphan files / 667 MiB surfaced (see §1c gap 18 + verification table)** ✅ (G3 Phase 1)
 - [ ] **Production-bundle console-noise check green: no unallowlisted `console.warn` / `.error` / `.debug` in the minified `visualization.js`**
 - [ ] Perf parity with kepler.gl on the 5 layer types they both support, measured by A4 harness

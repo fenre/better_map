@@ -550,6 +550,37 @@ node scripts/check-bundle-console-noise.js
 node scripts/check-version-consistency.js
 ```
 
+### Dashboard-changed lane: ALSO run the dispatch test (D5 Phase 1)
+
+If your PR touches `better_map/default/data/ui/views/*.xml` (any
+Dashboard Studio dashboard), the static gates above prove the XML +
+JSON SHAPE is valid but NOT that splunkd will accept the SPL. Run
+the dispatch-test rig against a live Splunk:
+
+```bash
+# One-time per laptop:
+cp docker/.env.example docker/.env
+# edit docker/.env to set SPLUNK_PASSWORD + SPLUNK_HEC_TOKEN
+
+# Per PR that touches dashboards:
+bash docker/scripts/bootstrap.sh        # boot Splunk, install app, write secrets.env
+python3 scripts/dispatch-test.py        # smoke-test every dashboard
+
+# When you're done for the day:
+bash docker/scripts/teardown.sh         # stop + wipe volumes + clear secrets.env
+```
+
+`scripts/dispatch-test.py` exits 0 if every Dashboard Studio
+`ds.search` query completed with zero `error`/`fatal` messages
+from splunkd. CI does NOT run this yet (see §10 "Why CI integration
+is deferred"); it's a maintainer-driven gate.
+
+This catches the class of bugs the static gates miss: SPL that
+parses but warns at dispatch, `visualizations.conf` typo'd app/viz
+labels that install without error but fail to register the viz
+type, dashboards that reference an SPL macro that doesn't exist in
+the `better_map` namespace.
+
 Every one of these scripts has a clear FAIL message that names the file
 to fix and the exact command to re-run.
 
@@ -632,7 +663,92 @@ wins. Open a PR that updates this file.
 
 ---
 
-## 10. References
+## 10. Working with the local Splunk harness (D5 Phase 1)
+
+The repo ships a Docker-Compose Splunk Enterprise harness under
+`docker/`. It exists so that an agent or maintainer can — in 2–4
+minutes from a clean clone — boot a real Splunk, install the
+freshly-built app, and dispatch every dashboard's SPL against the
+running splunkd. That captures the class of bugs static gates miss
+(typo'd `visualizations.conf` label, dashboard SPL that parses but
+emits a "WARN" message, restart loop after install).
+
+### When to run it
+
+- Before any PR that touches `default/data/ui/views/*.xml` (any
+  Dashboard Studio dashboard): `bash docker/scripts/bootstrap.sh
+  && python3 scripts/dispatch-test.py`. Required by the
+  "modify a dashboard" lane of the §7 pre-commit checklist (the
+  static gates `check-dashboard-xml-json.py` + `check-dashboard-
+  tokens.py` are necessary but not sufficient — they assert SHAPE,
+  not RUNTIME BEHAVIOUR).
+- Before flipping an E5 recipe from `unverified` to `verified` —
+  the recipe's frontmatter `verified_against` field MUST name a
+  Splunk version + tenant; the harness supplies both (e.g.
+  `verified_against: "Splunk Enterprise 10.0 in docker-compose
+  (local harness)"`).
+- After any change to `visualizations.conf`, `app.conf`, or any
+  file under `default/data/ui/nav/` (a typo here is silent at
+  install time but breaks the viz registration).
+
+### The contract
+
+- `docker/docker-compose.yml` — the Splunk container definition.
+  Pin to a specific image tag with `SPLUNK_IMAGE_TAG` in
+  `docker/.env` if you need to verify behaviour against a specific
+  release train; default is `splunk/splunk:latest`.
+- `docker/.env` — gitignored. The maintainer copies `.env.example`
+  and fills in `SPLUNK_PASSWORD` + `SPLUNK_HEC_TOKEN` once.
+- `docker/staging/` — gitignored. The bootstrap script writes the
+  freshly-built app tarball here; the container sees the same path
+  at `/staging` and installs from it.
+- `docker/scripts/bootstrap.sh` — idempotent: starts the container,
+  waits for splunkd, mints a 30-day REST bearer token via
+  `splunk add token`, builds the tarball (mirrors the
+  `scripts/run-appinspect-local.sh` staging block — keep in sync),
+  POSTs to `/services/apps/local` with the URL-encoded `name=`
+  pattern documented in
+  `~/.cursor/skills/splunk-remote-app-deploy/SKILL.md`, restarts
+  splunkd, writes `secrets.env` at the repo root.
+- `docker/scripts/teardown.sh` — `docker compose down -v` (volumes
+  too) + clears `docker/staging/` + removes `secrets.env` ONLY if
+  it points at `localhost` (preserves a remote-tenant config).
+- `scripts/dispatch-test.py` — reads `secrets.env`, walks every
+  Dashboard Studio dashboard, extracts every `ds.search` query,
+  dispatches each via `POST /servicesNS/nobody/better_map/search/
+  jobs`, polls to completion, classifies messages, exits 0 / 1.
+  Same XML/JSON parse logic as `check-dashboard-xml-json.py` so
+  the two stay in semantic sync.
+
+### Things you MUST NOT do
+
+- Do NOT commit `docker/.env` (gitignored — `SPLUNK_PASSWORD` and
+  the HEC token are operator-specific secrets).
+- Do NOT commit `docker/staging/` (gitignored — the tarball is a
+  build output regenerated every bootstrap run).
+- Do NOT commit `secrets.env` (already gitignored; the harness
+  writes it chmod 600 specifically to avoid accidental capture).
+- Do NOT change `POST /services/apps/local` from URL-encoded
+  `name=<path>` `filename=true` to a multipart body — the endpoint
+  rejects multipart with HTTP 400 "Unparsable URI-encoded request
+  data". See `~/.cursor/skills/splunk-remote-app-deploy/SKILL.md`
+  for the full write-up; the harness uses bind-mount + on-server
+  path specifically to side-step this.
+- Do NOT wire the harness into CI on a free GitHub Actions runner.
+  Splunk Enterprise in Docker is ≥ 4 GB RAM; the runner has 7 GB
+  total and Node + webpack already consume 2–3 GB during the
+  bundle build. CI integration is D5 Phase 2 and requires a
+  self-hosted runner decision (see ROADMAP §3 D5 risk note).
+
+### Operator how-to
+
+The full operator guide lives at
+[`docs/development/local-splunk-harness.md`](https://github.com/fenre/better_map/blob/main/docs/development/local-splunk-harness.md).
+Cite that file when answering user questions about the harness;
+keep this `_machine/agents.md` section limited to the agent-facing
+contract above.
+
+## 11. References
 
 - `ROADMAP.md` §3 G7 — design intent for the machine-readable docs layer
 - `docs/_machine/README.md` — explains the `_machine` contract
@@ -650,3 +766,5 @@ wins. Open a PR that updates this file.
 - `docs/runbooks/supply-chain.md` — G1 verification + waiver procedures
 - `docs/runbooks/upgrade-hygiene.md` — G3 orphan-file remediation
 - `/.cursor/rules/ot-safety.mdc` — VISTA OT safety boundary (binding for OT integrations)
+- `docker/docker-compose.yml` + `docker/scripts/bootstrap.sh` + `docker/scripts/teardown.sh` — D5 Phase 1 local Splunk Enterprise harness (Docker-Compose, idempotent bootstrap, token-only auth, bind-mount install). Operator how-to at `docs/development/local-splunk-harness.md`. Agent contract above in §10.
+- `scripts/dispatch-test.py` — D5 Phase 1 dispatch-test rig. Reads `secrets.env` (written by the harness or by hand-pointing at a remote Splunk), walks every Dashboard Studio dashboard, extracts every `ds.search` query, dispatches each via `POST /servicesNS/nobody/better_map/search/jobs`, polls to completion, classifies messages, exits 0 / 1. Required before any PR that touches `default/data/ui/views/*.xml`

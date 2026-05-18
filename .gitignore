@@ -106,3 +106,13 @@ dist-appinspect-local/
 # -------------------------------------------------------------
 site/
 .venv-mkdocs/
+
+# -------------------------------------------------------------
+# D5 — Local Splunk harness (docker/docker-compose.yml).
+# `docker/.env` carries the operator's admin password + HEC
+# token; never commit. `docker/staging/` holds the freshly-
+# built app tarball bind-mounted into the Splunk container
+# at install time; regenerated every bootstrap run.
+# -------------------------------------------------------------
+docker/.env
+docker/staging/
