@@ -29,12 +29,13 @@ Target sections (v1.7-prep, E2 Phase 2):
   followed by a per-integration endpoint detail subsection. The
   hand-authored prose blocks BELOW the marker pair (one ``##``
   heading per integration) are preserved verbatim.
-
-Subsequent cuts (E2 Phase 2 follow-up PRs, NOT shipped here) will
-add:
-
-* ``docs/recipes/index.md`` — auto-rendered matrix table from
-  ``docs/_machine/recipes/index.yaml``.
+* ``docs/recipes/index.md`` — section ``recipes-matrix`` emits a
+  single comparison table across every recipe in
+  ``docs/_machine/recipes/index.yaml`` (source pattern, layer,
+  status, required Splunk apps, expected-fields count, formatter
+  options, OT-safety flag, last-verified date, link to the recipe
+  markdown). The intro / contract / "where to read more" prose
+  outside the marker pair is preserved verbatim.
 
 Usage::
 
@@ -62,6 +63,8 @@ FORMATTER_SCHEMA = REPO_ROOT / "docs" / "_machine" / "formatter-schema.json"
 FORMATTER_DOC = REPO_ROOT / "docs" / "reference" / "formatter.md"
 INTEGRATIONS_DIR = REPO_ROOT / "docs" / "_machine" / "integrations"
 INTEGRATIONS_DOC = REPO_ROOT / "docs" / "integrations" / "catalogue.md"
+RECIPES_INDEX = REPO_ROOT / "docs" / "_machine" / "recipes" / "index.yaml"
+RECIPES_DOC = REPO_ROOT / "docs" / "recipes" / "index.md"
 GITHUB_BLOB_BASE = "https://github.com/fenre/better_map/blob/main"
 GITHUB_TREE_BASE = "https://github.com/fenre/better_map/tree/main"
 
@@ -459,6 +462,219 @@ def render_integrations_catalogue() -> str:
     return buf.getvalue().rstrip() + "\n"
 
 
+# ------------------------------------------------------ recipes renderer
+
+
+def _format_apps_required(apps: Any) -> str:
+    """Render the ``splunk_apps_required`` cell for one recipe row.
+
+    The schema entry is a list of ``{id, optional: bool}`` dicts. We
+    render required apps as bare ```id```; optional apps get an
+    explicit ``(optional)`` suffix so a reader can tell at a glance
+    which deployment requirements are hard and which are loose.
+    """
+    if not isinstance(apps, list) or not apps:
+        return "_none (vanilla install)_"
+    parts: list[str] = []
+    for app in apps:
+        if not isinstance(app, dict):
+            continue
+        app_id = str(app.get("id", "?"))
+        is_optional = bool(app.get("optional", False))
+        if is_optional:
+            parts.append(f"`{app_id}` _(optional)_")
+        else:
+            parts.append(f"`{app_id}`")
+    return ", ".join(parts) if parts else "—"
+
+
+def _format_formatter_options(options: Any) -> str:
+    """Render the formatter-options cell — count + comma list."""
+    if not isinstance(options, list) or not options:
+        return "0"
+    rendered = ", ".join(f"`{o}`" for o in options)
+    return f"{len(options)} ({rendered})"
+
+
+def _format_status(status: Any) -> str:
+    """Render the recipe status with a short visual prefix."""
+    s = str(status or "?")
+    if s == "verified":
+        return "verified"
+    if s == "unverified":
+        return "unverified _(needs live-tenant test)_"
+    if s == "deferred":
+        return "deferred"
+    return s
+
+
+def _recipe_doc_link(rel_path: str, source_display: str, layer_display: str) -> str:
+    """Render the recipe's display cell as a relative link.
+
+    The recipe markdown files live under ``docs/recipes/<src>/<layer>.md``
+    and the index page lives at ``docs/recipes/index.md`` — so the
+    correct in-site link from the index is
+    ``<source-id>/<layer-id>.md`` (drop the leading ``docs/recipes/``).
+    Keeping the link relative means MkDocs handles permalinks and the
+    page works equally well in a previewed local build.
+    """
+    label = f"{source_display} → {layer_display}"
+    if rel_path.startswith("docs/recipes/"):
+        site_rel = rel_path[len("docs/recipes/"):]
+    else:
+        site_rel = rel_path
+    return f"[{label}]({site_rel})"
+
+
+def render_recipes_matrix() -> str:
+    """Render the at-a-glance recipes matrix from the index YAML.
+
+    Reads ``docs/_machine/recipes/index.yaml`` (itself generated
+    deterministically by ``scripts/build-recipe-index.py`` from the
+    per-recipe frontmatter) and emits:
+
+    1. A one-line ``Total: N recipes · …`` summary that breaks down
+       status counts, distinct source patterns covered, and distinct
+       layer types covered.
+    2. A single Markdown table with one row per recipe, sorted by
+       recipe ``id`` (alphabetical — matches the index YAML's order).
+
+    The index file is the single source of truth; if it drifts
+    relative to the recipe markdown files, ``check-recipe-schema.py``
+    fails BEFORE this script ever runs in CI. We just consume it.
+    """
+    if not RECIPES_INDEX.is_file():
+        raise SystemExit(
+            f"[FAIL] recipes index missing: "
+            f"{RECIPES_INDEX.relative_to(REPO_ROOT)}. Run "
+            "`python3 scripts/build-recipe-index.py` first."
+        )
+
+    try:
+        index_data = _load_yaml(RECIPES_INDEX)
+    except Exception as exc:  # noqa: BLE001 — script-internal
+        raise SystemExit(
+            f"[FAIL] could not parse {RECIPES_INDEX.relative_to(REPO_ROOT)}: "
+            f"{exc}"
+        ) from exc
+
+    if not isinstance(index_data, dict):
+        raise SystemExit(
+            f"[FAIL] {RECIPES_INDEX.relative_to(REPO_ROOT)} did not parse "
+            "as a mapping (this file is auto-generated; if you see this, "
+            "run `python3 scripts/build-recipe-index.py`)"
+        )
+    recipes = index_data.get("recipes") or []
+    if not isinstance(recipes, list):
+        raise SystemExit(
+            f"[FAIL] {RECIPES_INDEX.relative_to(REPO_ROOT)} `recipes:` is "
+            "not a list"
+        )
+
+    # Stable order: sort by recipe id (alphabetical).
+    recipes_sorted = sorted(
+        (r for r in recipes if isinstance(r, dict)),
+        key=lambda r: str(r.get("id", "")),
+    )
+
+    # Summary counters.
+    status_counts: dict[str, int] = {}
+    source_patterns: set[str] = set()
+    layer_types: set[str] = set()
+    ot_safety_count = 0
+    for r in recipes_sorted:
+        status_counts[str(r.get("status", "?"))] = (
+            status_counts.get(str(r.get("status", "?")), 0) + 1
+        )
+        source = r.get("source", {}) or {}
+        layer = r.get("layer", {}) or {}
+        if isinstance(source, dict):
+            source_patterns.add(str(source.get("pattern", "")))
+        if isinstance(layer, dict):
+            layer_types.add(str(layer.get("id", "")))
+        if bool(r.get("ot_safety_relevant", False)):
+            ot_safety_count += 1
+
+    buf = io.StringIO()
+    buf.write(
+        "_The matrix table below is auto-generated from "
+        f"[`docs/_machine/recipes/index.yaml`]({GITHUB_BLOB_BASE}/docs/_machine/recipes/index.yaml) "
+        "by `scripts/build-reference-pages.py`. The index itself is "
+        "regenerated by `scripts/build-recipe-index.py` from the "
+        "frontmatter of every "
+        f"[`docs/recipes/<source>/<layer>.md`]({GITHUB_TREE_BASE}/docs/recipes) "
+        "file. Do not edit the auto-managed section by hand — run the "
+        "regenerators and commit the regenerated files._\n\n"
+    )
+
+    summary_parts = [f"{len(recipes_sorted)} recipes"]
+    for status in ("verified", "unverified", "deferred"):
+        if status in status_counts:
+            summary_parts.append(f"{status_counts[status]} {status}")
+    for status, count in sorted(status_counts.items()):
+        if status not in {"verified", "unverified", "deferred"}:
+            summary_parts.append(f"{count} {status}")
+    summary_parts.append(
+        f"{len(source_patterns)} source pattern"
+        + ("s" if len(source_patterns) != 1 else "")
+    )
+    summary_parts.append(
+        f"{len(layer_types)} layer type"
+        + ("s" if len(layer_types) != 1 else "")
+    )
+    if ot_safety_count:
+        summary_parts.append(
+            f"{ot_safety_count} OT-safety relevant"
+        )
+    buf.write(f"**Total: {' · '.join(summary_parts)}.**\n\n")
+
+    # Matrix table.
+    buf.write(
+        "| Recipe | Status | Source pattern | Layer | Splunk apps required | "
+        "Expected fields | Formatter options | OT-safety | Last verified |\n"
+    )
+    buf.write("|---|---|---|---|---|---|---|---|---|\n")
+    for r in recipes_sorted:
+        source = r.get("source", {}) or {}
+        layer = r.get("layer", {}) or {}
+        rel_path = str(r.get("path", ""))
+        source_display = str(source.get("display_name", "?"))
+        layer_display = str(layer.get("display_name", "?"))
+        source_pattern = str(source.get("pattern", "?"))
+        layer_id = str(layer.get("id", "?"))
+        expected_fields = r.get("expected_fields") or []
+        formatter_options = r.get("required_formatter_options") or []
+        ot_safety = bool(r.get("ot_safety_relevant", False))
+        last_verified = r.get("last_verified_iso8601") or "—"
+        row = (
+            _recipe_doc_link(rel_path, source_display, layer_display),
+            _escape_table_cell(_format_status(r.get("status"))),
+            f"`{source_pattern}`",
+            f"`{layer_id}`",
+            _escape_table_cell(_format_apps_required(r.get("splunk_apps_required"))),
+            f"{len(expected_fields) if isinstance(expected_fields, list) else 0}",
+            _escape_table_cell(
+                _format_formatter_options(formatter_options)
+            ),
+            "yes" if ot_safety else "no",
+            _escape_table_cell(str(last_verified)),
+        )
+        buf.write("| " + " | ".join(row) + " |\n")
+    buf.write("\n")
+
+    buf.write(
+        "_The `Last verified` column shows the `last_verified_iso8601` "
+        "value from each recipe's frontmatter. A `verified` status means "
+        "the SPL in §2 of that recipe has been dispatched against a real "
+        "Splunk tenant (named in the recipe's `verified_against` field); "
+        "`unverified` means the recipe is documentation-only and a "
+        "maintainer with live-tenant access should confirm before customer "
+        "delivery._\n"
+    )
+
+    return buf.getvalue().rstrip() + "\n"
+
+
 # ----------------------------------------------------- managed-region IO
 
 
@@ -540,6 +756,11 @@ def _regions() -> list[ManagedRegion]:
             section_id="integrations-matrix",
             render=render_integrations_catalogue,
         ),
+        ManagedRegion(
+            target=RECIPES_DOC,
+            section_id="recipes-matrix",
+            render=render_recipes_matrix,
+        ),
     ]
 
 
@@ -589,7 +810,8 @@ def main() -> int:
             f"[PASS] {len(projected)} reference page(s) in sync with "
             "their structured sources of truth "
             f"({FORMATTER_SCHEMA.relative_to(REPO_ROOT)}, "
-            f"{INTEGRATIONS_DIR.relative_to(REPO_ROOT)}/)."
+            f"{INTEGRATIONS_DIR.relative_to(REPO_ROOT)}/, "
+            f"{RECIPES_INDEX.relative_to(REPO_ROOT)})."
         )
         return 0
 
