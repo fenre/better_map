@@ -219,8 +219,10 @@ nav:
       - 'CIM Network Traffic — markers': recipes/cim-network-traffic/markers.md
       - 'CIM Network Traffic — paths': recipes/cim-network-traffic/paths.md
       - 'CIM Performance (CPU / memory / facilities) — markers': recipes/cim-performance/markers.md
+      - 'CSV lookup (geo points) — supercluster': recipes/csv-lookup-geo/supercluster.md
       - 'CSV lookup (geo polygons) — polygons': recipes/csv-lookup-geo/polygons.md
       - 'Cisco Cyber Vision (components + vulnerabilities) — markers': recipes/cyber-vision/markers.md
+      - 'Cisco ThousandEyes (path visualization) — paths': recipes/thousandeyes/paths.md
       - 'ES Risk-Based Alerting (risk index) — markers': recipes/es-risk/markers.md
       - 'ITSI service health (KPI base searches) — markers': recipes/itsi-kpi-base/markers.md
       - 'KV Store (lat/lon) — heatmap': recipes/kvstore-latlon/heat.md
@@ -229,6 +231,7 @@ nav:
       - 'NetFlow / sFlow / IPFIX — H3 hexbin': recipes/netflow-sflow-ipfix/h3.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — markers': recipes/ot-datastreamer/markers.md
       - 'Splunk Stream (wire data) — markers': recipes/splunk-stream/markers.md
+      - 'US states — 3D extrusion': recipes/geo-us-states/extrusion-3d.md
       - 'US states — choropleth': recipes/geo-us-states/choropleth.md
   - Performance: performance.md
   - Air-gapped deployment: air-gapped.md
