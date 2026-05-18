@@ -221,6 +221,7 @@ nav:
       - 'CIM Network Traffic — H3 hexbin': recipes/cim-network-traffic/h3.md
       - 'CIM Network Traffic — markers': recipes/cim-network-traffic/markers.md
       - 'CIM Network Traffic — paths': recipes/cim-network-traffic/paths.md
+      - 'CIM Network Traffic — supercluster': recipes/cim-network-traffic/supercluster.md
       - 'CIM Performance (CPU / memory / facilities) — H3 hexbin': recipes/cim-performance/h3.md
       - 'CIM Performance (CPU / memory / facilities) — markers': recipes/cim-performance/markers.md
       - 'CSV lookup (geo points) — H3 hexbin': recipes/csv-lookup-geo/h3.md
@@ -233,9 +234,11 @@ nav:
       - 'ITSI service health (KPI base searches) — markers': recipes/itsi-kpi-base/markers.md
       - 'KV Store (lat/lon) — heatmap': recipes/kvstore-latlon/heat.md
       - 'KV Store (lat/lon) — markers': recipes/kvstore-latlon/markers.md
+      - 'KV Store (lat/lon) — supercluster': recipes/kvstore-latlon/supercluster.md
       - 'Meraki (Cisco vendor TA) — H3 hexbin': recipes/meraki/h3.md
       - 'Meraki (Cisco vendor TA) — markers': recipes/meraki/markers.md
       - 'NetFlow / sFlow / IPFIX — H3 hexbin': recipes/netflow-sflow-ipfix/h3.md
+      - 'NetFlow / sFlow / IPFIX — heatmap': recipes/netflow-sflow-ipfix/heat.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — heatmap': recipes/ot-datastreamer/heat.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — markers': recipes/ot-datastreamer/markers.md
       - 'Splunk Stream (wire data) — heatmap': recipes/splunk-stream/heat.md
