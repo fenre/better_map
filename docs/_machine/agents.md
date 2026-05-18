@@ -304,25 +304,42 @@ the same expectations. Source of truth:
 4. **Regenerate the machine-readable indexes AND run the validators:**
 
    ```bash
-   python3 scripts/build-recipe-index.py
-   python3 scripts/check-recipe-schema.py
-   python3 scripts/build-llms-txt.py
-   python3 scripts/build-llms-full-txt.py
+   python3 scripts/build-recipe-index.py            # _machine/recipes/index.yaml
+   python3 scripts/check-recipe-schema.py           # frontmatter + body + index drift
+   python3 scripts/build-reference-pages.py         # recipes-matrix region in docs/recipes/index.md
+   python3 scripts/build-llms-txt.py                # short index
+   python3 scripts/build-llms-full-txt.py           # body-inclusive sibling
+   python3 scripts/build-reference-pages.py --check
    python3 scripts/build-llms-txt.py --check
    python3 scripts/build-llms-full-txt.py --check
    ```
 
-   The recipe check-script also re-runs the index builder under the
-   hood and compares byte-for-byte against the on-disk copy — drift
-   means you added a recipe but forgot to commit the regenerated index.
-   The same logic applies to `llms.txt`: the new recipe MUST appear
-   under `## Recipes (per-source playbooks)` of `docs/llms.txt`, so
-   commit the regenerated file in the same PR. The same logic also
-   applies to `llms-full.txt`: the new recipe MUST appear in
-   Appendix B (with status, required apps, expected-fields summary)
-   and the page body MUST appear under its `# === BEGIN: <url> ===`
-   block (the script walks the same `mkdocs.yml` `nav:` the
-   short-index generator does).
+   The recipe check-script re-runs `build-recipe-index.py` under the
+   hood and compares byte-for-byte against the on-disk
+   `_machine/recipes/index.yaml` — drift means you added a recipe but
+   forgot to commit the regenerated index. The new recipe THEN appears
+   in FOUR places, all derived from the same frontmatter:
+
+   - `docs/recipes/index.md` — a new row in the `recipes-matrix`
+     managed region (status, source pattern, layer, apps, field
+     count, formatter options, OT-safety flag, last-verified date).
+     Rendered by `build-reference-pages.py` from
+     `_machine/recipes/index.yaml`. The hand-authored
+     `## The recipe contract`, `## Where to read more`, and other
+     prose sections OUTSIDE the markers are preserved verbatim.
+   - `docs/_machine/recipes/index.yaml` — flattened frontmatter
+     under `recipes[]`.
+   - `docs/llms.txt` — under `## Recipes (per-source playbooks)`
+     with display name, status, source pattern, layer, apps.
+   - `docs/llms-full.txt` — under Appendix B (status, required
+     apps, expected-fields summary) AND the page body appears under
+     its `# === BEGIN: <url> ===` block (the script walks the same
+     `mkdocs.yml` `nav:` the short-index generator does).
+
+   Commit all five regenerated files in the same PR. All three CI
+   drift gates (`build-reference-pages.py --check`,
+   `build-llms-txt.py --check`, `build-llms-full-txt.py --check`)
+   plus `check-recipe-schema.py` will reject any drift.
 
 5. **(If possible) verify against a live tenant**, then flip
    `status: unverified` → `status: verified`, populate
@@ -517,10 +534,14 @@ node scripts/check-accessibility.js
 #   - docs/integrations/catalogue.md (integrations-matrix region)
 #     from docs/_machine/integrations/*.yaml — the at-a-glance
 #     matrix table + endpoint detail subsection.
+#   - docs/recipes/index.md (recipes-matrix region)
+#     from docs/_machine/recipes/index.yaml — the at-a-glance
+#     recipes matrix table (status, source, layer, apps, fields,
+#     formatter options, OT-safety, last verified).
 # Hand-authored narrative OUTSIDE the BEGIN/END AUTOGEN markers is
 # preserved. On drift: run `python3 scripts/build-reference-pages.py`
-# and commit. Needs PyYAML for the integrations matrix; the MkDocs
-# venv above already provides it.
+# and commit. Needs PyYAML for the integrations + recipes matrices;
+# the MkDocs venv above already provides it.
 .venv-mkdocs/bin/python3 scripts/build-reference-pages.py --check
 
 # Bundle hygiene (run after webpack build)
@@ -560,6 +581,8 @@ to fix and the exact command to re-run.
 | `[FAIL] docs/reference/formatter.md is out of sync vs the structured sources of truth` | You added/edited/removed a `formatter.html` control, or otherwise changed the formatter schema, but forgot to regenerate the auto-managed section of `docs/reference/formatter.md` | `python3 scripts/build-reference-pages.py && git add docs/reference/formatter.md`. The script only touches the region BETWEEN the `<!-- BEGIN AUTOGEN: formatter-enumeration -->` and `<!-- END AUTOGEN: formatter-enumeration -->` markers; hand-authored narrative outside the markers is preserved |
 | `[FAIL] docs/integrations/catalogue.md is out of sync vs the structured sources of truth` | You added/edited/removed an integration under `docs/_machine/integrations/*.yaml` (status, splunk_app_required, endpoints, auth, ot_safety, tested_against) but forgot to regenerate the auto-managed matrix section of `docs/integrations/catalogue.md` | `python3 scripts/build-reference-pages.py && git add docs/integrations/catalogue.md`. The script only touches the region BETWEEN the `<!-- BEGIN AUTOGEN: integrations-matrix -->` and `<!-- END AUTOGEN: integrations-matrix -->` markers; the eight `## <integration>` prose blocks below the markers are hand-authored and survive re-generation |
 | `[FAIL] docs/integrations/catalogue.md has no `<!-- BEGIN AUTOGEN: integrations-matrix -->` markers` | The catalogue page lost its managed-region marker pair (e.g. someone deleted them while editing prose). The script refuses to "guess" where to put the auto-gen output | Add the marker pair back at the spot where the auto-generated matrix + endpoint detail should live (canonically: right after the intro bullet list and before the first `## <integration>` heading), then rerun `python3 scripts/build-reference-pages.py` |
+| `[FAIL] docs/recipes/index.md is out of sync vs the structured sources of truth` | You added/edited/removed a recipe (frontmatter or whole file under `docs/recipes/<source>/<layer>.md`) and EITHER forgot to regenerate `docs/_machine/recipes/index.yaml` via `build-recipe-index.py` OR forgot to regenerate the auto-managed matrix section of `docs/recipes/index.md` via `build-reference-pages.py` | Run BOTH regenerators in order: `python3 scripts/build-recipe-index.py && python3 scripts/build-reference-pages.py && git add docs/_machine/recipes/index.yaml docs/recipes/index.md`. The recipes-matrix region only touches the region BETWEEN the `<!-- BEGIN AUTOGEN: recipes-matrix -->` and `<!-- END AUTOGEN: recipes-matrix -->` markers; the `## The recipe contract` / `## Where to read more` hand-authored sections survive re-generation |
+| `[FAIL] docs/recipes/index.md has no `<!-- BEGIN AUTOGEN: recipes-matrix -->` markers` | The recipes index page lost its managed-region marker pair (e.g. someone deleted them while editing prose). The script refuses to "guess" where to put the auto-gen output | Add the marker pair back at the spot where the auto-generated matrix should live (canonically: inside the `## Status (v1.7-prep, ...): E5 Phase 1 SHIPPED` section, right after the intro paragraph and before the "remaining matrix cells…" paragraph), then rerun `python3 scripts/build-reference-pages.py` |
 | `[FAIL] docs/reference/<file>.md has no `<!-- BEGIN AUTOGEN: <id> -->` / `<!-- END AUTOGEN: <id> -->` markers` | The reference page lost its managed-region marker pair (e.g. someone deleted them while editing prose). The script refuses to "guess" where to put the auto-gen output | Add the marker pair back at the spot where the auto-generated content should live, then rerun `python3 scripts/build-reference-pages.py` |
 | `demo.test.js > registers exactly the three v1.7 presets — Expected 3, received 4` | You added a fourth preset to `src/lib/demo/index.js` but forgot to bump the test that locks the count + IDs in order | Update the assertion in `src/lib/__tests__/demo.test.js` (search for "v1.7 presets"). The lock is intentional — silent preset additions break the formatter dropdown and `savedsearches.conf.spec` contract; the failing test forces you to update all three together |
 | Showcase dashboard renders three empty maps where the demos should be | The viz bundle was built BEFORE the new demo preset was wired into `src/lib/demo/index.js`, so the runtime registry doesn't contain it (the dashboard option `demoPreset: foo` finds no match → falls back to SPL → SPL is the trivial placeholder → empty map) | `cd better_map/appserver/static/visualizations/better_map && npm run build`; reload the dashboard with cache busting (cmd-shift-R / ctrl-shift-R). Confirm `loadDemoPreset('foo')` returns non-null from a browser devtools console invocation |
@@ -585,12 +608,15 @@ to fix and the exact command to re-run.
   `scripts/build-llms-full-txt.py --check` and bounded by a hard
   200k-estimated-token budget; the E2 Phase 2 auto-generated
   enumerations live INSIDE the hand-authored human-readable pages
-  (currently:
+  (currently THREE managed regions:
   [`docs/reference/formatter.md`](https://github.com/fenre/better_map/blob/main/docs/reference/formatter.md)
   inside the `<!-- BEGIN AUTOGEN: formatter-enumeration -->`
-  markers, AND
+  markers,
   [`docs/integrations/catalogue.md`](https://github.com/fenre/better_map/blob/main/docs/integrations/catalogue.md)
   inside the `<!-- BEGIN AUTOGEN: integrations-matrix -->`
+  markers, AND
+  [`docs/recipes/index.md`](https://github.com/fenre/better_map/blob/main/docs/recipes/index.md)
+  inside the `<!-- BEGIN AUTOGEN: recipes-matrix -->`
   markers), drift-gated by `scripts/build-reference-pages.py --check`).
 - Not the customer-facing setup guide. That's E5 — the recipe matrix.
   Phase 1 (framework + three starter recipes) shipped in v1.7-prep;
@@ -618,7 +644,7 @@ wins. Open a PR that updates this file.
 - `docs/llms-full.txt` — body-inclusive sibling of `llms.txt` (G7 Phase 2 follow-up): every page in `mkdocs.yml` `nav:` concatenated with stable `# === BEGIN/END ===` delimiters, plus an integrations matrix (Appendix A) and recipes matrix (Appendix B). Bounded by a hard 200k-estimated-token budget so the output stays inside the context window of every practical LLM. Ships verbatim at `site/llms-full.txt` alongside `site/llms.txt`
 - `scripts/build-llms-txt.py` — generator + `--check` drift gate for the short `llms.txt`
 - `scripts/build-llms-full-txt.py` — generator + `--check` drift gate for the body-inclusive `llms-full.txt`. Same deterministic contract: no clock-based fields, page emission order follows `mkdocs.yml` `nav:`, MkDocs Material chrome is stripped at render time
-- `scripts/build-reference-pages.py` — generator + `--check` drift gate for the auto-managed regions inside the human-readable pages (E2 Phase 2 — currently the 82-option enumeration in `docs/reference/formatter.md` AND the integrations matrix + endpoint detail in `docs/integrations/catalogue.md`)
+- `scripts/build-reference-pages.py` — generator + `--check` drift gate for the auto-managed regions inside the human-readable pages (E2 Phase 2 — currently THREE regions: the 82-option enumeration in `docs/reference/formatter.md`, the integrations matrix + endpoint detail in `docs/integrations/catalogue.md`, and the recipes matrix in `docs/recipes/index.md`)
 - `better_map/appserver/static/visualizations/better_map/src/lib/demo/` — v1.7 demo data pack: deterministic generators for three showcase presets (fleet telemetry, smart-building IoT, cyber incidents) backing the `demoPreset` formatter dropdown. See §5c for the contract.
 - `better_map/default/data/ui/views/better_map_showcase.xml` — v1.7 showcase dashboard exercising all three demo presets in one view; renders with zero live Splunk data
 - `docs/runbooks/supply-chain.md` — G1 verification + waiver procedures
