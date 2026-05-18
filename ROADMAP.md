@@ -2536,6 +2536,64 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   CHANGELOG iteration if a new release adds a
 >   large `## [VERSION]` section before then.
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 15 token-trim
+> SHIPPED (recipe count unchanged at 42 — this is a token-budget
+> PR, not a recipe PR).** Wave 14 finished at ~171,119 of the
+> 175,000 WARN budget (~3,881 tokens of headroom), which the wave 14
+> ROADMAP block flagged as below the per-recipe cost for wave 15.
+> The wave 15 prerequisite trim moves the `docs/reference/
+> formatter.md` auto-generated formatter-options enumeration —
+> 82 options across the tile-provider, layer-ordering, basemap,
+> heatmap, H3 cell-fill, supercluster, 3D extrusion, marker, path,
+> and polygon groups, rendered as ~181 lines / ~16 KB / ~3,948
+> tokens between the `<!-- BEGIN AUTOGEN: formatter-enumeration -->`
+> / `<!-- END AUTOGEN: ... -->` markers — out of llms-full.txt and
+> into a one-paragraph URL pointer that links back to:
+> - the canonical machine-readable schema at
+>   `docs/_machine/formatter-schema.json` (which is the source of
+>   truth the auto-generator reads in the first place); AND
+> - the full human-readable enumeration rendered for humans at
+>   `https://fenre.github.io/better_map/reference/formatter/`.
+> The on-disk `docs/reference/formatter.md` is unchanged — the
+> MkDocs site keeps rendering the full 82-row enumeration. The
+> trim is in-memory only, inside `scripts/build-llms-full-txt.py`
+> (`is_formatter_page` + `strip_formatter_appendix_a` helpers,
+> wired into `render()` right after the changelog trim, before
+> `strip_chrome`). Per-recipe §4 Recommended formatter-config
+> blocks (Appendix B) are NOT touched — they carry the option
+> SUBSET that each recipe actually uses, which IS the authoritative
+> reference for any LLM authoring a recipe; the full enumeration
+> is only useful when an agent is hunting for an option it does
+> not yet know about, and the URL pointer + schema link cover
+> that case at a fraction of the token cost. Verified saving:
+> 171,119 → 167,384 = **3,735 tokens reclaimed** (matches the
+> ~3.8k estimate within rounding). Post-trim budget headroom is
+> 175,000 − 167,384 = **7,616 tokens of WARN headroom**, which
+> at the wave 14 cost level (~3.1k tokens/recipe including OT-
+> safety §6 Gotchas) funds **2 more recipes** for wave 15 with
+> ~1.4k of remaining headroom — enough to start wave 15 without
+> requiring a SECOND token-trim PR.
+> Wave 15 token-trim levers REMAINING (for waves 16+, in
+> descending ROI order — see the wave 13 token-trim §
+> "Next potential trim levers" comment for the full menu): (a)
+> `docs/CI-GATES.md` summary (~4.2k tokens); (b)
+> `docs/recipes/index.md` matrix per-row "Apps + Verified" cells
+> could compact (~4.1k); (c) per-recipe §3 Expected-field
+> tables could compress to a per-source field-set lookup
+> (~3-4k across the 42 recipes, but requires schema work to
+> hoist the field sets to `docs/_machine/`). Wave 15 has bought
+> ~3 waves of headroom before the next trim is needed; the
+> wave 16 / 17 ROADMAP block should track which lever was
+> consumed when.
+> Test plan: all 5 docs gates green locally — recipe schema
+> (42 valid, 0 verified), llms.txt sync, llms-full.txt sync
+> + budget (~167k / 175k, **7.6k WARN headroom**), reference
+> pages sync (3 in sync), formatter coverage (83 unique
+> data-name(s), schema in sync), `mkdocs build --strict`
+> clean (1.77s, no warnings — the AUTOGEN section renders
+> intact for human readers on the MkDocs site as expected,
+> the trim is only in-memory for llms-full.txt).
+
 > **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 14 SHIPPED
 > (2 more recipes — recipe count 40 → 42, layer-type coverage
 > 9 / 10 unchanged, source-pattern coverage 8 / 8 unchanged,
