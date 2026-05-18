@@ -138,18 +138,25 @@ directly.
    property path. Helper getters already exist in `src/lib/`.
 4. Run `python3 scripts/build-formatter-schema.py` and commit the
    updated `docs/_machine/formatter-schema.json`.
-5. Run `python3 scripts/build-llms-txt.py` and commit the regenerated
-   `docs/llms.txt` — the file embeds the option count and a link to the
-   formatter-schema, so the option-count delta drifts the gate.
-6. Local sanity check:
+5. Run `python3 scripts/build-reference-pages.py` and commit the
+   regenerated `docs/reference/formatter.md`. The new option's row
+   (with type, default, enum / range, and the help text) appears in
+   the `Full option enumeration` section, inside the
+   `formatter-enumeration` managed region. Narrative outside the
+   markers is hand-authored and survives re-generation.
+6. Run `python3 scripts/build-llms-txt.py` and commit the regenerated
+   `docs/llms.txt` — the file embeds the option count and a link to
+   the formatter-schema, so the option-count delta drifts the gate.
+7. Local sanity check:
 
    ```bash
    python3 scripts/check-formatter-schema.py
    python3 scripts/check-formatter-coverage.py
+   python3 scripts/build-reference-pages.py --check
    python3 scripts/build-llms-txt.py --check
    ```
 
-   All three must print `[PASS]`.
+   All four must print `[PASS]`.
 
 > **Duplicate `data-name`s:** the parser handles them via
 > "last-write-wins" and records the conflict in
@@ -356,6 +363,16 @@ node scripts/check-accessibility.js
 # `python3 scripts/build-llms-txt.py` and commit. Needs PyYAML.
 .venv-mkdocs/bin/python3 scripts/build-llms-txt.py --check
 
+# Auto-generated reference page drift (E2 Phase 2).
+# Regenerates the managed regions inside docs/reference/*.md from the
+# machine schema (currently: the 82-option enumeration in
+# formatter.md, inside the BEGIN/END AUTOGEN: formatter-enumeration
+# marker pair) and FAILS if the on-disk file disagrees. Hand-authored
+# narrative OUTSIDE the markers is preserved. On drift: run
+# `python3 scripts/build-reference-pages.py` and commit. Pure stdlib —
+# no extra deps needed.
+python3 scripts/build-reference-pages.py --check
+
 # Bundle hygiene (run after webpack build)
 node scripts/check-bundle-size.js
 node scripts/check-bundle-console-noise.js
@@ -388,6 +405,8 @@ to fix and the exact command to re-run.
 | `[FAIL] docs/recipes/<src>/<layer>.md: §4 references formatter option(s) that are NOT in formatter-schema.json` | The recipe's §4 JSON sets a property name that doesn't exist on the formatter | Pick a real option (check `docs/_machine/formatter-schema.json`), or add the option to `formatter.html` first via §4 of this guide |
 | `[FAIL] docs/recipes/<src>/<layer>.md: expected_fields entry 'foo' is not present in the §3 markdown table` | Frontmatter promises a field the §3 table doesn't document | Add the field as a row in the §3 Markdown table, OR remove it from `expected_fields` if the SPL no longer produces it |
 | `[FAIL] docs/llms.txt is out of sync vs the structured sources of truth` | You added/edited an integration YAML, a recipe, a nav entry in `mkdocs.yml`, or a formatter option, but forgot to regenerate `docs/llms.txt` | `python3 scripts/build-llms-txt.py && git add docs/llms.txt`. The regenerator is deterministic — no clock-based fields, no random ordering — so a clean rebuild always re-passes the check |
+| `[FAIL] docs/reference/formatter.md is out of sync vs the structured sources of truth` | You added/edited/removed a `formatter.html` control, or otherwise changed the formatter schema, but forgot to regenerate the auto-managed section of `docs/reference/formatter.md` | `python3 scripts/build-reference-pages.py && git add docs/reference/formatter.md`. The script only touches the region BETWEEN the `<!-- BEGIN AUTOGEN: formatter-enumeration -->` and `<!-- END AUTOGEN: formatter-enumeration -->` markers; hand-authored narrative outside the markers is preserved |
+| `[FAIL] docs/reference/<file>.md has no `<!-- BEGIN AUTOGEN: <id> -->` / `<!-- END AUTOGEN: <id> -->` markers` | The reference page lost its managed-region marker pair (e.g. someone deleted them while editing prose). The script refuses to "guess" where to put the auto-gen output | Add the marker pair back at the spot where the auto-generated content should live, then rerun `python3 scripts/build-reference-pages.py` |
 
 ---
 
@@ -402,7 +421,12 @@ to fix and the exact command to re-run.
   + the human-readable `docs/` pages OUTSIDE this `_machine/`
   subtree; the G7 Phase 2 `llms.txt` index ships AT the site root
   via [`docs/llms.txt`](https://github.com/fenre/better_map/blob/main/docs/llms.txt),
-  drift-gated by `scripts/build-llms-txt.py --check`).
+  drift-gated by `scripts/build-llms-txt.py --check`; the E2 Phase 2
+  auto-generated reference enumerations live INSIDE the
+  hand-authored reference pages (currently:
+  [`docs/reference/formatter.md`](https://github.com/fenre/better_map/blob/main/docs/reference/formatter.md)
+  inside the `<!-- BEGIN AUTOGEN: formatter-enumeration -->` markers),
+  drift-gated by `scripts/build-reference-pages.py --check`).
 - Not the customer-facing setup guide. That's E5 — the recipe matrix.
   Phase 1 (framework + three starter recipes) shipped in v1.7-prep;
   the remaining matrix cells (every layer × every source) are
@@ -427,6 +451,7 @@ wins. Open a PR that updates this file.
 - `docs/_machine/recipes/index.yaml` — auto-generated recipe index (E5 Phase 1)
 - `docs/llms.txt` — agent-discoverable site index (G7 Phase 2), conforming to <https://llmstxt.org/>
 - `scripts/build-llms-txt.py` — generator + `--check` drift gate for the above
+- `scripts/build-reference-pages.py` — generator + `--check` drift gate for the auto-managed regions inside `docs/reference/*.md` (E2 Phase 2 — currently the 82-option enumeration in `formatter.md`)
 - `docs/runbooks/supply-chain.md` — G1 verification + waiver procedures
 - `docs/runbooks/upgrade-hygiene.md` — G3 orphan-file remediation
 - `/.cursor/rules/ot-safety.mdc` — VISTA OT safety boundary (binding for OT integrations)
