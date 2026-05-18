@@ -470,7 +470,7 @@ jobs:
         # a cache key. We point at scripts/requirements-appinspect.txt —
         # the single source of truth for the AppInspect pin (see file
         # header for upgrade policy).
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -632,7 +632,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Python 3.11 (matches release.yml)
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: 'pip'
