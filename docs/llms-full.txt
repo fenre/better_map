@@ -2330,18 +2330,7 @@ Why this minimal config:
   point — popups (on a marker click after cluster
   expansion) can reference them by name.
 
-## 5. Screenshot
-
-_Screenshot pending the D5 Splunk Docker compose harness (ROADMAP
-§3 D5). The cluster renderer is best demoed with the camera at
-country-level zoom (so most points are clustered) AND the user
-then zooming in to a single city (so clusters expand to
-individual markers, demonstrating the drilldown affordance). A
-maintainer can reproduce by pasting the SPL into a Dashboard
-Studio map panel with Better Map as the visualization, applying
-the formatter JSON in §4, and scroll-zooming the panel._
-
-_§6 Gotchas and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/supercluster/>._
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/csv-lookup-geo/supercluster/ ===
 
@@ -2891,19 +2880,7 @@ Why this minimal config:
   flow through automatically** as feature properties on
   each vertex — popups can reference them.
 
-## 5. Screenshot
-
-_Screenshot pending the D5 Splunk Docker compose harness (ROADMAP
-§3 D5). The paths layer is best demoed at globe zoom (so
-inter-region traceroutes show their full geographic shape) with
-a single test selected via a `$test_id$` dropdown (so the
-polyline is clearly distinguishable from siblings). A maintainer
-can reproduce by pasting the SPL into a Dashboard Studio map
-panel with Better Map as the visualization, applying the
-formatter JSON in §4, and selecting any active path-visualization
-test that has at least 3 geocodable hops._
-
-_§6 Gotchas and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/paths/>._
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/paths/>._
 
 # === END: https://fenre.github.io/better_map/recipes/thousandeyes/paths/ ===
 
@@ -4447,20 +4424,7 @@ Why this specific config:
   property on the joined polygon — popups can show the full
   state name without further config.
 
-## 5. Screenshot
-
-_Screenshot pending the D5 Splunk Docker compose harness (ROADMAP
-§3 D5). The 3D extrusion is best demoed with the camera tilted
-~35° via the on-map camera widget (which honours
-`allowPitch: true`, the formatter-schema default per
-[`docs/_machine/formatter-schema.json`](https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json));
-a flat-top screenshot loses the entire 3D-extrusion signal. A
-maintainer can reproduce by pasting the SPL into a Dashboard
-Studio map panel with Better Map as the visualization, applying
-the formatter JSON in §4, and right-dragging the panel to tilt
-the view._
-
-_§6 Gotchas and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/geo-us-states/extrusion-3d/>._
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/geo-us-states/extrusion-3d/>._
 
 # === END: https://fenre.github.io/better_map/recipes/geo-us-states/extrusion-3d/ ===
 
