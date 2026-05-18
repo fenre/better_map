@@ -1968,6 +1968,167 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   continues to hold across wave 8 + wave 9 even
 >   without additional trim.
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 8 SHIPPED
+> (3 more recipes — recipe count 24 → 27, layer-type coverage
+> stays at 9 / 10, source-pattern coverage stays at 8 / 8
+> COMPLETE).** Wave 8 continues the wave 7 cell-fill regime
+> (no new layer types, no new source patterns — only filling
+> matrix cells by applying already-shipped layer types to
+> already-shipped source patterns) but with a token-budget
+> mitigation bundled in alongside the recipes. The wave-8
+> token-trim landed in PR #53 (G7 Phase 2 follow-up #3)
+> reclaimed ~20k tokens by stripping historical wave-status
+> blockquotes from `llms-full.txt` only; this wave 8 PR adds
+> three recipes on top of that baseline. Three new recipes
+> ship:
+> - **`docs/recipes/splunk-stream/heat.md`** —
+>   `splunk-stream` source pattern (already shipped via the
+>   markers recipe), `heat` layer (already shipped via
+>   `kvstore-latlon/heat` + `cim-authentication/heat`). The
+>   aggregate-density complement to the existing
+>   `splunk-stream/markers` recipe: same `stream:tls` wire-
+>   data sourcetype, but aggregated `BY dest_ip` with
+>   `sum(bytes_out)` and rendered as a weighted heatmap.
+>   Introduces the **log-scale `weight` pattern** (specifically
+>   `eval weight=round(log10(bytes_out) /
+>   log10(max_bytes_out), 2)`) because bytes-out
+>   distributions in wire data span 6+ orders of magnitude
+>   (handshake at 5 KB → bulk-transfer at 5 GB), making
+>   linear normalisation visually useless. Targets executive
+>   data-exfiltration risk reviews and data-residency
+>   briefings — NOT per-destination IR triage (use markers
+>   for that). 6 expected fields including the
+>   layer-required `weight`. §6 Gotchas: log-scale safety
+>   (`max_bytes_out > 1` defence), heatmap vs markers
+>   decision matrix, CDN-destination smearing across POPs,
+>   MaxMind freshness, TLS wire-data GDPR posture, and
+>   the "Stream on an OT SPAN" carve-out (passive
+>   collection is correct per `ot-safety.mdc` Rule 1, but
+>   render-only with no SOAR write-back per Rules 2-4).
+>   Brings the `splunk-stream` source row to 2 recipes
+>   (markers + heat).
+> - **`docs/recipes/ot-datastreamer/heat.md`** —
+>   `splunk-edge-hub` source pattern (already shipped via the
+>   markers recipe), `heat` layer (already shipped via three
+>   prior recipes). **CARRIES `ot_safety_relevant: true`**
+>   per `ot-safety.mdc` Rule 6. The site-level aggregate-
+>   density complement to the existing
+>   `ot-datastreamer/markers` recipe: same `edge_hub_*`
+>   index union, same operator-maintained
+>   `edge_hub_sites.csv` lookup, but with a SECOND `stats`
+>   stage that collapses per-hub rows to per-site rows
+>   (`BY site_id, lat, lon`) and computes `max(safety_related)
+>   AS site_has_safety_hub` so the heatmap preserves the
+>   Rule 6 safety annotation. Targets OT operations
+>   leadership dashboards and NetOps capacity-planning
+>   briefings — NOT per-hub liveness investigation (use
+>   markers — the per-hub `last_seen_minutes_ago` colouring
+>   the markers carries cannot survive the per-site
+>   aggregation). 6 expected fields including the
+>   layer-required `weight` plus the safety-flagged
+>   `site_has_safety_hub` carried through as popup metadata.
+>   §6 Gotchas: extensive OT-safety bindings (heatmap MUST
+>   preserve safety annotation per Rule 6, passive
+>   collection ONLY per Rule 1, SOAR scope ends at IT/OT
+>   DMZ per Rule 3, paired "silent safety hubs" alert
+>   REQUIRED for any tenant with `safety_related=true` rows
+>   in the site lookup — the heatmap visualises loud
+>   sites; a separate alert must watch for safety-relevant
+>   silent ones). Brings the `ot-datastreamer` source row
+>   to 2 recipes (markers + heat).
+> - **`docs/recipes/cim-performance/h3.md`** — `splunk-cim`
+>   source pattern (already shipped in 4 prior recipes),
+>   `h3` layer (now 5 total — joins `csv-lookup-geo/h3`,
+>   `cim-network-traffic/h3`, `meraki/h3` from waves 6-7).
+>   The per-region aggregation complement to the existing
+>   `cim-performance/markers` recipe: same CIM-accelerated
+>   `Performance.CPU` + `Performance.Memory` `tstats`
+>   queries, same ES Asset & Identity asset lookup, but
+>   simplified to two datasets (CPU + Memory — drops
+>   Storage from the markers recipe's three because
+>   storage pressure is too PERSISTENT to surface
+>   meaningful cell-to-cell variance on a 15 min cadence).
+>   Adopts the H3 `value` field naming convention from
+>   the existing H3 recipes (`eval value=cpu_load_percent`
+>   so `hexbinAggregate: "avg"` produces the natural
+>   "average CPU% per region" cell colouring). Targets
+>   SRE / capacity-planning panels with per-region
+>   click-to-drilldown — NOT per-host investigation
+>   (use markers for that). 6 expected fields including
+>   the H3-required `value` plus both `_percent` columns
+>   for popup display. §6 Gotchas: H3 vs heatmap
+>   decision matrix (sharp cells with deterministic
+>   drilldown vs smooth blobs without), sample-size
+>   problem (one outlier in a sparse region paints a
+>   whole cell — needs companion `host_count >= 3`
+>   filter), aggregate-function semantics (`avg` /
+>   `max` / `count` / never `sum` for percentage
+>   values), and the `splunkbase:h3` Splunk command
+>   prerequisite for true H3 indexing in SPL.
+>   Brings the `cim-performance` source row to 2
+>   recipes (markers + h3).
+> - **No framework changes.** All three recipes pass the
+>   unchanged `scripts/check-recipe-schema.py` (now 27
+>   recipes valid, 0 verified, 27 unverified / deferred);
+>   auto-regen of `docs/_machine/recipes/index.yaml` (now
+>   27 entries), `docs/recipes/index.md` matrix (now 27
+>   rows), `docs/llms.txt` (now references 27 recipes),
+>   and `docs/llms-full.txt`. `mkdocs.yml` nav grows
+>   three lines (one per new recipe; existing source IDs
+>   keep their alphabetical-by-display-name convention).
+>   `mkdocs build --strict` is clean.
+> - **Coverage delta:** matrix coverage rises from 24 to
+>   27 recipes (32 % → 36 % of the ~75 ✓ cells); source
+>   pattern coverage stays at 8 / 8 = COMPLETE;
+>   layer-type coverage stays at 9 / 10 (only `indoor`
+>   remains, blocked on v1.8+). Per-source row counts
+>   now: `csv-lookup-geo` 4, `geo-us-states` 2,
+>   `cim-network-traffic` 3, `cim-authentication` 2,
+>   `cim-performance` 2 (NEW: h3), `cim-alerts` 1,
+>   `cyber-vision` 1, `es-risk` 1, `itsi-kpi-base` 1,
+>   `kvstore-latlon` 2, `meraki` 2,
+>   `netflow-sflow-ipfix` 1, `ot-datastreamer` 2 (NEW:
+>   heat), `splunk-stream` 2 (NEW: heat), `thousandeyes`
+>   1. Every shipped source pattern now has at least 2
+>   recipes — no more "single-recipe" sources in the
+>   matrix.
+> - **Wave 9 candidates** (cell-fill regime continues —
+>   shipped sources × shipped layers): (a)
+>   `cim-network-traffic/supercluster` — geographic
+>   density of unique destinations as a clustered map,
+>   complement to the existing `paths` and `h3` recipes
+>   for the same source; (b) `kvstore-latlon/supercluster`
+>   — clustered version of the KV Store points recipe
+>   for tenants with thousands of stored locations
+>   (warehouses, retail locations, vehicles);
+>   (c) `netflow-sflow-ipfix/heat` — the heatmap analogue
+>   to the existing `netflow-sflow-ipfix/h3` recipe,
+>   giving operators a smoother "egress pressure"
+>   visualisation alternative to the discrete hex cells.
+>   All three are projected ~3k tokens each post-§5 trim;
+>   plus the wave 9 status block at ~3k = ~12k cost.
+> - **Token budget watch.** With the G7 follow-up #3
+>   token-trim now active in `main`, this wave 8 PR
+>   regenerates `llms-full.txt` at **~165.8k estimated
+>   tokens** (663,000 chars, 11,808 lines) — ~9.2k
+>   headroom to the 175k WARN, ~34.2k to the 200k
+>   HARD-FAIL. This wave's own SHIPPED status block (the
+>   block you're reading right now) matches the
+>   `_ROADMAP_STATUS_BLOCK` regex on the
+>   `E5 Phase 2 wave \d+` arm, so it self-strips from
+>   `llms-full.txt` on the very build that introduces it.
+>   Wave 9 at 3 recipes × ~3.3k = ~9.9k cost (plus its
+>   own ~3-5k status block that ALSO self-strips) lands
+>   at ~175.7k — JUST over the WARN. Wave 9's lever is
+>   already designed: Appendix B summarisation (defer
+>   the per-recipe `expected_fields` / `formatter_config`
+>   blocks in `llms-full.txt`'s Appendix B to the live
+>   `docs/_machine/recipes/index.yaml` rather than
+>   inlining them — projected ~15-20k savings, opening
+>   ~5 more recipes of headroom). For now, the WARN is
+>   well clear; wave 9 planning resumes after wave 8
+>   lands.
+
 * **Problem:** Better Map can consume data from ~10 categorically different Splunk source patterns (see table below). A new customer with NetFlow data who wants a heat layer should not have to derive the SPL from first principles. There is currently no recipe documentation; the burden of "what SPL do I write?" falls entirely on the user, who often does not know the field names of their own data, let alone the contract this viz wants.
 * **Design:** Build the recipe matrix as `docs/recipes/<source>/<layer>.md`, where each leaf file is a **complete, copy-paste-runnable** recipe. Every recipe has the same 6-section structure (enforced by a validator script — G2 CI step), so an LLM can ingest the corpus consistently:
 
@@ -2431,7 +2592,7 @@ Goal: prove that v1.6 actually works under real load, close the operational-rigo
 | C1–C8. Eight Splunk integrations verified | C | 6×S (12) + 2×M (10) = 22 |
 | E1. Splunkbase listing | E | 5 |
 | **E2. Documentation site (Phase 1 SHIPPED; Phase 2 in progress — formatter, integrations, recipes auto-gen all SHIPPED)** | E | 5 |
-| **E5. Per-source setup recipes (the matrix — ~75 cells) (Phase 1 framework SHIPPED + Phase 2 waves 1+2+3+4+5+6+7 SHIPPED — 24 / ~75 cells, source-pattern coverage 8 / 8 COMPLETE, layer-type coverage 9 / 10; only `indoor` layer remains, blocked on v1.8+)** | **E** | **5** |
+| **E5. Per-source setup recipes (the matrix — ~75 cells) (Phase 1 framework SHIPPED + Phase 2 waves 1+2+3+4+5+6+7+8 SHIPPED — 27 / ~75 cells, source-pattern coverage 8 / 8 COMPLETE, layer-type coverage 9 / 10; only `indoor` layer remains, blocked on v1.8+)** | **E** | **5** |
 | **G7. AI-ingestion-friendly documentation layer (Phase 1 SHIPPED; Phase 2 — `llms.txt` SHIPPED; Phase 2 follow-up — `llms-full.txt` SHIPPED)** | **G** | **5** |
 | **Sub-total** | — | **69 d** |
 | Buffer (20 % for slip, lab access, surprise scope) | — | **14 d** |
