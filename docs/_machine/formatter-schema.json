@@ -52,6 +52,30 @@
       },
       "x-placeholder": "https://... or pmtiles://..."
     },
+    "demoPreset": {
+      "default": "none",
+      "description": "One-click showcase mode. Picks a deterministic, bundled dataset and replaces the SPL result for this panel \u2014 even on a panel whose query returns nothing. Fleet telemetry shows time scrubbing, comet trails, and 3D cargo extrusion; Smart building IoT shows the indoor floor-plan overlay and per-sensor alarm state; Cyber incidents shows global hexbin aggregation, MITRE chips, and RBA risk colouring. Set back to `None` to restore the SPL result.",
+      "enum": [
+        "none",
+        "fleet-telemetry",
+        "iot-smart-building",
+        "cyber-incidents"
+      ],
+      "title": "Fill with example data",
+      "type": "string",
+      "x-bm": {
+        "control": "select",
+        "heading": "Demo & onboarding",
+        "splunk-property-path": "display.visualizations.custom.better_map.better_map.demoPreset",
+        "tab": "data"
+      },
+      "x-enum-labels": {
+        "cyber-incidents": "Cyber incidents \u2014 global SOC view (600 events / 24 h)",
+        "fleet-telemetry": "Fleet telemetry \u2014 Oslo last-mile (40 vans \u00d7 6 h)",
+        "iot-smart-building": "Smart building IoT \u2014 Fornebu HQ (5 floors \u00d7 50 sensors)",
+        "none": "None \u2014 use this panel's SPL results"
+      }
+    },
     "enable3DExtrusion": {
       "default": false,
       "description": "Extrudes Polygon / MultiPolygon features along Z. Pitch and rotate are already enabled by default.",
@@ -1114,7 +1138,7 @@
   "type": "object",
   "x-meta": {
     "generator": "scripts/build-formatter-schema.py",
-    "option-count": 82,
+    "option-count": 83,
     "source-of-truth": "better_map/appserver/static/visualizations/better_map/formatter.html",
     "splunk-property-namespace": "display.visualizations.custom.better_map.better_map",
     "tabs": {

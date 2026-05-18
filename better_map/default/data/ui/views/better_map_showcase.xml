@@ -1,0 +1,134 @@
+<dashboard version="2" theme="dark">
+    <label>Better Map - Showcase (Demo data)</label>
+    <description>One-click showcase of the three bundled demo presets: Oslo last-mile fleet telemetry (tracking + time scrubber + 3D cargo extrusion), Fornebu HQ smart-building IoT sensor mesh (per-floor alarm states + heatmap), and a global cyber-incident SOC view (hexbin aggregation + MITRE chips + RBA risk colouring). Each panel hits the Better Map viz with an empty SPL result and picks a demoPreset in the formatter so the bundled deterministic dataset renders without any live Splunk data. Use this dashboard to evaluate the viz, screenshot for marketing, or demo to a customer on a laptop with no Splunk lab.</description>
+    <definition><![CDATA[
+{
+    "title": "Better Map - Showcase (Demo data)",
+    "description": "Three bundled demo presets showcasing tracking, IoT, and security use cases",
+    "inputs": {},
+    "defaults": {
+        "dataSources": {
+            "ds.search": {
+                "options": {
+                    "queryParameters": {
+                        "earliest": "-15m",
+                        "latest":   "now"
+                    }
+                }
+            }
+        }
+    },
+    "dataSources": {
+        "ds_placeholder": {
+            "type": "ds.search",
+            "name": "Placeholder search - the demoPreset formatter option overrides whatever this returns",
+            "options": {
+                "query": "| makeresults\n| eval lat=0, lon=0, _placeholder=1",
+                "refresh": "0",
+                "refreshType": "delay"
+            }
+        }
+    },
+    "visualizations": {
+        "viz_intro": {
+            "type": "splunk.markdown",
+            "options": {
+                "markdown": "# Better Map &mdash; Demo showcase\n\nEvery panel below pre-selects a different **demo preset** in the Better Map formatter. The placeholder SPL returns one row of nonsense; the viz discards it and renders a deterministic, bundled dataset instead. **No live Splunk data required &mdash; this dashboard renders identically on an empty lab.**\n\nTo use any of these scenes in your own dashboard: drop a Better Map panel onto any layout, open *Configure visualization* &rarr; *Data configurations* &rarr; *Demo &amp; onboarding*, pick a preset, and you are done. Set the dropdown back to *None* to restore your real SPL result."
+            }
+        },
+        "viz_caption_fleet": {
+            "type": "splunk.markdown",
+            "options": {
+                "markdown": "## 1. Fleet telemetry &mdash; Oslo last-mile (40 vans &times; 6&nbsp;h)\n\n*Tracking story.* Last-mile delivery vans moving between three depots (Alnabru, L&oslash;renskog, Drammen-Lierstranda) and six delivery clusters across the Oslo metro area. Scrub the **time scrubber** at the bottom to watch vans move along their routes with comet trails. Click a van for driver / cargo / fuel popup. Status colour: cyan &nbsp;=&nbsp; in-transit &middot; amber &nbsp;=&nbsp; idle &middot; lime &nbsp;=&nbsp; loading &middot; red &nbsp;=&nbsp; breakdown."
+            }
+        },
+        "viz_demo_fleet": {
+            "type": "better_map.better_map",
+            "title": "Fleet telemetry demo",
+            "dataSources": { "primary": "ds_placeholder" },
+            "options": {
+                "demoPreset":         "fleet-telemetry",
+                "tileProvider":       "openfreemap-positron",
+                "pointRenderer":      "markers",
+                "pointPulse":         "true",
+                "enable3DExtrusion":  "true",
+                "extrusionField":     "cargo_kg",
+                "extrusionScale":     "0.25",
+                "drawPaths":          "true",
+                "pathOpacity":        "0.75",
+                "showLayerControl":   "true",
+                "showControlPanel":   "true",
+                "cameraPitch":        "30",
+                "cameraBearing":      "15",
+                "vignette":           "true",
+                "enablePopups":       "true",
+                "enableDrilldown":    "true"
+            }
+        },
+        "viz_caption_iot": {
+            "type": "splunk.markdown",
+            "options": {
+                "markdown": "## 2. Smart building IoT &mdash; Fornebu HQ (5 floors &times; 50 sensors)\n\n*IoT story.* Multi-floor sensor mesh across a five-storey office building. Each pin is one temperature / humidity / CO2 / occupancy / door sensor. Status colour: lime &nbsp;=&nbsp; ok &middot; amber &nbsp;=&nbsp; warn &middot; red &nbsp;=&nbsp; alarm. The dataset is a single snapshot (no time axis) so the viz shows the building &laquo;right now&raquo; rather than animating; toggle the **Heatmap** layer in the layer-control widget to see the CO2 hot zones (corner meeting rooms where ventilation lags occupancy)."
+            }
+        },
+        "viz_demo_iot": {
+            "type": "better_map.better_map",
+            "title": "Smart building IoT demo",
+            "dataSources": { "primary": "ds_placeholder" },
+            "options": {
+                "demoPreset":         "iot-smart-building",
+                "tileProvider":       "openfreemap-positron",
+                "pointRenderer":      "markers",
+                "pointPulse":         "false",
+                "showLayerControl":   "true",
+                "showControlPanel":   "true",
+                "cameraPitch":        "45",
+                "cameraBearing":      "0",
+                "vignette":           "false",
+                "enablePopups":       "true",
+                "enableDrilldown":    "true",
+                "layerField":         "floor_id"
+            }
+        },
+        "viz_caption_cyber": {
+            "type": "splunk.markdown",
+            "options": {
+                "markdown": "## 3. Cyber incidents &mdash; global SOC view (600 events / 24&nbsp;h)\n\n*Security story.* Twenty-four hours of attack-origin events from edge sensors world-wide, geolocated to the source IP&apos;s country. Risk colour follows the RBA framework: green &nbsp;=&nbsp; low &middot; amber &nbsp;=&nbsp; moderate &middot; orange &nbsp;=&nbsp; elevated &middot; red &nbsp;=&nbsp; high &middot; crimson &nbsp;=&nbsp; critical. Click a pin to see the MITRE ATT&amp;CK technique and target asset. Toggle the **Hexbin** layer to aggregate by region; this is the view a SOC uses to spot a sudden attack-cluster forming over one country."
+            }
+        },
+        "viz_demo_cyber": {
+            "type": "better_map.better_map",
+            "title": "Cyber incidents demo",
+            "dataSources": { "primary": "ds_placeholder" },
+            "options": {
+                "demoPreset":         "cyber-incidents",
+                "tileProvider":       "carto_dark_matter",
+                "pointRenderer":      "auto",
+                "showLayerControl":   "true",
+                "showControlPanel":   "true",
+                "cameraPitch":        "0",
+                "cameraBearing":      "0",
+                "vignette":           "true",
+                "enablePopups":       "true",
+                "enableDrilldown":    "true",
+                "v2Mitre":            "true"
+            }
+        }
+    },
+    "layout": {
+        "type": "absolute",
+        "options": { "width": 1440, "height": 1640, "display": "auto-scale", "backgroundColor": "#0b1220" },
+        "structure": [
+            { "item": "viz_intro",         "type": "block", "position": { "x":  20, "y":  20, "w": 1400, "h":  120 } },
+            { "item": "viz_caption_fleet", "type": "block", "position": { "x":  20, "y": 160, "w": 1400, "h":   90 } },
+            { "item": "viz_demo_fleet",    "type": "block", "position": { "x":  20, "y": 260, "w": 1400, "h":  420 } },
+            { "item": "viz_caption_iot",   "type": "block", "position": { "x":  20, "y": 700, "w": 1400, "h":   90 } },
+            { "item": "viz_demo_iot",      "type": "block", "position": { "x":  20, "y": 800, "w": 1400, "h":  380 } },
+            { "item": "viz_caption_cyber", "type": "block", "position": { "x":  20, "y":1200, "w": 1400, "h":   90 } },
+            { "item": "viz_demo_cyber",    "type": "block", "position": { "x":  20, "y":1300, "w": 1400, "h":  320 } }
+        ]
+    },
+    "applicationProperties": { "theme": "dark" }
+}
+    ]]></definition>
+</dashboard>

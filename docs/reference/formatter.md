@@ -75,7 +75,7 @@ text shown in the Dashboard Studio UI.
 
 _The tables below are auto-generated from [`docs/_machine/formatter-schema.json`](https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json) by `scripts/build-reference-pages.py`. Do not edit the auto-managed sections by hand — run the script and commit the regenerated file._
 
-All **82 options** live in the same Splunk property namespace: each option's full Splunk path is `display.visualizations.custom.better_map.better_map.<option>`. Dashboard Studio shows the short name (`<option>`) in the formatter UI; the full path appears in the underlying `savedsearches.conf` stanza.
+All **83 options** live in the same Splunk property namespace: each option's full Splunk path is `display.visualizations.custom.better_map.better_map.<option>`. Dashboard Studio shows the short name (`<option>`) in the formatter UI; the full path appears in the underlying `savedsearches.conf` stanza.
 
 ### Tab — Data configurations
 
@@ -85,6 +85,12 @@ All **82 options** live in the same Splunk property namespace: each option's ful
 |---|---|---|---|---|
 | `highContrast`<br>_High-contrast mode_ | boolean | `false` |  | Replace translucent backgrounds with solid black/white widget chrome. Helps WCAG AAA contrast for low-vision users. |
 | `labelLanguage`<br>_Map label language_ | string | `""` | `<empty>` / `en` / `es` / `fr` / `de` / `it` / `pt` / `ru` / `zh` / `ja` / `ko` / `ar` / `hi` | Re-points every symbol layer's `text-field` at `name:<lang>`, with a fallback to the basemap's native `name`. Works on OpenFreeMap and other OpenMapTiles-based providers. |
+
+#### Demo & onboarding
+
+| Option | Type | Default | Enum / range | Description |
+|---|---|---|---|---|
+| `demoPreset`<br>_Fill with example data_ | string | `none` | `none` / `fleet-telemetry` / `iot-smart-building` / `cyber-incidents` | One-click showcase mode. Picks a deterministic, bundled dataset and replaces the SPL result for this panel — even on a panel whose query returns nothing. Fleet telemetry shows time scrubbing, comet trails, and 3D cargo extrusion; Smart building IoT shows the indoor floor-plan overlay and per-sensor alarm state; Cyber incidents shows global hexbin aggregation, MITRE chips, and RBA risk colouring. Set back to `None` to restore the SPL result. |
 
 #### Drilldown & cross-panel
 

@@ -74,6 +74,13 @@ import * as pathsLayer from './lib/layers/paths.js';
 import * as markersLayer from './lib/layers/markers.js';
 import * as extrusionLayer from './lib/layers/extrusion.js';
 import * as hexbinLayer from './lib/layers/hexbin.js';
+// v1.7 — demo data pack. The formatter exposes a "Demo & onboarding"
+// dropdown (`demoPreset`); when set to anything other than "none",
+// formatData() substitutes a deterministic generated dataset for the
+// SPL result, so the viz showcases its full feature surface on any
+// panel — even a panel whose SPL returns zero rows. See the
+// "Adding a new demo preset" recipe in docs/_machine/agents.md.
+import { isDemoPreset, loadDemoPreset, presetLabel } from './lib/demo/index.js';
 // v1.6 — bundle of every new widget, layer, and Splunk integration.
 // The bundle exposes setEnabled/isEnabled/reset for each item and
 // registers them with the master control panel automatically.
@@ -162,7 +169,33 @@ export default SplunkVisualizationBase.extend({
         };
     },
 
-    formatData: function (data /* , config */) {
+    formatData: function (data, config) {
+        // v1.7 — demo preset interception. Runs BEFORE the empty-data
+        // fallback so the viz can render demo data on any panel,
+        // including one whose SPL returns zero rows (the "Drop the
+        // viz onto a blank dashboard" onboarding flow).
+        //
+        // We deliberately do NOT cache demoData into _lastGoodData:
+        // when the user toggles demoPreset back to "none", the next
+        // tick must render the real SPL result (or empty state) —
+        // not stale demo data left behind from the previous render.
+        var ns = this.getPropertyNamespaceInfo().propertyNamespace;
+        var demoPreset = config
+            ? String(getOption(config, ns, 'demoPreset', 'none') || 'none')
+            : 'none';
+        if (isDemoPreset(demoPreset)) {
+            var demoData = loadDemoPreset(demoPreset);
+            if (demoData && demoData.rows && demoData.rows.length > 0) {
+                this._activeDemoPreset = demoPreset;
+                return demoData;
+            }
+        } else if (this._activeDemoPreset) {
+            // User just switched the preset OFF — make sure the next
+            // render does not silently keep showing demo data via
+            // _lastGoodData. The real SPL data (or empty state) wins.
+            this._activeDemoPreset = null;
+        }
+
         if (!data || !data.rows || !data.fields || data.rows.length === 0) {
             if (this._lastGoodData) {
                 return this._lastGoodData;

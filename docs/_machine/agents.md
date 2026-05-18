@@ -291,6 +291,97 @@ the same expectations. Source of truth:
 
 ---
 
+## 5c. Adding a new demo preset (Theme E — Demo Data Pack, v1.7)
+
+The "Fill with example data" dropdown in the formatter
+(`demoPreset`) is backed by a registry under
+[`src/lib/demo/`](https://github.com/fenre/better_map/tree/main/better_map/appserver/static/visualizations/better_map/src/lib/demo).
+The viz intercepts `formatData()` when `demoPreset != "none"` and
+substitutes the registered preset's generated dataset for the SPL
+result.  This lets the viz showcase its full feature surface on any
+panel, including one whose query returns zero rows.
+
+To add a fourth preset (e.g. `maritime-ais` for North Sea vessel
+tracking, or `cyber-incidents-ot` for IT-OT DMZ traffic):
+
+1. **Write the generator** at
+   [`src/lib/demo/presets/<id>.js`](https://github.com/fenre/better_map/tree/main/better_map/appserver/static/visualizations/better_map/src/lib/demo/presets).
+   It MUST export a single function named
+   `generate<PascalCaseId>(opts)` that returns
+   `{ fields: Array<{name:string}>, rows: Array<Array<string|number>> }`
+   — the exact Splunk SearchResults shape that `formatData()` consumes.
+   Use [`createRng(seed)`](https://github.com/fenre/better_map/blob/main/better_map/appserver/static/visualizations/better_map/src/lib/demo/rng.js)
+   for ALL randomness so the dataset is byte-stable across runs of
+   the same seed.  Use
+   [`geoUtils`](https://github.com/fenre/better_map/blob/main/better_map/appserver/static/visualizations/better_map/src/lib/demo/geoUtils.js)
+   for path interpolation, jitter, bearing, distance.  Do NOT add a
+   geospatial dep — `geoUtils` covers everything the three v1.7
+   presets needed.
+
+2. **Register it** by adding one entry to the `PRESETS` array in
+   [`src/lib/demo/index.js`](https://github.com/fenre/better_map/blob/main/better_map/appserver/static/visualizations/better_map/src/lib/demo/index.js):
+
+   ```js
+   {
+     id: 'maritime-ais',
+     label: 'Maritime AIS — North Sea fleet (150 vessels × 12 h)',
+     description: 'Vessel position pings with cargo type, flag, ETA.',
+     generate: generateMaritimeAis
+   }
+   ```
+
+   The array order IS the formatter-dropdown order; the most
+   visually-impressive preset belongs first (fleet-telemetry holds
+   that slot today).
+
+3. **Expose it in the formatter** by adding ONE `<option>` to the
+   `<select data-name="demoPreset">` element in
+   [`formatter.html`](https://github.com/fenre/better_map/blob/main/better_map/appserver/static/visualizations/better_map/formatter.html).
+   Use the exact same `id` string.  Rebuild the schema:
+   `python3 scripts/build-formatter-schema.py`.
+
+4. **Document it in `savedsearches.conf.spec`** — append the new id
+   to the bullet list under
+   [`display.visualizations.custom.better_map.better_map.demoPreset`](https://github.com/fenre/better_map/blob/main/better_map/README/savedsearches.conf.spec).
+
+5. **Add a test** to
+   [`src/lib/__tests__/demo.test.js`](https://github.com/fenre/better_map/blob/main/better_map/appserver/static/visualizations/better_map/src/lib/__tests__/demo.test.js)
+   that asserts:
+   (a) the field set is exactly what your generator emits,
+   (b) the row count falls inside an expected band,
+   (c) every row uses your color/status palette as documented.
+   Update the "registers exactly the three v1.7 presets" test to
+   the new count.  Lock the IDs in order so a future rename is a
+   hard CI failure rather than a silent breakage.
+
+6. **(Optional but encouraged) add a fourth panel** to
+   [`better_map_showcase.xml`](https://github.com/fenre/better_map/blob/main/better_map/default/data/ui/views/better_map_showcase.xml)
+   with `"demoPreset": "<your-id>"` plus a markdown caption that
+   sells the story in two sentences.  Extend the layout `height`
+   to fit.
+
+7. **Regenerate the manifest + reference page + llms.txt**:
+
+   ```bash
+   python3 scripts/build-manifest.py
+   python3 scripts/build-reference-pages.py
+   python3 scripts/build-llms-txt.py
+   ```
+
+8. Run the §7 pre-commit checklist; the demo tests must show
+   `4 passed` (or whatever the new count is), bundle size must
+   stay under 800 KB gzipped, and the dashboard-XML check must
+   parse the new showcase dashboard cleanly.
+
+The "preset CSS skin": the demo data ships only deterministic
+field values, not a presentation style.  Map options (basemap,
+camera, layer toggles) are still chosen on the dashboard panel
+(see `better_map_showcase.xml` for the v1.7 examples).  This
+keeps the generator generators slim — they are pure data, not
+viz config.
+
+---
+
 ## 6. The release flow (what you almost never touch)
 
 | Step | Where | Who triggers |
@@ -407,6 +498,9 @@ to fix and the exact command to re-run.
 | `[FAIL] docs/llms.txt is out of sync vs the structured sources of truth` | You added/edited an integration YAML, a recipe, a nav entry in `mkdocs.yml`, or a formatter option, but forgot to regenerate `docs/llms.txt` | `python3 scripts/build-llms-txt.py && git add docs/llms.txt`. The regenerator is deterministic — no clock-based fields, no random ordering — so a clean rebuild always re-passes the check |
 | `[FAIL] docs/reference/formatter.md is out of sync vs the structured sources of truth` | You added/edited/removed a `formatter.html` control, or otherwise changed the formatter schema, but forgot to regenerate the auto-managed section of `docs/reference/formatter.md` | `python3 scripts/build-reference-pages.py && git add docs/reference/formatter.md`. The script only touches the region BETWEEN the `<!-- BEGIN AUTOGEN: formatter-enumeration -->` and `<!-- END AUTOGEN: formatter-enumeration -->` markers; hand-authored narrative outside the markers is preserved |
 | `[FAIL] docs/reference/<file>.md has no `<!-- BEGIN AUTOGEN: <id> -->` / `<!-- END AUTOGEN: <id> -->` markers` | The reference page lost its managed-region marker pair (e.g. someone deleted them while editing prose). The script refuses to "guess" where to put the auto-gen output | Add the marker pair back at the spot where the auto-generated content should live, then rerun `python3 scripts/build-reference-pages.py` |
+| `demo.test.js > registers exactly the three v1.7 presets — Expected 3, received 4` | You added a fourth preset to `src/lib/demo/index.js` but forgot to bump the test that locks the count + IDs in order | Update the assertion in `src/lib/__tests__/demo.test.js` (search for "v1.7 presets"). The lock is intentional — silent preset additions break the formatter dropdown and `savedsearches.conf.spec` contract; the failing test forces you to update all three together |
+| Showcase dashboard renders three empty maps where the demos should be | The viz bundle was built BEFORE the new demo preset was wired into `src/lib/demo/index.js`, so the runtime registry doesn't contain it (the dashboard option `demoPreset: foo` finds no match → falls back to SPL → SPL is the trivial placeholder → empty map) | `cd better_map/appserver/static/visualizations/better_map && npm run build`; reload the dashboard with cache busting (cmd-shift-R / ctrl-shift-R). Confirm `loadDemoPreset('foo')` returns non-null from a browser devtools console invocation |
+| `demoPreset` formatter dropdown shows the preset id but selecting it leaves the map empty | The preset is registered AND the bundle is fresh, but the generator returned `{ rows: [] }` or threw silently before the `return`. Check the browser console for `Cannot read properties of undefined…` originating in the preset file | Open the preset under `src/lib/demo/presets/<id>.js`. Run the generator from a Node REPL: `node -e "import('./src/lib/demo/presets/<id>.js').then(m => console.log(m.generate<X>({}).rows.length))"`. If you get 0 or an exception, the bug is in the generator (most often: a typo in a waypoint coordinate array, off-by-one in a `for` loop, or a dedup filter that's too aggressive). Fix it; the corresponding `demo.test.js` row-count band test will fail too |
 
 ---
 
@@ -452,6 +546,8 @@ wins. Open a PR that updates this file.
 - `docs/llms.txt` — agent-discoverable site index (G7 Phase 2), conforming to <https://llmstxt.org/>
 - `scripts/build-llms-txt.py` — generator + `--check` drift gate for the above
 - `scripts/build-reference-pages.py` — generator + `--check` drift gate for the auto-managed regions inside `docs/reference/*.md` (E2 Phase 2 — currently the 82-option enumeration in `formatter.md`)
+- `better_map/appserver/static/visualizations/better_map/src/lib/demo/` — v1.7 demo data pack: deterministic generators for three showcase presets (fleet telemetry, smart-building IoT, cyber incidents) backing the `demoPreset` formatter dropdown. See §5c for the contract.
+- `better_map/default/data/ui/views/better_map_showcase.xml` — v1.7 showcase dashboard exercising all three demo presets in one view; renders with zero live Splunk data
 - `docs/runbooks/supply-chain.md` — G1 verification + waiver procedures
 - `docs/runbooks/upgrade-hygiene.md` — G3 orphan-file remediation
 - `/.cursor/rules/ot-safety.mdc` — VISTA OT safety boundary (binding for OT integrations)
