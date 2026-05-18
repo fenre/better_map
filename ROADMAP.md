@@ -2536,6 +2536,92 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   CHANGELOG iteration if a new release adds a
 >   large `## [VERSION]` section before then.
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 13 token-trim
+> SHIPPED — generalised ROADMAP status-block strip in
+> `scripts/build-llms-full-txt.py` from the wave 8 narrow regex
+> (E5 Phase 2 wave \\d+ OR G7 Phase 2 follow-up) to ANY subsystem
+> (D-, E-, G-, R-, REL-, T-).** Background: after wave 12 landed at
+> ~174.6k tokens (just 437 under the 175k WARN ceiling), the wave
+> 13 audit ran a section-by-section size analysis of llms-full.txt
+> and found the ROADMAP wrapper page accounted for **43,232 tokens
+> — 24.8 % of the entire file**, by ~10x the next-largest single
+> contributor (the formatter reference at 4,690). A targeted count
+> of `^> \*\*Status` blockquotes showed 33 in ROADMAP.md on disk
+> but only 17 stripped by the wave 8 narrow regex, leaving **16
+> write-once status blockquotes unstripped** in llms-full.txt
+> (D1, D2 Phase 1+1.5, D3 Phase 1, D5 Phase 1, D6, E2 Phase 1,
+> E2 Phase 2 ×3, E5 Phase 1, G1 ×N, G2 close-out audit, G7 Phase 1,
+> G7 Phase 2 ×2, G8). These status blocks are write-once historical
+> notes; their live state is duplicated in (a) the headline goals
+> table at the top of ROADMAP, (b) the per-subsystem section
+> bodies further down, (c) `docs/recipes/index.md` for E5, and
+> (d) the auto-generated machine-readable artefacts under
+> `docs/_machine/`. Trimming them preserves the on-disk ROADMAP
+> (humans see all 33 blockquotes on the MkDocs site) but reclaims
+> the budget an LLM agent needs to reason about the active
+> contract rather than the historical narrative.
+> The trim:
+> - **Regex change.** Replaces the inner alternation
+>   `(?:E5 Phase 2 wave \d+|G7 Phase 2 follow-up)` with the
+>   line-bounded any-subsystem pattern (the `[^\n]*\n` continuation
+>   was already there from wave 8). The `vX-prep` version marker
+>   guard is preserved on the anchor so a future SHIPPED-at-release
+>   block (e.g. `v1.7`) carrying the actual release version would
+>   NOT be stripped — this lets us mint permanent release markers
+>   in ROADMAP without losing them from llms-full.txt.
+> - **Token impact (measured):** llms-full.txt **174,563 → 159,848
+>   = 14,715 tokens reclaimed** (~8.4 % of the file).
+> - **WARN headroom (post-trim):** 15,152 tokens (175,000 - 159,848).
+>   At the wave 12 measured cost of ~2.6k tokens per recipe, this
+>   funds **~5 future recipes** before the next token-trim work is
+>   warranted. Wave 13 can comfortably ship 2 recipes; wave 14, 15,
+>   16, 17 can each ship 2-3 with the same budget without invoking
+>   another trim.
+> - **Why this is safe.** ROADMAP.md on disk is unchanged — full
+>   33-blockquote history preserved for human readers. MkDocs site
+>   renders identically. `docs/llms-full.txt` (LLM corpus) loses
+>   write-once status annotations but keeps every live-state
+>   surface: headline goals table, per-subsystem section bodies,
+>   subsystem-specific contracts (CI gates, version-consistency,
+>   AppInspect, etc.), risk register, milestone definitions, and
+>   the open-question list. An LLM agent's "what is the current
+>   project state?" answer is unchanged; its "tell me the full
+>   history of what shipped when" answer now requires hitting the
+>   MkDocs site or `ROADMAP.md` directly — which is the right
+>   default for a finite-context-window agent.
+> - **Why this is conservative.** The narrow wave 8 regex matched
+>   only the two subsystem patterns that ship MOST OFTEN and
+>   bloat ROADMAP fastest (E5 = one block per recipe wave, G7 =
+>   one block per llms.txt follow-up). The wave 13 generalisation
+>   sweeps in 16 one-shot blocks that, by definition, will not
+>   grow further (D1 shipped, D6 shipped, G8 shipped — they're
+>   single-milestone subsystems, not recurring like E5 waves).
+>   The marginal reclaim per wave from new subsystems shipping
+>   is small (~0.5-1.5k tokens per new subsystem milestone), but
+>   the wave 13 generalisation captures the full backlog at once.
+> - **Cadence implication:** the new sustainable cadence becomes
+>   **2-3 recipes per wave** (up from the 2-per-wave that wave 12
+>   established). Wave 13 ships 2 recipes immediately following
+>   this token-trim PR.
+> - **Test plan:** all 5 docs gates green locally — recipe schema
+>   (38 valid), llms.txt sync, llms-full.txt sync + budget
+>   (159,848 / 175,000), reference pages sync (3 in sync),
+>   `mkdocs build --strict` clean. Verified: 33 status blocks
+>   still present on-disk; 0 status blocks in llms-full.txt
+>   (down from 16); 1 unrelated `## Status (...)` H2 heading
+>   in `docs/recipes/index.md` correctly NOT stripped (H2, not
+>   blockquote).
+> - **Next potential trim levers** (in descending ROI order, kept
+>   for future budget pressure — none needed for wave 13+ unless
+>   the cadence accelerates beyond 2-3 recipes per wave): (a) `docs/
+>   reference/formatter.md` Appendix-A enumeration (~4.7k tokens —
+>   could move to URL pointer behind a per-row table); (b) `docs/
+>   CI-GATES.md` summary (4.2k); (c) `docs/recipes/index.md`
+>   matrix already auto-generated, but per-row Apps + Verified
+>   cells could compact (4.1k); (d) `docs/runbooks/supply-chain.md`
+>   (3.1k) and `docs/runbooks/upgrade-hygiene.md` (2.6k) — runbook
+>   bodies could trim post-§6 like recipe pages did in wave 4a.
+
 > **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 12 SHIPPED
 > (2 more recipes — recipe count 36 → 38, heat layer-type usage
 > 6 → 7, markers usage 12 → 13, layer-type coverage 9 / 10
