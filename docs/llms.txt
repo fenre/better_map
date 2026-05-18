@@ -47,6 +47,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 
 - [Recipes overview](https://fenre.github.io/better_map/recipes/): the recipe contract, the six-section structure, the CI gate, the JSON Schema, and how to add a new recipe. The machine-readable index of every shipped recipe is at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>.
 - [CIM Alerts → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-alerts/markers/): apps required: Splunk_SA_CIM, builtin:iplocation.
+- [CIM Authentication → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/h3/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Authentication → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/heat/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Authentication → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/markers/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Network Traffic → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/h3/): apps required: Splunk_SA_CIM, builtin:iplocation.
@@ -60,6 +61,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [CSV lookup (geo polygons) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/supercluster/): apps required: none.
 - [CSV lookup (region metrics) → Vector-tile join (customer PMTiles) (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/vector-tile-join/): apps required: none.
 - [Cisco Cyber Vision (components + vulnerabilities) → Markers (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/markers/): apps required: TA-cisco-cybervision.
+- [ES Risk-Based Alerting (risk index) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/es-risk/h3/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM.
 - [ES Risk-Based Alerting (risk index) → Markers (unverified)](https://fenre.github.io/better_map/recipes/es-risk/markers/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM, builtin:iplocation.
 - [US states (built-in geo lookup) → Choropleth (unverified)](https://fenre.github.io/better_map/recipes/geo-us-states/choropleth/): apps required: none.
 - [US states (built-in geo lookup) → 3D extrusion (unverified)](https://fenre.github.io/better_map/recipes/geo-us-states/extrusion-3d/): apps required: none.
@@ -68,6 +70,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [KV Store (lat/lon collection) → Markers (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/): apps required: none.
 - [KV Store (lat/lon collection) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/supercluster/): apps required: none.
 - [Cisco Meraki (devices) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/meraki/h3/): apps required: Splunk_TA_cisco_meraki.
+- [Cisco Meraki (devices) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/meraki/heat/): apps required: Splunk_TA_cisco_meraki.
 - [Cisco Meraki (devices) → Markers (unverified)](https://fenre.github.io/better_map/recipes/meraki/markers/): apps required: Splunk_TA_cisco_meraki.
 - [NetFlow / sFlow / IPFIX (flow records) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/h3/): apps required: Splunk_TA_netflow, builtin:iplocation.
 - [NetFlow / sFlow / IPFIX (flow records) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/heat/): apps required: Splunk_TA_netflow, builtin:iplocation.
