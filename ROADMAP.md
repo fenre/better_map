@@ -1266,6 +1266,71 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 > territory — deferring until the per-recipe pace actually
 > warrants it.
 
+> **Status (v1.7-prep, 2026-05-18): G7 Phase 2 follow-up #3
+> SHIPPED — historical wave-status blockquote trim in
+> `build-llms-full-txt.py`.** The "what's NOT in this prep"
+> footnote on follow-up #2 (above) listed Appendix B
+> summarisation as the next available token-budget lever.
+> The empirical data after wave 7 shipped (24 recipes,
+> ~171.7k tokens, ~3.3k headroom to WARN) showed Appendix B
+> isn't actually the largest non-recipe content source
+> anymore — the wave-by-wave `> **Status (...): E5 Phase 2
+> wave N SHIPPED ...` blockquotes accumulating under E5 are.
+> Six E5-wave + two G7-follow-up status blocks consumed
+> ~12.7k tokens of `roadmap.md` body and, once they reach
+> `llms-full.txt`, ~20k tokens of corpus weight (the
+> `re.sub(r"\n{3,}", "\n\n", out)` whitespace collapse
+> amplifies the savings vs raw character count). All eight
+> are pure progress notes — their LIVE state (recipe count,
+> layer-type coverage, source-pattern coverage) is duplicated
+> in (a) the E5 row of the headline goals table at the top
+> of this file and (b) `docs/recipes/index.md`, both of which
+> the auto-generators keep in lockstep. So follow-up #3
+> strips them from the `llms-full.txt` body only:
+> - **What changed:** a new `_ROADMAP_STATUS_BLOCK` regex
+>   plus `strip_roadmap_status_blocks()` helper in
+>   `scripts/build-llms-full-txt.py`. The strip runs in
+>   `render()` BEFORE `strip_chrome()` (so the chrome
+>   whitespace-collapse pass also tidies the gaps). The
+>   regex matches lines starting with the `> **Status
+>   (vX-prep, YYYY-MM-DD):` prefix followed by either the
+>   `E5 Phase 2 wave N` or `G7 Phase 2 follow-up` marker
+>   phrase, and consumes every continuation `>` line until
+>   the first non-blockquote line. The on-disk `ROADMAP.md`
+>   is unchanged and the MkDocs site still renders every
+>   status block via the existing mkdocs-include-markdown
+>   plugin include at the top of `docs/roadmap.md` — the
+>   trim is a llms-full.txt-only transform applied to the
+>   already-expanded body.
+> - **Token-budget impact:** wave 7's ~171.7k landed →
+>   wave 8 baseline drops to ~150.3k against the same
+>   175k WARN. That's ~24.7k headroom = ~7 more recipes at
+>   ~3.3k each before the next recalibration is warranted,
+>   which is wave 10-11 territory at the current 3-recipes-
+>   per-wave cadence. Wave 8 itself adds 3 new recipe pages
+>   (~9.9k) AND its own wave-8 status block (~2-3k), but the
+>   wave-8 status block is auto-stripped by this same regex,
+>   so the post-wave-8 baseline lands at ~160.2k — comfortably
+>   below WARN.
+> - **Self-consumption proof:** this G7 Phase 2 follow-up #3
+>   status block matches the `G7 Phase 2 follow-up` arm of
+>   the regex and is therefore trimmed from `llms-full.txt`
+>   on the very build that introduces it. The
+>   `--check` output reports `[PASS] docs/llms-full.txt is
+>   in sync (601,215 chars, ~150,303 estimated tokens,
+>   175,000 warn / 200,000 fail)` — note that 150k is the
+>   wave-7 baseline (171.7k) minus this block's contribution
+>   plus the eight prior wave-status blocks the regex
+>   harvested in the same pass.
+> - **What's NOT in this prep (still deferred to a future
+>   recalibration):** Appendix B summarisation remains the
+>   next lever if the per-recipe pace accelerates past the
+>   ~7-recipe headroom this trim opens. The wave-status
+>   trim was a higher-yield, lower-risk first pass (no
+>   schema/contract change, no public-page change, no
+>   per-recipe authoring change) so it ships ahead of the
+>   Appendix B work.
+
 > **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 4 SHIPPED
 > (3 more recipes — recipe count 12 → 15, layer-type coverage
 > 5 → 6 / 10).** Wave 4 follows the wave-3 strategic precedent
