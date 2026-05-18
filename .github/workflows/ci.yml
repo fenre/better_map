@@ -47,7 +47,12 @@ jobs:
   lint-and-build:
     name: Lint and build viz bundle
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # Bumped 10 → 20 in v1.7-prep when D2 Phase 1 added the second and
+    # third Playwright engines (firefox + webkit) to the install step.
+    # Cold install of all three browsers + their --with-deps system
+    # libraries runs ~10 minutes on ubuntu-latest; warm install
+    # (browsers cached, see the Cache step below) is seconds.
+    timeout-minutes: 20
     defaults:
       run:
         # Every script in this job assumes the working dir is the viz package
@@ -155,7 +160,34 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: python3 scripts/check-formatter-coverage.py
 
-      - name: Install Playwright browsers (D2 browser-compat + D3 accessibility)
+      - name: Read Playwright version from package-lock (D2 + D3 cache key)
+        # The cache below is keyed on the EXACT Playwright version
+        # pulled into the viz package, so a version bump in
+        # package-lock.json forces a clean re-install (browser binary
+        # layouts can change between Playwright minor versions). The
+        # version is read directly from the lockfile so the workflow
+        # has no hidden dependency on the actual installed semver.
+        id: playwright-version
+        run: |
+          v=$(node -e "console.log(require('./package-lock.json').packages['node_modules/playwright'].version)")
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          echo "Playwright lockfile version: $v"
+
+      - name: Cache Playwright browser binaries (D2 + D3)
+        # Caches ~/.cache/ms-playwright between runs so the cold
+        # `npx playwright install --with-deps chromium firefox webkit`
+        # step only pays the ~10 min download cost on lockfile bumps,
+        # not every PR. The system-package install (`--with-deps`)
+        # still re-runs every time (apt-get is fast on warm hits).
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install Playwright browsers (D2 + D3 — only on cache miss)
         # Playwright ships browser binaries separately from the npm
         # package — `npm ci` only fetches the JS adapter. We install
         # all three engine families so that:
@@ -166,21 +198,24 @@ jobs:
         #     {chromium, firefox, webkit} — the three engine families
         #     that together cover ~99 % of real browsers in the field
         #     (Chrome / Edge / Opera / Brave + Safari / iOS + Firefox).
-        # `--with-deps` is REQUIRED on ubuntu-runners for firefox +
-        # webkit (installs ~200 MB of system libraries the engines
-        # need); on macOS / Windows the flag is a no-op.
-        # Adds ~3 minutes to cold CI runs; Playwright caches the
-        # browsers under ~/.cache/ms-playwright (or the equivalent
-        # PLAYWRIGHT_BROWSERS_PATH) so warm runs are seconds.
-        # Previous behaviour pinned `chromium` only because the
-        # formatter HTML has no engine-specific behaviour worth testing here; what
-        # axe-core flags it flags in any modern engine. `--with-deps`
-        # installs the apt packages the headless shell needs on the
-        # GitHub-hosted runner (libnss3, libnspr4, libatk1.0-0, etc.).
-        # The cost is ~15s on the cold cache and well under 1s on
-        # the warm cache (`actions/setup-node` already cached the npm
-        # tree, which carries Playwright's version pin).
-        run: npx playwright install --with-deps chromium firefox webkit
+        # SKIPPED on cache hits — browsers are already on disk under
+        # ~/.cache/ms-playwright from the previous run with the same
+        # Playwright version. Cold install (cache miss or version
+        # bump) takes ~9-10 min on ubuntu-latest because firefox +
+        # webkit binaries are 50-90 MB each; warm install is 0 s.
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install chromium firefox webkit
+
+      - name: Install Playwright system deps (D2 + D3 — always)
+        # System libraries (libnss3, libatk-bridge2.0-0, libxkbcommon0,
+        # libgbm1, etc.) live outside the cached ~/.cache/ms-playwright
+        # tree, so they MUST re-`apt-get install` on every runner. apt
+        # is fast on warm runners (~10 s) and ubuntu-latest already
+        # carries most of what Chromium needs; the missing libs are
+        # almost always webkit / firefox specific. On cache HIT this
+        # is the only Playwright-related step that does meaningful
+        # work, keeping the warm-CI cost ~15 s instead of ~10 min.
+        run: npx playwright install-deps chromium firefox webkit
 
       - name: Check accessibility (D3 — axe-core on formatter.html)
         # ROADMAP §3 D3 Phase 1 + §7b "WCAG 2.2 AA conformance
