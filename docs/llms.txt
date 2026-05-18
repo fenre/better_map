@@ -47,7 +47,9 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 
 - [Recipes overview](https://fenre.github.io/better_map/recipes/): the recipe contract, the six-section structure, the CI gate, the JSON Schema, and how to add a new recipe. The machine-readable index of every shipped recipe is at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>.
 - [CIM Alerts → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-alerts/markers/): apps required: Splunk_SA_CIM, builtin:iplocation.
+- [CIM Authentication → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/heat/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Authentication → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/markers/): apps required: Splunk_SA_CIM, builtin:iplocation.
+- [CIM Network Traffic → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/h3/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Network Traffic → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/markers/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Network Traffic → Paths (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/paths/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Performance (CPU / memory / facilities) → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-performance/markers/): apps required: Splunk_SA_CIM.
@@ -62,6 +64,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [ITSI service health (KPI base searches) → Markers (unverified)](https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/): apps required: SA-ITOA.
 - [KV Store (lat/lon collection) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/heat/): apps required: none.
 - [KV Store (lat/lon collection) → Markers (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/): apps required: none.
+- [Cisco Meraki (devices) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/meraki/h3/): apps required: Splunk_TA_cisco_meraki.
 - [Cisco Meraki (devices) → Markers (unverified)](https://fenre.github.io/better_map/recipes/meraki/markers/): apps required: Splunk_TA_cisco_meraki.
 - [NetFlow / sFlow / IPFIX (flow records) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/h3/): apps required: Splunk_TA_netflow, builtin:iplocation.
 - [OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Markers (unverified)](https://fenre.github.io/better_map/recipes/ot-datastreamer/markers/): apps required: Splunk_TA_oti.
