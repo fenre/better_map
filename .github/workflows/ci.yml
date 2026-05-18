@@ -243,7 +243,7 @@ jobs:
         # Short retention because every PR produces one; main-branch
         # runs carry the canonical evidence.
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: accessibility-report-${{ github.sha }}
           path: reports/accessibility-report.json
@@ -277,7 +277,7 @@ jobs:
         # screenshots (chromium / firefox / webkit) are available
         # for offline triage even when the inline summary truncates.
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: browser-compat-report-${{ github.sha }}
           path: |
@@ -360,7 +360,7 @@ jobs:
         # retention because every PR produces one; the value is in
         # the latest main-branch run.
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: osv-scanner-report-${{ github.sha }}
           path: osv-report.json
@@ -434,7 +434,7 @@ jobs:
         # without rebuilding locally. Artifact is kept for 14 days
         # (GitHub default retention is 90; we keep it short to control
         # storage).
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: better_map-bundle-${{ github.sha }}
           path: |
@@ -560,7 +560,7 @@ jobs:
         # whole point — that's when you need it). Short retention so we
         # don't pay storage for green PR reports nobody will ever read.
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: appinspect-report-${{ github.sha }}
           path: dist-appinspect/report.json
@@ -725,7 +725,7 @@ jobs:
         # the whole gate locally. Short retention (every PR produces
         # one; main-branch carries the canonical evidence).
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: docs-site-${{ github.sha }}
           path: site/
