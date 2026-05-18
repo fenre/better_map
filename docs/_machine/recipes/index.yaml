@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 30
+recipe_count: 33
 recipes:
 - id: cim-alerts--markers
   source:
@@ -65,6 +65,61 @@ recipes:
   - description: Sibling — CIM Authentication markers (source-IP geocoding for credential abuse)
     path: docs/recipes/cim-authentication/markers.md
   path: docs/recipes/cim-alerts/markers.md
+- id: cim-authentication--h3
+  source:
+    id: cim-authentication
+    display_name: CIM Authentication
+    pattern: splunk-cim
+  layer:
+    id: h3
+    display_name: H3 hexbin
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_SA_CIM
+    optional: false
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: 203.0.113.45
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '52.3676'
+  - name: lon
+    type: number
+    example: '4.9041'
+  - name: value
+    type: integer
+    example: '417'
+    drives_formatter_option: hexbinAggregate
+  - name: src_country
+    type: string
+    example: NL
+  - name: distinct_users
+    type: integer
+    example: '23'
+  required_formatter_options:
+  - pointRenderer
+  - hexbinAggregate
+  - hexbinResolution
+  - hexbinOpacity
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipes — same source, different layers (markers + heat)
+    path: docs/recipes/cim-authentication/markers.md
+  - description: Splunk CIM skill — Authentication data model field reference
+    path: ~/.cursor/skills/splunk-cim/SKILL.md
+  - description: Splunk ES skill — risk-based alerting context for credential abuse
+    path: ~/.cursor/skills/splunk-enterprise-security/SKILL.md
+  - description: Layer reference — h3
+    path: docs/reference/layers.md
+  - description: Formatter schema — hexbinAggregate, hexbinResolution, hexbinOpacity
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/cim-authentication/h3.md
 - id: cim-authentication--heat
   source:
     id: cim-authentication
@@ -709,6 +764,61 @@ recipes:
   - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
     path: docs/reference/bm-ct-1.md
   path: docs/recipes/cyber-vision/markers.md
+- id: es-risk--h3
+  source:
+    id: es-risk
+    display_name: ES Risk-Based Alerting (risk index)
+    pattern: splunk-premium-es
+  layer:
+    id: h3
+    display_name: H3 hexbin
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: SplunkEnterpriseSecuritySuite
+    optional: false
+  - id: Splunk_SA_CIM
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: alice@example.com
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '47.6062'
+  - name: lon
+    type: number
+    example: '-122.3321'
+  - name: value
+    type: integer
+    example: '147'
+    drives_formatter_option: hexbinAggregate
+  - name: risk_object_type
+    type: string
+    example: user
+  - name: entity_count
+    type: integer
+    example: '8'
+  required_formatter_options:
+  - pointRenderer
+  - hexbinAggregate
+  - hexbinResolution
+  - hexbinOpacity
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, different layer (markers)
+    path: docs/recipes/es-risk/markers.md
+  - description: splunk-rba skill — Risk-Based Alerting framework (risk index schema, rules, RIRs)
+    path: ~/.cursor/skills/splunk-rba/SKILL.md
+  - description: splunk-enterprise-security skill — Asset & Identity framework, identities.csv schema
+    path: ~/.cursor/skills/splunk-enterprise-security/SKILL.md
+  - description: Layer reference — h3
+    path: docs/reference/layers.md
+  - description: Formatter schema — hexbinAggregate, hexbinResolution, hexbinOpacity
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/es-risk/h3.md
 - id: es-risk--markers
   source:
     id: es-risk
@@ -1083,6 +1193,58 @@ recipes:
   - description: hexbin layer source (binning + colour ramp + opacity contract)
     path: better_map/appserver/static/visualizations/better_map/src/lib/layers/hexbin.js
   path: docs/recipes/meraki/h3.md
+- id: meraki--heat
+  source:
+    id: meraki
+    display_name: Cisco Meraki (devices)
+    pattern: splunk-vendor-ta
+  layer:
+    id: heat
+    display_name: Heatmap
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_TA_cisco_meraki
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: Q2XX-XXXX-XXXX
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '37.7749'
+  - name: lon
+    type: number
+    example: '-122.4194'
+  - name: device_count
+    type: integer
+    example: '47'
+  - name: weight
+    type: number
+    example: '0.84'
+    drives_formatter_option: heatmapOpacity
+  - name: alerting_count
+    type: integer
+    example: '3'
+  required_formatter_options:
+  - pointRenderer
+  - heatmapOpacity
+  - heatmapRadius
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipes — same source, different layers (markers + h3)
+    path: docs/recipes/meraki/markers.md
+  - description: cisco-meraki-ta-setup skill — TA install, indexes, account config, input types
+    path: ~/.cursor/skills/cisco-meraki-ta-setup/SKILL.md
+  - description: cisco-products skill — Meraki sourcetypes, fields, sample queries
+    path: ~/.cursor/skills/cisco-products/SKILL.md
+  - description: Layer reference — heat
+    path: docs/reference/layers.md
+  - description: Formatter schema — heatmapOpacity, heatmapRadius
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/meraki/heat.md
 - id: meraki--markers
   source:
     id: meraki
