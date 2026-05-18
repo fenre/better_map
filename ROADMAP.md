@@ -2536,6 +2536,74 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   CHANGELOG iteration if a new release adds a
 >   large `## [VERSION]` section before then.
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 13 SHIPPED
+> (2 more recipes — recipe count 38 → 40, layer-type coverage
+> 9 / 10 unchanged, source-pattern coverage 8 / 8 unchanged,
+> heat layer usage 7 → 8, markers layer usage 13 → 14).**
+> Wave 13 closes two specific gaps the wave 11 / wave 12
+> backlog had been carrying:
+> - **`csv-lookup-geo/markers`** — the missing entry-point
+>   layer for the `splunk-lookup` source pattern. Wave 11
+>   shipped CSV-lookup-geo with H3, supercluster, polygons,
+>   and vector-tile-join, but a CSV lookup operator's FIRST
+>   instinct (and the lowest-cardinality use case — < ~200
+>   discrete points) needs a discrete-markers recipe with
+>   per-point popup affordance. This recipe explicitly
+>   contrasts with the higher-cardinality supercluster
+>   sibling and the higher-density H3 / heat siblings to
+>   guide layer choice via the §6 Gotchas matrix.
+> - **`es-risk/heat`** — completes the **es-risk source-row
+>   triplet** (markers in wave 9, H3 in wave 10, heat in
+>   wave 13). The heat layer is the right shape for SOC
+>   LEADERSHIP / board-deck rendering (smooth global risk
+>   pressure landscape) as distinct from the markers layer
+>   (analyst investigation) and the H3 layer (per-site
+>   comparison) — all three coexist on the same dashboard
+>   via BM-CT-1 layer toggles. Reuses the canonical
+>   `eventstats max + log10 eval normalise` heat-weight
+>   pattern shared across every heat recipe in the matrix
+>   (cim-network-traffic/heat, netflow-sflow-ipfix/heat,
+>   splunk-stream/heat, ot-datastreamer/heat, meraki/heat,
+>   kvstore-latlon/heat, cim-authentication/heat) — log
+>   scale is intentional because RBA scores span 2-3 orders
+>   of magnitude.
+> Coverage matrix after wave 13:
+> - **Source-pattern coverage: 8 / 8 (COMPLETE)** —
+>   unchanged from wave 6.
+> - **Layer-type coverage: 9 / 10** — unchanged
+>   (`indoor` remains blocked on v1.8+ image-overlay
+>   layer kind).
+> - **Cell fill: 40 / ~75 (~53 %)** — up from 38 / ~75.
+> - **Heat layer footprint:** 8 recipes (cim-network-traffic,
+>   netflow-sflow-ipfix, splunk-stream, ot-datastreamer,
+>   meraki, kvstore-latlon, cim-authentication, es-risk),
+>   making it the second-most-deployed layer type after
+>   markers — confirming the wave 12 thesis that heatmap
+>   is the natural shape for "where is the pressure?"
+>   leadership / executive dashboards.
+> - **Markers layer footprint:** 14 recipes — remains the
+>   most-deployed layer (the canonical "analyst
+>   investigation" shape).
+> Token budget after wave 13 recipes:
+> - llms-full.txt: **~165k / 175k** (~10k of WARN headroom
+>   remaining). The wave 13 token-trim (below) reclaimed
+>   14.7k tokens, funding wave 13 (2 recipes, ~4.9k added)
+>   with ~10k of remaining headroom for wave 14.
+> - Wave 14 candidates (no token-trim needed): the next
+>   targets are `cim-alerts/heat` (alerts → aggregate heat
+>   pressure leadership view, completes the alerts triplet
+>   with markers + h3), `cim-performance/heat` (performance
+>   monitoring → site-pressure leadership view), and
+>   `cyber-vision/heat` (OT vulnerability density —
+>   `ot_safety_relevant: true`). Each at ~2.5k tokens
+>   estimated; wave 14 ships 2-3 within the remaining
+>   headroom.
+> Test plan: all 5 docs gates green locally — recipe schema
+> (40 valid, 0 verified), llms.txt sync, llms-full.txt sync
+> + budget (~165k / 175k), reference pages sync (3 in sync
+> incl. recipes matrix auto-regen), `mkdocs build --strict`
+> clean.
+
 > **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 13 token-trim
 > SHIPPED — generalised ROADMAP status-block strip in
 > `scripts/build-llms-full-txt.py` from the wave 8 narrow regex

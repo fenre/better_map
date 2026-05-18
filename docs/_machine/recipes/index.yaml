@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 38
+recipe_count: 40
 recipes:
 - id: cim-alerts--h3
   source:
@@ -697,6 +697,53 @@ recipes:
   - description: Sibling — NetFlow H3 recipe (same layer, different source)
     path: docs/recipes/netflow-sflow-ipfix/h3.md
   path: docs/recipes/csv-lookup-geo/h3.md
+- id: csv-lookup-geo--markers
+  source:
+    id: csv-lookup-geo
+    display_name: CSV lookup (geo polygons)
+    pattern: splunk-lookup
+  layer:
+    id: markers
+    display_name: Markers
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required: []
+  expected_fields:
+  - name: id
+    type: string
+    example: STORE-0042
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '33.7490'
+  - name: lon
+    type: number
+    example: '-84.3880'
+  - name: site_name
+    type: string
+    example: 'Atlanta Downtown #42'
+  - name: site_category
+    type: string
+    example: retail
+  required_formatter_options:
+  - pointRenderer
+  - idField
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, supercluster layer (≥ 200 features)
+    path: docs/recipes/csv-lookup-geo/supercluster.md
+  - description: Companion recipe — same source family, polygon layer
+    path: docs/recipes/csv-lookup-geo/polygons.md
+  - description: Companion recipe — same source family, vector-tile-join
+    path: docs/recipes/csv-lookup-geo/vector-tile-join.md
+  - description: Splunk lookups skill — CSV lookup configuration
+    path: ~/.cursor/skills/splunk-lookups/SKILL.md
+  - description: Layer reference — markers
+    path: docs/reference/layers.md
+  - description: Formatter schema — pointRenderer enum
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/csv-lookup-geo/markers.md
 - id: csv-lookup-geo--polygons
   source:
     id: csv-lookup-geo
@@ -985,6 +1032,62 @@ recipes:
   - description: Formatter schema — hexbinAggregate, hexbinResolution, hexbinOpacity
     path: docs/_machine/formatter-schema.json
   path: docs/recipes/es-risk/h3.md
+- id: es-risk--heat
+  source:
+    id: es-risk
+    display_name: ES Risk-Based Alerting (risk index)
+    pattern: splunk-premium-es
+  layer:
+    id: heat
+    display_name: Heatmap
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: SplunkEnterpriseSecuritySuite
+    optional: false
+  - id: Splunk_SA_CIM
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: alice@example.com
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '47.6062'
+  - name: lon
+    type: number
+    example: '-122.3321'
+  - name: total_risk
+    type: integer
+    example: '147'
+  - name: risk_object_type
+    type: string
+    example: user
+  - name: weight
+    type: number
+    example: '0.84'
+    drives_formatter_option: heatmapOpacity
+  required_formatter_options:
+  - pointRenderer
+  - heatmapOpacity
+  - heatmapRadius
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, different layer (markers)
+    path: docs/recipes/es-risk/markers.md
+  - description: Companion recipe — same source, different layer (H3 hexbin)
+    path: docs/recipes/es-risk/h3.md
+  - description: splunk-rba skill — Risk-Based Alerting framework (risk index schema, rules, RIRs)
+    path: ~/.cursor/skills/splunk-rba/SKILL.md
+  - description: splunk-enterprise-security skill — Asset & Identity framework, identities.csv schema
+    path: ~/.cursor/skills/splunk-enterprise-security/SKILL.md
+  - description: Layer reference — heat
+    path: docs/reference/layers.md
+  - description: Formatter schema — heatmapOpacity, heatmapRadius
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/es-risk/heat.md
 - id: es-risk--markers
   source:
     id: es-risk
