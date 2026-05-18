@@ -49,10 +49,15 @@ spec, recalibrated in E5 Phase 2 wave 6 against actual 18-recipe
 corpus; further extended in wave 8 by also trimming historical
 ``> **Status (...): E5 Phase 2 wave N SHIPPED`` and ``G7 Phase 2
 follow-up #N SHIPPED`` blockquotes from ``roadmap.md`` — see
-``strip_roadmap_status_blocks`` below — and in wave 10 by trimming
+``strip_roadmap_status_blocks`` below — in wave 10 by trimming
 older ``## [VERSION] - DATE`` sections from ``changelog.md`` after
 the top ``_CHANGELOG_KEEP_VERSIONS`` are kept — see
-``strip_changelog_old_versions`` below):
+``strip_changelog_old_versions`` below — and in wave 12 by compacting
+``Appendix B — Per-source recipe matrix`` from per-recipe sections
+(with bulleted ``Expected fields:`` lists that duplicated §3 of each
+recipe body) to a single matrix table that preserves the lookup
+contract without the duplication — see the inline format-contract
+comment above the ``# === BEGIN: appendix:recipes ===`` write block):
 
   * Per-page warning at **50,000 estimated tokens** — one page should
     not dominate the corpus.
@@ -724,6 +729,22 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
     buf.write("# === END: appendix:integrations ===\n")
 
     # ------------- Recipes appendix
+    #
+    # Format contract (recalibrated in E5 Phase 2 wave 12 — see the
+    # corresponding ROADMAP status block): the appendix renders as a
+    # single matrix table rather than per-recipe sections with bulleted
+    # `Expected fields:` lists. The pre-wave-12 per-section format
+    # carried ~150 tokens per recipe (~5.3k tokens across 36 recipes,
+    # the second-largest content block after roadmap.md), and >70% of
+    # that was the `expected_fields` list — which is fully duplicated
+    # in §3 of each recipe page body, retained in llms-full.txt under
+    # the wave-4a `## 5. Screenshot` trim point. The matrix preserves
+    # the agent-actionable lookup contract (which recipe matches which
+    # source+layer? where is the unabridged page? what apps are
+    # required? what's the verification status?) while shedding the
+    # ~4k tokens of duplication. Agents that need the field contract
+    # follow the per-row Page link, which lands on the body block that
+    # already contains §3 in this same file.
     buf.write("\n# === BEGIN: appendix:recipes ===\n\n")
     buf.write("# Appendix B — Per-source recipe matrix\n\n")
     buf.write(
@@ -738,7 +759,10 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
         "with proof in the YAML metadata), `unverified` (the recipe "
         "follows the contract but has not yet been smoke-tested), or "
         "`deferred` (the recipe is known to be incomplete pending "
-        "upstream work).\n\n"
+        "upstream work). The expected-field contract for each recipe "
+        "lives in §3 of the recipe page (kept verbatim in this file "
+        "under the matching `# === BEGIN: …/recipes/<source>/<layer>/ "
+        "===` block); follow the Page link below to jump to it.\n\n"
     )
     if not recipes:
         buf.write(
@@ -746,6 +770,8 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
             "matrix design.)\n"
         )
     else:
+        buf.write("| Recipe ID | Source → Layer | Status | Apps required | Verified against | Page |\n")
+        buf.write("| :-- | :-- | :-- | :-- | :-- | :-- |\n")
         for entry in recipes:
             source = entry.get("source") or {}
             layer = entry.get("layer") or {}
@@ -753,50 +779,35 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
                 f"{source.get('display_name', source.get('id', '?'))} → "
                 f"{layer.get('display_name', layer.get('id', '?'))}"
             )
-            buf.write(f"## {label}\n\n")
-            buf.write(f"- ID: `{entry.get('id', '')}`\n")
-            buf.write(f"- Status: {entry.get('status', 'unknown')}\n")
+            recipe_id = entry.get("id", "")
+            status = entry.get("status", "unknown")
             apps = entry.get("splunk_apps_required") or []
-            if apps:
-                buf.write("- Splunk apps required:\n")
-                for app in apps:
-                    if isinstance(app, dict):
-                        app_id = app.get("id", "?")
-                        app_min = app.get("min_version", "")
-                        buf.write(
-                            f"    - `{app_id}`"
-                            + (f" ≥ {app_min}" if app_min else "")
-                            + "\n"
-                        )
+            app_cells: list[str] = []
+            for app in apps:
+                if isinstance(app, dict):
+                    app_id = app.get("id", "?")
+                    app_min = app.get("min_version", "")
+                    app_cells.append(
+                        f"`{app_id}`" + (f" ≥ {app_min}" if app_min else "")
+                    )
+            apps_cell = ", ".join(app_cells) if app_cells else "—"
+            verified = entry.get("verified_against") or {}
+            if isinstance(verified, dict) and verified:
+                verified_cell = ", ".join(f"{k}={v}" for k, v in verified.items())
+            else:
+                verified_cell = "—"
             path = entry.get("path", "")
             if path:
                 rel_short = path[len("docs/") :] if path.startswith("docs/") else path
                 page_url = url_for(site_url, rel_short)
-                buf.write(f"- Page: [{path}]({page_url})\n")
-            verified = entry.get("verified_against") or {}
-            if isinstance(verified, dict) and verified:
-                parts: list[str] = []
-                for k, v in verified.items():
-                    parts.append(f"{k}={v}")
-                buf.write("- Verified against: " + ", ".join(parts) + "\n")
-            expected = entry.get("expected_fields") or []
-            if expected:
-                buf.write("- Expected fields:\n")
-                for field in expected:
-                    if isinstance(field, dict):
-                        name = field.get("name", "?")
-                        ftype = field.get("type", "?")
-                        example = field.get("example", "")
-                        drives = field.get("drives_formatter_option")
-                        bits = [f"`{name}` ({ftype})"]
-                        if example != "":
-                            bits.append(f"e.g. `{example}`")
-                        if drives:
-                            bits.append(f"drives `{drives}`")
-                        buf.write(f"    - {' — '.join(bits)}\n")
-                    elif isinstance(field, str):
-                        buf.write(f"    - `{field}`\n")
-            buf.write("\n")
+                page_cell = f"[{path}]({page_url})"
+            else:
+                page_cell = "—"
+            buf.write(
+                f"| `{recipe_id}` | {label} | {status} | {apps_cell} | "
+                f"{verified_cell} | {page_cell} |\n"
+            )
+        buf.write("\n")
     buf.write("# === END: appendix:recipes ===\n")
 
     # ------------- Footer
