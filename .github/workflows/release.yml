@@ -296,7 +296,7 @@ jobs:
         # release artefacts (PR runs use 14 days; releases keep evidence
         # longer for post-publication audits).
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: accessibility-report-v${{ steps.tag.outputs.version }}
           path: reports/accessibility-report.json
@@ -319,7 +319,7 @@ jobs:
         # are available for offline triage. 90-day retention matches the
         # release accessibility report.
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: browser-compat-report-v${{ steps.tag.outputs.version }}
           path: |
@@ -477,7 +477,7 @@ jobs:
       - name: Upload AppInspect report alongside release artifacts
         # Useful for post-release audits and Splunkbase submission.
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: appinspect-report-v${{ steps.tag.outputs.version }}
           path: dist-appinspect/report.json
