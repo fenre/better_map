@@ -215,12 +215,15 @@ nav:
       - Catalogue: integrations/catalogue.md
   - Recipes:
       - recipes/index.md
+      - 'CIM Alerts — markers': recipes/cim-alerts/markers.md
       - 'CIM Authentication — markers': recipes/cim-authentication/markers.md
       - 'CIM Network Traffic — markers': recipes/cim-network-traffic/markers.md
       - 'CIM Network Traffic — paths': recipes/cim-network-traffic/paths.md
       - 'CIM Performance (CPU / memory / facilities) — markers': recipes/cim-performance/markers.md
+      - 'CSV lookup (geo points) — H3 hexbin': recipes/csv-lookup-geo/h3.md
       - 'CSV lookup (geo points) — supercluster': recipes/csv-lookup-geo/supercluster.md
       - 'CSV lookup (geo polygons) — polygons': recipes/csv-lookup-geo/polygons.md
+      - 'CSV lookup (region metrics) — vector-tile join': recipes/csv-lookup-geo/vector-tile-join.md
       - 'Cisco Cyber Vision (components + vulnerabilities) — markers': recipes/cyber-vision/markers.md
       - 'Cisco ThousandEyes (path visualization) — paths': recipes/thousandeyes/paths.md
       - 'ES Risk-Based Alerting (risk index) — markers': recipes/es-risk/markers.md

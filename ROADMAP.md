@@ -1625,6 +1625,142 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   reserve for wave 7+. The HARD-FAIL gate at 200k is
 >   the actual safety rail and remains intact.
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 6 SHIPPED
+> (3 more recipes — recipe count 18 → 21, layer-type coverage
+> 8 → 9 / 10).** Wave 6 simultaneously closes the last
+> demonstrable layer-type cell (the debatable
+> `vector-tile-join`), starts the second-recipe lap on a
+> proven source (`csv-lookup-geo` → `h3`), and adds the last
+> CIM data-model that wasn't yet represented (`cim-alerts`).
+> Three new recipes:
+> - **`docs/recipes/csv-lookup-geo/vector-tile-join.md`** —
+>   NEW layer type `vector-tile-join`, `splunk-lookup`
+>   source pattern. The "bring your own boundary" recipe:
+>   joins a customer-owned CSV of per-region metric values
+>   against a customer-hosted PMTiles vector tileset.
+>   Demonstrates `featureJoinUrl` + `featureJoinPromoteId`
+>   + `featureJoinSourceLayer` — the three formatter
+>   options that distinguish a customer-supplied tileset
+>   from the bundled `featureJoinPreset` (us-states /
+>   countries / admin1). 3 expected fields (`id`,
+>   `country_name`, `value`). Same underlying `featureJoin`
+>   layer source as the bundled `geo-us-states/choropleth`
+>   sibling — the distinction is the tileset axis (bundled
+>   vs customer-supplied), NOT the layer-type axis. §6
+>   Gotchas covers the four big surprises: HTTP Range
+>   requirement (`curl -I -H "Range: bytes=0-1023"` test
+>   on the CDN, fails on legacy file servers), Splunk
+>   Cloud CSP `connect-src 'self'` (three escape paths:
+>   same-origin static asset, per-tenant allow-list, or
+>   ship inside Better Map's `presets/` folder), case-
+>   sensitive `featureJoinPromoteId` (use `pmtiles show
+>   <file>` to inspect feature properties), and the
+>   unmatched-grey silent-drop gotcha. With this recipe,
+>   layer-type coverage rises to 9 / 10 — only `indoor`
+>   (blocked on v1.8+ image-overlay layer kind) remains
+>   undemonstrated.
+> - **`docs/recipes/csv-lookup-geo/h3.md`** — already-proven
+>   source `csv-lookup-geo`, already-proven layer `h3`.
+>   The second-recipe lap on `csv-lookup-geo` after
+>   `polygons` (wave 1), `supercluster` (wave 5), and
+>   `vector-tile-join` (this wave) — bringing that source
+>   row's cell-count to 4 / ~9. SPL is the canonical
+>   `inputlookup` + `where isnotnull(lat/lon)` + `rename`
+>   pattern (mirrors the sibling NetFlow H3 recipe but
+>   sourced from a static CSV). 5 expected fields. §6
+>   Gotchas captures the "CSV not distributed" performance
+>   ceiling (~10k rows is the typical CSV → KV-Store
+>   migration threshold), the silent-numeric-cast gotcha
+>   (CSV columns are strings unless `eval value=tonumber()`),
+>   the resolution-choice rubric (continental→3, country→4-5,
+>   metro→6-7, city block→8+), and a clean three-row
+>   hexbin-vs-supercluster-vs-heat decision matrix.
+> - **`docs/recipes/cim-alerts/markers.md`** — NEW source
+>   `cim-alerts`, `splunk-cim` pattern. The last CIM
+>   data-model not yet represented (Authentication and
+>   Performance / Network Traffic / Web shipped in earlier
+>   waves; Alerts is the obvious fifth). SPL is the
+>   accelerated `tstats summariesonly=true` over the
+>   Alerts data model, aggregated by destination host
+>   with severity-precedence logic and signature-diversity
+>   counting; `iplocation dest` for geo enrichment. 8
+>   expected fields. §6 Gotchas covers the
+>   acceleration-required gotcha (`summariesonly=true`
+>   silently returns zero rows when accel is OFF), the
+>   `Alerts.dest` IP-vs-hostname split (`iplocation`
+>   only geocodes IPs; customer asset CMDB is the
+>   right answer for hostname dests), vendor-specific
+>   severity nomenclature (`severity="3"` vs `severity="medium"`
+>   vs `severity="HIGH"`), and the explicit reference to
+>   `/.cursor/rules/ot-safety.mdc` Rule 6 for ES
+>   correlation searches that depend on OT-adjacent
+>   signals.
+> - **No framework changes.** All three recipes pass the
+>   unchanged `scripts/check-recipe-schema.py` (now 21
+>   recipes valid, 0 verified, 21 unverified / deferred);
+>   auto-regen of `docs/_machine/recipes/index.yaml` (now
+>   21 entries), `docs/recipes/index.md` matrix (now 21
+>   rows), `docs/llms.txt` (now references 21 recipes),
+>   and `docs/llms-full.txt` (~163.0k estimated tokens
+>   with PR #50's extended §5 trim + new 175k WARN active
+>   — comfortably under the 175k WARN, 81.5 % of the
+>   200k HARD-FAIL). `mkdocs.yml` nav grows four lines (one
+>   per new recipe plus the new `cim-alerts` source-id
+>   keeping the alphabetical-by-display-name convention).
+>   `mkdocs build --strict` is clean.
+> - **Coverage delta:** matrix coverage rises from 18 to
+>   21 recipes (24 % → 28 % of the ~75 ✓ cells); source
+>   pattern coverage stays at 8 / 8 = COMPLETE;
+>   **layer-type coverage rises from 8 to 9 / 10**
+>   (markers, paths, polygons, choropleth, H3 hexbin,
+>   heat, extrusion-3d, supercluster, **vector-tile-join**).
+>   Only 1 layer type remains undemonstrated: `indoor`
+>   (image-georeferenced floor-plan overlay — blocked on
+>   v1.8+ visualization feature work to support the
+>   image-overlay layer-kind), which puts a meaningful
+>   cap on how much further the "layer-type coverage"
+>   axis can move without underlying v1.8 feature work
+>   landing.
+> - **What's NOT in Phase 2 wave 6 (deferred to subsequent
+>   waves):** the remaining ~54 ✓ cells. Verification
+>   (flip to `status: verified` for any of the 21
+>   recipes) is still blocked on `secrets.env` against a
+>   tenant carrying the appropriate sourcetype + apps +
+>   lookups. The 3 new wave-6 recipes specifically need:
+>   a customer PMTiles file + populated `region_metrics.csv`
+>   (vector-tile-join — Natural Earth countries at
+>   <https://github.com/protomaps/basemaps-assets> is the
+>   public-domain starting point), a populated
+>   `incidents.csv` (csv-lookup-geo/h3), and an ES-enabled
+>   tenant with accelerated CIM Alerts + active
+>   correlation searches firing (cim-alerts/markers — v1.7-
+>   prep lab is bare-bones Splunk Enterprise, no ES).
+> - **Wave 7 candidates in priority order:** Now that
+>   layer-type coverage is capped at 9 / 10 (with `indoor`
+>   blocked on v1.8+), wave 7 pivots back to the
+>   per-source 2:1 fill ratio: (a) `cim-alerts/h3.md`
+>   (cells in a now-proven pattern), (b) `meraki/h3.md` or
+>   `meraki/heat.md` (extending the Meraki source-row),
+>   (c) `cim-network-traffic/h3.md` (NetFlow-style hexbin
+>   on the CIM Network Traffic data model). All three are
+>   ~3k tokens each at projected post-§5-trim marginal
+>   cost — well within headroom at the new 175k WARN
+>   threshold.
+> - **Wave 6 layer-coverage milestone closing remarks.**
+>   Reaching 9 / 10 layer types in 6 waves (5 weeks of
+>   matrix execution at ~1 wave per 4-7 days) is a clear
+>   strategic win: the matrix's "demonstrate the
+>   breadth of what Better Map can do" mission is now
+>   structurally complete pending one v1.8+ feature. The
+>   remaining work (cells, not layer types) is execution-
+>   rate work, not strategy work — meaningful but no
+>   longer the dominant axis. From wave 7 onward,
+>   tracking shifts to per-source cell-fill (the column-
+>   wise axis of the matrix), with explicit acknowledgement
+>   that "100% cells" is not the right metric (some cells
+>   are intentionally unfilled — e.g., `cim-alerts/heat`
+>   makes no semantic sense for severity-discrete data).
+
 * **Problem:** Better Map can consume data from ~10 categorically different Splunk source patterns (see table below). A new customer with NetFlow data who wants a heat layer should not have to derive the SPL from first principles. There is currently no recipe documentation; the burden of "what SPL do I write?" falls entirely on the user, who often does not know the field names of their own data, let alone the contract this viz wants.
 * **Design:** Build the recipe matrix as `docs/recipes/<source>/<layer>.md`, where each leaf file is a **complete, copy-paste-runnable** recipe. Every recipe has the same 6-section structure (enforced by a validator script — G2 CI step), so an LLM can ingest the corpus consistently:
 
@@ -2088,7 +2224,7 @@ Goal: prove that v1.6 actually works under real load, close the operational-rigo
 | C1–C8. Eight Splunk integrations verified | C | 6×S (12) + 2×M (10) = 22 |
 | E1. Splunkbase listing | E | 5 |
 | **E2. Documentation site (Phase 1 SHIPPED; Phase 2 in progress — formatter, integrations, recipes auto-gen all SHIPPED)** | E | 5 |
-| **E5. Per-source setup recipes (the matrix — ~75 cells) (Phase 1 framework SHIPPED + Phase 2 waves 1+2+3+4+5 SHIPPED — 18 / ~75 cells, source-pattern coverage 8 / 8 COMPLETE, layer-type coverage 8 / 10; subsequent waves remaining)** | **E** | **5** |
+| **E5. Per-source setup recipes (the matrix — ~75 cells) (Phase 1 framework SHIPPED + Phase 2 waves 1+2+3+4+5+6 SHIPPED — 21 / ~75 cells, source-pattern coverage 8 / 8 COMPLETE, layer-type coverage 9 / 10; only `indoor` layer remains, blocked on v1.8+)** | **E** | **5** |
 | **G7. AI-ingestion-friendly documentation layer (Phase 1 SHIPPED; Phase 2 — `llms.txt` SHIPPED; Phase 2 follow-up — `llms-full.txt` SHIPPED)** | **G** | **5** |
 | **Sub-total** | — | **69 d** |
 | Buffer (20 % for slip, lab access, surprise scope) | — | **14 d** |
@@ -2276,7 +2412,7 @@ If, and only if, every box below is true, we can credibly call v2.0 "one of the 
 - [ ] Listed on Splunkbase; ≥ 25 reviews; ≥ 4.0 average
 - [ ] ≥ 3 named reference customers willing to be quoted; ≥ 1 in a regulated vertical
 - [~] Documentation site live; ≥ 1k monthly uniques (privacy-preserving analytics) — **Phase 1 ✅** (`mkdocs.yml` + 11 hand-authored pages under `docs/`, strict-mode CI gate `docs-build` in `ci.yml`, GitHub Pages auto-deploy on `main` via `.github/workflows/docs.yml`, published at `fenre.github.io/better_map/`, air-gap-clean per §1a: no Google Fonts, no third-party scripts); **Phase 2 in progress** — formatter reference page now carries an auto-generated 82-option enumeration (16 tables, all `(tab, heading)` buckets) regenerated from `docs/_machine/formatter-schema.json` by `scripts/build-reference-pages.py` and drift-gated in CI; still pending: auto-generated sections inside `docs/integrations/catalogue.md` and `docs/recipes/index.md`, custom domain, privacy-preserving analytics, ≥ 1k monthly uniques target
-- [~] **Per-source recipe matrix (E5) ≥ 75 verified ✓ cells published; CI gates that a new layer or new source cannot land without updating the matrix** — **Phase 1 ✅ + Phase 2 waves 1+2+3+4+5 ✅** (framework: `docs/_machine/recipes/recipe-schema.json` JSON Schema 2020-12, `scripts/check-recipe-schema.py` validator + drift gate, `scripts/build-recipe-index.py` index emitter, `docs/_machine/recipes/index.yaml` machine-readable index, CI gate in `ci.yml docs-build` job; eighteen recipes shipped covering 8 / 8 source patterns (COMPLETE pattern coverage — every `source.pattern` enum value now has at least one recipe) and 8 / 10 layer types — CIM Network Traffic → markers, CIM Network Traffic → paths, CIM Authentication → markers, CIM Performance → markers, KV Store → markers, KV Store → heatmap, US states → choropleth, US states → 3D extrusion, Splunk Stream → markers, NetFlow / sFlow / IPFIX → H3 hexbin, CSV-lookup-geo → polygons, CSV-lookup-geo → supercluster, Cisco Meraki → markers, Cisco Cyber Vision → markers, Cisco ThousandEyes → paths, ES Risk-Based Alerting → markers, ITSI service health → markers, OT Datastreamer / Edge Hub → markers — all `status: unverified` pending live-Splunk REST access against a tenant carrying the appropriate sourcetype and licence); the remaining ~57 ✓ cells fill in as subsequent waves at 3-5 recipes per PR. Only 2 of 10 layer types remain undemonstrated: `indoor` (blocked on v1.8+ image-overlay layer kind) and `vector-tile join` (debatable — could be a customer-PMTiles wave 6 recipe)
+- [~] **Per-source recipe matrix (E5) ≥ 75 verified ✓ cells published; CI gates that a new layer or new source cannot land without updating the matrix** — **Phase 1 ✅ + Phase 2 waves 1+2+3+4+5+6 ✅** (framework: `docs/_machine/recipes/recipe-schema.json` JSON Schema 2020-12, `scripts/check-recipe-schema.py` validator + drift gate, `scripts/build-recipe-index.py` index emitter, `docs/_machine/recipes/index.yaml` machine-readable index, CI gate in `ci.yml docs-build` job; twenty-one recipes shipped covering 8 / 8 source patterns (COMPLETE pattern coverage — every `source.pattern` enum value now has at least one recipe) and 9 / 10 layer types — CIM Alerts → markers, CIM Network Traffic → markers, CIM Network Traffic → paths, CIM Authentication → markers, CIM Performance → markers, KV Store → markers, KV Store → heatmap, US states → choropleth, US states → 3D extrusion, Splunk Stream → markers, NetFlow / sFlow / IPFIX → H3 hexbin, CSV-lookup-geo → polygons, CSV-lookup-geo → supercluster, CSV-lookup-geo → H3 hexbin, CSV-lookup-geo → vector-tile join, Cisco Meraki → markers, Cisco Cyber Vision → markers, Cisco ThousandEyes → paths, ES Risk-Based Alerting → markers, ITSI service health → markers, OT Datastreamer / Edge Hub → markers — all `status: unverified` pending live-Splunk REST access against a tenant carrying the appropriate sourcetype and licence); the remaining ~54 ✓ cells fill in as subsequent waves at 3-5 recipes per PR. Only 1 of 10 layer types remains undemonstrated: `indoor` (blocked on v1.8+ image-overlay layer kind)
 - [x] **`docs/llms.txt` published per the llms.txt convention; an LLM given just the URL can locate and apply a recipe end-to-end** — SHIPPED in v1.7-prep (G7 Phase 2). `docs/llms.txt` is regenerated by `scripts/build-llms-txt.py` from `mkdocs.yml` `nav:`, `docs/_machine/recipes/index.yaml`, `docs/_machine/integrations/*.yaml`, and `docs/_machine/formatter-schema.json`. MkDocs copies it verbatim to `site/llms.txt`; the published URL is <https://fenre.github.io/better_map/llms.txt>. Drift-gated in CI by `scripts/build-llms-txt.py --check`. The end-to-end "agent given the URL → finds a recipe → applies it" flow now works for the three E5 Phase 1 starter recipes
 - [~] **`docs/_machine/` complete: formatter JSON Schema, per-layer YAML, per-integration YAML, recipes index, `agents.md`, OpenAPI for any exposed REST endpoint — each CI-asserted against the implementation it documents** — Phases 1 + 2 partially shipped in v1.7-prep (G7 + E5 + E2): formatter-schema.json (82 options, drift + coverage gates + D3 axe-core a11y), 8 × integrations/*.yaml, agents.md, README.md, recipe-schema.json + recipes/index.yaml (E5 Phase 1 — drift-gated, three starter recipes), llms.txt + build-llms-txt.py (G7 Phase 2 — drift-gated), llms-full.txt + build-llms-full-txt.py (G7 Phase 2 follow-up — body-inclusive sibling, drift-gated + hard 200k-estimated-token budget), build-reference-pages.py (E2 Phase 2 — managed-region regenerator now driving THREE managed regions: the 82-option enumeration in `docs/reference/formatter.md`, the 8-row integrations matrix + endpoint detail in `docs/integrations/catalogue.md`, AND the recipes matrix in `docs/recipes/index.md`, all three drift-gated; all original E2 Phase 2 auto-gen targets shipped); still open: per-layer YAML (layers/*.yaml), OpenAPI (blocked on REST endpoints in v1.8+)
 - [ ] 6 video walkthroughs published with English + at least one other locale captions
