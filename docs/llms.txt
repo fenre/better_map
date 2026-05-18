@@ -58,6 +58,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [Overview](https://fenre.github.io/better_map/runbooks/)
 - [Supply chain (G1)](https://fenre.github.io/better_map/runbooks/supply-chain/)
 - [Upgrade hygiene (G3)](https://fenre.github.io/better_map/runbooks/upgrade-hygiene/)
+- [CI gate inventory (G2)](https://fenre.github.io/better_map/CI-GATES/)
 - [Local Splunk harness (D5)](https://fenre.github.io/better_map/development/local-splunk-harness/)
 - [Browser compatibility matrix (D2)](https://fenre.github.io/better_map/COMPAT-MATRIX/)
 
