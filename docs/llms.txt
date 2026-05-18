@@ -49,10 +49,13 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [CIM Authentication → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/markers/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Network Traffic → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/markers/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Network Traffic → Paths (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/paths/): apps required: Splunk_SA_CIM, builtin:iplocation.
+- [CIM Performance (CPU / memory / facilities) → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-performance/markers/): apps required: Splunk_SA_CIM.
 - [CSV lookup (geo polygons) → Polygons (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/polygons/): apps required: none.
+- [Cisco Cyber Vision (components + vulnerabilities) → Markers (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/markers/): apps required: TA-cisco-cybervision.
 - [ES Risk-Based Alerting (risk index) → Markers (unverified)](https://fenre.github.io/better_map/recipes/es-risk/markers/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM, builtin:iplocation.
 - [US states (built-in geo lookup) → Choropleth (unverified)](https://fenre.github.io/better_map/recipes/geo-us-states/choropleth/): apps required: none.
 - [ITSI service health (KPI base searches) → Markers (unverified)](https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/): apps required: SA-ITOA.
+- [KV Store (lat/lon collection) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/heat/): apps required: none.
 - [KV Store (lat/lon collection) → Markers (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/): apps required: none.
 - [Cisco Meraki (devices) → Markers (unverified)](https://fenre.github.io/better_map/recipes/meraki/markers/): apps required: Splunk_TA_cisco_meraki.
 - [NetFlow / sFlow / IPFIX (flow records) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/h3/): apps required: Splunk_TA_netflow, builtin:iplocation.
