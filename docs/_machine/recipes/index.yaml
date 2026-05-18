@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 12
+recipe_count: 15
 recipes:
 - id: cim-authentication--markers
   source:
@@ -160,6 +160,59 @@ recipes:
   - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
     path: docs/reference/bm-ct-1.md
   path: docs/recipes/cim-network-traffic/paths.md
+- id: cim-performance--markers
+  source:
+    id: cim-performance
+    display_name: CIM Performance (CPU / memory / facilities)
+    pattern: splunk-cim
+  layer:
+    id: markers
+    display_name: Markers
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_SA_CIM
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: web-prod-01
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '37.7749'
+  - name: lon
+    type: number
+    example: '-122.4194'
+  - name: dest
+    type: string
+    example: web-prod-01
+  - name: cpu_load_percent
+    type: number
+    example: '82.4'
+    drives_formatter_option: markerColor
+  - name: mem_used_percent
+    type: number
+    example: '67.1'
+  - name: signal_count
+    type: integer
+    example: '3'
+  required_formatter_options:
+  - pointRenderer
+  - idField
+  - markerColor
+  ot_safety_relevant: false
+  references:
+  - description: splunk-cim skill — Performance data model schema, dataset tags, dest/cpu/memory contracts
+    path: ~/.cursor/skills/splunk-cim/SKILL.md
+  - description: splunk-datamodels-conf skill — CIM acceleration and tstats summariesonly tradeoffs
+    path: ~/.cursor/skills/splunk-datamodels-conf/SKILL.md
+  - description: Layer reference — markers
+    path: docs/reference/layers.md
+  - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
+    path: docs/reference/bm-ct-1.md
+  path: docs/recipes/cim-performance/markers.md
 - id: csv-lookup-geo--polygons
   source:
     id: csv-lookup-geo
@@ -201,6 +254,61 @@ recipes:
   - description: polygons layer source (geojson + wkt field auto-detect contract)
     path: better_map/appserver/static/visualizations/better_map/src/lib/layers/polygons.js
   path: docs/recipes/csv-lookup-geo/polygons.md
+- id: cyber-vision--markers
+  source:
+    id: cyber-vision
+    display_name: Cisco Cyber Vision (components + vulnerabilities)
+    pattern: splunk-vendor-ta
+  layer:
+    id: markers
+    display_name: Markers
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: TA-cisco-cybervision
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: PLC-FLOOR3-A02
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '29.7604'
+  - name: lon
+    type: number
+    example: '-95.3698'
+  - name: asset_name
+    type: string
+    example: PLC-FLOOR3-A02
+  - name: vendor
+    type: string
+    example: Siemens
+  - name: zone_purdue_level
+    type: string
+    example: L1
+  - name: max_cvss
+    type: number
+    example: '8.4'
+    drives_formatter_option: markerColor
+  required_formatter_options:
+  - pointRenderer
+  - idField
+  - markerColor
+  ot_safety_relevant: true
+  references:
+  - description: cisco-products skill — Cisco Cyber Vision sourcetypes, components/flows/events/vulnerabilities
+    path: ~/.cursor/skills/cisco-products/SKILL.md
+  - description: cisco-splunk-integration skill — Cyber Vision passive DPI, API endpoints, integration patterns
+    path: ~/.cursor/skills/cisco-splunk-integration/SKILL.md
+  - description: Cursor rule — ot-safety.mdc (passive DPI is the reference design, Rule 1)
+    path: .cursor/rules/ot-safety.mdc
+  - description: Layer reference — markers
+    path: docs/reference/layers.md
+  - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
+    path: docs/reference/bm-ct-1.md
+  path: docs/recipes/cyber-vision/markers.md
 - id: es-risk--markers
   source:
     id: es-risk
@@ -347,6 +455,54 @@ recipes:
   - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
     path: docs/reference/bm-ct-1.md
   path: docs/recipes/itsi-kpi-base/markers.md
+- id: kvstore-latlon--heat
+  source:
+    id: kvstore-latlon
+    display_name: KV Store (lat/lon collection)
+    pattern: splunk-lookup
+  layer:
+    id: heat
+    display_name: Heatmap
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required: []
+  expected_fields:
+  - name: id
+    type: string
+    example: DC-ATL-01
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '33.7490'
+  - name: lon
+    type: number
+    example: '-84.3880'
+  - name: site_name
+    type: string
+    example: Atlanta data center
+  - name: event_count
+    type: number
+    example: '1284'
+  - name: weight
+    type: number
+    example: '0.84'
+    drives_formatter_option: heatmapOpacity
+  required_formatter_options:
+  - pointRenderer
+  - heatmapOpacity
+  - heatmapRadius
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, different layer (markers)
+    path: docs/recipes/kvstore-latlon/markers.md
+  - description: Splunk lookups skill — KV Store lookup configuration
+    path: ~/.cursor/skills/splunk-lookups/SKILL.md
+  - description: Layer reference — heat
+    path: docs/reference/layers.md
+  - description: Formatter schema — heatmapOpacity, heatmapRadius
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/kvstore-latlon/heat.md
 - id: kvstore-latlon--markers
   source:
     id: kvstore-latlon

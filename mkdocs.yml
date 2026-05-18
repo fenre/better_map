@@ -218,9 +218,12 @@ nav:
       - 'CIM Authentication — markers': recipes/cim-authentication/markers.md
       - 'CIM Network Traffic — markers': recipes/cim-network-traffic/markers.md
       - 'CIM Network Traffic — paths': recipes/cim-network-traffic/paths.md
+      - 'CIM Performance (CPU / memory / facilities) — markers': recipes/cim-performance/markers.md
       - 'CSV lookup (geo polygons) — polygons': recipes/csv-lookup-geo/polygons.md
+      - 'Cisco Cyber Vision (components + vulnerabilities) — markers': recipes/cyber-vision/markers.md
       - 'ES Risk-Based Alerting (risk index) — markers': recipes/es-risk/markers.md
       - 'ITSI service health (KPI base searches) — markers': recipes/itsi-kpi-base/markers.md
+      - 'KV Store (lat/lon) — heatmap': recipes/kvstore-latlon/heat.md
       - 'KV Store (lat/lon) — markers': recipes/kvstore-latlon/markers.md
       - 'Meraki (Cisco vendor TA) — markers': recipes/meraki/markers.md
       - 'NetFlow / sFlow / IPFIX — H3 hexbin': recipes/netflow-sflow-ipfix/h3.md
