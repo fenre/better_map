@@ -45,12 +45,17 @@ This script:
    or ``docs/_machine/recipes/index.yaml``.
 
 Budget contract (derived from the ``llms-full.txt`` body of the
-spec):
+spec, recalibrated in E5 Phase 2 wave 6 against actual 18-recipe
+corpus):
 
   * Per-page warning at **50,000 estimated tokens** — one page should
     not dominate the corpus.
-  * Total warning at **150,000 estimated tokens** — the agent still
-    has 50k of headroom inside a 200k context window.
+  * Total warning at **175,000 estimated tokens** — the agent still
+    has 25k of headroom inside a 200k context window. The original
+    150k threshold was a guess pre-data; with 18 recipes shipped and
+    measured per-recipe marginal cost of ~3.3k tokens (post-trim),
+    175k matches the actual ~155k baseline + 20k headroom for the
+    next ~5-6 recipes before the next recalibration is warranted.
   * Total HARD FAIL at **200,000 estimated tokens** — output is
     deliberately unusable past this. Add a follow-up PR that elides
     less-important pages OR raise the budget after explicit roadmap
@@ -112,24 +117,27 @@ GITHUB_TREE_BASE = "https://github.com/fenre/better_map/tree/main"
 # Budget contract (see module docstring).
 CHARS_PER_TOKEN = 4
 PER_PAGE_WARN_TOKENS = 50_000
-TOTAL_WARN_TOKENS = 150_000
+TOTAL_WARN_TOKENS = 175_000
 TOTAL_FAIL_TOKENS = 200_000
 
 # Recipe trim contract — see strip_recipe_advisory() and the G7 wave
-# 4a follow-up ROADMAP block. Recipe pages under `docs/recipes/<source>/<layer>.md`
-# carry the bulk of their author guidance in §6 Gotchas and a
-# trailing "## Verification status" section. Those sections are
-# human-targeted advisory content; the LLM-actionable contract
-# (frontmatter + §1 Source description + §2 SPL recipe + §3 Expected
-# fields + §4 Recommended formatter config + §5 Screenshot) is fully
-# self-contained without them. Trimming §6 onward saves ~1.5-2k
-# tokens per recipe in llms-full.txt and keeps headroom for the
-# remaining ~63 ✓ matrix cells. The unabridged recipe is one click
-# away via the per-page block's URL header; this trim does NOT
-# affect the published MkDocs site, llms.txt, or
+# 4a (initial trim) + wave 6 (extended trim) ROADMAP blocks. Recipe
+# pages under `docs/recipes/<source>/<layer>.md` carry the bulk of
+# their author guidance in §6 Gotchas and a trailing "## Verification
+# status" section. §5 Screenshot is a stub waiting on D5 harness
+# (~100 tokens of boilerplate × 18 recipes = ~1.8k tokens of pure
+# duplication today). Those sections are human-targeted advisory
+# content; the LLM-actionable contract (frontmatter + §1 Source
+# description + §2 SPL recipe + §3 Expected fields + §4 Recommended
+# formatter config) is fully self-contained without §5 / §6.
+# Trimming §5 onward saves ~3.5-4k tokens per recipe (~64-72k across
+# 18 recipes) in llms-full.txt vs no-trim. The unabridged recipe is
+# one click away via the per-page block's URL header; this trim does
+# NOT affect the published MkDocs site, llms.txt, or
 # docs/_machine/recipes/index.yaml — only the body emitted into
-# llms-full.txt.
-_RECIPE_TRIM_AT = re.compile(r"^## 6\.\s+Gotchas\s*$", re.MULTILINE)
+# llms-full.txt. When D5 ships and §5 carries actual screenshot data
+# (not stubs), revisit whether to move the trim point back to §6.
+_RECIPE_TRIM_AT = re.compile(r"^## 5\.\s+Screenshot\s*$", re.MULTILINE)
 
 
 # ----------------------------------------------------- mkdocs.yml parse
@@ -283,20 +291,29 @@ def is_recipe_page(relpath: str) -> bool:
 
 
 def strip_recipe_advisory(body: str, page_url: str) -> str:
-    """Trim recipe page body at `## 6. Gotchas` and append a URL pointer.
+    """Trim recipe page body at `## 5. Screenshot` and append a URL pointer.
 
-    §6 Gotchas and the trailing `## Verification status` section are
-    human-targeted advisory content. An LLM consuming the recipe
+    §5 Screenshot (currently a D5-harness-pending boilerplate stub),
+    §6 Gotchas, and the trailing `## Verification status` section
+    are human-targeted advisory content. An LLM consuming the recipe
     needs the frontmatter, §1 Source description, §2 SPL recipe,
-    §3 Expected fields, §4 Recommended formatter config, and §5
-    Screenshot (typically a one-line stub) — all of which precede
-    §6. The advisory content is recoverable via the URL pointer
-    appended below for any agent that's debugging a recipe and
-    needs the gotchas.
+    §3 Expected fields, and §4 Recommended formatter config — all of
+    which precede §5. The advisory content is recoverable via the
+    URL pointer appended below for any agent that's debugging a
+    recipe and needs the gotchas.
 
-    If the recipe does not have a `## 6. Gotchas` heading (no
-    current recipe is missing one, but the helper is defensive),
-    the body is returned unchanged.
+    Trim history:
+      * Wave 4a (initial): trimmed at `## 6. Gotchas`.
+      * Wave 6 (extended): moved trim point up to `## 5. Screenshot`
+        because §5 today is the same ~7-line D5-harness-pending
+        stub across every recipe (~100 tokens × 18 recipes = ~1.8k
+        tokens of pure duplication). When D5 ships and §5 carries
+        actual per-recipe screenshot links / alt-text / metadata,
+        revisit moving the trim point back to §6.
+
+    If the recipe does not have a `## 5. Screenshot` heading (every
+    current recipe has one, but the helper is defensive), the body
+    is returned unchanged.
     """
     match = _RECIPE_TRIM_AT.search(body)
     if not match:
@@ -304,9 +321,9 @@ def strip_recipe_advisory(body: str, page_url: str) -> str:
     trimmed = body[: match.start()].rstrip() + "\n"
     pointer = (
         "\n"
-        "_§6 Gotchas and the trailing Verification status section "
-        f"are omitted from llms-full.txt for token-budget; read "
-        f"them in the full recipe at <{page_url}>._\n"
+        "_§5 Screenshot, §6 Gotchas, and the trailing Verification "
+        "status section are omitted from llms-full.txt for "
+        f"token-budget; read them in the full recipe at <{page_url}>._\n"
     )
     return trimmed + pointer
 
@@ -629,7 +646,7 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
         "from the same `mkdocs.yml` `nav:` and `docs/_machine/*` "
         "structured sources that drive the short `llms.txt`. The script "
         "carries a hard token budget (per-page warn at 50k, total warn "
-        "at 150k, total fail at 200k) so the output stays inside the "
+        "at 175k, total fail at 200k) so the output stays inside the "
         "context window of every practical LLM. Drift is blocked at PR "
         f"time by the CI gate in [`ci.yml`]({GITHUB_BLOB_BASE}/.github/workflows/ci.yml).\n\n"
     )

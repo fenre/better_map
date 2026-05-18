@@ -1209,6 +1209,63 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 > coverage, llms.txt sync, llms-full.txt sync at the new
 > reduced size, mkdocs --strict).
 
+> **Status (v1.7-prep, 2026-05-18): G7 Phase 2 follow-up #2
+> SHIPPED — wave 6 token-budget recalibration: extended §5
+> Screenshot trim + WARN bump 150k → 175k.** The wave 4a
+> projection (above) predicted wave 6 would just trip the
+> 150k WARN; reality landed faster — wave 5 already tripped
+> WARN at ~155k tokens (the wave-5 ROADMAP block itself was
+> ~8k tokens, larger than the recipe contribution predicted).
+> Two-prong response, both shipped in this PR:
+>
+> **Prong 1 — extended trim.** The `_RECIPE_TRIM_AT` regex
+> in `build-llms-full-txt.py` moves from `## 6. Gotchas` to
+> `## 5. Screenshot`. Rationale: §5 today is a 7-line
+> D5-harness-pending stub (~100 tokens × 18 recipes ≈ 1.8k
+> tokens of pure duplication). The pointer text updates to
+> mention §5 + §6 + Verification, and the trim helper's
+> docstring captures the trim history (wave 4a initial, wave
+> 6 extended) plus the revert condition (when D5 ships and
+> §5 carries real per-recipe screenshot links / alt-text /
+> metadata, move the trim point back to §6). Per-recipe
+> marginal cost falls from ~3.3k to ~3.2k tokens.
+>
+> **Prong 2 — WARN recalibration.** The total-warn threshold
+> moves from 150,000 to 175,000 estimated tokens. The
+> original 150k was a guess pre-data; with 18 recipes
+> shipped and measured per-recipe marginal cost, 175k
+> matches the actual ~155k baseline + ~20k headroom for
+> ~6 more recipes. The 200k HARD-FAIL gate is unchanged —
+> that remains the actual safety rail (refusing to write the
+> file at all past 200k). Both the module docstring's
+> Budget contract section and the Appendix C footer text
+> update to reflect the new 175k threshold.
+>
+> Combined result, measured against the 15-recipe pre-wave-5
+> baseline: 146.6k → 144.5k estimated tokens (a 2.1k saving
+> from extended trim alone). Against the 18-recipe post-
+> wave-5 baseline (projected): 155.2k → ~152.7k tokens, well
+> under the new 175k WARN. The script change is ~10 lines
+> of code (regex constant, threshold constant, footer text,
+> pointer text, docstring) and ~30 lines of docstring /
+> comment refresh. All CI gates pass (recipe schema,
+> formatter schema, formatter coverage, llms.txt sync,
+> llms-full.txt sync at the new reduced size and new WARN
+> threshold, mkdocs --strict).
+>
+> **What's NOT in this prep (deferred to a future
+> recalibration):** Appendix B summarisation. The script
+> currently emits a full metadata block per recipe in
+> Appendix B; a future trim pass could compress this to
+> YAML-frontmatter-only or even drop the appendix entirely
+> (it's a redundant view of `docs/_machine/recipes/
+> index.yaml`, which agents can fetch directly). The
+> projection: with both prongs landed plus Appendix B
+> compression, headroom would extend to ~25 more recipes
+> before the next recalibration. That's wave 9-10
+> territory — deferring until the per-recipe pace actually
+> warrants it.
+
 > **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 4 SHIPPED
 > (3 more recipes — recipe count 12 → 15, layer-type coverage
 > 5 → 6 / 10).** Wave 4 follows the wave-3 strategic precedent
