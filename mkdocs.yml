@@ -215,9 +215,12 @@ nav:
       - Catalogue: integrations/catalogue.md
   - Recipes:
       - recipes/index.md
+      - 'CIM Authentication — markers': recipes/cim-authentication/markers.md
       - 'CIM Network Traffic — markers': recipes/cim-network-traffic/markers.md
+      - 'CIM Network Traffic — paths': recipes/cim-network-traffic/paths.md
       - 'CSV lookup (geo polygons) — polygons': recipes/csv-lookup-geo/polygons.md
       - 'KV Store (lat/lon) — markers': recipes/kvstore-latlon/markers.md
+      - 'Meraki (Cisco vendor TA) — markers': recipes/meraki/markers.md
       - 'NetFlow / sFlow / IPFIX — H3 hexbin': recipes/netflow-sflow-ipfix/h3.md
       - 'Splunk Stream (wire data) — markers': recipes/splunk-stream/markers.md
       - 'US states — choropleth': recipes/geo-us-states/choropleth.md

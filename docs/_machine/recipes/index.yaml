@@ -4,8 +4,62 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 6
+recipe_count: 9
 recipes:
+- id: cim-authentication--markers
+  source:
+    id: cim-authentication
+    display_name: CIM Authentication
+    pattern: splunk-cim
+  layer:
+    id: markers
+    display_name: Markers
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_SA_CIM
+    optional: false
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: 203.0.113.45
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '52.3676'
+  - name: lon
+    type: number
+    example: '4.9041'
+  - name: src_country
+    type: string
+    example: NL
+  - name: src_city
+    type: string
+    example: Amsterdam
+  - name: failure_count
+    type: integer
+    example: '417'
+    drives_formatter_option: markerColor
+  - name: distinct_users
+    type: integer
+    example: '23'
+  required_formatter_options:
+  - pointRenderer
+  - markerColor
+  ot_safety_relevant: false
+  references:
+  - description: Splunk CIM skill — Authentication data model field reference
+    path: ~/.cursor/skills/splunk-cim/SKILL.md
+  - description: Splunk ES skill — risk-based alerting context for credential abuse
+    path: ~/.cursor/skills/splunk-enterprise-security/SKILL.md
+  - description: Layer reference — markers
+    path: docs/reference/layers.md
+  - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
+    path: docs/reference/bm-ct-1.md
+  path: docs/recipes/cim-authentication/markers.md
 - id: cim-network-traffic--markers
   source:
     id: cim-network-traffic
@@ -50,6 +104,62 @@ recipes:
   - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
     path: docs/reference/bm-ct-1.md
   path: docs/recipes/cim-network-traffic/markers.md
+- id: cim-network-traffic--paths
+  source:
+    id: cim-network-traffic
+    display_name: CIM Network Traffic
+    pattern: splunk-cim
+  layer:
+    id: paths
+    display_name: Paths
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_SA_CIM
+    optional: false
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: 203.0.113.45__198.51.100.7
+    drives_formatter_option: pathIdField
+  - name: seq
+    type: integer
+    example: '0'
+    drives_formatter_option: timeField
+  - name: lat
+    type: number
+    example: '37.7749'
+  - name: lon
+    type: number
+    example: '-122.4194'
+  - name: src_country
+    type: string
+    example: US
+  - name: dest_country
+    type: string
+    example: DE
+  - name: total_bytes
+    type: integer
+    example: '847293'
+  required_formatter_options:
+  - pathIdField
+  - timeField
+  - pathColor
+  - pathArrows
+  ot_safety_relevant: false
+  references:
+  - description: Splunk CIM skill — Network Traffic data model field reference
+    path: ~/.cursor/skills/splunk-cim/SKILL.md
+  - description: Layer reference — paths
+    path: docs/reference/layers.md
+  - description: Companion recipe — CIM Network Traffic → Markers (single endpoint geocoding)
+    path: docs/recipes/cim-network-traffic/markers.md
+  - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
+    path: docs/reference/bm-ct-1.md
+  path: docs/recipes/cim-network-traffic/paths.md
 - id: csv-lookup-geo--polygons
   source:
     id: csv-lookup-geo
@@ -165,6 +275,59 @@ recipes:
   - description: dataFitness.js alias auto-detect (lat/lon/id auto-picked)
     path: better_map/appserver/static/visualizations/better_map/src/lib/dataFitness.js
   path: docs/recipes/kvstore-latlon/markers.md
+- id: meraki--markers
+  source:
+    id: meraki
+    display_name: Cisco Meraki (devices)
+    pattern: splunk-vendor-ta
+  layer:
+    id: markers
+    display_name: Markers
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_TA_cisco_meraki
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: Q2XX-XXXX-XXXX
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '37.7749'
+  - name: lon
+    type: number
+    example: '-122.4194'
+  - name: name
+    type: string
+    example: SF HQ - Floor 3 AP
+  - name: model
+    type: string
+    example: MR46
+  - name: status
+    type: string
+    example: online
+    drives_formatter_option: markerColor
+  - name: network_name
+    type: string
+    example: SF HQ
+  required_formatter_options:
+  - pointRenderer
+  - idField
+  - markerColor
+  ot_safety_relevant: false
+  references:
+  - description: cisco-meraki-ta-setup skill — TA install, indexes, account config, input types
+    path: ~/.cursor/skills/cisco-meraki-ta-setup/SKILL.md
+  - description: cisco-products skill — Meraki sourcetypes, fields, sample queries
+    path: ~/.cursor/skills/cisco-products/SKILL.md
+  - description: Layer reference — markers
+    path: docs/reference/layers.md
+  - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
+    path: docs/reference/bm-ct-1.md
+  path: docs/recipes/meraki/markers.md
 - id: netflow-sflow-ipfix--h3
   source:
     id: netflow-sflow-ipfix
