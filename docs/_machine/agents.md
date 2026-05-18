@@ -650,9 +650,12 @@ to fix and the exact command to re-run.
   inside the `<!-- BEGIN AUTOGEN: recipes-matrix -->`
   markers), drift-gated by `scripts/build-reference-pages.py --check`).
 - Not the customer-facing setup guide. That's E5 — the recipe matrix.
-  Phase 1 (framework + three starter recipes) shipped in v1.7-prep;
-  the remaining matrix cells (every layer × every source) are
-  authored as live-Splunk verification time becomes available. See
+  Phase 1 (framework + three starter recipes) and Phase 2 wave 1
+  (3 additional recipes — six total covering 6 source patterns and
+  4 layer types) shipped in v1.7-prep; the remaining matrix cells
+  (every layer × every source) are authored in subsequent waves at
+  3-5 recipes per PR as live-Splunk verification time becomes
+  available. See
   [`docs/recipes/index.md`](https://github.com/fenre/better_map/tree/main/docs/recipes)
   for the live status table and §5b above for the authoring contract.
 - Not the API reference for plugin authors (that's G6, deferred to

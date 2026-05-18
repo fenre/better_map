@@ -719,6 +719,78 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   highest-leverage follow-up — needs a maintainer with
 >   `secrets.env` against `rev`.
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 1 SHIPPED
+> (3 more recipes — recipe count doubled).** First wave of the
+> "fill in the remaining ✓ cells" backlog called out in Phase
+> 1. Three new recipes land against the unchanged Phase 1
+> framework (schema + validator + index emitter + drift gate +
+> nav), proving the framework scales without further surgery:
+> - **`docs/recipes/splunk-stream/markers.md`** — Splunk
+>   Stream wire data (`stream:tls`) → markers. SPL rolls up
+>   per-session events to one row per `(src_ip, dest_ip,
+>   dest_port)`, geolocates with `iplocation`, drops RFC-1918
+>   destinations, assembles `id` from `dest_ip:dest_port` and
+>   a popup body in SPL. 8 expected fields. Apps required:
+>   `Splunk_TA_stream`, optional `splunk_app_stream`,
+>   `builtin:iplocation`. Pattern: `splunk-stream`. Documents
+>   the wire-data sampling, MaxMind GeoLite2 freshness, TLS
+>   1.3 SNI encryption (ECH), wire-data privacy/compliance
+>   posture, OT-environment safety boundary, and `iplocation`
+>   performance-at-scale gotchas.
+> - **`docs/recipes/netflow-sflow-ipfix/h3.md`** — NetFlow /
+>   sFlow / IPFIX flow records → H3 hexbin layer (FIRST new
+>   layer-type recipe added in Phase 2). SPL rolls up to one
+>   row per `dest_ip` summing `bytes`, geolocates, drops
+>   RFC-1918, emits `id`/`value` for hex aggregation. 6
+>   expected fields. Apps required: `Splunk_TA_netflow`,
+>   `builtin:iplocation`. Pattern: `splunk-vendor-ta`.
+>   Documents NetFlow sampling intervals, sFlow vs NetFlow
+>   byte semantics, hex-resolution vs row-count rule of
+>   thumb, `iplocation` performance, OT environment posture,
+>   collector deployment surface.
+> - **`docs/recipes/csv-lookup-geo/polygons.md`** — CSV
+>   lookup of GeoJSON polygons → polygons layer (SECOND new
+>   layer-type recipe added in Phase 2). SPL is `|
+>   inputlookup asset_zones.csv | rename zone_id AS id`. 5
+>   expected fields. Zero apps required. Pattern:
+>   `splunk-lookup`. Documents CSV-inside-JSON quoting
+>   escapes, GeoJSON `[lon, lat]` coordinate-order trap,
+>   polygon-ring closure, lookup-RAM ceiling vs KV Store
+>   switchover, MapLibre tile-edge clipping, SIS-boundary
+>   read-only posture.
+> - **No framework changes.** All three recipes pass the
+>   unchanged `scripts/check-recipe-schema.py` (which now
+>   reports 6 recipes valid, 0 verified, 6 unverified /
+>   deferred); auto-regen of
+>   `docs/_machine/recipes/index.yaml` (now 6 entries),
+>   `docs/recipes/index.md` matrix (now 6 rows including 3
+>   new source patterns and 2 new layer types), `docs/llms.txt`
+>   (now references 6 recipes in the Recipes section), and
+>   `docs/llms-full.txt` (now 108k estimated tokens — still
+>   well under the 150k warn / 200k fail thresholds) all
+>   green. `mkdocs.yml` nav grows three lines (one per new
+>   recipe) keeping the alphabetical-by-display-name
+>   convention.
+> - **Coverage delta:** matrix coverage rises from 3 to 6
+>   recipes (4 % → 8 % of the ~75 ✓ cells), 3 to 6 source
+>   patterns covered (CIM Network Traffic, KV Store, US
+>   States + Splunk Stream, NetFlow, CSV-lookup-geo), 2 to 4
+>   layer types covered (markers, choropleth + H3, polygons).
+>   Wave 1 was scoped to "prove the framework is additive"
+>   rather than "complete every ✓ cell"; subsequent waves
+>   add 3-5 recipes each at the same per-recipe cost.
+> - **What's NOT in Phase 2 wave 1 (deferred to subsequent
+>   waves):** the remaining ~69 ✓ cells. Verification (flip
+>   to `status: verified` for any of the 6 recipes) is still
+>   blocked on `secrets.env` against a tenant carrying the
+>   appropriate sourcetype — the D5 Phase 1 harness ships
+>   the test rig but cannot fabricate wire data, NetFlow, or
+>   a customer-curated polygons CSV. The 4 remaining layer
+>   types not yet demonstrated (paths, heat, supercluster,
+>   3D extrusion, indoor, vector-tile join) and the 9
+>   remaining source patterns are the natural targets for
+>   waves 2-N.
+
 * **Problem:** Better Map can consume data from ~10 categorically different Splunk source patterns (see table below). A new customer with NetFlow data who wants a heat layer should not have to derive the SPL from first principles. There is currently no recipe documentation; the burden of "what SPL do I write?" falls entirely on the user, who often does not know the field names of their own data, let alone the contract this viz wants.
 * **Design:** Build the recipe matrix as `docs/recipes/<source>/<layer>.md`, where each leaf file is a **complete, copy-paste-runnable** recipe. Every recipe has the same 6-section structure (enforced by a validator script — G2 CI step), so an LLM can ingest the corpus consistently:
 
@@ -1077,7 +1149,7 @@ Goal: prove that v1.6 actually works under real load, close the operational-rigo
 | C1–C8. Eight Splunk integrations verified | C | 6×S (12) + 2×M (10) = 22 |
 | E1. Splunkbase listing | E | 5 |
 | **E2. Documentation site (Phase 1 SHIPPED; Phase 2 in progress — formatter, integrations, recipes auto-gen all SHIPPED)** | E | 5 |
-| **E5. Per-source setup recipes (the matrix — ~75 cells)** | **E** | **5** |
+| **E5. Per-source setup recipes (the matrix — ~75 cells) (Phase 1 framework SHIPPED + Phase 2 wave 1 SHIPPED — 6 / ~75 cells; subsequent waves remaining)** | **E** | **5** |
 | **G7. AI-ingestion-friendly documentation layer (Phase 1 SHIPPED; Phase 2 — `llms.txt` SHIPPED; Phase 2 follow-up — `llms-full.txt` SHIPPED)** | **G** | **5** |
 | **Sub-total** | — | **69 d** |
 | Buffer (20 % for slip, lab access, surprise scope) | — | **14 d** |
@@ -1264,7 +1336,7 @@ If, and only if, every box below is true, we can credibly call v2.0 "one of the 
 - [ ] Listed on Splunkbase; ≥ 25 reviews; ≥ 4.0 average
 - [ ] ≥ 3 named reference customers willing to be quoted; ≥ 1 in a regulated vertical
 - [~] Documentation site live; ≥ 1k monthly uniques (privacy-preserving analytics) — **Phase 1 ✅** (`mkdocs.yml` + 11 hand-authored pages under `docs/`, strict-mode CI gate `docs-build` in `ci.yml`, GitHub Pages auto-deploy on `main` via `.github/workflows/docs.yml`, published at `fenre.github.io/better_map/`, air-gap-clean per §1a: no Google Fonts, no third-party scripts); **Phase 2 in progress** — formatter reference page now carries an auto-generated 82-option enumeration (16 tables, all `(tab, heading)` buckets) regenerated from `docs/_machine/formatter-schema.json` by `scripts/build-reference-pages.py` and drift-gated in CI; still pending: auto-generated sections inside `docs/integrations/catalogue.md` and `docs/recipes/index.md`, custom domain, privacy-preserving analytics, ≥ 1k monthly uniques target
-- [~] **Per-source recipe matrix (E5) ≥ 75 verified ✓ cells published; CI gates that a new layer or new source cannot land without updating the matrix** — **Phase 1 ✅** (framework: `docs/_machine/recipes/recipe-schema.json` JSON Schema 2020-12, `scripts/check-recipe-schema.py` validator + drift gate, `scripts/build-recipe-index.py` index emitter, `docs/_machine/recipes/index.yaml` machine-readable index, CI gate in `ci.yml docs-build` job; three starter recipes shipped — CIM Network Traffic → markers, KV Store → markers, US states → choropleth — all `status: unverified` pending live-Splunk REST access); the remaining ~72 ✓ cells fill in as a maintainer with `secrets.env` against `rev` adds them
+- [~] **Per-source recipe matrix (E5) ≥ 75 verified ✓ cells published; CI gates that a new layer or new source cannot land without updating the matrix** — **Phase 1 ✅ + Phase 2 wave 1 ✅** (framework: `docs/_machine/recipes/recipe-schema.json` JSON Schema 2020-12, `scripts/check-recipe-schema.py` validator + drift gate, `scripts/build-recipe-index.py` index emitter, `docs/_machine/recipes/index.yaml` machine-readable index, CI gate in `ci.yml docs-build` job; six recipes shipped covering 6 source patterns and 4 layer types — CIM Network Traffic → markers, KV Store → markers, US states → choropleth, Splunk Stream → markers, NetFlow / sFlow / IPFIX → H3 hexbin, CSV-lookup-geo → polygons — all `status: unverified` pending live-Splunk REST access against a tenant carrying the appropriate sourcetype); the remaining ~69 ✓ cells fill in as subsequent waves at 3-5 recipes per PR
 - [x] **`docs/llms.txt` published per the llms.txt convention; an LLM given just the URL can locate and apply a recipe end-to-end** — SHIPPED in v1.7-prep (G7 Phase 2). `docs/llms.txt` is regenerated by `scripts/build-llms-txt.py` from `mkdocs.yml` `nav:`, `docs/_machine/recipes/index.yaml`, `docs/_machine/integrations/*.yaml`, and `docs/_machine/formatter-schema.json`. MkDocs copies it verbatim to `site/llms.txt`; the published URL is <https://fenre.github.io/better_map/llms.txt>. Drift-gated in CI by `scripts/build-llms-txt.py --check`. The end-to-end "agent given the URL → finds a recipe → applies it" flow now works for the three E5 Phase 1 starter recipes
 - [~] **`docs/_machine/` complete: formatter JSON Schema, per-layer YAML, per-integration YAML, recipes index, `agents.md`, OpenAPI for any exposed REST endpoint — each CI-asserted against the implementation it documents** — Phases 1 + 2 partially shipped in v1.7-prep (G7 + E5 + E2): formatter-schema.json (82 options, drift + coverage gates + D3 axe-core a11y), 8 × integrations/*.yaml, agents.md, README.md, recipe-schema.json + recipes/index.yaml (E5 Phase 1 — drift-gated, three starter recipes), llms.txt + build-llms-txt.py (G7 Phase 2 — drift-gated), llms-full.txt + build-llms-full-txt.py (G7 Phase 2 follow-up — body-inclusive sibling, drift-gated + hard 200k-estimated-token budget), build-reference-pages.py (E2 Phase 2 — managed-region regenerator now driving THREE managed regions: the 82-option enumeration in `docs/reference/formatter.md`, the 8-row integrations matrix + endpoint detail in `docs/integrations/catalogue.md`, AND the recipes matrix in `docs/recipes/index.md`, all three drift-gated; all original E2 Phase 2 auto-gen targets shipped); still open: per-layer YAML (layers/*.yaml), OpenAPI (blocked on REST endpoints in v1.8+)
 - [ ] 6 video walkthroughs published with English + at least one other locale captions

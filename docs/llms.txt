@@ -47,8 +47,11 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 
 - [Recipes overview](https://fenre.github.io/better_map/recipes/): the recipe contract, the six-section structure, the CI gate, the JSON Schema, and how to add a new recipe. The machine-readable index of every shipped recipe is at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>.
 - [CIM Network Traffic → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/markers/): apps required: Splunk_SA_CIM, builtin:iplocation.
+- [CSV lookup (geo polygons) → Polygons (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/polygons/): apps required: none.
 - [US states (built-in geo lookup) → Choropleth (unverified)](https://fenre.github.io/better_map/recipes/geo-us-states/choropleth/): apps required: none.
 - [KV Store (lat/lon collection) → Markers (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/): apps required: none.
+- [NetFlow / sFlow / IPFIX (flow records) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/h3/): apps required: Splunk_TA_netflow, builtin:iplocation.
+- [Splunk Stream (wire data) → Markers (unverified)](https://fenre.github.io/better_map/recipes/splunk-stream/markers/): apps required: Splunk_TA_stream, splunk_app_stream, builtin:iplocation.
 
 ## Runbooks
 
