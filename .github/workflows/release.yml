@@ -133,10 +133,10 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Resolved tag=$TAG version=$VERSION"
 
-      - name: Set up Node.js 18 (matches viz engines.node)
+      - name: Set up Node.js 22 (matches viz engines.node)
         uses: actions/setup-node@v6
         with:
-          node-version: '18'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: better_map/appserver/static/visualizations/better_map/package-lock.json
 
