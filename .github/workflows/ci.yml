@@ -155,18 +155,32 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: python3 scripts/check-formatter-coverage.py
 
-      - name: Install Playwright Chromium (D3 accessibility audit)
+      - name: Install Playwright browsers (D2 browser-compat + D3 accessibility)
         # Playwright ships browser binaries separately from the npm
-        # package — `npm ci` only fetches the JS adapter. We pin to
-        # `chromium` (no Firefox/WebKit) because the formatter HTML
-        # has no engine-specific behaviour worth testing here; what
+        # package — `npm ci` only fetches the JS adapter. We install
+        # all three engine families so that:
+        #   - D3 (axe-core accessibility) runs on Chromium (sufficient
+        #     because formatter.html is a Splunk-hosted fragment and
+        #     axe rules are engine-agnostic at the WCAG level we test).
+        #   - D2 Phase 1 (browser-compat load test) runs against
+        #     {chromium, firefox, webkit} — the three engine families
+        #     that together cover ~99 % of real browsers in the field
+        #     (Chrome / Edge / Opera / Brave + Safari / iOS + Firefox).
+        # `--with-deps` is REQUIRED on ubuntu-runners for firefox +
+        # webkit (installs ~200 MB of system libraries the engines
+        # need); on macOS / Windows the flag is a no-op.
+        # Adds ~3 minutes to cold CI runs; Playwright caches the
+        # browsers under ~/.cache/ms-playwright (or the equivalent
+        # PLAYWRIGHT_BROWSERS_PATH) so warm runs are seconds.
+        # Previous behaviour pinned `chromium` only because the
+        # formatter HTML has no engine-specific behaviour worth testing here; what
         # axe-core flags it flags in any modern engine. `--with-deps`
         # installs the apt packages the headless shell needs on the
         # GitHub-hosted runner (libnss3, libnspr4, libatk1.0-0, etc.).
         # The cost is ~15s on the cold cache and well under 1s on
         # the warm cache (`actions/setup-node` already cached the npm
         # tree, which carries Playwright's version pin).
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium firefox webkit
 
       - name: Check accessibility (D3 — axe-core on formatter.html)
         # ROADMAP §3 D3 Phase 1 + §7b "WCAG 2.2 AA conformance
@@ -198,6 +212,42 @@ jobs:
         with:
           name: accessibility-report-${{ github.sha }}
           path: reports/accessibility-report.json
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Check browser compatibility (D2 — formatter.html in chromium + firefox + webkit)
+        # ROADMAP §3 D2 Phase 1 + §4 v1.7 milestone exit-criterion
+        # "showcases pass on Chrome, Firefox, Safari, Edge × ...".
+        # Loads `formatter.html` (wrapped in a minimal HTML5 page —
+        # same wrapper pattern as D3 so a regression in the wrapper
+        # affects both gates identically) in headless Chromium,
+        # Firefox, and WebKit via Playwright. Captures console.error
+        # events, page errors, and failed network requests; FAILs if
+        # any engine reports any error.
+        # Defends against the "ships in Chrome, breaks in Safari /
+        # Firefox" class of bug — the bundle is built with
+        # `target: ['web', 'es5']` precisely so the AMD loader on
+        # every browser can `require()` it, but nothing else in CI
+        # asserts the produced `visualization.js` actually parses +
+        # executes in WebKit and Firefox.
+        # Phase 1 is Linux-only (because GitHub free runners are
+        # Linux); cross-OS matrix runs (macOS Safari + Windows Edge)
+        # fall to Phase 2, blocked on a self-hosted-runner decision
+        # per ROADMAP §3 D5 risk note.
+        working-directory: ${{ github.workspace }}
+        run: node scripts/check-browser-compat.js
+
+      - name: Upload browser-compat report (D2)
+        # Always upload so the full per-engine error list and three
+        # screenshots (chromium / firefox / webkit) are available
+        # for offline triage even when the inline summary truncates.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-compat-report-${{ github.sha }}
+          path: |
+            reports/browser-compat-report.json
+            reports/browser-compat/
           retention-days: 14
           if-no-files-found: warn
 
