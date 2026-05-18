@@ -24,6 +24,19 @@
 
     <!-- ===== Tab 1: Data configurations ===== -->
     <section id="tab-data" class="splunk-formatter-tab-panel is-active" role="tabpanel">
+
+        <h3 class="splunk-formatter-heading">Demo &amp; onboarding</h3>
+        <div class="splunk-formatter-row">
+            <label for="bm-demoPreset">Fill with example data</label>
+            <select id="bm-demoPreset" data-name="demoPreset">
+                <option value="none" selected>None &mdash; use this panel's SPL results</option>
+                <option value="fleet-telemetry">Fleet telemetry &mdash; Oslo last-mile (40 vans &times; 6 h)</option>
+                <option value="iot-smart-building">Smart building IoT &mdash; Fornebu HQ (5 floors &times; 50 sensors)</option>
+                <option value="cyber-incidents">Cyber incidents &mdash; global SOC view (600 events / 24 h)</option>
+            </select>
+            <p class="splunk-formatter-help">One-click showcase mode. Picks a deterministic, bundled dataset and replaces the SPL result for this panel &mdash; even on a panel whose query returns nothing. Fleet telemetry shows time scrubbing, comet trails, and 3D cargo extrusion; Smart building IoT shows the indoor floor-plan overlay and per-sensor alarm state; Cyber incidents shows global hexbin aggregation, MITRE chips, and RBA risk colouring. Set back to <code>None</code> to restore the SPL result.</p>
+        </div>
+
         <h3 class="splunk-formatter-heading">Geometry &amp; identifiers</h3>
 
         <div class="splunk-formatter-row">

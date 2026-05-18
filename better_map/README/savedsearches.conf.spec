@@ -7,6 +7,33 @@
 #  custom viz options without reading source.
 
 #-----------------------------------------------------------------------
+# Demo & onboarding (v1.7)
+#-----------------------------------------------------------------------
+display.visualizations.custom.better_map.better_map.demoPreset = <string>
+* One-click showcase mode. When set to anything other than "none", the
+* viz discards the SPL result for this panel and renders a deterministic,
+* bundled dataset instead. Lets the viz showcase its feature surface on
+* any panel, including one whose query returns zero rows.
+* One of:
+*   none              | fleet-telemetry | iot-smart-building |
+*   cyber-incidents
+* Default: none
+*
+* Preset details (generator source under
+* appserver/static/visualizations/better_map/src/lib/demo/presets/):
+*   - fleet-telemetry      : Oslo last-mile fleet, ~40 vans x 6 h, GPS
+*                            pings every 5 min. Use with the time
+*                            scrubber + comet trails + 3D cargo
+*                            extrusion.
+*   - iot-smart-building   : Fornebu HQ multi-floor sensor mesh, 5
+*                            floors x ~50 sensors. Use with the indoor
+*                            floor-plan overlay and heatmap layer.
+*   - cyber-incidents      : Global SOC view, ~600 incidents / 24 h
+*                            with MITRE ATT&CK technique IDs, ISO
+*                            country code, and RBA risk score. Use
+*                            with hexbin / heatmap layers.
+
+#-----------------------------------------------------------------------
 # Tile provider / basemap
 #-----------------------------------------------------------------------
 display.visualizations.custom.better_map.better_map.tileProvider = <string>

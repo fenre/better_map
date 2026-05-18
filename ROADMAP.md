@@ -320,6 +320,82 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 * **Risk:** Splunk Enterprise in docker is heavy (≥ 4 GB RAM per container); GitHub Actions free runners may OOM. Mitigation: budget a self-hosted runner or use Splunk's own cloud-CI minutes if the Splunk Engineering partnership materialises.
 * **Accept:** Green CI on PR within 15 min wall-clock; one dashboard-renders-and-resets assertion per showcase × 2 Splunk versions; Playwright traces uploaded as PR artifacts on failure. Reduce flake rate to < 2% over a rolling 30-PR window (measured automatically).
 
+#### D6. Demo data pack & one-click showcase mode — `S`
+
+> **Status (v1.7-prep, 2026-05-18): D6 SHIPPED.** The
+> visualisation now carries a bundled, deterministic demo data
+> pack and a one-click formatter dropdown to load it on any
+> panel, including one whose SPL returns zero rows. Concretely:
+> - **`src/lib/demo/`** (new module tree, ~13 KB source / ~3 KB
+>   gzipped contribution to the bundle): `rng.js` exports a
+>   seeded mulberry32 PRNG (`createRng(seed)` →
+>   `next/range/int/pick/gauss/chance`); `geoUtils.js` exports
+>   `lerpLatLon / jitter / bearing / distanceM / pathAlong` (no
+>   turf dep — `pathAlong` is the only non-trivial helper, ~25
+>   LOC); `index.js` exports `PRESETS / isDemoPreset /
+>   loadDemoPreset / presetLabel`.
+> - **Three presets** under `src/lib/demo/presets/`:
+>   `fleetTelemetry.js` (Oslo last-mile, 40 vans × 6 h,
+>   ~2 880 GPS pings emit `_time / lat / lon / pathId / driver /
+>   depot / cluster / cargo_type / cargo_kg / fuel_pct /
+>   speed_kph / heading_deg / status / color / popup`),
+>   `iotSmartBuilding.js` (Fornebu HQ multi-floor sensor mesh,
+>   5 floors × 50 sensors = 250 rows of `temperature / humidity /
+>   co2 / occupancy / door` with `floor_id / floor_purpose /
+>   status / color / popup`),
+>   `cyberIncidents.js` (global SOC, 600 incidents / 24 h with
+>   weighted source-country sampling, `iso` ISO-3166-alpha-2,
+>   ASHRAE-aligned alarm thresholds, `mitre_technique_id` matching
+>   `Txxxx[.xxx]`, `risk_score` 0–100 + 5-band colour ramp,
+>   `src_ip` always in RFC-5737 documentation space).
+> - **Formatter wire-up** — new "Demo & onboarding" section at the
+>   top of Tab 1 in `formatter.html` with a `demoPreset` dropdown
+>   (`none` / `fleet-telemetry` / `iot-smart-building` /
+>   `cyber-incidents`). The viz intercepts `formatData()` and
+>   substitutes the generated dataset when `demoPreset != "none"`,
+>   crucially **without** caching the demo data into `_lastGoodData`
+>   — toggling back to "None" restores the real SPL result.
+> - **Showcase dashboard** —
+>   `default/data/ui/views/better_map_showcase.xml`, three panels
+>   side-by-side with markdown captions explaining each story,
+>   wired into `default/data/ui/nav/default.xml` as a top-level
+>   entry alongside the overview. Renders end-to-end on a Splunk
+>   install with **zero live data** because every panel uses a
+>   trivial `| makeresults` placeholder that the demo interception
+>   discards.
+> - **Tests** — `src/lib/__tests__/demo.test.js` carries 40 Vitest
+>   cases covering the RNG contract, geo helpers, registry
+>   contract, field schema per preset (locked in order — adding a
+>   field is a deliberate breaking-change PR), row-count bands,
+>   colour-palette membership, determinism (same seed →
+>   byte-identical first / mid / last row), the four-status
+>   diversity of the fleet dataset, the ASHRAE-aligned alarm
+>   reliability of the IoT dataset, the country-distribution
+>   coverage of the cyber dataset, and the Splunk
+>   SearchResults shape every loader returns. Full suite is
+>   `124 passed (124)`.
+> - **Bundle impact** — `visualization.js` shrunk slightly from
+>   2.23 MB → 2.18 MB raw (tree-shaking re-checked when the
+>   import graph changed) and 576 KB → 574.9 KB gzipped; the
+>   D6 surface fits inside existing bundle-size budgets with
+>   substantial headroom (the §7c budget of 800 KB gzip is at
+>   72 % utilisation).
+> - **Docs** — `docs/_machine/agents.md` carries a new §5c
+>   "Adding a new demo preset" recipe (generator contract +
+>   registry + formatter + spec + tests + showcase panel + regen
+>   + checklist) and three new common-mistake rows; the
+>   `docs/_machine/README.md` table lists the new
+>   `src/lib/demo/` runtime module and the showcase dashboard.
+>   `README/savedsearches.conf.spec` documents `demoPreset` with
+>   per-preset detail. The auto-generated formatter reference
+>   (E2 Phase 2) picks up the new option automatically and lists
+>   it under "Demo & onboarding".
+
+* **Problem (resolved by SHIPPED):** A new evaluator who installs the app on an empty Splunk lab sees twelve showcase dashboards full of `| makeresults` + `sin(c/8)` synthetic data — four trucks circling NYC / London / SF / Tokyo on impossible trig-shaped routes, abstract trig-jittered IoT noise, hex-bin world maps with no realistic origin-country distribution. The data is unconvincing as a "this is what your real ops look like" story, and there is no first-class way to load anything richer without standing up a full Splunk environment first.
+* **Design (SHIPPED above):** Three deterministic, narrative-driven datasets baked into the viz bundle, exposed via a single formatter dropdown that overrides the panel's SPL result. The interception is in `formatData()` rather than `updateView()` so the (a) empty-data fallback path and (b) `_lastGoodData` cache are both respected — switching the dropdown off restores the user's real SPL result on the very next tick. Each preset embeds a small story (Oslo last-mile logistics, Fornebu office IoT, global SOC) so the screenshots tell something a customer can recognise rather than "a flat map of dots".
+* **Prereqs:** None (no live Splunk needed).
+* **Accept (SHIPPED):** (a) `demoPreset` set to a non-default value renders the bundled dataset even on a panel with `| makeresults | head 0`; (b) setting it back to `none` restores the SPL result with no stale demo rows; (c) bundle size stays within the §7c budgets; (d) `demo.test.js` passes 40/40 including byte-stability across two runs of the same seed; (e) `better_map_showcase.xml` parses, renders, and lives in the nav.
+
 ### Theme E — Distribution & adoption
 
 #### E1. Splunkbase listing — `M`
@@ -888,14 +964,15 @@ Goal: prove that v1.6 actually works under real load, close the operational-rigo
 | D2. Browser compatibility matrix | D | 2 |
 | **D3. Accessibility audit (Phase 1 SHIPPED)** | D | 2 |
 | D5. End-to-end test suite (dispatch + Playwright) | D | 5 |
+| **D6. Demo data pack & one-click showcase mode (SHIPPED)** | D | 2 |
 | C1–C8. Eight Splunk integrations verified | C | 6×S (12) + 2×M (10) = 22 |
 | E1. Splunkbase listing | E | 5 |
 | **E2. Documentation site (Phase 1 SHIPPED; Phase 2 in progress — formatter auto-gen SHIPPED)** | E | 5 |
 | **E5. Per-source setup recipes (the matrix — ~75 cells)** | **E** | **5** |
 | **G7. AI-ingestion-friendly documentation layer** | **G** | **5** |
-| **Sub-total** | — | **67 d** |
+| **Sub-total** | — | **69 d** |
 | Buffer (20 % for slip, lab access, surprise scope) | — | **14 d** |
-| **Total ≈ 81 dev-days ≈ 20 single-engineer weeks** | — | **10–14 weeks at 2 engineers** |
+| **Total ≈ 83 dev-days ≈ 20 single-engineer weeks** | — | **10–14 weeks at 2 engineers** |
 
 **Exit criteria:**
 - G2 pipeline green on every PR; release workflow tag-triggered and signed (G1).

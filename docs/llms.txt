@@ -2,7 +2,7 @@
 
 > Splunk Dashboard Studio custom map visualization built on MapLibre GL JS — ten layer types, time scrubber, 3D extrusion, H3 hexbin aggregation, vector-tile feature join, cross-panel coordination, indoor floor-plan overlay, and twelve preset Studio dashboards.
 
-Better Map is a Splunk Dashboard Studio v2 custom map visualization built on MapLibre GL JS. The project is documented in two layers: human-readable pages rendered as a Material site (this `llms.txt` indexes them) and a structured machine-readable layer under `docs/_machine/` (JSON Schema for the 82 formatter options, YAML scaffolds for each Splunk integration, YAML index of per-source recipes). Every entry below resolves to a single page; the structured machine-readable files are linked at the bottom for agents that would rather consume the contract directly than read prose.
+Better Map is a Splunk Dashboard Studio v2 custom map visualization built on MapLibre GL JS. The project is documented in two layers: human-readable pages rendered as a Material site (this `llms.txt` indexes them) and a structured machine-readable layer under `docs/_machine/` (JSON Schema for the 83 formatter options, YAML scaffolds for each Splunk integration, YAML index of per-source recipes). Every entry below resolves to a single page; the structured machine-readable files are linked at the bottom for agents that would rather consume the contract directly than read prose.
 
 All URLs below are publicly accessible; the project ships under the MIT licence and the source repo is at <https://github.com/fenre/better_map>.
 
@@ -19,7 +19,7 @@ All URLs below are publicly accessible; the project ships under the MIT licence 
 ## Reference
 
 - [Overview](https://fenre.github.io/better_map/reference/)
-- [Formatter options](https://fenre.github.io/better_map/reference/formatter/): the 82 formatter options exposed by the visualization. The canonical JSON Schema 2020-12 is at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+- [Formatter options](https://fenre.github.io/better_map/reference/formatter/): the 83 formatter options exposed by the visualization. The canonical JSON Schema 2020-12 is at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
 - [Layer reference](https://fenre.github.io/better_map/reference/layers/)
 - [BM-CT-1 contract](https://fenre.github.io/better_map/reference/bm-ct-1/)
 
@@ -68,7 +68,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 
 Every file below is either auto-generated from a source of truth elsewhere in the repo OR hand-maintained with that fact declared in a `meta:` block. Either way the contents are stable enough to be diffed in CI; the corresponding drift gates live in `scripts/check-*.py`. The README is at <https://fenre.github.io/better_map/_machine/>.
 
-- [`formatter-schema.json`](https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json): JSON Schema 2020-12 for the 82 formatter options. Generated from `formatter.html`. Drift gate: `scripts/check-formatter-schema.py`.
+- [`formatter-schema.json`](https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json): JSON Schema 2020-12 for the 83 formatter options. Generated from `formatter.html`. Drift gate: `scripts/check-formatter-schema.py`.
 - [`integrations/`](https://github.com/fenre/better_map/tree/main/docs/_machine/integrations): 8 hand-authored YAML scaffolds, one per Splunk integration in `src/lib/splunk/`.
 - [`recipes/recipe-schema.json`](https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/recipe-schema.json): JSON Schema 2020-12 for the YAML frontmatter every recipe MUST carry. Hand-maintained.
 - [`recipes/index.yaml`](https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml): auto-generated index of every recipe under `docs/recipes/`. Drift gate: `scripts/check-recipe-schema.py`.
