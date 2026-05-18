@@ -259,6 +259,48 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 
 #### D2. Browser compatibility matrix — `S`
 
+> **Status (v1.7-prep, 2026-05-18): D2 Phase 1 SHIPPED.** Browser-
+> compatibility load gate now runs on every PR. Concretely:
+>
+> - **`scripts/check-browser-compat.js`** loads `formatter.html`
+>   (wrapped in the same minimal HTML5 page the D3 accessibility
+>   audit uses — DRY single wrapper) in headless **Chromium,
+>   Firefox, and WebKit** via Playwright. The three engine families
+>   together cover ~99 % of real browsers in the field
+>   (Chrome / Edge / Opera / Brave + Firefox + Safari / iOS).
+>   Captures `console.error`, `pageerror`, and `requestfailed`
+>   events; FAILs the gate on any error. Saves a full-page
+>   screenshot per engine to `reports/browser-compat/<engine>.png`
+>   for offline triage.
+> - **CI wiring:** `.github/workflows/ci.yml` installs all three
+>   Playwright engines via `npx playwright install --with-deps
+>   chromium firefox webkit` (adds ~3 minutes to cold runs;
+>   browsers are cached between runs). The new "Check browser
+>   compatibility (D2)" step runs `node scripts/check-browser-compat.js`
+>   and uploads `reports/browser-compat-report.json` plus the three
+>   screenshots as a 14-day artifact.
+> - **Customer-facing docs:** new `docs/COMPAT-MATRIX.md` page
+>   wired into `mkdocs.yml` under Reference > Development.
+>   Documents the Phase 1 matrix (3 engines × Linux × `formatter.html`),
+>   the deferred Phase 2 matrix (cross-OS + live Splunk dashboards),
+>   a "reading a failing run" troubleshooting table, and the
+>   subset-by-engine local workflow (`--engine=webkit`).
+> - **Agent guidance:** `docs/_machine/agents.md` "Common mistakes
+>   and how to fix them" gained the `D2 FAIL — N/3 engine(s) reported
+>   errors` row pointing at the COMPAT-MATRIX troubleshooting table
+>   and the webpack ES5 contract that protects against the most
+>   common cross-engine regression.
+> - **npm:** `npm run lint:browser-compat` added to the viz
+>   package; mirrors the `lint:a11y` shape.
+>
+> **Phase 2 (deferred):** cross-OS matrix (macOS Safari + Windows
+> Edge) and live-Splunk dashboard rendering (the 12 showcases
+> against a Splunk Enterprise container). Both blocked on the same
+> self-hosted-runner decision tracked in D5 Phase 2; GitHub Actions
+> free runners are Linux-only and the marginal value of "real
+> Safari on macOS" over "WebKit on Linux" (same engine) is small
+> for a panel-options UI.
+
 * **Problem:** Tested on Chrome by hand. Unverified on Firefox, Safari, Edge, Splunk Mobile.
 * **Design:** Use Playwright to load the 12 showcase dashboards in [Chrome, Firefox, Safari (via WebKit), Edge] × [macOS, Windows, Linux]. Screenshot each. Diff against a baseline. Document the perf delta.
 * **Prereqs:** D1.
@@ -1142,7 +1184,7 @@ Goal: prove that v1.6 actually works under real load, close the operational-rigo
 | G1. Security audit + supply-chain hardening | G | 5 |
 | G3. Upgrade hygiene + migration tests | G | 2 |
 | D1. AppInspect re-cert | D | 2 |
-| D2. Browser compatibility matrix | D | 2 |
+| **D2. Browser compatibility matrix (Phase 1 SHIPPED — formatter.html × chromium + firefox + webkit on Linux; Phase 2 — cross-OS + live Splunk dashboards — deferred to self-hosted runner decision)** | D | 2 |
 | **D3. Accessibility audit (Phase 1 SHIPPED)** | D | 2 |
 | **D5. End-to-end test suite (Phase 1 SHIPPED — Docker harness + dispatch test; Phase 2 — Playwright + CI matrix — deferred to self-hosted runner decision)** | D | 5 |
 | **D6. Demo data pack & one-click showcase mode (SHIPPED)** | D | 2 |
@@ -1288,7 +1330,7 @@ If, and only if, every box below is true, we can credibly call v2.0 "one of the 
 ### 7b. Quality
 
 - [ ] AppInspect cloud-cert green on Splunkbase (blocked on E1); **AppInspect runs in CI on every PR** ✅ (G2-2: PR-gate cloud+future tags, release-gate adds `--fail-on-warnings`; 0/0/0/0 baseline as of v1.6.2)
-- [ ] Browser matrix green: Chrome / Firefox / Safari / Edge × macOS / Windows / Linux (12 cells, all green)
+- [~] Browser matrix green: Chrome / Firefox / Safari / Edge × macOS / Windows / Linux (12 cells, all green) — **Phase 1 ✅** (`scripts/check-browser-compat.js` loads `formatter.html` in headless Chromium + Firefox + WebKit via Playwright on every PR; covers the three engine families that account for ~99 % of real browsers); Phase 2 — cross-OS matrix + the 12 showcase dashboards rendered against a live Splunk container — deferred to the self-hosted-runner decision in §3 D5. Customer-facing matrix lives at `docs/COMPAT-MATRIX.md`
 - [~] WCAG 2.2 AA conformance verified — **Phase 1 ✅** (`scripts/check-accessibility.js` runs axe-core on `formatter.html` as a PR gate, 0 violations / 0 incomplete; legacy `highContrast` duplicate + orphan `mapLabelLanguage` removed); Phase 2 (showcase dashboards under D5) and Phase 3 (manual VoiceOver + NVDA, pre-E1) still pending
 - [ ] Telemetry path documented; zero data leaves by default; HEC schema published
 - [ ] No regression of the v1.5.2 BM-CT-1 contract (all controls expose `setEnabled / isEnabled / reset`)

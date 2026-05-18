@@ -490,6 +490,18 @@ python3 scripts/check-dashboard-xml-json.py
 # (Playwright ships the binary separately from the npm package).
 node scripts/check-accessibility.js
 
+# Browser compatibility (D2 Phase 1) — formatter.html load test in
+# headless Chromium, Firefox, and WebKit. Catches the "ships in
+# Chrome, breaks in Safari / Firefox" class of bug at PR time.
+# First run only: `cd better_map/appserver/static/visualizations/better_map
+# && npx playwright install --with-deps chromium firefox webkit`.
+# Subset locally with `--engine=chromium,webkit` while iterating.
+# Outputs per-engine screenshots to reports/browser-compat/<engine>.png
+# and a JSON summary at reports/browser-compat-report.json (both
+# gitignored). See docs/COMPAT-MATRIX.md for the rendered matrix
+# + the "reading a failing run" troubleshooting guide.
+node scripts/check-browser-compat.js
+
 # Documentation site (E2 Phase 1) — strict-mode MkDocs build.
 # First run only:
 #   python3 -m venv .venv-mkdocs
@@ -598,7 +610,8 @@ to fix and the exact command to re-run.
 | `[FAIL] license not on allowlist` | A transitive dependency landed with a copyleft license | `docs/runbooks/supply-chain.md` §"Copyleft dependency replacement"; do NOT add to the allowlist without architecture review |
 | `[FAIL] high-severity vulnerability` | `npm audit` found a non-waived high/critical CVE | Update the dependency; if no fix exists, add a time-boxed waiver to `scripts/npm-audit-waivers.json` per `docs/runbooks/supply-chain.md` §"CVE waiver management" |
 | `FAIL — axe-core reported violations` | New formatter markup broke WCAG 2.2 AA (missing `<label for=...>`, duplicate `id`, no accessible name, contrast regression, etc.) | Fix the markup in `formatter.html` and rerun `node scripts/check-accessibility.js`; if the rule is genuinely a Splunk-host concern, add the rule id to `DISABLED_RULES` in `scripts/check-accessibility.js` with a one-line justification |
-| `FATAL — Executable doesn't exist at .../chrome-headless-shell` | First run on this machine; Playwright's Chromium isn't installed yet | `cd better_map/appserver/static/visualizations/better_map && npx playwright install chromium` |
+| `FATAL — Executable doesn't exist at .../chrome-headless-shell` | First run on this machine; Playwright's Chromium isn't installed yet | `cd better_map/appserver/static/visualizations/better_map && npx playwright install chromium` (D3) or `... install --with-deps chromium firefox webkit` (D2 — needs all three engines) |
+| `D2 FAIL — N/3 engine(s) reported errors` | `formatter.html` change introduced engine-specific JS / HTML that Firefox or WebKit rejects | Read the per-engine error capture in `reports/browser-compat-report.json`; the screenshot at `reports/browser-compat/<engine>.png` shows the visual state at failure. If the bundle ships ES2020+ syntax, confirm `webpack.config.js` still pins `target: ['web', 'es5']` per `splunk-custom-viz-integration.mdc` §11. See `docs/COMPAT-MATRIX.md` "Reading a failing run" for the symptom → cause table |
 | `Aborted with N warnings in strict mode!` (MkDocs) | A new doc page introduced a broken cross-link, an orphan markdown file, or a deprecated MkDocs config key | Read the warning lines above the abort — each names the file + link target. Fix the link (relative within `docs/`, absolute `https://github.com/.../blob/main/...` for repo-root files), or remove the orphan from `nav:` in `mkdocs.yml`. Rerun `.venv-mkdocs/bin/mkdocs build --strict`. |
 | `ImportError: No module named 'mkdocs'` (first run of `mkdocs build`) | The MkDocs venv hasn't been created yet | `python3 -m venv .venv-mkdocs && .venv-mkdocs/bin/pip install -r scripts/requirements-mkdocs.txt` |
 | `Get Pages site failed` / `Create Pages site failed: Resource not accessible by integration` (docs deploy workflow) | Brand-new repo where GitHub Pages was never enabled; workflow `GITHUB_TOKEN` cannot self-bootstrap Pages (the REST `enable-pages-for-repository` endpoint requires PAT-level perms) | One-time, with maintainer credentials: `gh api -X POST /repos/<owner>/<repo>/pages -f build_type=workflow` — then re-run the docs workflow. From then on `actions/configure-pages`' `enablement: true` no-ops and the deploy is fully turnkey |

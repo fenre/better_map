@@ -14,6 +14,7 @@
     "lint:version-consistency": "node ../../../../../scripts/check-version-consistency.js",
     "lint:appinspect": "bash ../../../../../scripts/run-appinspect-local.sh",
     "lint:a11y": "node ../../../../../scripts/check-accessibility.js",
+    "lint:browser-compat": "node ../../../../../scripts/check-browser-compat.js",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

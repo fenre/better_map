@@ -32,7 +32,8 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Runbooks / Overview (`docs/runbooks/index.md`)
 - Runbooks / Supply chain (G1) (`docs/runbooks/supply-chain.md`)
 - Runbooks / Upgrade hygiene (G3) (`docs/runbooks/upgrade-hygiene.md`)
-- Development / Local Splunk harness (D5) (`docs/development/local-splunk-harness.md`)
+- Runbooks / Development / Local Splunk harness (D5) (`docs/development/local-splunk-harness.md`)
+- Runbooks / Development / Browser compatibility matrix (D2) (`docs/COMPAT-MATRIX.md`)
 - Contributing (`docs/contributing.md`)
 - Changelog (`docs/changelog.md`)
 - Roadmap (`docs/roadmap.md`)
@@ -3554,7 +3555,7 @@ the runbook reports zero orphans.
 
 # === BEGIN: https://fenre.github.io/better_map/development/local-splunk-harness/ ===
 
-# Development / Local Splunk harness (D5)
+# Runbooks / Development / Local Splunk harness (D5)
 
 > Source: `docs/development/local-splunk-harness.md`  
 > URL: <https://fenre.github.io/better_map/development/local-splunk-harness/>
@@ -3783,6 +3784,172 @@ across a teardown — useful when you want to swap to a different
 better_map branch and re-test without re-ingesting any data.
 
 # === END: https://fenre.github.io/better_map/development/local-splunk-harness/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/COMPAT-MATRIX/ ===
+
+# Runbooks / Development / Browser compatibility matrix (D2)
+
+> Source: `docs/COMPAT-MATRIX.md`  
+> URL: <https://fenre.github.io/better_map/COMPAT-MATRIX/>
+
+# Browser compatibility matrix
+
+Status of Better Map across browser engines, asserted automatically
+by [`scripts/check-browser-compat.js`](https://github.com/fenre/better_map/blob/main/scripts/check-browser-compat.js)
+on every pull request.
+
+## TL;DR
+
+Better Map's `formatter.html` — the panel-options UI every Dashboard
+Studio author interacts with — is asserted to load cleanly in the
+**three engine families that cover ~99 % of real browsers**:
+Chromium, Firefox, and WebKit. Every PR runs the check; a regression
+that breaks one engine fails CI before merge.
+
+The full dashboard-rendering compatibility matrix (12 showcases ×
+{Chromium, Firefox, WebKit} × {macOS, Windows, Linux}) and the live
+Splunk-hosted bundle-load test are Phase 2 work tracked in
+[ROADMAP §3 D2](roadmap.md) (blocked on a self-hosted-runner
+decision; GitHub Actions free runners are Linux-only).
+
+## Phase 1 matrix (shipped — every PR)
+
+| Surface | Chromium | Firefox | WebKit | OS | Frequency |
+|---|:-:|:-:|:-:|---|---|
+| `formatter.html` (panel-options UI) | ✅ | ✅ | ✅ | Linux (ubuntu-latest) | Every PR |
+
+**What "✅" means:**
+
+- The engine launched headless via [Playwright](https://playwright.dev/)
+- The wrapped formatter page loaded without timing out (30 s budget)
+- `document.body.children.length > 0` (engine did not silently reject
+  the HTML)
+- No `console.error` events fired
+- No `pageerror` events fired
+- No `requestfailed` events fired
+- A full-page screenshot was saved to
+  `reports/browser-compat/<engine>.png` (uploaded as a CI artifact
+  on every run; 14-day retention)
+
+**Why these three engines:**
+
+- **Chromium** → covers Chrome, Edge, Opera, Brave, every Chromium
+  fork, and Splunk Mobile Android.
+- **WebKit** → covers Safari (macOS + iOS) and Splunk Mobile iOS.
+- **Firefox** → covers Firefox and every Gecko fork.
+
+The remaining ~1 % of the field (pre-Chromium Edge — sunsetted by
+Microsoft; niche WebKit forks like Epiphany; pre-Quantum Firefox)
+is explicitly out of support.
+
+**Why Linux only in Phase 1:**
+
+GitHub Actions free-tier runners are Linux x64 only. macOS and
+Windows runners exist on the paid tier but cost ~10× per minute, and
+the marginal value of "Safari on macOS" over "WebKit on Linux"
+(the same engine) is small for a panel-options UI that has no native
+APIs. The matrix expands to real Safari + real Edge when D5 Phase 2
+adds a self-hosted runner — see ROADMAP §3 D5 + §3 D2.
+
+## Phase 2 matrix (deferred — tracked in ROADMAP §3 D2)
+
+| Surface | Chromium | Firefox | WebKit | OS | Status |
+|---|:-:|:-:|:-:|---|---|
+| `formatter.html` | ✅ | ✅ | ✅ | macOS | Deferred — needs self-hosted runner |
+| `formatter.html` | ✅ | ✅ | n/a | Windows | Deferred — needs self-hosted runner |
+| 12 showcase dashboards in live Splunk | ⏸ | ⏸ | ⏸ | Linux | Deferred — needs D5 Phase 2 (Playwright × Splunk container) |
+| 12 showcase dashboards in live Splunk | ⏸ | ⏸ | ⏸ | macOS | Deferred — needs D5 Phase 2 + self-hosted runner |
+| Visual-regression baseline | ⏸ | ⏸ | ⏸ | All | Deferred — value/flake tradeoff in `check-browser-compat.js` design notes |
+
+(✅ = green target; ⏸ = scope acknowledged, not yet attempted.)
+
+## Running locally
+
+The Phase 1 gate runs end-to-end on any machine with Node 18+ and
+Playwright's browser binaries installed:
+
+```bash
+cd better_map/appserver/static/visualizations/better_map
+npm ci
+npx playwright install --with-deps chromium firefox webkit
+npm run lint:browser-compat
+```
+
+Subset to one engine while iterating:
+
+```bash
+node scripts/check-browser-compat.js --engine=webkit
+```
+
+Multi-engine, comma-separated:
+
+```bash
+node scripts/check-browser-compat.js --engine=chromium,webkit
+```
+
+The script writes:
+
+- `reports/browser-compat-report.json` — per-engine PASS/FAIL with
+  the full error capture for offline triage.
+- `reports/browser-compat/<engine>.png` — one full-page screenshot
+  per engine, useful for "the layout shifts in Firefox" review.
+- `reports/_browser-compat-wrapper.html` — the wrapped formatter
+  page the engines actually loaded (DRY: same wrapper the D3
+  accessibility audit uses).
+
+All three paths are gitignored.
+
+## Reading a failing run
+
+The script prints a focused per-engine summary; the full JSON
+report carries the rest. A typical failure block looks like:
+
+```text
+  FAIL  firefox  (body children: 0)
+         engine-level: document.body has zero children after load — engine rejected the HTML
+         console.error events: 2
+           - SyntaxError: missing ) after argument list ...
+```
+
+Common failure modes and where to look:
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `console.error` includes a syntax error | webpack target slipped — bundle contains ES2020+ syntax WebKit / Firefox rejects | confirm `webpack.config.js` still sets `target: ['web', 'es5']` and `output.environment.arrowFunction: false` per [`splunk-custom-viz-integration.mdc` §11](https://github.com/fenre/better_map/blob/main/.cursor/rules/splunk-custom-viz-integration.mdc) |
+| `pageerror` references a missing global | an API used in `src/lib/**/*.js` exists in Chromium but not in WebKit / Firefox | add a feature-detect + fallback or document the gap in this file's Phase 2 row |
+| `requestfailed` for a CDN URL | offline CI runner or a CSP regression | the formatter wrapper SHOULD load no external resources — investigate which file picked up a stray `<link href="https://...">` |
+| `document.body.children.length === 0` | the engine outright rejected the wrapper as malformed HTML | run `cat reports/_browser-compat-wrapper.html` and visually inspect — most often a leaked `<` from formatter source |
+
+If the failure is genuinely a documented engine gap (e.g. WebKit
+lacks a specific Container Queries feature you depend on), add a
+row to the Phase 2 matrix above with the gap noted and open a
+ROADMAP follow-up — do NOT add the engine to a skip list in the
+script.
+
+## Out of scope
+
+- **Splunk Mobile** (iOS + Android). These ride on WebKit + Chromium
+  respectively, so Phase 1 covers the engine layer. The Splunk-
+  Mobile-specific JS bridge (`mobileapp.splunk.com`) is not
+  exercised by `formatter.html` and is tested manually before each
+  release per ROADMAP §3 D2.
+- **Internet Explorer**, **pre-Chromium Edge**, **pre-Quantum
+  Firefox** (< 57), and **PhantomJS**. Splunk itself dropped IE
+  support in 8.0; we follow.
+- **Headed-only behaviours** (e.g. native fullscreen, pointer-lock,
+  WebXR). Better Map does not currently use these APIs. If we add
+  any, this matrix grows a column.
+
+## See also
+
+- [`scripts/check-browser-compat.js`](https://github.com/fenre/better_map/blob/main/scripts/check-browser-compat.js) — gate source
+- [`scripts/check-accessibility.js`](https://github.com/fenre/better_map/blob/main/scripts/check-accessibility.js) — the D3 sibling using the same wrapper
+- [ROADMAP §3 D2 — Browser compatibility matrix](roadmap.md)
+- [ROADMAP §3 D5 — End-to-end test suite (Docker harness)](roadmap.md)
+- [`.cursor/rules/splunk-custom-viz-integration.mdc` §11 — webpack ES5 contract](https://github.com/fenre/better_map/blob/main/.cursor/rules/splunk-custom-viz-integration.mdc)
+- [`docs/runbooks/upgrade-hygiene.md`](runbooks/upgrade-hygiene.md) — operator pattern this matrix follows
+
+# === END: https://fenre.github.io/better_map/COMPAT-MATRIX/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/contributing/ ===
 
@@ -5776,6 +5943,48 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 
 #### D2. Browser compatibility matrix — `S`
 
+> **Status (v1.7-prep, 2026-05-18): D2 Phase 1 SHIPPED.** Browser-
+> compatibility load gate now runs on every PR. Concretely:
+>
+> - **`scripts/check-browser-compat.js`** loads `formatter.html`
+>   (wrapped in the same minimal HTML5 page the D3 accessibility
+>   audit uses — DRY single wrapper) in headless **Chromium,
+>   Firefox, and WebKit** via Playwright. The three engine families
+>   together cover ~99 % of real browsers in the field
+>   (Chrome / Edge / Opera / Brave + Firefox + Safari / iOS).
+>   Captures `console.error`, `pageerror`, and `requestfailed`
+>   events; FAILs the gate on any error. Saves a full-page
+>   screenshot per engine to `reports/browser-compat/<engine>.png`
+>   for offline triage.
+> - **CI wiring:** `.github/workflows/ci.yml` installs all three
+>   Playwright engines via `npx playwright install --with-deps
+>   chromium firefox webkit` (adds ~3 minutes to cold runs;
+>   browsers are cached between runs). The new "Check browser
+>   compatibility (D2)" step runs `node scripts/check-browser-compat.js`
+>   and uploads `reports/browser-compat-report.json` plus the three
+>   screenshots as a 14-day artifact.
+> - **Customer-facing docs:** new `docs/COMPAT-MATRIX.md` page
+>   wired into `mkdocs.yml` under Reference > Development.
+>   Documents the Phase 1 matrix (3 engines × Linux × `formatter.html`),
+>   the deferred Phase 2 matrix (cross-OS + live Splunk dashboards),
+>   a "reading a failing run" troubleshooting table, and the
+>   subset-by-engine local workflow (`--engine=webkit`).
+> - **Agent guidance:** `docs/_machine/agents.md` "Common mistakes
+>   and how to fix them" gained the `D2 FAIL — N/3 engine(s) reported
+>   errors` row pointing at the COMPAT-MATRIX troubleshooting table
+>   and the webpack ES5 contract that protects against the most
+>   common cross-engine regression.
+> - **npm:** `npm run lint:browser-compat` added to the viz
+>   package; mirrors the `lint:a11y` shape.
+>
+> **Phase 2 (deferred):** cross-OS matrix (macOS Safari + Windows
+> Edge) and live-Splunk dashboard rendering (the 12 showcases
+> against a Splunk Enterprise container). Both blocked on the same
+> self-hosted-runner decision tracked in D5 Phase 2; GitHub Actions
+> free runners are Linux-only and the marginal value of "real
+> Safari on macOS" over "WebKit on Linux" (same engine) is small
+> for a panel-options UI.
+
 * **Problem:** Tested on Chrome by hand. Unverified on Firefox, Safari, Edge, Splunk Mobile.
 * **Design:** Use Playwright to load the 12 showcase dashboards in [Chrome, Firefox, Safari (via WebKit), Edge] × [macOS, Windows, Linux]. Screenshot each. Diff against a baseline. Document the perf delta.
 * **Prereqs:** D1.
@@ -6659,7 +6868,7 @@ Goal: prove that v1.6 actually works under real load, close the operational-rigo
 | G1. Security audit + supply-chain hardening | G | 5 |
 | G3. Upgrade hygiene + migration tests | G | 2 |
 | D1. AppInspect re-cert | D | 2 |
-| D2. Browser compatibility matrix | D | 2 |
+| **D2. Browser compatibility matrix (Phase 1 SHIPPED — formatter.html × chromium + firefox + webkit on Linux; Phase 2 — cross-OS + live Splunk dashboards — deferred to self-hosted runner decision)** | D | 2 |
 | **D3. Accessibility audit (Phase 1 SHIPPED)** | D | 2 |
 | **D5. End-to-end test suite (Phase 1 SHIPPED — Docker harness + dispatch test; Phase 2 — Playwright + CI matrix — deferred to self-hosted runner decision)** | D | 5 |
 | **D6. Demo data pack & one-click showcase mode (SHIPPED)** | D | 2 |
@@ -6805,7 +7014,7 @@ If, and only if, every box below is true, we can credibly call v2.0 "one of the 
 ### 7b. Quality
 
 - [ ] AppInspect cloud-cert green on Splunkbase (blocked on E1); **AppInspect runs in CI on every PR** ✅ (G2-2: PR-gate cloud+future tags, release-gate adds `--fail-on-warnings`; 0/0/0/0 baseline as of v1.6.2)
-- [ ] Browser matrix green: Chrome / Firefox / Safari / Edge × macOS / Windows / Linux (12 cells, all green)
+- [~] Browser matrix green: Chrome / Firefox / Safari / Edge × macOS / Windows / Linux (12 cells, all green) — **Phase 1 ✅** (`scripts/check-browser-compat.js` loads `formatter.html` in headless Chromium + Firefox + WebKit via Playwright on every PR; covers the three engine families that account for ~99 % of real browsers); Phase 2 — cross-OS matrix + the 12 showcase dashboards rendered against a live Splunk container — deferred to the self-hosted-runner decision in §3 D5. Customer-facing matrix lives at `docs/COMPAT-MATRIX.md`
 - [~] WCAG 2.2 AA conformance verified — **Phase 1 ✅** (`scripts/check-accessibility.js` runs axe-core on `formatter.html` as a PR gate, 0 violations / 0 incomplete; legacy `highContrast` duplicate + orphan `mapLabelLanguage` removed); Phase 2 (showcase dashboards under D5) and Phase 3 (manual VoiceOver + NVDA, pre-E1) still pending
 - [ ] Telemetry path documented; zero data leaves by default; HEC schema published
 - [ ] No regression of the v1.5.2 BM-CT-1 contract (all controls expose `setEnabled / isEnabled / reset`)
