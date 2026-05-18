@@ -4,8 +4,65 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 33
+recipe_count: 36
 recipes:
+- id: cim-alerts--h3
+  source:
+    id: cim-alerts
+    display_name: CIM Alerts
+    pattern: splunk-cim
+  layer:
+    id: h3
+    display_name: H3 hexbin
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_SA_CIM
+    optional: false
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: web-prod-04.example.com
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '47.6062'
+  - name: lon
+    type: number
+    example: '-122.3321'
+  - name: value
+    type: integer
+    example: '47'
+    drives_formatter_option: hexbinAggregate
+  - name: max_severity
+    type: string
+    example: critical
+  - name: distinct_signatures
+    type: integer
+    example: '8'
+  required_formatter_options:
+  - pointRenderer
+  - hexbinAggregate
+  - hexbinResolution
+  - hexbinOpacity
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (per-host drilldown)
+    path: docs/recipes/cim-alerts/markers.md
+  - description: Splunk CIM skill — Alerts data model field reference
+    path: ~/.cursor/skills/splunk-cim/SKILL.md
+  - description: Splunk ES skill — notable events + correlation searches generate CIM Alerts
+    path: ~/.cursor/skills/splunk-enterprise-security/SKILL.md
+  - description: Sibling — CIM Authentication H3 (same hexbin-by-region pattern, source-IP geocoding)
+    path: docs/recipes/cim-authentication/h3.md
+  - description: Layer reference — h3
+    path: docs/reference/layers.md
+  - description: Formatter schema — hexbinAggregate, hexbinResolution, hexbinOpacity
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/cim-alerts/h3.md
 - id: cim-alerts--markers
   source:
     id: cim-alerts
@@ -709,6 +766,61 @@ recipes:
   - description: Bundled choropleth sibling (`featureJoinPreset` instead of `featureJoinUrl`)
     path: docs/recipes/geo-us-states/choropleth.md
   path: docs/recipes/csv-lookup-geo/vector-tile-join.md
+- id: cyber-vision--h3
+  source:
+    id: cyber-vision
+    display_name: Cisco Cyber Vision (components + vulnerabilities)
+    pattern: splunk-vendor-ta
+  layer:
+    id: h3
+    display_name: H3 hexbin
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: TA-cisco-cybervision
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: PLC-FLOOR3-A02
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '29.7604'
+  - name: lon
+    type: number
+    example: '-95.3698'
+  - name: value
+    type: integer
+    example: '12'
+    drives_formatter_option: hexbinAggregate
+  - name: max_cvss
+    type: number
+    example: '9.8'
+  - name: safety_related
+    type: boolean
+    example: 'true'
+  required_formatter_options:
+  - pointRenderer
+  - hexbinAggregate
+  - hexbinResolution
+  - hexbinOpacity
+  ot_safety_relevant: true
+  references:
+  - description: Companion recipe — same source, markers layer (per-asset drilldown)
+    path: docs/recipes/cyber-vision/markers.md
+  - description: cisco-products skill — Cisco Cyber Vision sourcetypes, components/flows/events/vulnerabilities
+    path: ~/.cursor/skills/cisco-products/SKILL.md
+  - description: cisco-splunk-integration skill — Cyber Vision passive DPI, API endpoints, integration patterns
+    path: ~/.cursor/skills/cisco-splunk-integration/SKILL.md
+  - description: Cursor rule — ot-safety.mdc (passive DPI is the reference design, Rule 1)
+    path: .cursor/rules/ot-safety.mdc
+  - description: Layer reference — h3
+    path: docs/reference/layers.md
+  - description: Formatter schema — hexbinAggregate, hexbinResolution, hexbinOpacity
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/cyber-vision/h3.md
 - id: cyber-vision--markers
   source:
     id: cyber-vision
@@ -1630,6 +1742,61 @@ recipes:
   - description: dataFitness.js alias auto-detect (lat/lon/id auto-picked)
     path: better_map/appserver/static/visualizations/better_map/src/lib/dataFitness.js
   path: docs/recipes/splunk-stream/markers.md
+- id: thousandeyes--markers
+  source:
+    id: thousandeyes
+    display_name: Cisco ThousandEyes (agent fleet)
+    pattern: splunk-vendor-ta
+  layer:
+    id: markers
+    display_name: Markers
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: ta_cisco_thousandeyes
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: agent-12345
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '37.7749'
+  - name: lon
+    type: number
+    example: '-122.4194'
+  - name: agent_name
+    type: string
+    example: SFO-AWS-us-west-1
+  - name: agent_type
+    type: string
+    example: enterprise
+  - name: test_count
+    type: integer
+    example: '12'
+    drives_formatter_option: markerColor
+  - name: country
+    type: string
+    example: United States
+  required_formatter_options:
+  - pointRenderer
+  - idField
+  - markerColor
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, paths layer (hop-by-hop traceroute polylines)
+    path: docs/recipes/thousandeyes/paths.md
+  - description: ThousandEyes setup skill — sourcetypes, indexes, OAuth flow
+    path: ~/.cursor/skills/cisco-thousandeyes-setup/SKILL.md
+  - description: Cisco products skill — ThousandEyes data model and example SPL
+    path: ~/.cursor/skills/cisco-products/SKILL.md
+  - description: Layer reference — markers
+    path: docs/reference/layers.md
+  - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
+    path: docs/reference/bm-ct-1.md
+  path: docs/recipes/thousandeyes/markers.md
 - id: thousandeyes--paths
   source:
     id: thousandeyes

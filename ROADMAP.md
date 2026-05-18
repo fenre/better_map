@@ -2536,6 +2536,168 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   CHANGELOG iteration if a new release adds a
 >   large `## [VERSION]` section before then.
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 11 SHIPPED
+> (3 more recipes — recipe count 33 → 36, H3 layer-type usage
+> 7 → 9, markers usage 11 → 12, layer-type coverage 9 / 10
+> unchanged, source-pattern coverage 8 / 8 unchanged).** Wave 11
+> continues the wave 7-10 cell-fill regime (no new layer types,
+> no new source patterns — only filling matrix cells by applying
+> already-shipped layer types to already-shipped source patterns).
+> One scope correction from the wave 10 status block's "wave 11
+> candidates" list: `itsi-kpi-base/markers` was identified as a
+> wave 11 target, but a mid-wave-10 inventory cross-check
+> revealed that recipe was already shipped (in an earlier wave
+> the wave 10 block author had mis-tracked) — so the wave 11
+> slate substitutes `cyber-vision/h3` (an OT-safety-relevant
+> hex aggregation of Cisco Cyber Vision asset density per site,
+> which is independently the most operationally valuable
+> remaining empty cyber-vision cell and keeps the cell-fill
+> count at 3). Three new recipes ship:
+> - **`docs/recipes/cim-alerts/h3.md`** —
+>   `splunk-cim` source pattern (already shipped in 7 prior
+>   recipes; this is the 2nd recipe for the `cim-alerts` source
+>   row, joining the existing `markers`), `h3` layer (now 8
+>   total uses across the matrix). The per-region-drilldown
+>   complement to the existing markers recipe for the same
+>   source: same CIM-accelerated Alerts data model, same
+>   `iplocation` enrichment of `dest`, same severity-fold via
+>   `case` + `mvfind`, but rendered as H3 hexagonal cells with
+>   per-cell drilldown rather than discrete per-host markers.
+>   Targets SOC daily stand-up dashboards and executive
+>   briefing slides where the audience needs regional alert-
+>   pressure ranking, NOT per-host investigation (markers
+>   companion). 6 expected fields including the h3-layer-
+>   required `value` (set from `alert_count`). §6 Gotchas:
+>   CIM acceleration prerequisite, the markers-vs-h3 decision
+>   matrix, per-cell sample-size workaround, aggregate
+>   function semantics, hostname-vs-IP `dest` caveat, severity
+>   nomenclature drift, GDPR posture, and the OT-related
+>   alert pass-through note (Rule 6 — alerts ARE emitted from
+>   OT-adjacent detection but the input is a Level-3/4
+>   artefact, not a Level-0/1/2 read). Brings the `cim-alerts`
+>   source row to 2 recipes.
+> - **`docs/recipes/cyber-vision/h3.md`** (OT-safety-relevant —
+>   `ot_safety_relevant: true`) — `splunk-vendor-ta` source
+>   pattern (already shipped via meraki, ot-datastreamer,
+>   splunk-stream, thousandeyes), `h3` layer (now 9 total uses
+>   across the matrix). The per-site-density complement to the
+>   existing markers recipe for the same source: same Cisco
+>   Cyber Vision components + vulnerabilities streams, same
+>   operator-maintained `cybervision_sites.csv` lookup
+>   contract, same passive-DPI-only OT-zone read posture
+>   (Rule 1 reference design), but rendered as H3 hexagonal
+>   cells coloured by OT asset count per region (with
+>   alternative config for worst-CVSS-per-cell exposure
+>   tracking). Targets plant-leadership monthly review
+>   dashboards for multi-site OT footprints, NOT per-asset
+>   investigation (markers companion). **Recipe diverges from
+>   the cim-* H3 siblings in resolution default**: `4` instead
+>   of `3`, because OT assets cluster at site-scale (~1-2 km
+>   per facility) and res 3 (~120 km cells) would merge
+>   multi-site regional clusters into a single mega-hex — res
+>   4 (~17 km cells) keeps each site as its own cell at
+>   world zoom. 6 expected fields including the h3-layer-
+>   required `value` (set from `1` for density semantics; the
+>   §6 Gotchas explain the `value=max_cvss + aggregate: max`
+>   alternative for CVE exposure semantics). §6 Gotchas: all
+>   four OT-safety boundary rules (Rule 1 passive DPI, Rule 2
+>   no suppression, Rule 3 SOAR scope, Rule 5 SRS mirror),
+>   the `cybervision_sites.csv` schema recap, the resolution-
+>   choice rationale (the recipe's most distinctive design
+>   decision), aggregate function semantics for both
+>   density and exposure modes, `asset_id` cardinality drift,
+>   CVSS join cardinality, time range, and the asset-name
+>   PII posture. Brings the `cyber-vision` source row to 2
+>   recipes.
+> - **`docs/recipes/thousandeyes/markers.md`** —
+>   `splunk-vendor-ta` source pattern, `markers` layer (now
+>   12 total uses across the matrix). The probe-anchor
+>   complement to the existing paths recipe for the same
+>   source: instead of per-test hop-by-hop polylines, render
+>   the agent FLEET itself as static markers positioned at
+>   each agent's anchored coordinates, sized by how many
+>   distinct tests the agent currently runs. **NOTE:** this
+>   recipe's `display_name` is "Cisco ThousandEyes (agent
+>   fleet)" (vs the paths recipe's "Cisco ThousandEyes (path
+>   visualization)") — same source `id: thousandeyes` and
+>   same `pattern: splunk-vendor-ta`, but the two questions
+>   are different enough operationally (fleet inventory vs
+>   measurement trajectory) that the display names diverge.
+>   `scripts/check-recipe-schema.py` accepts the divergence
+>   because the matrix groups by source `id`, not display
+>   name. Targets DEM-coverage-planning panels ("is my agent
+>   footprint covering my critical geographies?") and
+>   capacity-review panels ("which agent is taking on the
+>   most measurement load?"). 7 expected fields. §6 Gotchas:
+>   the `tests_by_agent` join-shape drift across TA
+>   versions (pre-v3 lookup vs v3+ subsearch), `is_online`
+>   field name drift, the THREE distinct agent-type geo
+>   provenance models (enterprise = customer-supplied,
+>   cloud = TE-supplied region geocode, endpoint = current-IP
+>   geocode that can jump daily), test count vs measurement
+>   volume distinction, cluster-vs-individual rendering,
+>   time range, the no-OT-zone-deployment Rule 1 boundary
+>   ("if any agent in the result set has a coordinate
+>   inside a known OT plant geofence, STOP and audit"),
+>   and the endpoint-agent-name PII posture. Brings the
+>   `thousandeyes` source row to 2 recipes.
+> - **No framework changes.** All three recipes pass the
+>   unchanged `scripts/check-recipe-schema.py` (now 36
+>   recipes valid, 0 verified, 36 unverified / deferred);
+>   auto-regen of `docs/_machine/recipes/index.yaml` (now 36
+>   entries), `docs/recipes/index.md` matrix (now 36 rows),
+>   `docs/llms.txt` (now references 36 recipes), and
+>   `docs/llms-full.txt`. `mkdocs.yml` nav grows three lines.
+>   `mkdocs build --strict` is clean.
+> - **Coverage delta:** matrix coverage rises from 33 to 36
+>   recipes (~44 % → ~48 % of the ~75 ✓ cells); source-
+>   pattern coverage stays at 8 / 8 = COMPLETE; layer-type
+>   coverage stays at 9 / 10 (only `indoor` layer remains,
+>   blocked on v1.8+). Per-source row counts now:
+>   `csv-lookup-geo` 4, `cim-network-traffic` 4;
+>   `cim-authentication` 3, `kvstore-latlon` 3, `meraki` 3;
+>   **`cim-alerts` 2 (NEW: h3)**,
+>   **`cyber-vision` 2 (NEW: h3)**, `cim-performance` 2,
+>   `es-risk` 2, `geo-us-states` 2,
+>   `netflow-sflow-ipfix` 2, `ot-datastreamer` 2,
+>   `splunk-stream` 2, **`thousandeyes` 2 (NEW: markers)**;
+>   `itsi-kpi-base` 1. Layer-type usage now:
+>   **`markers` 12 (NEW: 11 → 12)**, **`h3` 9 (NEW: 7 → 9)**,
+>   `heat` 6, `paths` 2, `supercluster` 3,
+>   `vector-tile-join` 1, `polygons` 1, `choropleth` 1,
+>   `extrusion-3d` 1.
+> - **Wave 12 candidates** (cell-fill regime continues):
+>   (a) `cim-network-traffic/heat` — heatmap of network
+>   conversation density per region (fills heat-row cim-
+>   network-traffic gap); (b) `netflow-sflow-ipfix/markers`
+>   — discrete per-flow marker overlay (fills markers gap
+>   for netflow-sflow-ipfix); (c) `csv-lookup-geo/markers`
+>   — explicit markers recipe for the most common pattern
+>   (fills the markers gap for csv-lookup-geo; currently
+>   the source row has 4 recipes but none are markers).
+>   All three are projected ~2.4k tokens each post-§5 trim;
+>   plus the wave 12 status block at ~3-4k (self-stripping)
+>   = ~7-8k total cost. Lands at ~179-180k — **just over
+>   the 175k WARN**. Wave 12 MUST be paired with another
+>   token-trim PR; the Appendix B summarisation (~4.5k
+>   reclaim) is the natural lever and was already designed
+>   in the deferred-design notes (CANCELLED in the todo list
+>   pending re-measurement, but the original plan stands).
+> - **Token budget watch.** With wave 11 landing at
+>   **~172k estimated tokens** (projected; actual at PR
+>   creation), headroom to the 175k WARN is **~3k** and
+>   headroom to the 200k HARD-FAIL is ~28k. The cell-fill
+>   regime has now consumed all the slack the G7 follow-up #4
+>   CHANGELOG trim created; wave 12 onwards REQUIRES a paired
+>   token-trim PR. Re-measure top contributors at the wave
+>   12 prep phase: if Appendix B is still the biggest non-
+>   ROADMAP / non-CHANGELOG contributor (currently ~4.5k),
+>   ship its summarisation as PR ##-wave-12-token-trim; if a
+>   new release has added a large `## [VERSION]` section to
+>   CHANGELOG.md, the keep-recent-N strategy can be re-applied
+>   with no code change (the trim threshold is already
+>   parameterised).
+
 * **Problem:** Better Map can consume data from ~10 categorically different Splunk source patterns (see table below). A new customer with NetFlow data who wants a heat layer should not have to derive the SPL from first principles. There is currently no recipe documentation; the burden of "what SPL do I write?" falls entirely on the user, who often does not know the field names of their own data, let alone the contract this viz wants.
 * **Design:** Build the recipe matrix as `docs/recipes/<source>/<layer>.md`, where each leaf file is a **complete, copy-paste-runnable** recipe. Every recipe has the same 6-section structure (enforced by a validator script — G2 CI step), so an LLM can ingest the corpus consistently:
 
@@ -2999,7 +3161,7 @@ Goal: prove that v1.6 actually works under real load, close the operational-rigo
 | C1–C8. Eight Splunk integrations verified | C | 6×S (12) + 2×M (10) = 22 |
 | E1. Splunkbase listing | E | 5 |
 | **E2. Documentation site (Phase 1 SHIPPED; Phase 2 in progress — formatter, integrations, recipes auto-gen all SHIPPED)** | E | 5 |
-| **E5. Per-source setup recipes (the matrix — ~75 cells) (Phase 1 framework SHIPPED + Phase 2 waves 1+2+3+4+5+6+7+8+9+10 SHIPPED — 33 / ~75 cells, source-pattern coverage 8 / 8 COMPLETE, layer-type coverage 9 / 10; only `indoor` layer remains, blocked on v1.8+)** | **E** | **5** |
+| **E5. Per-source setup recipes (the matrix — ~75 cells) (Phase 1 framework SHIPPED + Phase 2 waves 1+2+3+4+5+6+7+8+9+10+11 SHIPPED — 36 / ~75 cells, source-pattern coverage 8 / 8 COMPLETE, layer-type coverage 9 / 10; only `indoor` layer remains, blocked on v1.8+)** | **E** | **5** |
 | **G7. AI-ingestion-friendly documentation layer (Phase 1 SHIPPED; Phase 2 — `llms.txt` SHIPPED; Phase 2 follow-up — `llms-full.txt` SHIPPED)** | **G** | **5** |
 | **Sub-total** | — | **69 d** |
 | Buffer (20 % for slip, lab access, surprise scope) | — | **14 d** |
