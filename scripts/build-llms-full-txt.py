@@ -49,7 +49,10 @@ spec, recalibrated in E5 Phase 2 wave 6 against actual 18-recipe
 corpus; further extended in wave 8 by also trimming historical
 ``> **Status (...): E5 Phase 2 wave N SHIPPED`` and ``G7 Phase 2
 follow-up #N SHIPPED`` blockquotes from ``roadmap.md`` — see
-``strip_roadmap_status_blocks`` below):
+``strip_roadmap_status_blocks`` below — and in wave 10 by trimming
+older ``## [VERSION] - DATE`` sections from ``changelog.md`` after
+the top ``_CHANGELOG_KEEP_VERSIONS`` are kept — see
+``strip_changelog_old_versions`` below):
 
   * Per-page warning at **50,000 estimated tokens** — one page should
     not dominate the corpus.
@@ -165,6 +168,32 @@ _ROADMAP_STATUS_BLOCK = re.compile(
     r"(?:>[^\n]*\n)*",
     re.MULTILINE,
 )
+
+# Changelog older-versions trim contract — see strip_changelog_old_versions()
+# and the E5 Phase 2 wave 10 ROADMAP block. CHANGELOG.md is the
+# Keep-a-Changelog-formatted release history; by wave 9 the file held
+# 18 version sections (1.6.2 down to 0.1.0) totalling ~19.6k tokens
+# in llms-full.txt — the second-largest single page after roadmap.md.
+# Each section is a `## [VERSION] - DATE` heading. Most of an LLM's
+# value for changelog content is in the CURRENT release cycle (the
+# top 3 versions tell the agent what the latest behavioural contract
+# is, what just changed, and what's pending). Earlier versions are
+# historical reference that an agent needs only when explicitly
+# investigating a prior release — recoverable via the URL pointer
+# the trim appends. The trim keeps the top _CHANGELOG_KEEP_VERSIONS
+# sections fully and replaces everything below with a one-line
+# pointer + the older-version-titles list (so the agent still knows
+# WHICH older versions exist).
+#
+# The on-disk CHANGELOG.md is unchanged — the trim runs only in
+# the in-memory body before it lands in llms-full.txt. The MkDocs
+# site continues to render every version for human readers via
+# the unaltered `{% include-markdown "../CHANGELOG.md" %}` include.
+_CHANGELOG_VERSION_HEADING = re.compile(
+    r"^## \[(?P<version>[\d.]+)\] - (?P<date>\d{4}-\d{2}-\d{2})\s*$",
+    re.MULTILINE,
+)
+_CHANGELOG_KEEP_VERSIONS = 3
 
 
 # ----------------------------------------------------- mkdocs.yml parse
@@ -381,6 +410,53 @@ def is_roadmap_page(relpath: str) -> bool:
     return relpath == "roadmap.md"
 
 
+def is_changelog_page(relpath: str) -> bool:
+    """True when `docs/<relpath>` is the changelog page.
+
+    Only the top-level `docs/changelog.md` qualifies — this is the page
+    that uses `{% include-markdown "../CHANGELOG.md" %}` to pull the
+    project's release history into the docs site.
+    """
+    return relpath == "changelog.md"
+
+
+def strip_changelog_old_versions(
+    body: str, page_url: str, keep: int = _CHANGELOG_KEEP_VERSIONS
+) -> tuple[str, int]:
+    """Keep the top `keep` `## [VERSION] - DATE` sections; trim older.
+
+    Returns (cleaned body, number of trimmed versions). The trim
+    replaces every section after the `keep`-th version heading with a
+    single pointer line plus a bullet list of the trimmed version
+    numbers (so the agent still knows WHICH versions exist without
+    fetching CHANGELOG.md).
+
+    If the file has `keep` or fewer version headings, the body is
+    returned unchanged (the trim is a no-op).
+    """
+    matches = list(_CHANGELOG_VERSION_HEADING.finditer(body))
+    if len(matches) <= keep:
+        return body, 0
+
+    trim_start = matches[keep].start()
+    older = matches[keep:]
+    trimmed_count = len(older)
+    older_list_lines = [
+        f"- `[{m.group('version')}] - {m.group('date')}`"
+        for m in older
+    ]
+    pointer = (
+        "\n"
+        f"_The following {trimmed_count} older version section(s) are "
+        f"omitted from llms-full.txt for token budget; read them in "
+        f"the full CHANGELOG.md at <{page_url}> or in the repo at "
+        "<https://github.com/fenre/better_map/blob/main/CHANGELOG.md>:_\n\n"
+        + "\n".join(older_list_lines)
+        + "\n"
+    )
+    return body[:trim_start].rstrip() + "\n" + pointer, trimmed_count
+
+
 def strip_roadmap_status_blocks(body: str) -> tuple[str, int]:
     """Strip historical E5/G7 wave SHIPPED status blockquotes.
 
@@ -553,6 +629,10 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
         expanded = resolve_includes(raw, source_file)
         if is_roadmap_page(relpath):
             expanded, _blocks = strip_roadmap_status_blocks(expanded)
+        if is_changelog_page(relpath):
+            expanded, _versions = strip_changelog_old_versions(
+                expanded, url
+            )
         cleaned = strip_chrome(expanded).rstrip() + "\n"
         if is_recipe_page(relpath):
             cleaned = strip_recipe_advisory(cleaned, url)
