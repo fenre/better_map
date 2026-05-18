@@ -2129,6 +2129,165 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   well clear; wave 9 planning resumes after wave 8
 >   lands.
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 9 SHIPPED
+> (3 more recipes — recipe count 27 → 30, supercluster
+> layer-type usage 1 → 3, every source has ≥2 recipes
+> remaining true).** Wave 9 continues the wave 7-8
+> cell-fill regime (no new layer types, no new source
+> patterns — only filling matrix cells by applying
+> already-shipped layer types to already-shipped source
+> patterns) AND establishes that the token-budget runway
+> is healthier than the wave 8 projection suggested. The
+> wave 8 status block forecast `3 × 3.3k = ~9.9k tokens`
+> for wave 9; the actual measured per-recipe marginal
+> cost (post-§5 trim) sits closer to **~2.1k tokens per
+> recipe** (range 1.2k-3.1k across the now-shipped 30
+> recipes; the largest is `cim-performance/h3` at 3.1k,
+> the smallest is `kvstore-latlon/markers` at 1.2k). So
+> the planned Appendix B summarisation lever is **NOT
+> needed** for wave 9 — it can stay queued for wave
+> 10-11 when it actually opens headroom that the
+> per-recipe cost has not. Three new recipes ship:
+> - **`docs/recipes/cim-network-traffic/supercluster.md`**
+>   — `splunk-cim` source pattern (already shipped in 5
+>   prior recipes; this is the 3rd recipe for the
+>   `cim-network-traffic` source row, joining `markers`,
+>   `paths`, `h3`), `supercluster` layer (already shipped
+>   via `csv-lookup-geo/supercluster`; this is the 2nd
+>   instance — supercluster layer-type usage now 1 → 2).
+>   The high-cardinality drilldown complement to the
+>   existing markers / h3 recipes: same `tstats
+>   summariesonly=true … BY All_Traffic.dest_ip`
+>   accelerated CIM query, same `iplocation` enrichment,
+>   but rendered as a supercluster-backed cluster
+>   renderer. Targets perimeter-firewall and
+>   cloud-proxy SecOps panels with 500-10000 unique
+>   external destinations per time window. 6 expected
+>   fields including the cluster-layer-required `id`
+>   (which is `dest_ip` post-rename). §6 Gotchas: CIM
+>   acceleration prerequisite, the cluster-vs-heatmap-vs-
+>   hexbin decision matrix specific to network-traffic
+>   data, MaxMind GeoLite2 country-vs-city precision,
+>   CDN POP smearing across re-renders, IPv6 + CGNAT
+>   filter additions, the v1.8+-tracked `clusterRadius`
+>   / `clusterMaxZoom` formatter exposure, GDPR posture
+>   for IP-address-as-personal-data, and the OT-zone
+>   carve-out (passive collection valid per Rule 1; no
+>   SOAR write-back to Level-0/1/2 destinations per
+>   Rule 3). Brings the `cim-network-traffic` source
+>   row to 4 recipes (markers + paths + h3 +
+>   supercluster).
+> - **`docs/recipes/kvstore-latlon/supercluster.md`** —
+>   `splunk-lookup` source pattern (already shipped in
+>   6 prior recipes; this is the 3rd recipe for the
+>   `kvstore-latlon` source row, joining `markers`,
+>   `heat`), `supercluster` layer (now 3 total —
+>   joining the new `cim-network-traffic/supercluster`
+>   above plus the existing `csv-lookup-geo/supercluster`).
+>   The high-volume drilldown complement to the
+>   existing markers / heat recipes: same `| inputlookup`
+>   KV Store collection-as-source-of-truth shape, but
+>   sized for 5000-50000-row collections (retail chains,
+>   logistics fleets, charging-station networks,
+>   smart-city deployments) instead of the 10-100-row
+>   curated site lists the markers recipe targets. 5
+>   expected fields. §6 Gotchas: KV Store size limits
+>   (1-10M-row degradation threshold), accelerated
+>   fields for collections > 500k rows, the
+>   cluster-vs-heatmap-vs-hexbin decision matrix
+>   specific to a large customer-location collection,
+>   v1.8+-tracked formatter exposure for cluster tuning
+>   knobs, privacy/PII posture for collections that
+>   identify individual staff or customer locations,
+>   and the OT-safety carve-out for collections that
+>   ALSO carry SIS-related sites. Brings the
+>   `kvstore-latlon` source row to 3 recipes (markers
+>   + heat + supercluster).
+> - **`docs/recipes/netflow-sflow-ipfix/heat.md`** —
+>   `splunk-vendor-ta` source pattern (already shipped
+>   via the markers + h3 recipes), `heat` layer
+>   (already shipped in 4 prior recipes — heat layer
+>   usage now 5). The continuous-density complement to
+>   the existing `netflow-sflow-ipfix/h3` recipe: same
+>   `Splunk_TA_netflow` ingestion, same `iplocation`
+>   enrichment, same `sum(bytes) BY dest_ip`
+>   aggregation, but rendered as a MapLibre GL weighted
+>   heatmap instead of discrete hex cells. Reuses the
+>   log-scale `weight` pattern introduced in
+>   `splunk-stream/heat` (NetFlow byte distributions
+>   span 6+ orders of magnitude, identical normalisation
+>   problem). 6 expected fields including the
+>   heatmap-layer-required `weight`. §6 Gotchas: the
+>   heatmap-vs-hexbin decision matrix specific to
+>   flow-data audience (executive vs operational), the
+>   `O(N × R²)` heatmap render-cost formula and its
+>   implication for the `head 10000` defensive cap,
+>   CDN-POP smearing (more forgiving here than for
+>   markers/clusters because the smooth gradient
+>   absorbs per-search variation), MaxMind freshness
+>   guidance for data-residency dashboards, GDPR
+>   posture (heatmap actively helps the posture by
+>   collapsing individual destinations into aggregate
+>   density that is not an individual identifier), and
+>   the OT-zone carve-out. Brings the
+>   `netflow-sflow-ipfix` source row to 2 recipes
+>   (h3 + heat).
+> - **No framework changes.** All three recipes pass
+>   the unchanged `scripts/check-recipe-schema.py` (now
+>   30 recipes valid, 0 verified, 30 unverified /
+>   deferred); auto-regen of `docs/_machine/recipes/
+>   index.yaml` (now 30 entries), `docs/recipes/
+>   index.md` matrix (now 30 rows), `docs/llms.txt`
+>   (now references 30 recipes), and
+>   `docs/llms-full.txt`. `mkdocs.yml` nav grows three
+>   lines (one per new recipe; existing source IDs
+>   keep their alphabetical-by-display-name convention).
+>   `mkdocs build --strict` is clean.
+> - **Coverage delta:** matrix coverage rises from 27
+>   to 30 recipes (~36 % → ~40 % of the ~75 ✓ cells);
+>   source-pattern coverage stays at 8 / 8 = COMPLETE;
+>   layer-type coverage stays at 9 / 10 (only `indoor`
+>   remains, blocked on v1.8+). Per-source row counts
+>   now: `csv-lookup-geo` 4, **`cim-network-traffic` 4
+>   (NEW: supercluster)**; `geo-us-states` 2,
+>   `cim-authentication` 2, `cim-performance` 2,
+>   **`kvstore-latlon` 3 (NEW: supercluster)**,
+>   `meraki` 2, `ot-datastreamer` 2, `splunk-stream` 2,
+>   **`netflow-sflow-ipfix` 2 (NEW: heat)**; `cim-alerts`
+>   1, `cyber-vision` 1, `es-risk` 1, `itsi-kpi-base` 1,
+>   `thousandeyes` 1. Layer-type usage now:
+>   `markers` 14, `h3` 5, **`heat` 5 (NEW: 4 → 5)**,
+>   `paths` 3, **`supercluster` 3 (NEW: 1 → 3)**,
+>   `vector-tile-join` 1, `polygons` 1, `choropleth` 1,
+>   `extrusion-3d` 1.
+> - **Wave 10 candidates** (cell-fill regime continues):
+>   (a) `cim-authentication/h3` — geographic
+>   authentication-event density per hex cell,
+>   complement to the existing markers + heat for the
+>   same source; (b) `es-risk/h3` — risk-event density
+>   per hex cell, complement to the existing markers
+>   recipe; (c) `meraki/heat` — wireless-device-density
+>   heatmap, complement to the existing markers + h3
+>   recipes. All three are projected ~2k tokens each
+>   post-§5 trim; plus the wave 10 status block at
+>   ~3-5k = ~9-11k total cost.
+> - **Token budget watch.** With wave 9 landing at
+>   ~172.0k estimated tokens (the 3 new recipes plus
+>   minor downstream regen drift), headroom to the
+>   175k WARN is ~3k and headroom to the 200k
+>   HARD-FAIL is ~28k. Wave 10 at ~9-11k will hit the
+>   175k WARN squarely (~181-183k). Two levers are
+>   prepared: (a) the still-queued Appendix B
+>   summarisation (~15-20k savings, designed in the
+>   wave 8 status block above), and (b) a tighter
+>   per-page warn for `roadmap.md` itself if the
+>   cumulative status-block prose grows past its
+>   current ~43k contribution despite the
+>   self-stripping regex. The HARD-FAIL at 200k
+>   remains the safety rail and continues to hold
+>   well into wave 11-12 even without additional
+>   trim.
+
 * **Problem:** Better Map can consume data from ~10 categorically different Splunk source patterns (see table below). A new customer with NetFlow data who wants a heat layer should not have to derive the SPL from first principles. There is currently no recipe documentation; the burden of "what SPL do I write?" falls entirely on the user, who often does not know the field names of their own data, let alone the contract this viz wants.
 * **Design:** Build the recipe matrix as `docs/recipes/<source>/<layer>.md`, where each leaf file is a **complete, copy-paste-runnable** recipe. Every recipe has the same 6-section structure (enforced by a validator script — G2 CI step), so an LLM can ingest the corpus consistently:
 
@@ -2592,7 +2751,7 @@ Goal: prove that v1.6 actually works under real load, close the operational-rigo
 | C1–C8. Eight Splunk integrations verified | C | 6×S (12) + 2×M (10) = 22 |
 | E1. Splunkbase listing | E | 5 |
 | **E2. Documentation site (Phase 1 SHIPPED; Phase 2 in progress — formatter, integrations, recipes auto-gen all SHIPPED)** | E | 5 |
-| **E5. Per-source setup recipes (the matrix — ~75 cells) (Phase 1 framework SHIPPED + Phase 2 waves 1+2+3+4+5+6+7+8 SHIPPED — 27 / ~75 cells, source-pattern coverage 8 / 8 COMPLETE, layer-type coverage 9 / 10; only `indoor` layer remains, blocked on v1.8+)** | **E** | **5** |
+| **E5. Per-source setup recipes (the matrix — ~75 cells) (Phase 1 framework SHIPPED + Phase 2 waves 1+2+3+4+5+6+7+8+9 SHIPPED — 30 / ~75 cells, source-pattern coverage 8 / 8 COMPLETE, layer-type coverage 9 / 10; only `indoor` layer remains, blocked on v1.8+)** | **E** | **5** |
 | **G7. AI-ingestion-friendly documentation layer (Phase 1 SHIPPED; Phase 2 — `llms.txt` SHIPPED; Phase 2 follow-up — `llms-full.txt` SHIPPED)** | **G** | **5** |
 | **Sub-total** | — | **69 d** |
 | Buffer (20 % for slip, lab access, surprise scope) | — | **14 d** |
