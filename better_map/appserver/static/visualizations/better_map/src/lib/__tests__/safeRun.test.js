@@ -268,7 +268,7 @@ describe('safeRun — rate limiting', () => {
     });
 
     it('does not collapse different scopes', () => {
-        let t = 1000;
+        const t = 1000;
         __setNow(function () { return t; });
         const received = [];
         __setReporter(function (e) { received.push(e); });
@@ -358,7 +358,7 @@ describe('safeRun — backoff and quarantine', () => {
     });
 
     it('clearErrorState(scope) clears just that scope', () => {
-        let t = 1000;
+        const t = 1000;
         __setNow(function () { return t; });
         safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('a'); } });
         clearErrorState(LAYER_MARKERS);
@@ -372,7 +372,7 @@ describe('safeRun — backoff and quarantine', () => {
     });
 
     it('clearErrorState() with no scope clears everything', () => {
-        let t = 1000;
+        const t = 1000;
         __setNow(function () { return t; });
         safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('a'); } });
         safeRun({ scope: MAP_CREATE, action: function () { throw new Error('b'); } });
