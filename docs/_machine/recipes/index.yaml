@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 69
+recipe_count: 72
 recipes:
 - id: cim-alerts--h3
   source:
@@ -1780,6 +1780,74 @@ recipes:
   - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
     path: docs/reference/bm-ct-1.md
   path: docs/recipes/cyber-vision/paths.md
+- id: cyber-vision--supercluster
+  source:
+    id: cyber-vision
+    display_name: Cisco Cyber Vision (components + vulnerabilities)
+    pattern: splunk-vendor-ta
+  layer:
+    id: supercluster
+    display_name: Supercluster
+  status: unverified
+  last_verified_iso8601: '2026-05-19'
+  verified_against: null
+  splunk_apps_required:
+  - id: TA-cisco-cybervision
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: PLC-FLOOR3-A02
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '29.7604'
+  - name: lon
+    type: number
+    example: '-95.3698'
+  - name: asset_name
+    type: string
+    example: PLC-FLOOR3-A02
+  - name: vendor
+    type: string
+    example: Siemens
+  - name: zone_purdue_level
+    type: string
+    example: L1
+  - name: safety_related
+    type: string
+    example: Y
+  - name: site_name
+    type: string
+    example: Houston Refinery
+  required_formatter_options:
+  - pointRenderer
+  - idField
+  ot_safety_relevant: true
+  references:
+  - description: Companion recipe — same source, markers layer (per-asset CVE + event overview)
+    path: docs/recipes/cyber-vision/markers.md
+  - description: Companion recipe — same source, heatmap layer (asset-density per site)
+    path: docs/recipes/cyber-vision/heat.md
+  - description: Companion recipe — same source, H3 hexbin layer (per-zone CVE roll-up)
+    path: docs/recipes/cyber-vision/h3.md
+  - description: Companion recipe — same source, paths layer (OT lateral movement)
+    path: docs/recipes/cyber-vision/paths.md
+  - description: Pattern reference — supercluster with operator-maintained site lookup
+    path: docs/recipes/csv-lookup-geo/supercluster.md
+  - description: Pattern reference — supercluster for vendor-TA inventory
+    path: docs/recipes/meraki/supercluster.md
+  - description: cisco-products skill — Cisco Cyber Vision sourcetypes, components/flows/events/vulnerabilities
+    path: ~/.cursor/skills/cisco-products/SKILL.md
+  - description: cisco-splunk-integration skill — Cyber Vision passive DPI, API endpoints, integration patterns
+    path: ~/.cursor/skills/cisco-splunk-integration/SKILL.md
+  - description: Cursor rule — ot-safety.mdc (passive DPI is the reference design, Rule 1)
+    path: .cursor/rules/ot-safety.mdc
+  - description: Layer reference — supercluster
+    path: docs/reference/layers.md
+  - description: Clusters layer source — supercluster index, clusterMaxZoom=14, clusterRadius=48 (hardcoded)
+    path: better_map/appserver/static/visualizations/better_map/src/lib/layers/clusters.js
+  path: docs/recipes/cyber-vision/supercluster.md
 - id: es-risk--h3
   source:
     id: es-risk
@@ -2328,6 +2396,68 @@ recipes:
   - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
     path: docs/reference/bm-ct-1.md
   path: docs/recipes/itsi-kpi-base/markers.md
+- id: itsi-kpi-base--paths
+  source:
+    id: itsi-kpi-base
+    display_name: ITSI service health (KPI base searches)
+    pattern: splunk-premium-itsi
+  layer:
+    id: paths
+    display_name: Paths
+  status: unverified
+  last_verified_iso8601: '2026-05-19'
+  verified_against: null
+  splunk_apps_required:
+  - id: SA-ITOA
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: DEP-svc_payments_eu-svc_authdb_us
+    drives_formatter_option: pathIdField
+  - name: seq
+    type: integer
+    example: '0'
+    drives_formatter_option: timeField
+  - name: lat
+    type: number
+    example: '53.5511'
+  - name: lon
+    type: number
+    example: '9.9937'
+  - name: service_id
+    type: string
+    example: svc_payments_eu
+  - name: service_title
+    type: string
+    example: Payments (EU region)
+  - name: role
+    type: string
+    example: parent
+  required_formatter_options:
+  - pathIdField
+  - timeField
+  - pathColor
+  - pathArrows
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (per-service drilldown)
+    path: docs/recipes/itsi-kpi-base/markers.md
+  - description: Companion recipe — same source, H3 hexbin (per-cell roll-up)
+    path: docs/recipes/itsi-kpi-base/h3.md
+  - description: Companion recipe — same source, heatmap (smoothed density)
+    path: docs/recipes/itsi-kpi-base/heat.md
+  - description: Companion recipe — same source, supercluster (zoom-adaptive)
+    path: docs/recipes/itsi-kpi-base/supercluster.md
+  - description: Pattern reference — paths layer for kill-chain reconstruction
+    path: docs/recipes/es-risk/paths.md
+  - description: Pattern reference — paths layer with append-based 2-vertex polylines
+    path: docs/recipes/cyber-vision/paths.md
+  - description: splunk-itsi skill — itsi_services KV store schema, service_dependencies multi-value field
+    path: ~/.cursor/skills/splunk-itsi/SKILL.md
+  - description: Layer reference — paths
+    path: docs/reference/layers.md
+  path: docs/recipes/itsi-kpi-base/paths.md
 - id: itsi-kpi-base--supercluster
   source:
     id: itsi-kpi-base
@@ -2570,6 +2700,64 @@ recipes:
   - description: 'Cluster layer source (supercluster index, MapLibre cluster: true)'
     path: better_map/appserver/static/visualizations/better_map/src/lib/layers/clusters.js
   path: docs/recipes/kvstore-latlon/supercluster.md
+- id: meraki--extrusion-3d
+  source:
+    id: meraki
+    display_name: Cisco Meraki (devices)
+    pattern: splunk-vendor-ta
+  layer:
+    id: extrusion-3d
+    display_name: 3D extrusion
+  status: unverified
+  last_verified_iso8601: '2026-05-19'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_TA_cisco_meraki
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: CA
+    drives_formatter_option: idField
+  - name: state_name
+    type: string
+    example: California
+  - name: value
+    type: integer
+    example: '247'
+    drives_formatter_option: extrusionHeightField
+  - name: device_count
+    type: integer
+    example: '247'
+  - name: alerting_count
+    type: integer
+    example: '11'
+  required_formatter_options:
+  - featureJoinPreset
+  - enable3DExtrusion
+  - extrusionHeightField
+  - extrusionScale
+  - enableChoropleth
+  - palette
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (per-device drilldown)
+    path: docs/recipes/meraki/markers.md
+  - description: Companion recipe — same source, H3 hexbin layer (per-cell density)
+    path: docs/recipes/meraki/h3.md
+  - description: Companion recipe — same source, supercluster layer (zoom-adaptive)
+    path: docs/recipes/meraki/supercluster.md
+  - description: Pattern reference — extrusion-3d via iplocation + us-states preset
+    path: docs/recipes/cim-network-traffic/extrusion-3d.md
+  - description: Pattern reference — first extrusion-3d recipe (geo-us-states preset)
+    path: docs/recipes/geo-us-states/extrusion-3d.md
+  - description: cisco-meraki-ta-setup skill — TA install, indexes, account config, input types
+    path: ~/.cursor/skills/cisco-meraki-ta-setup/SKILL.md
+  - description: Layer reference — extrusion-3d
+    path: docs/reference/layers.md
+  - description: Formatter schema — enable3DExtrusion, extrusionHeightField, extrusionScale
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/meraki/extrusion-3d.md
 - id: meraki--h3
   source:
     id: meraki

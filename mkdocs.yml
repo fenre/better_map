@@ -247,6 +247,7 @@ nav:
       - 'Cisco Cyber Vision (components + vulnerabilities) — heatmap': recipes/cyber-vision/heat.md
       - 'Cisco Cyber Vision (components + vulnerabilities) — markers': recipes/cyber-vision/markers.md
       - 'Cisco Cyber Vision (components + vulnerabilities) — paths': recipes/cyber-vision/paths.md
+      - 'Cisco Cyber Vision (components + vulnerabilities) — supercluster': recipes/cyber-vision/supercluster.md
       - 'Cisco ThousandEyes (agent fleet) — H3 hexbin': recipes/thousandeyes/h3.md
       - 'Cisco ThousandEyes (agent fleet) — heatmap': recipes/thousandeyes/heat.md
       - 'Cisco ThousandEyes (agent fleet) — markers': recipes/thousandeyes/markers.md
@@ -260,11 +261,13 @@ nav:
       - 'ITSI service health (KPI base searches) — H3 hexbin': recipes/itsi-kpi-base/h3.md
       - 'ITSI service health (KPI base searches) — heatmap': recipes/itsi-kpi-base/heat.md
       - 'ITSI service health (KPI base searches) — markers': recipes/itsi-kpi-base/markers.md
+      - 'ITSI service health (KPI base searches) — paths': recipes/itsi-kpi-base/paths.md
       - 'ITSI service health (KPI base searches) — supercluster': recipes/itsi-kpi-base/supercluster.md
       - 'KV Store (lat/lon) — H3 hexbin': recipes/kvstore-latlon/h3.md
       - 'KV Store (lat/lon) — heatmap': recipes/kvstore-latlon/heat.md
       - 'KV Store (lat/lon) — markers': recipes/kvstore-latlon/markers.md
       - 'KV Store (lat/lon) — supercluster': recipes/kvstore-latlon/supercluster.md
+      - 'Meraki (Cisco vendor TA) — 3D extrusion': recipes/meraki/extrusion-3d.md
       - 'Meraki (Cisco vendor TA) — H3 hexbin': recipes/meraki/h3.md
       - 'Meraki (Cisco vendor TA) — heatmap': recipes/meraki/heat.md
       - 'Meraki (Cisco vendor TA) — markers': recipes/meraki/markers.md

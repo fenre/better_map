@@ -1,5 +1,102 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-20): E5 Phase 2 wave 27 recipes
+> SHIPPED (3 more recipes — recipe count 69 → 72, layer-type
+> coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
+> unchanged, extrusion-3d usage 2 → 3, paths usage 11 → 12,
+> supercluster usage 11 → 12).** Wave 27 continues the
+> **diversification regime** opened by waves 21-26, now in its
+> **7th consecutive wave** with a focus on **filling stuck-at-4
+> source rows** (meraki, itsi-kpi-base, cyber-vision all advance
+> 4 → 5 layer cells) while expanding underrepresented layer
+> shapes. Together waves 21-27 have now filled **21 of the
+> original ~24 diversification cells** (3 per wave for 7 waves),
+> with remaining cells skewing toward `choropleth` (still 6
+> source rows missing) and the long-tail polygon shapes
+> (`vector-tile-join`, `polygons` — both still singletons).
+> - **`meraki/extrusion-3d`** (NEW layer shape for source AND
+>   NEW source for extrusion-3d layer — 2 → 3 source coverage).
+>   8th cell on the meraki row. SPL uses the same `iplocation`-
+>   on-WAN-IP pattern as the cim-network-traffic/extrusion-3d
+>   companion (wave 26), but tunes `extrusionScale: 8000.0` for
+>   Meraki device counts in the 1-500 range (vs CIM event counts
+>   in the 1k-1M range). `eval public_ip=coalesce(publicIp,
+>   wan1Ip)` handles both MX appliances (publicIp) and MR/MS/MV
+>   devices (wan1Ip). Right shape for **executive sales-
+>   engineering panels** where geographic distribution is the
+>   talking point; meraki's "where does this customer's footprint
+>   live?" view becomes immediate at globe zoom. §6 gotchas cover
+>   the CGNAT trap (devices behind carrier-grade NAT all resolve
+>   to the carrier's state, not the device's true state), the
+>   IP-block-registration trap (AWS/GCP/Apple IPs amplify CA/WA),
+>   per-device-type `publicIp`/`wan1Ip` availability gaps (MV/MT
+>   typically have neither and drop out), and dataset-dependent
+>   `extrusionScale` tuning. No OT-safety dependency. ~1.6k
+>   tokens.
+> - **`itsi-kpi-base/paths`** (NEW layer shape for source).
+>   5th cell on the itsi-kpi-base row, joining markers/heat/h3/
+>   supercluster — completes 5/9 layer-cell coverage. SPL reads
+>   `itsi_services` via `inputlookup`, follows
+>   `service_dependencies` (multi-value field) via `mvexpand`,
+>   re-lookups each dependency for child coordinates, and
+>   emits 2-vertex polylines per (parent → child) edge. The
+>   path arrow points from parent (dependent) to child
+>   (provider), making cascade-risk direction visible at a
+>   glance. Distinct from other paths recipes (which trace
+>   temporal sequences): this one traces the STATIC dependency
+>   graph encoded in operator-curated ITSI configuration.
+>   Right shape for **change-management dashboards** (preview
+>   which services are downstream of planned maintenance) and
+>   **incident-response panels** (show all services downstream
+>   of a degraded one). §6 gotchas cover the
+>   `service_dependencies` empty-string trap (newly-initialized
+>   services have `""` not NULL), the operator-curated bad-
+>   reference trap (dependencies pointing at non-existent
+>   `_key` values silently drop), single-hop limitation (multi-
+>   hop A→B→C cascades render as two separate polylines, not
+>   one chained polyline), and KV-store scale (`inputlookup`
+>   on 10000+ services is slow — recommend summary-index
+>   acceleration). No OT-safety dependency. ~1.6k tokens.
+> - **`cyber-vision/supercluster`** (NEW layer shape for
+>   source, **OT-safety relevant**). 5th cell on the cyber-
+>   vision row, joining markers/heat/h3/paths — completes 5/9
+>   layer-cell coverage. SPL drops the markers companion's
+>   vulnerabilities and events joins (keeping just components +
+>   site lookup), making it 3x faster on large fleets where the
+>   markers companion can saturate. Right shape for **multi-
+>   site OT-NetOps panels** where Cyber Vision discovers 500-
+>   5000+ assets across 10-50 plants and per-marker rendering
+>   collapses to overlapping dots. §6 gotchas explicitly call
+>   out OT-safety considerations: cluster bubbles do NOT
+>   visually differentiate safety-related assets (pair with
+>   a companion Single-Value panel filtering on
+>   `safety_related="Y"`); SOAR action scope is doubly
+>   important when clusters contain SIL-rated assets (any
+>   containment must stay in IT zone, never OT zone per
+>   `/.cursor/rules/ot-safety.mdc` Rule 3); cluster expansion
+>   preserves the full per-asset popup contract for drilldown
+>   to safety-classified assets. Per Rule 1, Cyber Vision is
+>   the reference passive-DPI design — this recipe consumes
+>   its already-passive output. ~1.5k tokens.
+>
+> **Wave 27 token-budget profile:** llms-full.txt now
+> 162,295 estimated tokens (+4,764 from wave 26's 157,531);
+> WARN headroom 12,705 of 175,000 (down from 17,469); per-
+> recipe cost ~1.59k tokens. At this cadence, headroom funds
+> ~8 more recipes (~3 more 3-recipe waves) before the next
+> token-trim is needed. Wave 28 plan: ship one more 3-recipe
+> diversification wave (~3.6k cost, ~9k WARN headroom after),
+> then design + ship a token-trim before wave 29 starts to
+> reopen budget for the long-tail layers (`polygons`,
+> `vector-tile-join`) and the remaining `choropleth` cells.
+>
+> Subsystem status carried forward unchanged from wave 26:
+> the §0 narrative on subsystem health, the §1 build status,
+> the §2 verification status, and the §3 production-rollout
+> status are all stable; only the recipe-coverage roll-up
+> shifts with this wave. The diversification regime opened
+> by wave 21 is now durable through wave 27.
+
 > **Status (v1.7-prep, 2026-05-20): E5 Phase 2 wave 26 recipes
 > SHIPPED (3 more recipes — recipe count 66 → 69, layer-type
 > coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
