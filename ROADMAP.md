@@ -1,5 +1,30 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-22): E5 Phase 2 wave 30 token-trim
+> SHIPPED (extend the wave 29 `strip_roadmap_historical_subsections`
+> contract with one further H3 subsection — §1b "Competitive tier
+> table" — and two new H2 sections via a sibling regex — §6 "Open
+> questions for the project owner", §7 "Defensible v2.0 claim —
+> checklist" with its children §7a-7e — from the in-memory ROADMAP
+> body before it lands in `llms-full.txt`).** §1b is narrative-
+> competitive positioning (v1.6 vs kepler.gl / deck.gl / Mapbox
+> Studio) that doesn't drive recipe authoring or CI hardening; §6 is
+> a list of escalation questions awaiting human-owner resolution that
+> an agent cannot action; §7 is the destination-state v2.0 release-
+> sign-off checklist (every capability / quality / perf / security /
+> distribution box that must be true at v2.0 cut — useful at release-
+> sign-off but not actionable when authoring a recipe). Reclaim
+> measured at **4,304 tokens** (167,868 → 163,564), bringing WARN
+> headroom to **11,436 tokens** — comfortable for ~2 recipes per
+> wave through wave 33 before the next trim is needed. New regex
+> `_ROADMAP_HISTORICAL_SECTION` (H2-targeted, terminates at next H2
+> or `---`) added alongside the existing H3 pattern; both wired into
+> the same `strip_roadmap_historical_subsections` function. On-disk
+> ROADMAP.md unchanged, MkDocs site still renders every subsection
+> verbatim. All gates green (recipes/schema/coverage/reference-pages/
+> llms-full drift + `mkdocs build --strict`). Subsequent wave 30
+> recipes will fold in below this block.
+
 > **Status (v1.7-prep, 2026-05-22): E5 Phase 2 wave 29 recipes SHIPPED
 > (3 more recipes — recipe count 75 → 78, layer-type coverage 9 / 10
 > unchanged, source-pattern coverage 8 / 8 unchanged, polygons usage
