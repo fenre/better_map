@@ -31,7 +31,8 @@ const _state = {
     ringBuffer: [],
     ringCap: 50,
     reporter: null,
-    nowFn: null
+    nowFn: null,
+    lastReportedAt: {}        // map<rateLimitKey, timestamp-ms>
 };
 
 function _now() {
@@ -106,7 +107,13 @@ function _handleFailure(opts, err) {
     if (_state.ringBuffer.length > _state.ringCap) {
         _state.ringBuffer.shift();
     }
-    _safeReport(envelope);
+    const key = opts.rateLimitKey || envelope.scope;
+    const now = envelope.timestamp;
+    const last = _state.lastReportedAt[key] || 0;
+    if (now - last >= 1000) {
+        _state.lastReportedAt[key] = now;
+        _safeReport(envelope);
+    }
     if (opts.panelRoot && typeof CustomEvent !== 'undefined') {
         try {
             opts.panelRoot.dispatchEvent(new CustomEvent('better_map:error', { detail: envelope }));
@@ -169,4 +176,5 @@ export function __resetSafeRunState() {
     _state.ringBuffer.length = 0;
     _state.reporter = null;
     _state.nowFn = null;
+    _state.lastReportedAt = {};
 }
