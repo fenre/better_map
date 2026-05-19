@@ -215,6 +215,8 @@ nav:
       - Catalogue: integrations/catalogue.md
   - Recipes:
       - recipes/index.md
+      - 'CIM Alerts — 3D extrusion': recipes/cim-alerts/extrusion-3d.md
+      - 'CIM Alerts — choropleth': recipes/cim-alerts/choropleth.md
       - 'CIM Alerts — H3 hexbin': recipes/cim-alerts/h3.md
       - 'CIM Alerts — heatmap': recipes/cim-alerts/heat.md
       - 'CIM Alerts — markers': recipes/cim-alerts/markers.md
@@ -234,6 +236,7 @@ nav:
       - 'CIM Network Traffic — markers': recipes/cim-network-traffic/markers.md
       - 'CIM Network Traffic — paths': recipes/cim-network-traffic/paths.md
       - 'CIM Network Traffic — supercluster': recipes/cim-network-traffic/supercluster.md
+      - 'CIM Network Traffic — vector-tile join': recipes/cim-network-traffic/vector-tile-join.md
       - 'CIM Performance (CPU / memory / facilities) — H3 hexbin': recipes/cim-performance/h3.md
       - 'CIM Performance (CPU / memory / facilities) — heatmap': recipes/cim-performance/heat.md
       - 'CIM Performance (CPU / memory / facilities) — markers': recipes/cim-performance/markers.md
