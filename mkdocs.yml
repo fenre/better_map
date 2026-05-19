@@ -252,6 +252,7 @@ nav:
       - 'ITSI service health (KPI base searches) — H3 hexbin': recipes/itsi-kpi-base/h3.md
       - 'ITSI service health (KPI base searches) — heatmap': recipes/itsi-kpi-base/heat.md
       - 'ITSI service health (KPI base searches) — markers': recipes/itsi-kpi-base/markers.md
+      - 'ITSI service health (KPI base searches) — supercluster': recipes/itsi-kpi-base/supercluster.md
       - 'KV Store (lat/lon) — H3 hexbin': recipes/kvstore-latlon/h3.md
       - 'KV Store (lat/lon) — heatmap': recipes/kvstore-latlon/heat.md
       - 'KV Store (lat/lon) — markers': recipes/kvstore-latlon/markers.md
@@ -263,6 +264,7 @@ nav:
       - 'NetFlow / sFlow / IPFIX — H3 hexbin': recipes/netflow-sflow-ipfix/h3.md
       - 'NetFlow / sFlow / IPFIX — heatmap': recipes/netflow-sflow-ipfix/heat.md
       - 'NetFlow / sFlow / IPFIX — markers': recipes/netflow-sflow-ipfix/markers.md
+      - 'NetFlow / sFlow / IPFIX — paths': recipes/netflow-sflow-ipfix/paths.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — H3 hexbin': recipes/ot-datastreamer/h3.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — heatmap': recipes/ot-datastreamer/heat.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — markers': recipes/ot-datastreamer/markers.md
@@ -270,6 +272,7 @@ nav:
       - 'Splunk Stream (wire data) — H3 hexbin': recipes/splunk-stream/h3.md
       - 'Splunk Stream (wire data) — heatmap': recipes/splunk-stream/heat.md
       - 'Splunk Stream (wire data) — markers': recipes/splunk-stream/markers.md
+      - 'Splunk Stream (wire data) — supercluster': recipes/splunk-stream/supercluster.md
       - 'US states — 3D extrusion': recipes/geo-us-states/extrusion-3d.md
       - 'US states — choropleth': recipes/geo-us-states/choropleth.md
   - Performance: performance.md

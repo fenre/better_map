@@ -4,7 +4,7 @@
 
 This file is the body-inclusive sibling of `llms.txt` and concatenates every page on the Better Map documentation site into a single, LLM-friendly text dump. The short companion index is at <https://fenre.github.io/better_map/llms.txt>. Pages appear in `mkdocs.yml` `nav:` declaration order. Each page block carries a stable `# === ... ===` separator plus the source-of-truth path on disk and the published URL so the same content can be grepped by either dimension.
 
-At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 57 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 60 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
 
 All page URLs resolve to publicly accessible Material-themed HTML on GitHub Pages. The project ships under the MIT licence; the canonical repo is <https://github.com/fenre/better_map>.
 
@@ -58,6 +58,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / ITSI service health (KPI base searches) — H3 hexbin (`docs/recipes/itsi-kpi-base/h3.md`)
 - Recipes / ITSI service health (KPI base searches) — heatmap (`docs/recipes/itsi-kpi-base/heat.md`)
 - Recipes / ITSI service health (KPI base searches) — markers (`docs/recipes/itsi-kpi-base/markers.md`)
+- Recipes / ITSI service health (KPI base searches) — supercluster (`docs/recipes/itsi-kpi-base/supercluster.md`)
 - Recipes / KV Store (lat/lon) — H3 hexbin (`docs/recipes/kvstore-latlon/h3.md`)
 - Recipes / KV Store (lat/lon) — heatmap (`docs/recipes/kvstore-latlon/heat.md`)
 - Recipes / KV Store (lat/lon) — markers (`docs/recipes/kvstore-latlon/markers.md`)
@@ -69,6 +70,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / NetFlow / sFlow / IPFIX — H3 hexbin (`docs/recipes/netflow-sflow-ipfix/h3.md`)
 - Recipes / NetFlow / sFlow / IPFIX — heatmap (`docs/recipes/netflow-sflow-ipfix/heat.md`)
 - Recipes / NetFlow / sFlow / IPFIX — markers (`docs/recipes/netflow-sflow-ipfix/markers.md`)
+- Recipes / NetFlow / sFlow / IPFIX — paths (`docs/recipes/netflow-sflow-ipfix/paths.md`)
 - Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — H3 hexbin (`docs/recipes/ot-datastreamer/h3.md`)
 - Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — heatmap (`docs/recipes/ot-datastreamer/heat.md`)
 - Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — markers (`docs/recipes/ot-datastreamer/markers.md`)
@@ -76,6 +78,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / Splunk Stream (wire data) — H3 hexbin (`docs/recipes/splunk-stream/h3.md`)
 - Recipes / Splunk Stream (wire data) — heatmap (`docs/recipes/splunk-stream/heat.md`)
 - Recipes / Splunk Stream (wire data) — markers (`docs/recipes/splunk-stream/markers.md`)
+- Recipes / Splunk Stream (wire data) — supercluster (`docs/recipes/splunk-stream/supercluster.md`)
 - Recipes / US states — 3D extrusion (`docs/recipes/geo-us-states/extrusion-3d.md`)
 - Recipes / US states — choropleth (`docs/recipes/geo-us-states/choropleth.md`)
 - Performance (`docs/performance.md`)
@@ -1183,7 +1186,7 @@ generated from
 so it cannot drift from the recipe files.
 
 <!-- recipes-matrix trimmed for llms-full.txt token budget (see Wave 16 ROADMAP block); full matrix at <https://fenre.github.io/better_map/recipes/> and source-of-truth YAML at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>; per-recipe details (status, apps, expected-field contract, formatter options) are kept verbatim under the matching `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file -->
-**Total: 57 recipes · 15 source dir(s) · 9 layer type(s).**
+**Total: 60 recipes · 15 source dir(s) · 9 layer type(s).**
 
 Source dirs and the layer ids that already ship for each (any `(source, layer)` not listed below is an open cell in the E5 matrix and is a candidate for the next recipe wave):
 
@@ -1195,12 +1198,12 @@ Source dirs and the layer ids that already ship for each (any `(source, layer)` 
 - `cyber-vision`: h3, heat, markers, paths
 - `es-risk`: h3, heat, markers
 - `geo-us-states`: choropleth, extrusion-3d
-- `itsi-kpi-base`: h3, heat, markers
+- `itsi-kpi-base`: h3, heat, markers, supercluster
 - `kvstore-latlon`: h3, heat, markers, supercluster
 - `meraki`: h3, heat, markers, supercluster
-- `netflow-sflow-ipfix`: h3, heat, markers
+- `netflow-sflow-ipfix`: h3, heat, markers, paths
 - `ot-datastreamer`: h3, heat, markers, paths
-- `splunk-stream`: h3, heat, markers
+- `splunk-stream`: h3, heat, markers, supercluster
 - `thousandeyes`: h3, heat, markers, paths
 
 **OT-safety-relevant recipes (8):** `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `cyber-vision/paths`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`, `ot-datastreamer/paths`.
@@ -5810,6 +5813,106 @@ _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are o
 
 # === END: https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/ ===
 
+# === BEGIN: https://fenre.github.io/better_map/recipes/itsi-kpi-base/supercluster/ ===
+
+# Recipes / ITSI service health (KPI base searches) — supercluster
+
+> Source: `docs/recipes/itsi-kpi-base/supercluster.md`  
+> URL: <https://fenre.github.io/better_map/recipes/itsi-kpi-base/supercluster/>
+
+# ITSI service health — supercluster
+
+Render every geo-tagged ITSI service as a **zoom-adaptive
+supercluster** on a world map, one row per service, with cluster
+pills at regional / continental zoom that progressively split
+into per-service markers as the user zooms in. The canonical
+"executive global-portfolio service-health" panel — when a CIO,
+SRE manager, or business-services lead has 200+ services across
+multiple continents and needs a single-pane "where is my health
+right now" view that gracefully collapses dense regions (e.g.,
+"EU west: 47 services, mostly green; one critical in
+Stockholm") into navigable cluster pills.
+
+Sister recipe to
+[itsi-kpi-base/markers](../itsi-kpi-base/markers.md) (per-
+service drilldown), [itsi-kpi-base/h3](../itsi-kpi-base/h3.md)
+(per-cell roll-up), and
+[itsi-kpi-base/heat](../itsi-kpi-base/heat.md) (smoothed-density
+hot-spot detection). The four shapes together give an SRE /
+platform team executive-, hex-, density-, AND scale-tolerant
+cluster views on one ITSI service-health feed.
+
+## 1. Source description
+
+Same ITSI `itsi_summary` source and `SHKPI-` service-health
+event shape as the
+[markers](../itsi-kpi-base/markers.md) companion — see that
+recipe §1 for the full discussion of ITSI service / KPI
+aggregation cadence, the `SHKPI-<service_id>` synthetic KPI
+convention, the `entity_key="N/A"` filter for service-level
+roll-ups, the `itsi_services` KV store schema, and the
+`info_lat` / `info_lon` operator-extension pattern.
+
+This recipe is the **portfolio-scale overview**: same per-
+service health-score and alert-level data as the markers
+companion, but rendered through supercluster instead of
+individual markers. Where the markers companion is the right
+choice for ≤50 services (one zoom level reveals all), this
+recipe is the right choice for 50–500 services across multiple
+geographic regions where zoom-driven aggregation is the only
+way to read the panel without visual overload.
+
+**Typical sourcetype / index:** `index=itsi_summary`. Same
+`itsi_services` KV store lookup contract as the markers
+companion.
+
+## 2. SPL recipe
+
+```spl
+index=itsi_summary kpi_id="SHKPI-*" entity_key="N/A" earliest=-15m latest=now
+| stats latest(alert_value) AS health_score,
+    latest(alert_level) AS alert_level,
+    latest(service_title) AS service_title
+  BY itsi_service_id
+| lookup itsi_services _key AS itsi_service_id OUTPUT info_lat AS lat, info_lon AS lon, identifying_name
+| where isnotnull(lat) AND isnotnull(lon)
+| eval health_score=round(health_score, 0)
+| eval alert_level=tonumber(alert_level)
+| eval id=coalesce(identifying_name, itsi_service_id)
+| fields id, lat, lon, service_title, health_score, alert_level
+| sort - alert_level, service_title
+| head 1000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/supercluster/>._
+
+## 3. Expected fields
+
+| field         | type    | example              |
+|---------------|---------|----------------------|
+| id            | string  | svc_payments_eu      |
+| lat           | number  | 53.5511              |
+| lon           | number  | 9.9937               |
+| service_title | string  | Payments (EU region) |
+| health_score  | integer | 78                   |
+| alert_level   | integer | 3                    |
+
+All six appear in `expected_fields` in the frontmatter and are
+cross-checked by `scripts/check-recipe-schema.py`.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pointRenderer": "cluster",
+  "idField": "id"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/supercluster/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/supercluster/>._
+
+# === END: https://fenre.github.io/better_map/recipes/itsi-kpi-base/supercluster/ ===
+
 # === BEGIN: https://fenre.github.io/better_map/recipes/kvstore-latlon/h3/ ===
 
 # Recipes / KV Store (lat/lon) — H3 hexbin
@@ -7018,6 +7121,144 @@ _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are o
 
 # === END: https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/markers/ ===
 
+# === BEGIN: https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/paths/ ===
+
+# Recipes / NetFlow / sFlow / IPFIX — paths
+
+> Source: `docs/recipes/netflow-sflow-ipfix/paths.md`  
+> URL: <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/paths/>
+
+# NetFlow / sFlow / IPFIX — paths
+
+Render **top-talker flow polylines** by aggregating NetFlow / sFlow
+/ IPFIX flow records per (src_ip, dest_ip, protocol) tuple, geocoding
+BOTH endpoints via `iplocation`, and drawing one polyline per top
+conversation. The canonical "NetOps top-talker overlay" panel —
+when a NetOps analyst sees an 800 GB destination in the markers
+companion, the paths panel shows them WHICH SOURCES are hitting
+that destination (and from which countries). The sister panel to
+[netflow-sflow-ipfix/markers](../netflow-sflow-ipfix/markers.md)
+(per-destination volume), [netflow-sflow-ipfix/heat](../netflow-sflow-ipfix/heat.md)
+(smoothed-density), and [netflow-sflow-ipfix/h3](../netflow-sflow-ipfix/h3.md)
+(per-cell roll-up) — together the four shapes give a NetOps team
+target-, density-, jurisdiction-, AND flow-attribution views on
+one NetFlow data source.
+
+## 1. Source description
+
+Same NetFlow / sFlow / IPFIX flow-record stream as the
+[markers](../netflow-sflow-ipfix/markers.md),
+[h3](../netflow-sflow-ipfix/h3.md), and
+[heat](../netflow-sflow-ipfix/heat.md) companions — vendor-agnostic
+at the flow-record layer because all three protocols encode the
+same `(src_ip, dst_ip, sport, dport, protocol, bytes, packets)`
+tuple. See the markers recipe §1 for the full sourcetype matrix
+and collection-method discussion.
+
+This recipe is the **flow-attribution view**: it aggregates per
+unique (src_ip, dest_ip, protocol) tuple over a 1-hour window,
+filters to bidirectional volumes above a meaningful threshold,
+geocodes both endpoints, and emits two rows per conversation
+(seq=0 for source, seq=1 for destination). The paths layer draws
+one polyline per (src, dest) pair — the geometric equivalent of
+"draw me the actual conversations happening on my network".
+
+**Typical sourcetype / index:** `sourcetype="cisco:netflow"` /
+`index=netflow`. Replace with vendor-specific sourcetypes as
+documented in
+[netflow-sflow-ipfix/markers](../netflow-sflow-ipfix/markers.md) §1.
+
+## 2. SPL recipe
+
+```spl
+index=netflow sourcetype="cisco:netflow" earliest=-1h latest=now
+| stats sum(bytes) AS bytes,
+    sum(packets) AS packets,
+    values(protocol) AS protocols,
+    values(dest_port) AS dest_ports,
+    min(_time) AS first_seen
+  BY src_ip, dest_ip
+| where bytes >= 10485760
+| iplocation src_ip prefix=src_
+| iplocation dest_ip
+| where isnotnull(src_lat) AND isnotnull(src_lon)
+    AND isnotnull(lat) AND isnotnull(lon)
+| eval top_protocol=case(
+    mvfind(protocols, "tcp") >= 0 AND mvfind(dest_ports, "443") >= 0, "tcp/443",
+    mvfind(protocols, "tcp") >= 0 AND mvfind(dest_ports, "80") >= 0, "tcp/80",
+    mvfind(protocols, "udp") >= 0 AND mvfind(dest_ports, "443") >= 0, "udp/443",
+    mvfind(protocols, "tcp") >= 0, "tcp/other",
+    mvfind(protocols, "udp") >= 0, "udp/other",
+    true(), "other")
+| eval flow_id=src_ip . "-" . dest_ip
+| eval src_country=src_Country, dest_country=Country
+| eval lat_src=src_lat, lon_src=src_lon
+| eval lat_dest=lat, lon_dest=lon
+| eval lat=lat_src, lon=lon_src, seq=0
+| append [
+    search index=netflow sourcetype="cisco:netflow" earliest=-1h latest=now
+    | stats sum(bytes) AS bytes,
+        sum(packets) AS packets,
+        values(protocol) AS protocols,
+        values(dest_port) AS dest_ports
+      BY src_ip, dest_ip
+    | where bytes >= 10485760
+    | iplocation src_ip prefix=src_
+    | iplocation dest_ip
+    | where isnotnull(src_lat) AND isnotnull(src_lon)
+        AND isnotnull(lat) AND isnotnull(lon)
+    | eval top_protocol=case(
+        mvfind(protocols, "tcp") >= 0 AND mvfind(dest_ports, "443") >= 0, "tcp/443",
+        mvfind(protocols, "tcp") >= 0 AND mvfind(dest_ports, "80") >= 0, "tcp/80",
+        mvfind(protocols, "udp") >= 0 AND mvfind(dest_ports, "443") >= 0, "udp/443",
+        mvfind(protocols, "tcp") >= 0, "tcp/other",
+        mvfind(protocols, "udp") >= 0, "udp/other",
+        true(), "other")
+    | eval flow_id=src_ip . "-" . dest_ip
+    | eval src_country=src_Country, dest_country=Country
+    | eval seq=1
+  ]
+| rename flow_id AS id
+| fields id, seq, lat, lon, src_ip, dest_ip, bytes, top_protocol, src_country, dest_country
+| sort id, + seq
+| head 2000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/paths/>._
+
+## 3. Expected fields
+
+| field         | type    | example                            |
+|---------------|---------|------------------------------------|
+| id            | string  | 203.0.113.45-198.51.100.7          |
+| seq           | integer | 0                                  |
+| lat           | number  | 37.7749                            |
+| lon           | number  | -122.4194                          |
+| src_ip        | string  | 203.0.113.45                       |
+| dest_ip       | string  | 198.51.100.7                       |
+| bytes         | number  | 184320000                          |
+| top_protocol  | string  | tcp/443                            |
+| src_country   | string  | US                                 |
+| dest_country  | string  | NL                                 |
+
+All ten fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pathIdField": "id",
+  "timeField": "seq",
+  "pathColor": "#2ca02c",
+  "pathArrows": true
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/paths/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/paths/>._
+
+# === END: https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/paths/ ===
+
 # === BEGIN: https://fenre.github.io/better_map/recipes/ot-datastreamer/h3/ ===
 
 # Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — H3 hexbin
@@ -7838,6 +8079,103 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/splunk-stream/markers/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/splunk-stream/supercluster/ ===
+
+# Recipes / Splunk Stream (wire data) — supercluster
+
+> Source: `docs/recipes/splunk-stream/supercluster.md`  
+> URL: <https://fenre.github.io/better_map/recipes/splunk-stream/supercluster/>
+
+# Splunk Stream (wire data) — supercluster
+
+Render every outbound destination captured by Splunk Stream as a
+**zoom-adaptive supercluster** on a world map, one row per
+`dest_ip`, with weight derived from total bytes_out per
+destination. The canonical "global wire-data destination
+footprint" panel — when a security or NetOps team wants a
+single-pane "where is my network talking to RIGHT NOW" view that
+gracefully collapses 10k+ destinations into a navigable cluster
+tree instead of overwhelming the renderer with a marker dump.
+
+Sister recipe to
+[splunk-stream/markers](../splunk-stream/markers.md) (per-
+endpoint drilldown), [splunk-stream/h3](../splunk-stream/h3.md)
+(per-cell roll-up), and
+[splunk-stream/heat](../splunk-stream/heat.md) (smoothed
+density). The four shapes together give a wire-data team
+investigative-, hex-, density-, AND scale-tolerant cluster views
+on one Splunk Stream data feed.
+
+## 1. Source description
+
+Same Splunk Stream `stream:tls` source as the
+[markers](../splunk-stream/markers.md) companion — see that
+recipe §1 for the full discussion of `streamfwd`, SPAN-port
+collection, the TLS session decoder, and why this recipe binds
+to `stream:tls` over the other Stream sourcetypes
+(`stream:http`, `stream:dns`, `stream:tcp`, …).
+
+This recipe is the **scale-tolerant overview**: instead of
+emitting one row per `(src_ip, dest_ip, dest_port)` tuple (which
+the markers companion does — and which can balloon to 10k+ rows
+at a busy SaaS perimeter), it rolls up to one row per `dest_ip`,
+counts sessions and source-IP cardinality, and renders the
+result through supercluster. The supercluster algorithm groups
+nearby points into cluster pills at low zoom levels and
+progressively splits them as the user zooms in — so a single
+"500 destinations in San Francisco" pill at world zoom becomes
+500 individual markers at street zoom.
+
+**Typical sourcetype / index:** `sourcetype="stream:tls"` /
+`index=wire_data`.
+
+## 2. SPL recipe
+
+```spl
+index=wire_data sourcetype="stream:tls" earliest=-1h latest=now
+| stats sum(bytes_out) AS bytes_out,
+    count AS session_count,
+    dc(src_ip) AS distinct_src
+  BY dest_ip
+| iplocation dest_ip
+| where isnotnull(lat) AND isnotnull(lon)
+| eval id=dest_ip
+| fields id, lat, lon, dest_ip, dest_country, session_count, bytes_out, distinct_src
+| sort - bytes_out
+| head 10000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/supercluster/>._
+
+## 3. Expected fields
+
+| field         | type    | example         |
+|---------------|---------|-----------------|
+| id            | string  | 203.0.113.45    |
+| lat           | number  | 37.7749         |
+| lon           | number  | -122.4194       |
+| dest_ip       | string  | 203.0.113.45    |
+| dest_country  | string  | US              |
+| session_count | integer | 428             |
+| bytes_out     | integer | 184320000       |
+| distinct_src  | integer | 47              |
+
+All eight appear in `expected_fields` in the frontmatter and
+are cross-checked by `scripts/check-recipe-schema.py`.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pointRenderer": "cluster",
+  "idField": "id"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/supercluster/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/supercluster/>._
+
+# === END: https://fenre.github.io/better_map/recipes/splunk-stream/supercluster/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/geo-us-states/extrusion-3d/ ===
 
@@ -10958,7 +11296,7 @@ Each entry below distils the corresponding YAML scaffold so an LLM can answer in
 
 # Appendix B — Per-source recipe matrix
 
-> Source of truth: `docs/_machine/recipes/index.yaml` (57 recipe(s), emission order)
+> Source of truth: `docs/_machine/recipes/index.yaml` (60 recipe(s), emission order)
 
 Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answer 'which recipe matches this data source?' without fetching every recipe page. Recipes carry one of three statuses: `verified` (smoke-tested against a live Splunk tenant with proof in the YAML metadata), `unverified` (the recipe follows the contract but has not yet been smoke-tested), or `deferred` (the recipe is known to be incomplete pending upstream work). The expected-field contract for each recipe lives in §3 of the recipe page (kept verbatim in this file under the matching `# === BEGIN: …/recipes/<source>/<layer>/ ===` block); follow the Page link below to jump to it.
 
@@ -10999,6 +11337,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `itsi-kpi-base--h3` | ITSI service health (KPI base searches) → H3 hexbin | unverified | `SA-ITOA` | — | [docs/recipes/itsi-kpi-base/h3.md](https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/) |
 | `itsi-kpi-base--heat` | ITSI service health (KPI base searches) → Heatmap | unverified | `SA-ITOA` | — | [docs/recipes/itsi-kpi-base/heat.md](https://fenre.github.io/better_map/recipes/itsi-kpi-base/heat/) |
 | `itsi-kpi-base--markers` | ITSI service health (KPI base searches) → Markers | unverified | `SA-ITOA` | — | [docs/recipes/itsi-kpi-base/markers.md](https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/) |
+| `itsi-kpi-base--supercluster` | ITSI service health (KPI base searches) → Supercluster | unverified | `SA-ITOA` | — | [docs/recipes/itsi-kpi-base/supercluster.md](https://fenre.github.io/better_map/recipes/itsi-kpi-base/supercluster/) |
 | `kvstore-latlon--h3` | KV Store (lat/lon collection) → H3 hexbin | unverified | — | — | [docs/recipes/kvstore-latlon/h3.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/h3/) |
 | `kvstore-latlon--heat` | KV Store (lat/lon collection) → Heatmap | unverified | — | — | [docs/recipes/kvstore-latlon/heat.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/heat/) |
 | `kvstore-latlon--markers` | KV Store (lat/lon collection) → Markers | unverified | — | — | [docs/recipes/kvstore-latlon/markers.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/) |
@@ -11010,6 +11349,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `netflow-sflow-ipfix--h3` | NetFlow / sFlow / IPFIX (flow records) → H3 hexbin | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/h3.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/h3/) |
 | `netflow-sflow-ipfix--heat` | NetFlow / sFlow / IPFIX (flow records) → Heatmap | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/heat.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/heat/) |
 | `netflow-sflow-ipfix--markers` | NetFlow / sFlow / IPFIX (flow records) → Markers | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/markers.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/markers/) |
+| `netflow-sflow-ipfix--paths` | NetFlow / sFlow / IPFIX (flow records) → Paths | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/paths.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/paths/) |
 | `ot-datastreamer--h3` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → H3 hexbin | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/h3.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/h3/) |
 | `ot-datastreamer--heat` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Heatmap | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/heat.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/heat/) |
 | `ot-datastreamer--markers` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Markers | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/markers.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/markers/) |
@@ -11017,6 +11357,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `splunk-stream--h3` | Splunk Stream (wire data) → H3 hexbin | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/h3.md](https://fenre.github.io/better_map/recipes/splunk-stream/h3/) |
 | `splunk-stream--heat` | Splunk Stream (wire data) → Heatmap | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/heat.md](https://fenre.github.io/better_map/recipes/splunk-stream/heat/) |
 | `splunk-stream--markers` | Splunk Stream (wire data) → Markers | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/markers.md](https://fenre.github.io/better_map/recipes/splunk-stream/markers/) |
+| `splunk-stream--supercluster` | Splunk Stream (wire data) → Supercluster | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/supercluster.md](https://fenre.github.io/better_map/recipes/splunk-stream/supercluster/) |
 | `thousandeyes--h3` | Cisco ThousandEyes (agent fleet) → H3 hexbin | unverified | `ta_cisco_thousandeyes` | — | [docs/recipes/thousandeyes/h3.md](https://fenre.github.io/better_map/recipes/thousandeyes/h3/) |
 | `thousandeyes--heat` | Cisco ThousandEyes (agent fleet) → Heatmap | unverified | `ta_cisco_thousandeyes` | — | [docs/recipes/thousandeyes/heat.md](https://fenre.github.io/better_map/recipes/thousandeyes/heat/) |
 | `thousandeyes--markers` | Cisco ThousandEyes (agent fleet) → Markers | unverified | `ta_cisco_thousandeyes` | — | [docs/recipes/thousandeyes/markers.md](https://fenre.github.io/better_map/recipes/thousandeyes/markers/) |

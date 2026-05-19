@@ -2809,6 +2809,112 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 > `llms-full.txt` at the next regeneration via the wave-13
 > generalised ROADMAP status-block regex._
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 23 recipes
+> SHIPPED (3 more recipes — recipe count 57 → 60, layer-type
+> coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
+> unchanged, paths usage 6 → 7, supercluster usage 6 → 8).**
+> Wave 23 continues the **diversification regime** opened by
+> wave 21 and continued by wave 22, this time with an
+> **observability theme**: every new recipe adds a previously-
+> missing layer shape to an observability / NetOps / SRE
+> source row. The diversification regime opened ~24 remaining
+> matrix cells in wave 21; waves 22-23 together fill 6 of those
+> cells (3 each).
+> - **`netflow-sflow-ipfix/paths`** (NEW layer shape for source)
+>   — top-talker flow-attribution view on the NetFlow / sFlow /
+>   IPFIX flow-record stream. 4th cell on the netflow row
+>   (joining markers, h3, heat). Aggregates per unique
+>   (src_ip, dest_ip) tuple over a 1-hour window, drops noise
+>   via `where bytes >= 10485760` (10 MB threshold), geocodes
+>   BOTH endpoints via `iplocation src_ip prefix=src_` +
+>   `iplocation dest_ip`, and uses the canonical `append`-
+>   branch pattern (seq=0 source, seq=1 destination) to
+>   materialise 2-vertex polylines. Right shape for **NetOps
+>   top-talker overlay panels** — when a markers companion
+>   surfaces an 800 GB destination, the paths companion shows
+>   which sources are hitting that destination and from which
+>   geographies. §6 gotchas cover the both-endpoints-must-
+>   geocode constraint (internal-to-internal east-west flows
+>   drop entirely — use CMDB lookup instead), the 10 MB
+>   threshold tuning (environment-specific), the `append`-
+>   doubles-execution-time cost (acceptable for operator-pull
+>   panels; summary-index for auto-refresh), asymmetric routing
+>   (BGP multi-homed networks may show both flow halves as
+>   separate polylines unless canonicalised), and Splunk 8.0+
+>   `iplocation prefix=` syntax. No OT-safety dependency
+>   (NetFlow is IT-layer flow data).
+> - **`splunk-stream/supercluster`** (NEW layer shape for
+>   source) — global wire-data destination footprint view on
+>   Splunk Stream's `stream:tls` sourcetype. 4th cell on the
+>   splunk-stream row (joining markers, h3, heat). Same
+>   `iplocation` enrichment as the markers companion but
+>   collapsed to one row per `dest_ip` (with `sum(bytes_out)`,
+>   `count` sessions, `dc(src_ip)` distinct sources) and
+>   capped at `head 10000`. Forces `pointRenderer: "cluster"`
+>   for zoom-adaptive aggregation — at world zoom a 10k-
+>   destination payload renders as ~20 cluster pills (one per
+>   major region); progressively splits as the user zooms.
+>   Right shape for **single-pane global wire-data overview
+>   panels** that need to handle 10k+ destinations without
+>   freezing the renderer. §6 gotchas cover CDN destination
+>   geo-flicker (Cloudflare/Akamai shift POPs hourly), the
+>   `head 10000` render cap (audit-grade coverage needs
+>   port-band partitioning), `pointRenderer: "cluster"` vs
+>   `"auto"` (this recipe forces unconditionally because
+>   individual-marker rendering is never right at 10k scale),
+>   and the `stream:tls` wire-byte semantics (TCP-payload
+>   bytes, not application-layer bytes). No OT-safety
+>   dependency (Splunk Stream is IT-perimeter wire-data).
+> - **`itsi-kpi-base/supercluster`** (NEW layer shape for
+>   source) — executive global-portfolio service-health view
+>   on ITSI's `SHKPI-*` service-health events. 4th cell on
+>   the itsi-kpi-base row (joining markers, h3, heat).
+>   Inherits the markers companion's `itsi_summary` +
+>   `itsi_services` KV-store-lookup contract but drops the
+>   `join` for `critical_kpi_count` (supercluster pills
+>   don't render per-row popup data at cluster-aggregate
+>   zoom, so the join is dead weight). Forces
+>   `pointRenderer: "cluster"` for zoom-adaptive aggregation
+>   — at world zoom a 500-service portfolio renders as ~12
+>   cluster pills (one per major DC region). Right shape for
+>   **CIO / SRE-manager executive overview panels** where the
+>   markers companion's individual-marker rendering would
+>   overwhelm at portfolio scale (50-500 services across
+>   multiple continents). §6 gotchas cover the `info_lat` /
+>   `info_lon` operator-extension dependency (inherited from
+>   markers companion), cluster-pill aggregate semantics
+>   (count not averaged health-score; use the h3 companion
+>   for per-region health aggregation), the `head 1000`
+>   render cap (defensive — typical installations return
+>   <500 rows), no per-service critical-KPI context in
+>   cluster popups (click-through to markers companion for
+>   drilldown), and no OT-safety dependency (ITSI service
+>   health is an IT-services concept).
+> - **Token budget.** Wave 23 lands at **~145,276 estimated
+>   tokens** / **~29,724 tokens of WARN headroom** (175,000 -
+>   145,276). The 3 new recipes cost **~3.8k tokens combined**
+>   (~1.27k/recipe) — slightly under the wave-22 baseline of
+>   ~1.5k/recipe. At this cadence, headroom funds **~23 more
+>   recipes** before the next token-trim is required.
+> - **Layer / pattern coverage updates.** Recipe count 57 → 60
+>   (+3). Layer coverage 9/10 unchanged (extrusion-3d still
+>   the one cell occupied). **paths usage 6 → 7** (netflow
+>   adopts). **supercluster usage 6 → 8** (splunk-stream +
+>   itsi-kpi-base both adopt). Source-pattern coverage 8/8
+>   unchanged. Source-row triplet count: 14 unchanged (wave
+>   23 deliberately diversification). OT-safety-relevant
+>   recipe count: 5 unchanged (none of the wave-23 recipes
+>   are OT-safety-relevant). The diversification regime now
+>   has filled **9 of the original ~24 cells** opened by
+>   wave 21 (3 in wave 21 + 3 in wave 22 + 3 in wave 23) —
+>   remaining cells skew toward `choropleth` (8 source rows
+>   missing it) and the long-tail polygon shapes
+>   (`vector-tile-join`, `extrusion-3d`-on-non-geo sources).
+>
+> _This `> **Status …` blockquote will self-strip from
+> `llms-full.txt` at the next regeneration via the wave-13
+> generalised ROADMAP status-block regex._
+
 > **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 21 recipes
 > SHIPPED (3 more recipes — recipe count 51 → 54, layer-type
 > coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
