@@ -116,18 +116,30 @@ function _handleFailure(opts, err) {
     return { ok: false, error: envelope };
 }
 
+function _isThenable(v) {
+    return v != null
+        && (typeof v === 'object' || typeof v === 'function')
+        && typeof v.then === 'function';
+}
+
 export function safeRun(opts) {
     if (!opts || typeof opts !== 'object') {
         opts = { action: function () {} };
     }
     const action = typeof opts.action === 'function' ? opts.action : function () {};
+    let result;
     try {
-        const result = action();
-        // (Async support is added in Task 5; for now treat all returns as sync.)
-        return { ok: true, result: result };
+        result = action();
     } catch (err) {
         return _handleFailure(opts, err);
     }
+    if (_isThenable(result)) {
+        return result.then(
+            function (value) { return { ok: true, result: value }; },
+            function (err) { return _handleFailure(opts, err); }
+        );
+    }
+    return { ok: true, result: result };
 }
 
 export function getRecentErrors(filter) {
