@@ -1285,14 +1285,23 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
         "the canonical repo is <https://github.com/fenre/better_map>.\n\n"
     )
 
-    # ------------- Table of contents
-    buf.write("## Table of contents\n\n")
-    for crumbs, title, relpath in nav_entries:
-        crumb_prefix = " / ".join(crumbs)
-        if crumb_prefix:
-            crumb_prefix += " / "
-        buf.write(f"- {crumb_prefix}{title} (`docs/{relpath}`)\n")
-    buf.write("\n")
+    # ------------- Table of contents — TRIMMED in wave 31 token-trim
+    #
+    # The per-page TOC block used to enumerate every nav entry as
+    # ``- <crumbs> / <title> (`docs/<relpath>`)`` lines (~2.5k tokens
+    # by wave 30, ~100+ pages × ~25 tokens each). Removed because every
+    # page below already opens with a ``# === BEGIN: <URL> ===`` block
+    # followed by a ``> Source: docs/<relpath>`` line — the same path
+    # AND the published URL, sortable / greppable by either dimension
+    # (the file intro paragraph above documents this exact contract).
+    # The TOC duplicated that information without adding anything an LLM
+    # consumer could not reconstruct from the per-page separators.
+    # Net saving: ~2.5k tokens (zero information loss). Human readers
+    # of llms-full.txt who want a flat page index can run::
+    #
+    #     grep '^# === BEGIN: ' docs/llms-full.txt
+    #
+    # in any shell to reproduce the old TOC content on demand.
 
     # ------------- Per-page bodies
     for crumbs, title, relpath in nav_entries:
@@ -1339,7 +1348,32 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
         per_page_chars[relpath] = len(cleaned)
         buf.write(f"\n# === END: {url} ===\n")
 
-    # ------------- Integrations appendix
+    # ------------- Integrations appendix — COMPACTED in wave 31 token-trim
+    #
+    # Format history (Appendix A is the per-integration deep-dive):
+    #
+    #   * Pre-wave-31 — per-integration H2 with bulleted dump of every
+    #     YAML field (file path, status, app required, version min,
+    #     JS source path, endpoints called with method+path+auth, field
+    #     contract keys, tested-against, BM-CT-1 contract methods with
+    #     prose descriptions, references) — ~2,317 tokens by wave 30.
+    #   * Wave 31 onwards — single matrix table carrying ONLY the
+    #     per-integration data that is NOT already in the catalogue
+    #     page's matrix above. The catalogue matrix (rendered in this
+    #     same file under the ``integrations/catalogue/`` block) already
+    #     covers: name + status + app required + version min + endpoint
+    #     count + auth + OT-safety + live-tenant tested + source YAML
+    #     pointer. The truly unique Appendix A additions were:
+    #       (a) BM-CT-1 contract methods (which of setEnabled / isEnabled
+    #           / reset exist + a one-line description each)
+    #       (b) Field contract keys (what input/output keys the JS
+    #           module reads/writes)
+    #       (c) JS source-of-truth path
+    #     Everything else (per-endpoint detail, tested-against, references)
+    #     is already either in the catalogue matrix above or in the
+    #     YAML files themselves (linked from the matrix's "Source YAML"
+    #     column). The compacted table form preserves the unique value
+    #     at ~1/5 the token cost. Net saving: ~1.7-1.9k tokens.
     buf.write("\n# === BEGIN: appendix:integrations ===\n\n")
     buf.write("# Appendix A — Splunk integrations matrix\n\n")
     buf.write(
@@ -1347,79 +1381,61 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
         f"({len(integrations)} files, lexicographic order)\n\n"
     )
     buf.write(
-        "Each entry below distils the corresponding YAML scaffold so an "
-        "LLM can answer integration-readiness questions without "
-        "another fetch. The YAMLs themselves remain the contract: drift "
-        f"between them and the JS modules under `src/lib/splunk/` is "
-        "blocked at PR time by the G7 Phase 1 gates.\n\n"
+        "The full per-integration matrix (status, app required, Splunk "
+        "version min, endpoint count, auth scheme, OT-safety, live-tenant "
+        "tested flag, source-YAML pointer) is rendered above in this "
+        f"same file under the `integrations/catalogue/` page block "
+        f"(<{site_url}integrations/catalogue/>). This appendix carries "
+        "only the per-integration data NOT already on that matrix — "
+        "BM-CT-1 contract methods, field contract keys, and JS "
+        "source-of-truth pointers — so an agent answering "
+        "integration-readiness questions can resolve everything from "
+        "one fetch. The YAMLs themselves remain the contract; drift "
+        "between them and the JS modules under `src/lib/splunk/` is "
+        "blocked at PR time by the G7 Phase 1 gates. For per-endpoint "
+        "detail (method + path + auth scheme + description) consult "
+        "the endpoint-detail tables on the catalogue page above or "
+        "the linked YAML.\n\n"
+    )
+    buf.write(
+        "| Integration | BM-CT-1 methods | Field contract keys "
+        "| JS source-of-truth | YAML |\n"
+    )
+    buf.write(
+        "|---|---|---|---|---|\n"
     )
     for entry in integrations:
         data = entry["data"]
         name = data.get("display_name") or data.get("id") or entry["file"]
-        status = data.get("status", "unknown")
-        app = data.get("splunk_app_required") or "n/a"
         meta = data.get("meta") or {}
         source = meta.get("source_of_truth_path") or "n/a"
-        buf.write(f"## {name}\n\n")
-        buf.write(f"- File: `docs/_machine/integrations/{entry['file']}`\n")
-        buf.write(f"- Status: {status}\n")
-        buf.write(f"- Splunk app required: `{app}`\n")
-        version_min = data.get("splunk_version_min")
-        if version_min:
-            buf.write(f"- Splunk version min: {version_min}\n")
-        buf.write(f"- Source path (JS): `{source}`\n")
-        endpoints = data.get("endpoints_called") or []
-        if endpoints:
-            buf.write("- Endpoints called:\n")
-            for ep in endpoints:
-                if not isinstance(ep, dict):
-                    continue
-                method = ep.get("method", "?")
-                path = ep.get("path", "?")
-                auth = ep.get("auth", "?")
-                buf.write(f"    - `{method} {path}` (auth: {auth})\n")
-        field_contract = data.get("field_contract")
-        if isinstance(field_contract, dict):
-            keys = list(field_contract.keys())
-            if keys:
-                buf.write(
-                    "- Field contract keys: "
-                    + ", ".join(f"`{k}`" for k in keys)
-                    + "\n"
-                )
-        tested = data.get("tested_against")
-        if isinstance(tested, dict) and tested:
-            parts: list[str] = []
-            for k, v in tested.items():
-                parts.append(f"{k}={v}")
-            buf.write("- Tested against: " + ", ".join(parts) + "\n")
-        elif isinstance(tested, str) and tested.strip():
-            buf.write(f"- Tested against: {tested}\n")
-        else:
-            buf.write("- Tested against: (pending live-tenant verification)\n")
+
         bm_ct_1 = data.get("bm_ct_1") or {}
         if isinstance(bm_ct_1, dict) and bm_ct_1:
-            buf.write("- BM-CT-1 contract:\n")
-            for slot in ("setEnabled", "isEnabled", "reset"):
-                desc = bm_ct_1.get(slot)
-                if desc:
-                    buf.write(f"    - `{slot}`: {desc}\n")
-        references = data.get("references") or []
-        if references:
-            buf.write("- References:\n")
-            for ref in references:
-                if isinstance(ref, dict):
-                    label = ref.get("description") or ref.get("title") or ""
-                    target = ref.get("path") or ref.get("url") or ""
-                    if label and target:
-                        buf.write(f"    - {label}: `{target}`\n")
-                    elif label:
-                        buf.write(f"    - {label}\n")
-                    elif target:
-                        buf.write(f"    - `{target}`\n")
-                elif isinstance(ref, str):
-                    buf.write(f"    - {ref}\n")
-        buf.write("\n")
+            present = [
+                slot for slot in ("setEnabled", "isEnabled", "reset")
+                if bm_ct_1.get(slot)
+            ]
+            bm_cell = ", ".join(f"`{slot}`" for slot in present) if present else "—"
+        else:
+            bm_cell = "—"
+
+        field_contract = data.get("field_contract")
+        if isinstance(field_contract, dict) and field_contract:
+            keys_cell = ", ".join(f"`{k}`" for k in field_contract.keys())
+        else:
+            keys_cell = "—"
+
+        js_cell = f"`{source}`" if source != "n/a" else "—"
+        yaml_cell = (
+            f"[`{entry['file']}`]"
+            f"({GITHUB_BLOB_BASE}/docs/_machine/integrations/{entry['file']})"
+        )
+
+        buf.write(
+            f"| {name} | {bm_cell} | {keys_cell} | {js_cell} | {yaml_cell} |\n"
+        )
+    buf.write("\n")
     buf.write("# === END: appendix:integrations ===\n")
 
     # ------------- Recipes appendix

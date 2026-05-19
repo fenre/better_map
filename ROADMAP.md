@@ -1,5 +1,44 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-24): E5 Phase 2 wave 31 token-trim
+> SHIPPED (two complementary trims to `build-llms-full-txt.py` —
+> (a) drop the redundant top-of-file `## Table of contents` block;
+> (b) compact Appendix A — Splunk integrations matrix from per-
+> integration H2 deep-dives to a single compact matrix table).** The
+> TOC trim is a pure information-equivalent change: every page below
+> the intro opens with a `# === BEGIN: <URL> ===` separator followed
+> by a `> Source: docs/<relpath>` line — the same path AND published
+> URL, sortable / greppable by either dimension (the file intro
+> paragraph above already documents this exact contract). The TOC
+> duplicated that information without adding anything an LLM consumer
+> could not reconstruct from the per-page separators. Human readers
+> who want a flat page index can run `grep '^# === BEGIN: '
+> docs/llms-full.txt` to reproduce the old TOC content on demand.
+> The Appendix A compaction is a value-preserving compression: the
+> per-integration H2 deep-dive (file path, status, app required,
+> version min, JS source path, endpoints called with method+path+
+> auth, field contract keys, tested-against, BM-CT-1 contract methods
+> with prose descriptions, references) is replaced with a single
+> matrix table carrying only the per-integration data NOT already in
+> the catalogue page's matrix above (BM-CT-1 method names, field
+> contract key names, JS source-of-truth path, YAML pointer). The
+> catalogue matrix already covers: name + status + app required +
+> version min + endpoint count + auth + OT-safety + live-tenant
+> tested + source YAML pointer — and the per-endpoint detail tables
+> on the catalogue page above carry the full method/path/auth
+> tuple per endpoint. The YAMLs themselves remain the contract and
+> are linked from every row. Reclaim measured at **3,689 tokens**
+> (168,846 → 165,157), bringing WARN headroom to **9,843 tokens** —
+> comfortable for ~2-3 recipes per wave through wave 33+ before the
+> next trim is needed. The compaction logic lives entirely in
+> `scripts/build-llms-full-txt.py` per the established trim
+> contract; on-disk MkDocs pages are unchanged. All gates green
+> locally (`build-llms-full-txt.py --check`, `build-llms-txt.py
+> --check`, `check-recipe-schema.py`, `build-reference-pages.py
+> --check`, `check-manifest.py`, `check-formatter-schema.py`,
+> `check-formatter-coverage.py`, `mkdocs build --strict`).
+> Subsequent wave 31 recipes will fold in below this block.
+
 > **Status (v1.7-prep, 2026-05-23): E5 Phase 2 wave 30 recipes SHIPPED
 > (3 more recipes — recipe count 78 → 81, layer-type coverage
 > **9 / 10 → 10 / 10 COMPLETE**, source-pattern coverage 8 / 8
