@@ -4,7 +4,7 @@
 
 This file is the body-inclusive sibling of `llms.txt` and concatenates every page on the Better Map documentation site into a single, LLM-friendly text dump. The short companion index is at <https://fenre.github.io/better_map/llms.txt>. Pages appear in `mkdocs.yml` `nav:` declaration order. Each page block carries a stable `# === ... ===` separator plus the source-of-truth path on disk and the published URL so the same content can be grepped by either dimension.
 
-At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 54 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 57 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
 
 All page URLs resolve to publicly accessible Material-themed HTML on GitHub Pages. The project ships under the MIT licence; the canonical repo is <https://github.com/fenre/better_map>.
 
@@ -24,9 +24,11 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / CIM Alerts — H3 hexbin (`docs/recipes/cim-alerts/h3.md`)
 - Recipes / CIM Alerts — heatmap (`docs/recipes/cim-alerts/heat.md`)
 - Recipes / CIM Alerts — markers (`docs/recipes/cim-alerts/markers.md`)
+- Recipes / CIM Alerts — paths (`docs/recipes/cim-alerts/paths.md`)
 - Recipes / CIM Authentication — H3 hexbin (`docs/recipes/cim-authentication/h3.md`)
 - Recipes / CIM Authentication — heatmap (`docs/recipes/cim-authentication/heat.md`)
 - Recipes / CIM Authentication — markers (`docs/recipes/cim-authentication/markers.md`)
+- Recipes / CIM Authentication — supercluster (`docs/recipes/cim-authentication/supercluster.md`)
 - Recipes / CIM Network Traffic — choropleth (`docs/recipes/cim-network-traffic/choropleth.md`)
 - Recipes / CIM Network Traffic — H3 hexbin (`docs/recipes/cim-network-traffic/h3.md`)
 - Recipes / CIM Network Traffic — heatmap (`docs/recipes/cim-network-traffic/heat.md`)
@@ -45,6 +47,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / Cisco Cyber Vision (components + vulnerabilities) — H3 hexbin (`docs/recipes/cyber-vision/h3.md`)
 - Recipes / Cisco Cyber Vision (components + vulnerabilities) — heatmap (`docs/recipes/cyber-vision/heat.md`)
 - Recipes / Cisco Cyber Vision (components + vulnerabilities) — markers (`docs/recipes/cyber-vision/markers.md`)
+- Recipes / Cisco Cyber Vision (components + vulnerabilities) — paths (`docs/recipes/cyber-vision/paths.md`)
 - Recipes / Cisco ThousandEyes (agent fleet) — H3 hexbin (`docs/recipes/thousandeyes/h3.md`)
 - Recipes / Cisco ThousandEyes (agent fleet) — heatmap (`docs/recipes/thousandeyes/heat.md`)
 - Recipes / Cisco ThousandEyes (agent fleet) — markers (`docs/recipes/thousandeyes/markers.md`)
@@ -1180,16 +1183,16 @@ generated from
 so it cannot drift from the recipe files.
 
 <!-- recipes-matrix trimmed for llms-full.txt token budget (see Wave 16 ROADMAP block); full matrix at <https://fenre.github.io/better_map/recipes/> and source-of-truth YAML at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>; per-recipe details (status, apps, expected-field contract, formatter options) are kept verbatim under the matching `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file -->
-**Total: 54 recipes · 15 source dir(s) · 9 layer type(s).**
+**Total: 57 recipes · 15 source dir(s) · 9 layer type(s).**
 
 Source dirs and the layer ids that already ship for each (any `(source, layer)` not listed below is an open cell in the E5 matrix and is a candidate for the next recipe wave):
 
-- `cim-alerts`: h3, heat, markers
-- `cim-authentication`: h3, heat, markers
+- `cim-alerts`: h3, heat, markers, paths
+- `cim-authentication`: h3, heat, markers, supercluster
 - `cim-network-traffic`: choropleth, h3, heat, markers, paths, supercluster
 - `cim-performance`: h3, heat, markers
 - `csv-lookup-geo`: h3, heat, markers, polygons, supercluster, vector-tile-join
-- `cyber-vision`: h3, heat, markers
+- `cyber-vision`: h3, heat, markers, paths
 - `es-risk`: h3, heat, markers
 - `geo-us-states`: choropleth, extrusion-3d
 - `itsi-kpi-base`: h3, heat, markers
@@ -1200,7 +1203,7 @@ Source dirs and the layer ids that already ship for each (any `(source, layer)` 
 - `splunk-stream`: h3, heat, markers
 - `thousandeyes`: h3, heat, markers, paths
 
-**OT-safety-relevant recipes (7):** `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`, `ot-datastreamer/paths`.
+**OT-safety-relevant recipes (8):** `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `cyber-vision/paths`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`, `ot-datastreamer/paths`.
 
 The remaining matrix cells from the E5 design — every layer × every
 source pattern — are tracked in
@@ -1702,6 +1705,115 @@ _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are o
 
 # === END: https://fenre.github.io/better_map/recipes/cim-alerts/markers/ ===
 
+# === BEGIN: https://fenre.github.io/better_map/recipes/cim-alerts/paths/ ===
+
+# Recipes / CIM Alerts — paths
+
+> Source: `docs/recipes/cim-alerts/paths.md`  
+> URL: <https://fenre.github.io/better_map/recipes/cim-alerts/paths/>
+
+# CIM Alerts — paths
+
+Render **alert progression chains** by geocoding alert `src` (the
+attacker / source IP) and stringing chronologically-firing alerts
+from the same `src` into a polyline. The canonical "kill-chain
+reconstruction" panel: when a SOC analyst sees a marker firing 47
+alerts on `web-prod-04`, the paths panel shows them WHERE those
+alerts came from (IPs across 3 countries) AND in what order (recon
+scan → public-app exploit → credential theft → lateral movement).
+The sister panel to [`cim-alerts/markers`](../cim-alerts/markers.md)
+(per-target overview), [`cim-alerts/heat`](../cim-alerts/heat.md)
+(target-density smoothing), and [`cim-alerts/h3`](../cim-alerts/h3.md)
+(jurisdictional roll-up) — together the four shapes give a SOC team
+target-, density-, jurisdiction-, AND attacker-attribution views on
+one CIM data model.
+
+## 1. Source description
+
+Splunk's **Alerts** Common Information Model (CIM) data model
+normalizes alerts from any source — saved-search alerts, ES
+correlation searches, ITSI notable events, third-party SIEM
+forwarders, IDS/IPS engines, EDR platforms — into a stable schema
+keyed on the `tag=alert` event tag. See
+[`cim-alerts/markers`](../cim-alerts/markers.md) for the full list
+of contributing sourcetypes and the CIM Alerts data model contract.
+
+This recipe is the **attacker-attribution view**: it accelerates
+the same CIM Alerts data model used by markers / heat / h3, but
+groups events by `src` (source IP) instead of `dest` (target host),
+geocodes the source IP via `iplocation`, and uses `streamstats` to
+generate a per-source monotonic sequence number. The polyline
+formatter draws one line per `src`, vertex-ordered by alert
+firing time — the geometric equivalent of "draw me the path this
+attacker walked".
+
+**Typical sourcetype / index:** anything tagged `alert`. Same
+detection-engine sources as
+[`cim-alerts/markers`](../cim-alerts/markers.md) — ES correlation,
+ITSI episodes, Mission Control cases, SIEM forwarders, IDS/IPS,
+EDR. The recipe assumes CIM Alerts data model acceleration is
+enabled; without it, `summariesonly=true` returns zero rows.
+
+## 2. SPL recipe
+
+```spl
+| tstats summariesonly=true count AS alert_count,
+    values(Alerts.signature) AS signatures,
+    values(Alerts.severity) AS severities,
+    min(_time) AS first_seen,
+    max(_time) AS last_seen
+  FROM datamodel=Alerts WHERE earliest=-24h
+  BY Alerts.src, Alerts.dest, Alerts.signature, _time span=1m
+| rename "Alerts.src" AS src, "Alerts.dest" AS dest, "Alerts.signature" AS signature
+| iplocation src
+| where isnotnull(lat) AND isnotnull(lon)
+| eval severity=mvindex(severities, 0)
+| eval path_id=src . "__" . tostring(relative_time(now(), "-24h"))
+| sort 0 path_id, _time
+| streamstats current=true count AS seq BY path_id
+| eval seq=seq-1
+| eventstats count AS hops_in_path BY path_id
+| where hops_in_path >= 2
+| rename path_id AS id
+| fields id, seq, lat, lon, src, dest, signature, severity, alert_count, _time
+| sort id, + seq
+| head 5000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/paths/>._
+
+## 3. Expected fields
+
+| field        | type    | example                          |
+|--------------|---------|----------------------------------|
+| id           | string  | 203.0.113.42__1747534800         |
+| seq          | integer | 0                                |
+| lat          | number  | 47.6062                          |
+| lon          | number  | -122.3321                        |
+| src          | string  | 203.0.113.42                     |
+| dest         | string  | web-prod-04.example.com          |
+| signature    | string  | T1190-exploit-public-app         |
+| severity     | string  | high                             |
+
+All eight fields appear in `expected_fields` in the frontmatter and
+are cross-checked by `scripts/check-recipe-schema.py`. `alert_count`
+and `_time` also flow through as feature properties for the popup.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pathIdField": "id",
+  "timeField": "seq",
+  "pathColor": "#d62728",
+  "pathArrows": true
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/paths/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/paths/>._
+
+# === END: https://fenre.github.io/better_map/recipes/cim-alerts/paths/ ===
+
 # === BEGIN: https://fenre.github.io/better_map/recipes/cim-authentication/h3/ ===
 
 # Recipes / CIM Authentication — H3 hexbin
@@ -2022,6 +2134,107 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-authentication/markers/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/cim-authentication/supercluster/ ===
+
+# Recipes / CIM Authentication — supercluster
+
+> Source: `docs/recipes/cim-authentication/supercluster.md`  
+> URL: <https://fenre.github.io/better_map/recipes/cim-authentication/supercluster/>
+
+# CIM Authentication — supercluster
+
+Render every source IP that has produced ANY authentication event
+(success OR failure) over a 24h window as a zoom-adaptive cluster
+on a world map. At world zoom you see cluster bubbles per continent
+("12k auth sources from North America, 8k from Europe, …"); at
+country zoom you see per-metro clusters ("4.2k from London, 3.1k
+from Paris, …"); at city zoom you see individual source IPs. The
+canonical "global enterprise authentication footprint" panel for an
+**identity-team overview** — distinct from the
+[cim-authentication/markers](../cim-authentication/markers.md) recipe
+which deliberately filters to failed auths only (SOC-centric), and
+distinct from the [cim-authentication/heat](../cim-authentication/heat.md)
+recipe which smoothes density (executive briefings). The supercluster
+shape preserves per-source-IP identity (click-to-zoom drilldown)
+while keeping cluster-overlap manageable for 50k+ unique sources.
+
+## 1. Source description
+
+Splunk's **Authentication** Common Information Model (CIM) data
+model normalizes login events from IdPs, VPN concentrators,
+operating systems, applications, and cloud control planes into a
+stable schema. See
+[`cim-authentication/markers`](../cim-authentication/markers.md) §1
+for the full list of contributing sourcetypes (AD, Entra ID, Okta,
+AWS CloudTrail, Cisco Duo / ISE / AnyConnect, Linux PAM, Workday,
+GitHub Enterprise, …).
+
+This recipe is the **global-footprint view**: it aggregates ALL
+auth events (not just failures) per source IP, computes a
+success-rate alongside the raw count, and emits one row per unique
+geocoded source. The supercluster formatter takes care of zoom-
+adaptive aggregation client-side — no need to pre-aggregate by
+country / metro in SPL. The result is a panel that scales gracefully
+from a small tenant (500 source IPs) to a global enterprise
+(100k+ source IPs across 200+ countries).
+
+**Typical sourcetype / index:** anything tagged `authentication`.
+Same detection-engine sources as
+[`cim-authentication/markers`](../cim-authentication/markers.md).
+The recipe queries the CIM-accelerated data model summary, so the
+source index does not appear in the SPL.
+
+## 2. SPL recipe
+
+```spl
+| tstats summariesonly=true count AS auth_count,
+    dc(Authentication.user) AS distinct_users,
+    sum(eval(if(Authentication.action="success", 1, 0))) AS success_count
+  FROM datamodel=Authentication WHERE earliest=-24h latest=now
+  BY Authentication.src
+| rename Authentication.src AS src
+| where match(src, "^\d+\.\d+\.\d+\.\d+$")
+| iplocation src
+| where isnotnull(lat) AND isnotnull(lon)
+| eval success_rate=round(success_count / auth_count, 2)
+| rename src AS id, City AS src_city, Country AS src_country
+| eval src=id
+| fields id, lat, lon, src, src_country, src_city, auth_count, distinct_users, success_rate
+| sort - auth_count
+| head 50000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/supercluster/>._
+
+## 3. Expected fields
+
+| field          | type    | example       |
+|----------------|---------|---------------|
+| id             | string  | 203.0.113.45  |
+| lat            | number  | 52.3676       |
+| lon            | number  | 4.9041        |
+| src            | string  | 203.0.113.45  |
+| src_country    | string  | NL            |
+| src_city       | string  | Amsterdam     |
+| auth_count     | integer | 1247          |
+| distinct_users | integer | 23            |
+| success_rate   | number  | 0.83          |
+
+All nine fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pointRenderer": "cluster"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/supercluster/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/supercluster/>._
+
+# === END: https://fenre.github.io/better_map/recipes/cim-authentication/supercluster/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/ ===
 
@@ -4184,6 +4397,160 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cyber-vision/markers/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/cyber-vision/paths/ ===
+
+# Recipes / Cisco Cyber Vision (components + vulnerabilities) — paths
+
+> Source: `docs/recipes/cyber-vision/paths.md`  
+> URL: <https://fenre.github.io/better_map/recipes/cyber-vision/paths/>
+
+# Cisco Cyber Vision — paths
+
+Render **OT-network flow polylines** by reading Cisco Cyber Vision's
+`flows` sourcetype, joining both endpoints against the
+operator-maintained `cybervision_sites.csv` site lookup for physical
+lat / lon coordinates, and drawing one polyline per (src_asset →
+dest_asset) flow ordered by observation time. The canonical
+"OT lateral movement reconstruction" panel — when a Cyber Vision
+event fires on `PLC-FLOOR3-A02`, the paths panel shows WHICH OTHER
+OT ASSETS that PLC has been communicating with over the last 24h
+(neighbouring HMIs, engineering workstations, historians, jump
+hosts), the protocols used (Modbus-TCP, EtherNet/IP, S7, …), and
+the Purdue level of each endpoint (so you can immediately spot
+illegitimate L3↔L1 crossings). Strict adherence to
+[`/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc):
+Cyber Vision is the **reference passive-DPI design** per Rule 1;
+this recipe surfaces its discoveries without ever querying the OT
+zone. The sister panel to
+[`cyber-vision/markers`](../cyber-vision/markers.md) (which shows
+the ASSETS) — here showing the CONVERSATIONS between those assets.
+
+## 1. Source description
+
+**Cisco Cyber Vision** is a passive deep-packet-inspection
+platform for OT networks. See
+[`cyber-vision/markers`](../cyber-vision/markers.md) §1 for the
+full platform overview and the four-sourcetype contract
+(`components`, `flows`, `events`, `vulnerabilities`).
+
+This recipe is the **flow-attribution view**: it reads the
+`flows` sourcetype (one event per observed conversation),
+aggregates per unique (src_asset, dest_asset, protocol) tuple,
+joins both endpoints against the same `cybervision_sites.csv`
+lookup the markers companion uses, and `streamstats` generates
+per-flow monotonic sequence numbers. The paths layer draws one
+polyline per flow with the source asset at seq=0 and the
+destination asset at seq=1 (a 2-vertex polyline is sufficient
+for endpoint-to-endpoint flow visualization; for multi-hop path
+reconstruction across intermediate jump hosts, extend the recipe
+with an `append` branch per hop).
+
+The recipe is `ot_safety_relevant: true` because every flow row
+references OT-zone assets — see §6 Gotchas for the full safety
+contract.
+
+**Typical sourcetype / index:** `index=cybervision
+sourcetype="cisco:cybervision:flows"`. The TA is
+`TA-cisco-cybervision`. The site lookup is the same operator-
+maintained `cybervision_sites.csv` used by the markers / heat /
+h3 companions — no additional lookup work needed if those
+recipes are already deployed.
+
+## 2. SPL recipe
+
+```spl
+index=cybervision sourcetype="cisco:cybervision:flows" earliest=-24h latest=now
+| stats count AS flow_count,
+    sum(bytes) AS total_bytes,
+    min(_time) AS first_seen,
+    max(_time) AS last_seen
+  BY src_asset, dest_asset, protocol
+| where flow_count >= 10
+| lookup cybervision_sites.csv asset_id AS src_asset
+    OUTPUT lat AS src_lat, lon AS src_lon,
+           zone_purdue_level AS src_zone_purdue_level,
+           safety_related AS src_safety_related,
+           site_name AS src_site_name
+| lookup cybervision_sites.csv asset_id AS dest_asset
+    OUTPUT lat AS dest_lat, lon AS dest_lon,
+           zone_purdue_level AS dest_zone_purdue_level,
+           safety_related AS dest_safety_related,
+           site_name AS dest_site_name
+| where isnotnull(src_lat) AND isnotnull(src_lon)
+    AND isnotnull(dest_lat) AND isnotnull(dest_lon)
+| eval flow_id="FLOW-" . src_asset . "-" . dest_asset . "-" . protocol
+| eval src_vertex=mvrange(0, 1, 1)
+| mvexpand src_vertex
+| eval lat=src_lat, lon=src_lon, asset=src_asset,
+       zone_purdue_level=src_zone_purdue_level,
+       safety_related=src_safety_related,
+       site_name=src_site_name, seq=0
+| append [
+    search index=cybervision sourcetype="cisco:cybervision:flows" earliest=-24h latest=now
+    | stats count AS flow_count,
+        sum(bytes) AS total_bytes
+      BY src_asset, dest_asset, protocol
+    | where flow_count >= 10
+    | lookup cybervision_sites.csv asset_id AS dest_asset
+        OUTPUT lat AS dest_lat, lon AS dest_lon,
+               zone_purdue_level AS dest_zone_purdue_level,
+               safety_related AS dest_safety_related,
+               site_name AS dest_site_name
+    | lookup cybervision_sites.csv asset_id AS src_asset
+        OUTPUT lat AS src_lat, lon AS src_lon
+    | where isnotnull(src_lat) AND isnotnull(src_lon)
+        AND isnotnull(dest_lat) AND isnotnull(dest_lon)
+    | eval flow_id="FLOW-" . src_asset . "-" . dest_asset . "-" . protocol
+    | eval lat=dest_lat, lon=dest_lon, asset=dest_asset,
+           zone_purdue_level=dest_zone_purdue_level,
+           safety_related=dest_safety_related,
+           site_name=dest_site_name, seq=1
+  ]
+| rename flow_id AS id
+| fields id, seq, lat, lon, src_asset, dest_asset, protocol,
+    src_zone_purdue_level, dest_zone_purdue_level,
+    safety_related, site_name, flow_count, total_bytes
+| sort id, + seq
+| head 5000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/paths/>._
+
+## 3. Expected fields
+
+| field                  | type    | example                              |
+|------------------------|---------|--------------------------------------|
+| id                     | string  | FLOW-203.0.113.45-198.51.100.7       |
+| seq                    | integer | 0                                    |
+| lat                    | number  | 29.7604                              |
+| lon                    | number  | -95.3698                             |
+| src_asset              | string  | ENGINEERING-WS-04                    |
+| dest_asset             | string  | PLC-FLOOR3-A02                       |
+| protocol               | string  | Modbus-TCP                           |
+| src_zone_purdue_level  | string  | L3                                   |
+| dest_zone_purdue_level | string  | L1                                   |
+| flow_count             | integer | 147                                  |
+
+All ten fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+`safety_related`, `site_name`, and `total_bytes` also flow
+through as feature properties for the popup.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pathIdField": "id",
+  "timeField": "seq",
+  "pathColor": "#1f77b4",
+  "pathArrows": true
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/paths/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/paths/>._
+
+# === END: https://fenre.github.io/better_map/recipes/cyber-vision/paths/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/thousandeyes/h3/ ===
 
@@ -10591,7 +10958,7 @@ Each entry below distils the corresponding YAML scaffold so an LLM can answer in
 
 # Appendix B — Per-source recipe matrix
 
-> Source of truth: `docs/_machine/recipes/index.yaml` (54 recipe(s), emission order)
+> Source of truth: `docs/_machine/recipes/index.yaml` (57 recipe(s), emission order)
 
 Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answer 'which recipe matches this data source?' without fetching every recipe page. Recipes carry one of three statuses: `verified` (smoke-tested against a live Splunk tenant with proof in the YAML metadata), `unverified` (the recipe follows the contract but has not yet been smoke-tested), or `deferred` (the recipe is known to be incomplete pending upstream work). The expected-field contract for each recipe lives in §3 of the recipe page (kept verbatim in this file under the matching `# === BEGIN: …/recipes/<source>/<layer>/ ===` block); follow the Page link below to jump to it.
 
@@ -10600,9 +10967,11 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `cim-alerts--h3` | CIM Alerts → H3 hexbin | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-alerts/h3.md](https://fenre.github.io/better_map/recipes/cim-alerts/h3/) |
 | `cim-alerts--heat` | CIM Alerts → Heatmap | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-alerts/heat.md](https://fenre.github.io/better_map/recipes/cim-alerts/heat/) |
 | `cim-alerts--markers` | CIM Alerts → Markers | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-alerts/markers.md](https://fenre.github.io/better_map/recipes/cim-alerts/markers/) |
+| `cim-alerts--paths` | CIM Alerts → Paths | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-alerts/paths.md](https://fenre.github.io/better_map/recipes/cim-alerts/paths/) |
 | `cim-authentication--h3` | CIM Authentication → H3 hexbin | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/h3.md](https://fenre.github.io/better_map/recipes/cim-authentication/h3/) |
 | `cim-authentication--heat` | CIM Authentication → Heatmap | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/heat.md](https://fenre.github.io/better_map/recipes/cim-authentication/heat/) |
 | `cim-authentication--markers` | CIM Authentication → Markers | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/markers.md](https://fenre.github.io/better_map/recipes/cim-authentication/markers/) |
+| `cim-authentication--supercluster` | CIM Authentication → Supercluster | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/supercluster.md](https://fenre.github.io/better_map/recipes/cim-authentication/supercluster/) |
 | `cim-network-traffic--choropleth` | CIM Network Traffic (data model) → Choropleth | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-network-traffic/choropleth.md](https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/) |
 | `cim-network-traffic--h3` | CIM Network Traffic → H3 hexbin | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-network-traffic/h3.md](https://fenre.github.io/better_map/recipes/cim-network-traffic/h3/) |
 | `cim-network-traffic--heat` | CIM Network Traffic → Heatmap | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-network-traffic/heat.md](https://fenre.github.io/better_map/recipes/cim-network-traffic/heat/) |
@@ -10621,6 +10990,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `cyber-vision--h3` | Cisco Cyber Vision (components + vulnerabilities) → H3 hexbin | unverified | `TA-cisco-cybervision` | — | [docs/recipes/cyber-vision/h3.md](https://fenre.github.io/better_map/recipes/cyber-vision/h3/) |
 | `cyber-vision--heat` | Cisco Cyber Vision (components + vulnerabilities) → Heatmap | unverified | `TA-cisco-cybervision` | — | [docs/recipes/cyber-vision/heat.md](https://fenre.github.io/better_map/recipes/cyber-vision/heat/) |
 | `cyber-vision--markers` | Cisco Cyber Vision (components + vulnerabilities) → Markers | unverified | `TA-cisco-cybervision` | — | [docs/recipes/cyber-vision/markers.md](https://fenre.github.io/better_map/recipes/cyber-vision/markers/) |
+| `cyber-vision--paths` | Cisco Cyber Vision (components + vulnerabilities) → Paths | unverified | `TA-cisco-cybervision` | — | [docs/recipes/cyber-vision/paths.md](https://fenre.github.io/better_map/recipes/cyber-vision/paths/) |
 | `es-risk--h3` | ES Risk-Based Alerting (risk index) → H3 hexbin | unverified | `SplunkEnterpriseSecuritySuite`, `Splunk_SA_CIM` | — | [docs/recipes/es-risk/h3.md](https://fenre.github.io/better_map/recipes/es-risk/h3/) |
 | `es-risk--heat` | ES Risk-Based Alerting (risk index) → Heatmap | unverified | `SplunkEnterpriseSecuritySuite`, `Splunk_SA_CIM` | — | [docs/recipes/es-risk/heat.md](https://fenre.github.io/better_map/recipes/es-risk/heat/) |
 | `es-risk--markers` | ES Risk-Based Alerting (risk index) → Markers | unverified | `SplunkEnterpriseSecuritySuite`, `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/es-risk/markers.md](https://fenre.github.io/better_map/recipes/es-risk/markers/) |

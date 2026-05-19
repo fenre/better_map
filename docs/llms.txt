@@ -49,9 +49,11 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [CIM Alerts → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/cim-alerts/h3/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Alerts → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/cim-alerts/heat/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Alerts → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-alerts/markers/): apps required: Splunk_SA_CIM, builtin:iplocation.
+- [CIM Alerts → Paths (unverified)](https://fenre.github.io/better_map/recipes/cim-alerts/paths/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Authentication → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/h3/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Authentication → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/heat/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Authentication → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/markers/): apps required: Splunk_SA_CIM, builtin:iplocation.
+- [CIM Authentication → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/supercluster/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Network Traffic (data model) → Choropleth (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/): apps required: Splunk_SA_CIM.
 - [CIM Network Traffic → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/h3/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Network Traffic → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/heat/): apps required: Splunk_SA_CIM, builtin:iplocation.
@@ -70,6 +72,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [Cisco Cyber Vision (components + vulnerabilities) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/h3/): apps required: TA-cisco-cybervision.
 - [Cisco Cyber Vision (components + vulnerabilities) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/heat/): apps required: TA-cisco-cybervision.
 - [Cisco Cyber Vision (components + vulnerabilities) → Markers (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/markers/): apps required: TA-cisco-cybervision.
+- [Cisco Cyber Vision (components + vulnerabilities) → Paths (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/paths/): apps required: TA-cisco-cybervision.
 - [ES Risk-Based Alerting (risk index) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/es-risk/h3/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM.
 - [ES Risk-Based Alerting (risk index) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/es-risk/heat/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM.
 - [ES Risk-Based Alerting (risk index) → Markers (unverified)](https://fenre.github.io/better_map/recipes/es-risk/markers/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM, builtin:iplocation.

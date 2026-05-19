@@ -218,9 +218,11 @@ nav:
       - 'CIM Alerts — H3 hexbin': recipes/cim-alerts/h3.md
       - 'CIM Alerts — heatmap': recipes/cim-alerts/heat.md
       - 'CIM Alerts — markers': recipes/cim-alerts/markers.md
+      - 'CIM Alerts — paths': recipes/cim-alerts/paths.md
       - 'CIM Authentication — H3 hexbin': recipes/cim-authentication/h3.md
       - 'CIM Authentication — heatmap': recipes/cim-authentication/heat.md
       - 'CIM Authentication — markers': recipes/cim-authentication/markers.md
+      - 'CIM Authentication — supercluster': recipes/cim-authentication/supercluster.md
       - 'CIM Network Traffic — choropleth': recipes/cim-network-traffic/choropleth.md
       - 'CIM Network Traffic — H3 hexbin': recipes/cim-network-traffic/h3.md
       - 'CIM Network Traffic — heatmap': recipes/cim-network-traffic/heat.md
@@ -239,6 +241,7 @@ nav:
       - 'Cisco Cyber Vision (components + vulnerabilities) — H3 hexbin': recipes/cyber-vision/h3.md
       - 'Cisco Cyber Vision (components + vulnerabilities) — heatmap': recipes/cyber-vision/heat.md
       - 'Cisco Cyber Vision (components + vulnerabilities) — markers': recipes/cyber-vision/markers.md
+      - 'Cisco Cyber Vision (components + vulnerabilities) — paths': recipes/cyber-vision/paths.md
       - 'Cisco ThousandEyes (agent fleet) — H3 hexbin': recipes/thousandeyes/h3.md
       - 'Cisco ThousandEyes (agent fleet) — heatmap': recipes/thousandeyes/heat.md
       - 'Cisco ThousandEyes (agent fleet) — markers': recipes/thousandeyes/markers.md
