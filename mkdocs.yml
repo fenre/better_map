@@ -225,6 +225,7 @@ nav:
       - 'CIM Authentication — paths': recipes/cim-authentication/paths.md
       - 'CIM Authentication — supercluster': recipes/cim-authentication/supercluster.md
       - 'CIM Network Traffic — choropleth': recipes/cim-network-traffic/choropleth.md
+      - 'CIM Network Traffic — 3D extrusion': recipes/cim-network-traffic/extrusion-3d.md
       - 'CIM Network Traffic — H3 hexbin': recipes/cim-network-traffic/h3.md
       - 'CIM Network Traffic — heatmap': recipes/cim-network-traffic/heat.md
       - 'CIM Network Traffic — markers': recipes/cim-network-traffic/markers.md
@@ -238,6 +239,7 @@ nav:
       - 'CSV lookup (geo points) — H3 hexbin': recipes/csv-lookup-geo/h3.md
       - 'CSV lookup (geo points) — heatmap': recipes/csv-lookup-geo/heat.md
       - 'CSV lookup (geo points) — markers': recipes/csv-lookup-geo/markers.md
+      - 'CSV lookup (geo points) — paths': recipes/csv-lookup-geo/paths.md
       - 'CSV lookup (geo points) — supercluster': recipes/csv-lookup-geo/supercluster.md
       - 'CSV lookup (geo polygons) — polygons': recipes/csv-lookup-geo/polygons.md
       - 'CSV lookup (region metrics) — vector-tile join': recipes/csv-lookup-geo/vector-tile-join.md
@@ -253,6 +255,7 @@ nav:
       - 'ES Risk-Based Alerting (risk index) — H3 hexbin': recipes/es-risk/h3.md
       - 'ES Risk-Based Alerting (risk index) — heatmap': recipes/es-risk/heat.md
       - 'ES Risk-Based Alerting (risk index) — markers': recipes/es-risk/markers.md
+      - 'ES Risk-Based Alerting (risk index) — paths': recipes/es-risk/paths.md
       - 'ES Risk-Based Alerting (risk index) — supercluster': recipes/es-risk/supercluster.md
       - 'ITSI service health (KPI base searches) — H3 hexbin': recipes/itsi-kpi-base/h3.md
       - 'ITSI service health (KPI base searches) — heatmap': recipes/itsi-kpi-base/heat.md

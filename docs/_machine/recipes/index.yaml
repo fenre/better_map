@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 66
+recipe_count: 69
 recipes:
 - id: cim-alerts--h3
   source:
@@ -600,6 +600,61 @@ recipes:
   - description: featureJoin layer (us-states PMTiles preset; promoteId=stusps)
     path: better_map/appserver/static/visualizations/better_map/src/lib/layers/featureJoin.js
   path: docs/recipes/cim-network-traffic/choropleth.md
+- id: cim-network-traffic--extrusion-3d
+  source:
+    id: cim-network-traffic
+    display_name: CIM Network Traffic (data model)
+    pattern: splunk-cim
+  layer:
+    id: extrusion-3d
+    display_name: 3D extrusion
+  status: unverified
+  last_verified_iso8601: '2026-05-19'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_SA_CIM
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: CA
+    drives_formatter_option: idField
+  - name: state_name
+    type: string
+    example: California
+  - name: value
+    type: integer
+    example: '847291'
+    drives_formatter_option: extrusionHeightField
+  - name: event_count
+    type: integer
+    example: '847291'
+  required_formatter_options:
+  - featureJoinPreset
+  - enable3DExtrusion
+  - extrusionHeightField
+  - extrusionScale
+  - enableChoropleth
+  - palette
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, choropleth layer (flat fill)
+    path: docs/recipes/cim-network-traffic/choropleth.md
+  - description: Companion recipe — same source, markers layer
+    path: docs/recipes/cim-network-traffic/markers.md
+  - description: Companion recipe — same source, H3 hexbin layer
+    path: docs/recipes/cim-network-traffic/h3.md
+  - description: Pattern reference — extrusion-3d on the bundled us-states preset
+    path: docs/recipes/geo-us-states/extrusion-3d.md
+  - description: CIM Network Traffic data model reference
+    path: ~/.cursor/skills/splunk-cim/SKILL.md
+  - description: Layer reference — extrusion-3d
+    path: docs/reference/layers.md
+  - description: Formatter schema — enable3DExtrusion, extrusionHeightField, extrusionScale
+    path: docs/_machine/formatter-schema.json
+  - description: featureJoin layer (us-states PMTiles preset; promoteId=stusps)
+    path: better_map/appserver/static/visualizations/better_map/src/lib/layers/featureJoin.js
+  path: docs/recipes/cim-network-traffic/extrusion-3d.md
 - id: cim-network-traffic--h3
   source:
     id: cim-network-traffic
@@ -1300,6 +1355,64 @@ recipes:
   - description: Formatter schema — pointRenderer enum
     path: docs/_machine/formatter-schema.json
   path: docs/recipes/csv-lookup-geo/markers.md
+- id: csv-lookup-geo--paths
+  source:
+    id: csv-lookup-geo
+    display_name: CSV lookup (geo polygons)
+    pattern: splunk-lookup
+  layer:
+    id: paths
+    display_name: Paths
+  status: unverified
+  last_verified_iso8601: '2026-05-19'
+  verified_against: null
+  splunk_apps_required: []
+  expected_fields:
+  - name: id
+    type: string
+    example: ROUTE-LAX-ATL
+    drives_formatter_option: pathIdField
+  - name: seq
+    type: integer
+    example: '2'
+    drives_formatter_option: timeField
+  - name: lat
+    type: number
+    example: '33.7490'
+  - name: lon
+    type: number
+    example: '-84.3880'
+  - name: site_id
+    type: string
+    example: DC-ATL-01
+  - name: site_name
+    type: string
+    example: 'Atlanta DC #1'
+  - name: route_name
+    type: string
+    example: LAX to ATL via DFW
+  required_formatter_options:
+  - pathIdField
+  - timeField
+  - pathColor
+  - pathArrows
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (per-site identity)
+    path: docs/recipes/csv-lookup-geo/markers.md
+  - description: Companion recipe — same source, supercluster layer (large-fleet overview)
+    path: docs/recipes/csv-lookup-geo/supercluster.md
+  - description: Companion recipe — same source, polygons layer (site boundaries)
+    path: docs/recipes/csv-lookup-geo/polygons.md
+  - description: Pattern reference — paths layer with sequenced vertices
+    path: docs/recipes/cim-alerts/paths.md
+  - description: Splunk lookups skill — CSV lookup configuration
+    path: ~/.cursor/skills/splunk-lookups/SKILL.md
+  - description: Layer reference — paths
+    path: docs/reference/layers.md
+  - description: Formatter schema — pathIdField, timeField, pathColor, pathArrows
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/csv-lookup-geo/paths.md
 - id: csv-lookup-geo--polygons
   source:
     id: csv-lookup-geo
@@ -1837,6 +1950,79 @@ recipes:
   - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
     path: docs/reference/bm-ct-1.md
   path: docs/recipes/es-risk/markers.md
+- id: es-risk--paths
+  source:
+    id: es-risk
+    display_name: ES Risk-Based Alerting (risk index)
+    pattern: splunk-premium-es
+  layer:
+    id: paths
+    display_name: Paths
+  status: unverified
+  last_verified_iso8601: '2026-05-19'
+  verified_against: null
+  splunk_apps_required:
+  - id: SplunkEnterpriseSecuritySuite
+    optional: false
+  - id: Splunk_SA_CIM
+    optional: false
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: alice@example.com
+    drives_formatter_option: pathIdField
+  - name: seq
+    type: integer
+    example: '3'
+    drives_formatter_option: timeField
+  - name: lat
+    type: number
+    example: '47.6062'
+  - name: lon
+    type: number
+    example: '-122.3321'
+  - name: risk_object
+    type: string
+    example: alice@example.com
+  - name: risk_score
+    type: integer
+    example: '30'
+  - name: source_search
+    type: string
+    example: Suspicious PowerShell Process
+  - name: technique
+    type: string
+    example: T1059.001
+  required_formatter_options:
+  - pathIdField
+  - timeField
+  - pathColor
+  - pathArrows
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (per-entity risk totals)
+    path: docs/recipes/es-risk/markers.md
+  - description: Companion recipe — same source, supercluster layer (portfolio overview)
+    path: docs/recipes/es-risk/supercluster.md
+  - description: Companion recipe — same source, H3 hexbin layer (regional risk aggregation)
+    path: docs/recipes/es-risk/h3.md
+  - description: Companion recipe — same source, heatmap layer (continuous risk density)
+    path: docs/recipes/es-risk/heat.md
+  - description: Pattern reference — paths layer with chronological vertices
+    path: docs/recipes/cim-authentication/paths.md
+  - description: splunk-rba skill — Risk-Based Alerting framework
+    path: ~/.cursor/skills/splunk-rba/SKILL.md
+  - description: splunk-enterprise-security skill — Asset & Identity framework
+    path: ~/.cursor/skills/splunk-enterprise-security/SKILL.md
+  - description: splunk-mitre-attack skill — annotations.mitre_attack contract
+    path: ~/.cursor/skills/splunk-mitre-attack/SKILL.md
+  - description: Layer reference — paths
+    path: docs/reference/layers.md
+  - description: Formatter schema — pathIdField, timeField, pathColor, pathArrows
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/es-risk/paths.md
 - id: es-risk--supercluster
   source:
     id: es-risk
