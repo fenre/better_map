@@ -95,6 +95,18 @@
     background: rgba(255, 255, 255, 0.12);
 }
 
+/* v1.8.0 — pushBanner stacking badge (e.g. "+2 more") */
+.better_map-viz .better_map-error__badge {
+    margin-left: 8px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.12);
+    color: inherit;
+    flex: 0 0 auto;
+}
+
 .better_map-viz .better_map-perf-hud {
     position: absolute;
     top: 12px;
@@ -124,6 +136,27 @@
 .better_map-viz .maplibregl-popup.better_map-popup-wrapper .maplibregl-popup-content img {
     max-width: 100%;
     height: auto;
+}
+
+/*
+ * v1.7 — Tier 2 #5: hover-preview popup. Distinct from the click popup
+ * (which uses .better_map-popup-wrapper alone) so we can give it a
+ * tighter footprint, a slight transparency, and disable pointer
+ * interaction (the mousemove listener owns dismissal). The class is
+ * combined with .better_map-popup-wrapper so all base typography +
+ * sanitised <a>/<img> rules above still apply.
+ */
+.better_map-viz .maplibregl-popup.better_map-hover-popup .maplibregl-popup-content {
+    padding: 6px 10px;
+    font-size: 11px;
+    opacity: 0.95;
+    /* Don't intercept clicks — they belong to whatever marker / canvas
+     * is underneath. Critical for cursor-hover-then-click flows. */
+    pointer-events: none;
+}
+
+.better_map-viz .maplibregl-popup.better_map-hover-popup .maplibregl-popup-tip {
+    opacity: 0.95;
 }
 
 /*
@@ -1228,12 +1261,22 @@
 }
 
 /* ----------------------- Draw tools (top-left) -------------------- */
+/*
+ * v1.7.1: toolbar is now a flex COLUMN that stacks a button row on
+ * top of an inline status hint. The hint tells users that clicking a
+ * draw button only activates a mode — they then need to click on the
+ * map to add vertices. Without the hint, the buttons looked broken
+ * because the only visible effect of a click was the active-state
+ * highlight on the button itself.
+ */
 .better_map-viz .better_map-draw {
     position: absolute;
     top: 12px;
     left: 12px;
     z-index: 5;
     display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 4px;
     padding: 4px;
     background: rgba(11, 26, 45, 0.82);
@@ -1243,6 +1286,20 @@
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    max-width: 220px;
+}
+
+.better_map-viz .better_map-draw__row {
+    display: flex;
+    gap: 4px;
+}
+
+.better_map-viz .better_map-draw__hint {
+    font-size: 11px;
+    line-height: 1.35;
+    color: rgba(227, 237, 247, 0.78);
+    padding: 1px 2px 2px 2px;
+    max-width: 212px;
 }
 
 .better_map-viz .better_map-draw__btn {
@@ -1278,6 +1335,8 @@
     left: 232px;
     z-index: 5;
     display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     gap: 4px;
     padding: 4px;
     background: rgba(11, 26, 45, 0.82);
@@ -1287,6 +1346,20 @@
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    max-width: 260px;
+}
+
+.better_map-viz .better_map-measure__row {
+    display: flex;
+    gap: 4px;
+}
+
+.better_map-viz .better_map-measure__hint {
+    font-size: 11px;
+    line-height: 1.35;
+    color: rgba(227, 237, 247, 0.78);
+    padding: 1px 2px 2px 2px;
+    max-width: 252px;
 }
 
 .better_map-viz .better_map-measure__btn {
@@ -1316,7 +1389,8 @@
 
 .better_map-viz .better_map-measure__panel {
     position: absolute;
-    top: 56px;
+    /* 12px top + ~28px buttons + 4px gap + ~30px hint + 6px breathing = ~80px */
+    top: 88px;
     left: 232px;
     z-index: 7;
     max-width: 260px;
@@ -1956,6 +2030,9 @@
  * Below 640px viewport width the top-left draw + measure toolbars
  * would overlap the top-center geocoder. Stack measure below draw
  * so they don't collide. The minimap goes back to small dimensions.
+ *
+ * v1.7.1 — Draw + Measure toolbars are now taller (button row + hint)
+ * so the stacked-below-draw measure widget needs more headroom.
  * ============================================================= */
 
 @media (max-width: 640px) {
@@ -1966,13 +2043,16 @@
     }
 
     .better_map-viz .better_map-measure {
-        top: 56px;
+        /* Sits below the draw toolbar which is now ~72px tall
+         * (12px top + ~28px buttons + 4px gap + ~30px hint). */
+        top: 92px;
         left: 12px;
     }
 
     .better_map-viz .better_map-measure__panel {
         left: 12px;
-        top: 100px;
+        /* Below the measure toolbar (92px) + its buttons + hint. */
+        top: 168px;
         max-width: calc(100% - 24px);
     }
 
