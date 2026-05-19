@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 47
+recipe_count: 48
 recipes:
 - id: cim-alerts--h3
   source:
@@ -1451,6 +1451,62 @@ recipes:
   - description: featureJoin layer (us-states PMTiles preset; promoteId=stusps)
     path: better_map/appserver/static/visualizations/better_map/src/lib/layers/featureJoin.js
   path: docs/recipes/geo-us-states/extrusion-3d.md
+- id: itsi-kpi-base--heat
+  source:
+    id: itsi-kpi-base
+    display_name: ITSI service health (KPI base searches)
+    pattern: splunk-premium-itsi
+  layer:
+    id: heat
+    display_name: Heatmap
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: SA-ITOA
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: DC-AMS-01
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '53.5511'
+  - name: lon
+    type: number
+    example: '9.9937'
+  - name: unhealthy_services
+    type: integer
+    example: '7'
+  - name: total_services
+    type: integer
+    example: '23'
+  - name: weight
+    type: number
+    example: '1.0'
+    drives_formatter_option: heatmapWeight
+  required_formatter_options:
+  - pointRenderer
+  - heatmapOpacity
+  - heatmapRadius
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (per-service identity)
+    path: docs/recipes/itsi-kpi-base/markers.md
+  - description: Pattern reference — heatmap with weight normalisation on lookup-anchored sites
+    path: docs/recipes/kvstore-latlon/heat.md
+  - description: Pattern reference — alert-density heatmap (same eventstats max pattern)
+    path: docs/recipes/es-risk/heat.md
+  - description: splunk-itsi skill — itsi_summary schema, SHKPI- service health, entity attributes
+    path: ~/.cursor/skills/splunk-itsi/SKILL.md
+  - description: splunk-itsi-content skill — ITSI service / KPI / entity content packaging
+    path: ~/.cursor/skills/splunk-itsi-content/SKILL.md
+  - description: Layer reference — heatmap
+    path: docs/reference/layers.md
+  - description: Formatter schema — heatmapOpacity, heatmapRadius, heatmapWeight
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/itsi-kpi-base/heat.md
 - id: itsi-kpi-base--markers
   source:
     id: itsi-kpi-base
