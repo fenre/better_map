@@ -249,6 +249,7 @@ nav:
       - 'Cisco Cyber Vision (components + vulnerabilities) — paths': recipes/cyber-vision/paths.md
       - 'Cisco Cyber Vision (components + vulnerabilities) — supercluster': recipes/cyber-vision/supercluster.md
       - 'Cisco ThousandEyes (agent fleet) — H3 hexbin': recipes/thousandeyes/h3.md
+      - 'Cisco ThousandEyes (agent fleet) — choropleth': recipes/thousandeyes/choropleth.md
       - 'Cisco ThousandEyes (agent fleet) — heatmap': recipes/thousandeyes/heat.md
       - 'Cisco ThousandEyes (agent fleet) — markers': recipes/thousandeyes/markers.md
       - 'Cisco ThousandEyes (agent fleet) — supercluster': recipes/thousandeyes/supercluster.md
@@ -266,6 +267,7 @@ nav:
       - 'KV Store (lat/lon) — H3 hexbin': recipes/kvstore-latlon/h3.md
       - 'KV Store (lat/lon) — heatmap': recipes/kvstore-latlon/heat.md
       - 'KV Store (lat/lon) — markers': recipes/kvstore-latlon/markers.md
+      - 'KV Store (lat/lon) — paths': recipes/kvstore-latlon/paths.md
       - 'KV Store (lat/lon) — supercluster': recipes/kvstore-latlon/supercluster.md
       - 'Meraki (Cisco vendor TA) — 3D extrusion': recipes/meraki/extrusion-3d.md
       - 'Meraki (Cisco vendor TA) — H3 hexbin': recipes/meraki/h3.md
@@ -284,6 +286,7 @@ nav:
       - 'Splunk Stream (wire data) — H3 hexbin': recipes/splunk-stream/h3.md
       - 'Splunk Stream (wire data) — heatmap': recipes/splunk-stream/heat.md
       - 'Splunk Stream (wire data) — markers': recipes/splunk-stream/markers.md
+      - 'Splunk Stream (wire data) — paths': recipes/splunk-stream/paths.md
       - 'Splunk Stream (wire data) — supercluster': recipes/splunk-stream/supercluster.md
       - 'US states — 3D extrusion': recipes/geo-us-states/extrusion-3d.md
       - 'US states — choropleth': recipes/geo-us-states/choropleth.md
