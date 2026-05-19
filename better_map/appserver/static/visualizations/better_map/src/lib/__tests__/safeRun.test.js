@@ -232,3 +232,58 @@ describe('safeRun — async actions', () => {
         expect(r.result).toEqual({ not: 'a-promise' });
     });
 });
+
+describe('safeRun — rate limiting', () => {
+    beforeEach(() => { __resetSafeRunState(); });
+
+    it('collapses identical scope envelopes within a 1s window', () => {
+        let t = 1000;
+        __setNow(function () { return t; });
+        const received = [];
+        __setReporter(function (e) { received.push(e); });
+
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('a'); } });
+        t = 1100;
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('b'); } });
+        t = 1500;
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('c'); } });
+
+        expect(received).toHaveLength(1);
+        expect(received[0].message).toBe('a');
+    });
+
+    it('reports again after the 1s window elapses', () => {
+        let t = 1000;
+        __setNow(function () { return t; });
+        const received = [];
+        __setReporter(function (e) { received.push(e); });
+
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('a'); } });
+        t = 2001;
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('b'); } });
+
+        expect(received).toHaveLength(2);
+    });
+
+    it('does not collapse different scopes', () => {
+        let t = 1000;
+        __setNow(function () { return t; });
+        const received = [];
+        __setReporter(function (e) { received.push(e); });
+
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('a'); } });
+        safeRun({ scope: MAP_CREATE, action: function () { throw new Error('b'); } });
+
+        expect(received).toHaveLength(2);
+    });
+
+    it('still records every envelope in the ring buffer (rate-limit affects reporter only)', () => {
+        let t = 1000;
+        __setNow(function () { return t; });
+        for (let i = 0; i < 5; i++) {
+            t = 1000 + i * 10;
+            safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('e' + i); } });
+        }
+        expect(getRecentErrors()).toHaveLength(5);
+    });
+});
