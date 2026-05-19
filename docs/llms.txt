@@ -61,6 +61,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [CIM Performance (CPU / memory / facilities) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/cim-performance/heat/): apps required: Splunk_SA_CIM.
 - [CIM Performance (CPU / memory / facilities) → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-performance/markers/): apps required: Splunk_SA_CIM.
 - [CSV lookup (geo points) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/h3/): apps required: none.
+- [CSV lookup (geo polygons) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/heat/): apps required: none.
 - [CSV lookup (geo polygons) → Markers (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/markers/): apps required: none.
 - [CSV lookup (geo polygons) → Polygons (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/polygons/): apps required: none.
 - [CSV lookup (geo polygons) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/supercluster/): apps required: none.
@@ -74,6 +75,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [US states (built-in geo lookup) → Choropleth (unverified)](https://fenre.github.io/better_map/recipes/geo-us-states/choropleth/): apps required: none.
 - [US states (built-in geo lookup) → 3D extrusion (unverified)](https://fenre.github.io/better_map/recipes/geo-us-states/extrusion-3d/): apps required: none.
 - [ITSI service health (KPI base searches) → Markers (unverified)](https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/): apps required: SA-ITOA.
+- [KV Store (lat/lon collection) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/h3/): apps required: none.
 - [KV Store (lat/lon collection) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/heat/): apps required: none.
 - [KV Store (lat/lon collection) → Markers (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/): apps required: none.
 - [KV Store (lat/lon collection) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/supercluster/): apps required: none.

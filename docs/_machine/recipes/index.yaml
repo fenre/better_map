@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 45
+recipe_count: 47
 recipes:
 - id: cim-alerts--h3
   source:
@@ -807,6 +807,65 @@ recipes:
   - description: Sibling — NetFlow H3 recipe (same layer, different source)
     path: docs/recipes/netflow-sflow-ipfix/h3.md
   path: docs/recipes/csv-lookup-geo/h3.md
+- id: csv-lookup-geo--heat
+  source:
+    id: csv-lookup-geo
+    display_name: CSV lookup (geo polygons)
+    pattern: splunk-lookup
+  layer:
+    id: heat
+    display_name: Heatmap
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required: []
+  expected_fields:
+  - name: id
+    type: string
+    example: STORE-0042
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '33.7490'
+  - name: lon
+    type: number
+    example: '-84.3880'
+  - name: site_name
+    type: string
+    example: 'Atlanta Downtown #42'
+  - name: site_category
+    type: string
+    example: retail
+  - name: event_count
+    type: number
+    example: '1284'
+  - name: weight
+    type: number
+    example: '0.84'
+    drives_formatter_option: heatmapOpacity
+  required_formatter_options:
+  - pointRenderer
+  - heatmapOpacity
+  - heatmapRadius
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer
+    path: docs/recipes/csv-lookup-geo/markers.md
+  - description: Companion recipe — same source, supercluster layer
+    path: docs/recipes/csv-lookup-geo/supercluster.md
+  - description: Companion recipe — same source family, polygon layer
+    path: docs/recipes/csv-lookup-geo/polygons.md
+  - description: Companion recipe — same source family, vector-tile-join
+    path: docs/recipes/csv-lookup-geo/vector-tile-join.md
+  - description: Pattern reference — same heat-weight shape, KV-Store source
+    path: docs/recipes/kvstore-latlon/heat.md
+  - description: Splunk lookups skill — CSV lookup configuration
+    path: ~/.cursor/skills/splunk-lookups/SKILL.md
+  - description: Layer reference — heat
+    path: docs/reference/layers.md
+  - description: Formatter schema — heatmapOpacity, heatmapRadius
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/csv-lookup-geo/heat.md
 - id: csv-lookup-geo--markers
   source:
     id: csv-lookup-geo
@@ -1445,6 +1504,60 @@ recipes:
   - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
     path: docs/reference/bm-ct-1.md
   path: docs/recipes/itsi-kpi-base/markers.md
+- id: kvstore-latlon--h3
+  source:
+    id: kvstore-latlon
+    display_name: KV Store (lat/lon collection)
+    pattern: splunk-lookup
+  layer:
+    id: h3
+    display_name: H3 hexbin
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required: []
+  expected_fields:
+  - name: id
+    type: string
+    example: DC-ATL-01
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '33.7490'
+  - name: lon
+    type: number
+    example: '-84.3880'
+  - name: site_name
+    type: string
+    example: Atlanta data center
+  - name: event_count
+    type: number
+    example: '1284'
+  - name: value
+    type: number
+    example: '1284'
+  required_formatter_options:
+  - pointRenderer
+  - hexbinAggregate
+  - hexbinResolution
+  - hexbinOpacity
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer
+    path: docs/recipes/kvstore-latlon/markers.md
+  - description: Companion recipe — same source, heat layer
+    path: docs/recipes/kvstore-latlon/heat.md
+  - description: Companion recipe — same source, supercluster layer
+    path: docs/recipes/kvstore-latlon/supercluster.md
+  - description: Pattern reference — h3 layer with sum-aggregate on lookup-anchored sites
+    path: docs/recipes/ot-datastreamer/h3.md
+  - description: Splunk lookups skill — KV Store lookup configuration
+    path: ~/.cursor/skills/splunk-lookups/SKILL.md
+  - description: Layer reference — h3
+    path: docs/reference/layers.md
+  - description: Formatter schema — hexbinAggregate, hexbinResolution, hexbinOpacity
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/kvstore-latlon/h3.md
 - id: kvstore-latlon--heat
   source:
     id: kvstore-latlon

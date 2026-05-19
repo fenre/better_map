@@ -230,6 +230,7 @@ nav:
       - 'CIM Performance (CPU / memory / facilities) — heatmap': recipes/cim-performance/heat.md
       - 'CIM Performance (CPU / memory / facilities) — markers': recipes/cim-performance/markers.md
       - 'CSV lookup (geo points) — H3 hexbin': recipes/csv-lookup-geo/h3.md
+      - 'CSV lookup (geo points) — heatmap': recipes/csv-lookup-geo/heat.md
       - 'CSV lookup (geo points) — markers': recipes/csv-lookup-geo/markers.md
       - 'CSV lookup (geo points) — supercluster': recipes/csv-lookup-geo/supercluster.md
       - 'CSV lookup (geo polygons) — polygons': recipes/csv-lookup-geo/polygons.md
@@ -243,6 +244,7 @@ nav:
       - 'ES Risk-Based Alerting (risk index) — heatmap': recipes/es-risk/heat.md
       - 'ES Risk-Based Alerting (risk index) — markers': recipes/es-risk/markers.md
       - 'ITSI service health (KPI base searches) — markers': recipes/itsi-kpi-base/markers.md
+      - 'KV Store (lat/lon) — H3 hexbin': recipes/kvstore-latlon/h3.md
       - 'KV Store (lat/lon) — heatmap': recipes/kvstore-latlon/heat.md
       - 'KV Store (lat/lon) — markers': recipes/kvstore-latlon/markers.md
       - 'KV Store (lat/lon) — supercluster': recipes/kvstore-latlon/supercluster.md

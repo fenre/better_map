@@ -2536,6 +2536,123 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   CHANGELOG iteration if a new release adds a
 >   large `## [VERSION]` section before then.
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 17 recipes
+> SHIPPED (2 more recipes — recipe count 45 → 47, layer-type
+> coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
+> unchanged, heat usage 7 → 8, h3 usage 10 → 11).** Wave 17
+> completes the **11th + 12th source-row triplets** (every
+> triplet so far: cim-alerts, cim-authentication,
+> cim-network-traffic, cim-performance, cyber-vision, es-risk,
+> meraki, netflow-sflow-ipfix, splunk-stream, ot-datastreamer
+> from waves 4b–16, plus **csv-lookup-geo** AND **kvstore-latlon**
+> now completing markers / heat / h3):
+> - **`csv-lookup-geo/heat`** — completes the csv-lookup-geo
+>   triplet (markers from wave 6, heat from wave 17, h3 already
+>   shipped; supercluster and vector-tile-join also already
+>   shipped — csv-lookup-geo is now the most-comprehensively-
+>   covered source row in the matrix at 5 layer recipes). The
+>   heat layer is the right shape for **executive activity-
+>   density briefings** (smooth Gaussian per-site pressure
+>   surface from an events-index join), **operations heatmap
+>   panels** (where IS the load concentrated this hour), and
+>   **per-site weighted-activity views** (each site contributes
+>   weight ∝ its event_count via the `eventstats max` /
+>   `weight=event_count/max_event_count` normalisation
+>   pattern). Distinct from the markers companion (per-site
+>   identity pins), the h3 companion (hard-bordered regional
+>   sum-aggregates), and the supercluster companion (zoom-
+>   adaptive cluster bubbles). The §6 Gotchas cover the
+>   site_id-extraction prereq, the weight-normalisation
+>   choice (`max` vs `log10` vs absolute), the layer-choice
+>   matrix (heat vs markers vs supercluster vs h3), the
+>   CSV-vs-KV-Store decision (CSV for editor-driven mappings
+>   ≤10k rows / KV-Store for REST-API-driven mappings),
+>   `auto` renderer disabling, empty-result handling, the
+>   10MB CSV ceiling, and the no-OT-safety boundary.
+> - **`kvstore-latlon/h3`** — completes the kvstore-latlon
+>   triplet (markers from wave 4b, heat from wave 4b, h3 from
+>   wave 17; supercluster from wave 9 also already shipped —
+>   kvstore-latlon is also at 4 layer recipes now). The h3
+>   layer is the right shape for **regional capacity
+>   briefings** (continental sum-aggregated hexes — "region
+>   8b1 in continental Europe drew 1.2M events"), **board-
+>   level deployment-scope maps** (one hex per
+>   continental jurisdiction at resolution 3), and **data-
+>   residency audits** (flag any hex outside the contracted
+>   region with non-zero `value`). Distinct from the heat
+>   companion (smooth Gaussian per-site pressure, no hard
+>   borders) and the markers companion (per-site identity
+>   pins). The §6 Gotchas cover the same site_id-extraction
+>   prereq as the heat companion, the `hexbinResolution`
+>   selection guide (3 = continental / 4-5 = country /
+>   6-7 = metro / 8-9 = building), the H3-vs-heat matrix
+>   (boundary-aware totals vs smooth-gradient pressure),
+>   the `sum`/`count`/`avg`/`max` aggregate-choice contract
+>   (default `sum`), the per-hex popup contract (shows the
+>   aggregated `value`, NOT individual sites), the `value`
+>   field-aliasing rule, empty-result handling, the no-
+>   cross-panel normalisation gotcha (each h3 panel
+>   independently auto-scales its colour ramp to its
+>   per-panel min/max), and the OT-safety carve-out (Rule
+>   1 + Rule 5 — SIS sites belong in a dedicated layer
+>   with their own `ot_safety_relevant: true` flag because
+>   hex aggregation does NOT preserve per-site safety
+>   distinctions).
+> - **Triplet completion now 12 / 15 source dirs.** The
+>   wave-16 status block noted `csv-lookup-geo/heat` and
+>   `kvstore-latlon/h3` as the two best one-cell-away
+>   triplet completers; wave 17 cleared both in a single
+>   PR. Remaining source rows: `geo-us-states` (geo-shape
+>   row, intentionally NOT a markers-style triplet
+>   target), `itsi-kpi-base` (has markers only; missing
+>   h3/heat — two-cell-away triplet candidate), and
+>   `thousandeyes` (has markers + paths; missing h3/heat
+>   — two-cell-away triplet candidate). Best wave 18+
+>   triplet-completing two-cell sets: `itsi-kpi-base/h3` +
+>   `itsi-kpi-base/heat` OR `thousandeyes/h3` +
+>   `thousandeyes/heat`.
+> - **Layer-type coverage 9 / 10 unchanged.** Both the heat
+>   layer (already shipped in 7 prior recipes from waves
+>   4b–14) and the h3 layer (already shipped in 10 prior
+>   recipes from waves 8–16) are well-established; wave 17
+>   just extends each to the next missing source row.
+>   The only remaining layer is `indoor`, which is blocked
+>   on the v1.8+ floor-plan-overlay UI infrastructure.
+> - **Source-pattern coverage 8 / 8 unchanged.** All eight
+>   source patterns were already represented from wave 6's
+>   21-recipe milestone; wave 17 adds one recipe each to
+>   `splunk-lookup` (csv-lookup-geo) and `splunk-lookup`
+>   (kvstore-latlon) — the pattern was already shipped, so
+>   the count is unchanged.
+> - **Token budget.** Wave 17 trim opened ~8,337 tokens of
+>   WARN headroom (175,000 - 166,663). The two recipes add
+>   ~5,329 tokens combined (~2,665 per recipe — slightly
+>   above the 2,800-token median because both recipes are
+>   triplet-completers and therefore include a more
+>   comprehensive "vs companion" decision matrix in §1 +
+>   §6); the wave 17 recipes status block adds ~2k more
+>   (self-stripping, so zero net corpus impact via the
+>   wave-13 generalised regex). `llms-full.txt` lands at
+>   **~171,992 estimated tokens** / **~3,008 tokens of
+>   WARN headroom**. Sufficient to fund 1 more recipe at
+>   ~2.8k cost in wave 18 before the next token-trim is
+>   required. Most-promising wave-18 trim levers (in
+>   projected-ROI order): (a) recipe-page §1 Source-
+>   description compaction (rejected for wave 17 but the
+>   "vs" layer-choice comparison embedded in §1 is high-
+>   signal — could be split out into a dedicated §1b
+>   subsection that's NOT trimmed, allowing the rest of
+>   §1 to be compacted); (b) per-recipe §6 Gotchas
+>   sub-trim (currently kept verbatim but contains
+>   significant repetition of the OT-safety boundary
+>   across recipes — could deduplicate to a shared
+>   reference); (c) a second CHANGELOG iteration if a new
+>   release adds large `## [VERSION]` sections.
+>
+> _This `> **Status …` blockquote will self-strip from
+> `llms-full.txt` at the next regeneration via the wave-13
+> generalised ROADMAP status-block regex._
+
 > **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 17 token-trim
 > SHIPPED (~7.7k tokens reclaimed by compacting each Theme A-G
 > work-item body in `ROADMAP.md` to its heading + Problem + Accept

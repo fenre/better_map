@@ -4,7 +4,7 @@
 
 This file is the body-inclusive sibling of `llms.txt` and concatenates every page on the Better Map documentation site into a single, LLM-friendly text dump. The short companion index is at <https://fenre.github.io/better_map/llms.txt>. Pages appear in `mkdocs.yml` `nav:` declaration order. Each page block carries a stable `# === ... ===` separator plus the source-of-truth path on disk and the published URL so the same content can be grepped by either dimension.
 
-At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 45 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 47 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
 
 All page URLs resolve to publicly accessible Material-themed HTML on GitHub Pages. The project ships under the MIT licence; the canonical repo is <https://github.com/fenre/better_map>.
 
@@ -36,6 +36,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / CIM Performance (CPU / memory / facilities) — heatmap (`docs/recipes/cim-performance/heat.md`)
 - Recipes / CIM Performance (CPU / memory / facilities) — markers (`docs/recipes/cim-performance/markers.md`)
 - Recipes / CSV lookup (geo points) — H3 hexbin (`docs/recipes/csv-lookup-geo/h3.md`)
+- Recipes / CSV lookup (geo points) — heatmap (`docs/recipes/csv-lookup-geo/heat.md`)
 - Recipes / CSV lookup (geo points) — markers (`docs/recipes/csv-lookup-geo/markers.md`)
 - Recipes / CSV lookup (geo points) — supercluster (`docs/recipes/csv-lookup-geo/supercluster.md`)
 - Recipes / CSV lookup (geo polygons) — polygons (`docs/recipes/csv-lookup-geo/polygons.md`)
@@ -49,6 +50,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / ES Risk-Based Alerting (risk index) — heatmap (`docs/recipes/es-risk/heat.md`)
 - Recipes / ES Risk-Based Alerting (risk index) — markers (`docs/recipes/es-risk/markers.md`)
 - Recipes / ITSI service health (KPI base searches) — markers (`docs/recipes/itsi-kpi-base/markers.md`)
+- Recipes / KV Store (lat/lon) — H3 hexbin (`docs/recipes/kvstore-latlon/h3.md`)
 - Recipes / KV Store (lat/lon) — heatmap (`docs/recipes/kvstore-latlon/heat.md`)
 - Recipes / KV Store (lat/lon) — markers (`docs/recipes/kvstore-latlon/markers.md`)
 - Recipes / KV Store (lat/lon) — supercluster (`docs/recipes/kvstore-latlon/supercluster.md`)
@@ -1171,7 +1173,7 @@ generated from
 so it cannot drift from the recipe files.
 
 <!-- recipes-matrix trimmed for llms-full.txt token budget (see Wave 16 ROADMAP block); full matrix at <https://fenre.github.io/better_map/recipes/> and source-of-truth YAML at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>; per-recipe details (status, apps, expected-field contract, formatter options) are kept verbatim under the matching `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file -->
-**Total: 45 recipes · 15 source dir(s) · 9 layer type(s).**
+**Total: 47 recipes · 15 source dir(s) · 9 layer type(s).**
 
 Source dirs and the layer ids that already ship for each (any `(source, layer)` not listed below is an open cell in the E5 matrix and is a candidate for the next recipe wave):
 
@@ -1179,12 +1181,12 @@ Source dirs and the layer ids that already ship for each (any `(source, layer)` 
 - `cim-authentication`: h3, heat, markers
 - `cim-network-traffic`: h3, heat, markers, paths, supercluster
 - `cim-performance`: h3, heat, markers
-- `csv-lookup-geo`: h3, markers, polygons, supercluster, vector-tile-join
+- `csv-lookup-geo`: h3, heat, markers, polygons, supercluster, vector-tile-join
 - `cyber-vision`: h3, heat, markers
 - `es-risk`: h3, heat, markers
 - `geo-us-states`: choropleth, extrusion-3d
 - `itsi-kpi-base`: markers
-- `kvstore-latlon`: heat, markers, supercluster
+- `kvstore-latlon`: h3, heat, markers, supercluster
 - `meraki`: h3, heat, markers
 - `netflow-sflow-ipfix`: h3, heat, markers
 - `ot-datastreamer`: h3, heat, markers
@@ -4437,6 +4439,219 @@ _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are o
 
 # === END: https://fenre.github.io/better_map/recipes/csv-lookup-geo/h3/ ===
 
+# === BEGIN: https://fenre.github.io/better_map/recipes/csv-lookup-geo/heat/ ===
+
+# Recipes / CSV lookup (geo points) — heatmap
+
+> Source: `docs/recipes/csv-lookup-geo/heat.md`  
+> URL: <https://fenre.github.io/better_map/recipes/csv-lookup-geo/heat/>
+
+# CSV lookup (geo points) — heatmap
+
+The activity-volume complement to the
+[csv-lookup-geo/markers](./markers.md) +
+[csv-lookup-geo/supercluster](./supercluster.md) recipes — same
+`csv-lookup-geo` source pattern, same `sites.csv` lookup that holds
+`site_id` → `lat`/`lon` (plus descriptive columns), but rendered
+as a **weighted heatmap** driven by an events-index join. The
+question this recipe answers is "which of my CSV-listed sites
+are busiest right now?" — not "where is each site?" (use
+[markers](./markers.md)) nor "how many sites are clustered in
+each region?" (use [supercluster](./supercluster.md)). Completes
+the `csv-lookup-geo` source-row triplet (markers / supercluster /
+heat — polygons and vector-tile-join are separate-shape layers
+for the same source pattern).
+
+## 1. Source description
+
+Same `sites.csv` lookup mechanism as the markers /
+supercluster siblings — a CSV file under
+`<app>/lookups/sites.csv` with columns
+`site_id,site_name,site_category,lat,lon` exposed via a
+`transforms.conf` `[sites]` stanza, queried with the `| lookup`
+command. The difference here is the SECOND data source: an
+events index that carries a `site_id` field (extracted from
+`hostname` via a CIM `FIELDALIAS`, set directly by a forwarder
+via `inputs.conf` `_meta`, or tagged in by a search-time `eval`).
+The two sources are joined on `site_id`: the events provide
+WEIGHT (event count per site), the CSV provides POSITION (lat /
+lon / display fields per site). Structurally identical to the
+[kvstore-latlon/heat](../kvstore-latlon/heat.md) pattern — the
+only difference is the inventory store (CSV file vs KV-Store
+collection), which changes the operational model (git-friendly
++ version-controlled + AppInspect-clean for CSV vs live-editable
++ REST-API-driven for KV-Store) but NOT the SPL shape.
+
+**Why heatmap for CSV-listed sites.** A markers view at world
+zoom shows you WHERE each site is but not WHICH sites are
+active. A supercluster view tells you how many sites are
+clustered per region but flattens activity volume to "1 site =
+1 dot." For the executive panel "show me my fleet's load
+distribution" or the SRE panel "which sites are hottest in this
+window?" the heat layer is the right shape — it weights each
+feature by activity and lets the operator see the pressure
+gradient at a glance.
+
+**Heatmap vs markers vs supercluster — which to choose.**
+- Use **markers** when the panel question is "WHICH SITE is
+  this dot? Let me click it." (per-site identity, ≤ 200
+  sites). Layer: [markers](./markers.md).
+- Use **supercluster** when the panel question is "how many
+  sites do I have per region, and let me drill down per
+  individual" (200-250k sites, identity preserved via cluster
+  expand-on-click). Layer: [supercluster](./supercluster.md).
+- Use **heatmap** (this recipe) when the panel question is
+  "where is the ACTIVITY distributed?" (volume-weighted,
+  identity collapsed into density). The heat layer is the
+  right shape for executive briefings, multi-region SRE
+  reviews, and "which of my sites generated the most traffic
+  this hour" questions.
+
+**Typical sourcetype / index:** events index varies by use
+case (`web`, `firewall`, `wineventlog`, `aws:cloudtrail`,
+`pan:traffic`, ...); the `sites.csv` lookup is the same
+regardless. The events SPL stage assumes the events have
+already been enriched with a `site_id` field; if they have
+not, see §6 Gotchas for the enrichment patterns.
+
+This recipe assumes the `sites.csv` lookup described in
+[csv-lookup-geo/markers §1](./markers.md#1-source-description)
+already exists — its one-time setup is the prerequisite, not
+duplicated here.
+
+## 2. SPL recipe
+
+```spl
+index=web sourcetype=access_combined earliest=-1h latest=now
+| stats count AS event_count BY site_id
+| lookup sites site_id OUTPUT lat, lon, site_name, site_category
+| where isnotnull(lat) AND isnotnull(lon)
+| eventstats max(event_count) AS max_event_count
+| eval weight=round(event_count / max_event_count, 2)
+| rename site_id AS id
+| fields id, lat, lon, site_name, site_category, event_count, weight
+| sort - event_count
+| head 5000
+```
+
+Why this exact shape, line by line:
+
+- **`index=web sourcetype=access_combined earliest=-1h latest=now`**
+  — change to whatever events index represents "activity" in
+  your install. The recipe uses web access logs as the canonical
+  example because every Splunk install has them. A 1 h window
+  gives a rolling "recently busy" picture without dragging in
+  long-tail history. For shift-handover views widen to 24 h;
+  for live ops narrow to 5 min.
+- **`stats count AS event_count BY site_id`** — one row per
+  site, with the count of events on that site in the window.
+  The `BY site_id` is what makes the heat blob density per-site
+  rather than per-event.
+- **`lookup sites site_id OUTPUT lat, lon, site_name,
+  site_category`** — pull coordinates AND display fields from
+  the CSV. `site_id` is the join key on both sides (no `AS`
+  alias needed — same name as the CSV column). The `lookup`
+  command reads from the `[sites]` `transforms.conf` stanza.
+- **`where isnotnull(lat) AND isnotnull(lon)`** — drop any
+  `site_id` value that is in the events stream but missing
+  from `sites.csv` (an unregistered site, a typo in the
+  hostname enrichment, a decommissioned site whose entry was
+  deleted from the CSV but whose hostname still appears in
+  events). Surface those in a companion table panel for the
+  site-ops team to backfill.
+- **`eventstats max(event_count) AS max_event_count`** — adds
+  the global maximum as a column on every row, so the next
+  `eval` can normalise. `eventstats` (not `stats`) is the right
+  command here because it KEEPS the per-site rows and only ADDS
+  the new column.
+- **`eval weight=round(event_count / max_event_count, 2)`** —
+  normalise to a `[0, 1]` band so the heat layer's weight
+  property has a predictable scale across panels. Rounded to
+  2 decimal places for stable rendering and clean popup
+  formatting.
+- **`rename site_id AS id`** — adopt Better Map's canonical
+  `id` alias, same convention as the markers / supercluster
+  siblings and every other recipe in the matrix.
+- **`fields id, lat, lon, site_name, site_category,
+  event_count, weight`** — explicit projection. CSV lookups
+  often carry many columns (opening date, manager, square
+  footage, regional VP, cost centre); for the heat panel we
+  only need the seven documented in the field contract.
+  `max_event_count` is dropped explicitly (it was a transient
+  helper).
+- **`sort - event_count`, `head 5000`** — render budget. The
+  heat layer scales to thousands of points cleanly. 5000
+  covers a fleet of thousands of sites comfortably. The
+  `sort - event_count` makes the hottest sites render first,
+  which is the right z-order for the heat layer (overlap of
+  hot blobs reinforces; overlap of hot-over-cold lets the hot
+  bleed through).
+
+## 3. Expected fields
+
+| field         | type   | example              |
+|---------------|--------|----------------------|
+| id            | string | STORE-0042           |
+| lat           | number | 33.7490              |
+| lon           | number | -84.3880             |
+| site_name     | string | Atlanta Downtown #42 |
+| site_category | string | retail               |
+| event_count   | number | 1284                 |
+| weight        | number | 0.84                 |
+
+All seven fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+`site_name` and `site_category` flow through as feature
+properties for the popup but are not strictly required by the
+heat layer (the heat renderer reads only `lat`, `lon`, and
+`weight`; the descriptive columns survive the join because
+the heat layer preserves all feature properties for the popup
+panel that pops up on hover / click of a hot region).
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pointRenderer": "heatmap",
+  "heatmapOpacity": 0.75,
+  "heatmapRadius": 24
+}
+```
+
+Why this specific config:
+
+- **`pointRenderer: "heatmap"`** — explicit pin to the heatmap
+  renderer. The `auto` renderer switches to heatmap above
+  ~200 features, so for SMALL CSVs (the most common
+  csv-lookup-geo use case — a corporate site list, a regional
+  datacenter inventory) the recipe needs an explicit pin to
+  force the heat rendering even when the active-site count
+  drops below 200.
+- **`heatmapOpacity: 0.75`** — matches the `kvstore-latlon/
+  heat` recipe. At 1.0 the heat fully occludes the basemap
+  labels; at 0.5 the heat is too washed out to read at low
+  zoom; 0.75 is the sweet spot for an SRE / executive
+  audience that needs to read both the heat gradient AND the
+  underlying city / region labels.
+- **`heatmapRadius: 24`** — matches the `kvstore-latlon/heat`
+  recipe (a fleet-of-sites view where blobs from neighbouring
+  sites SHOULD merge at world zoom and resolve to per-site
+  blobs at country / city zoom). For a single-region or
+  single-city view, drop to 12-16; for a dense
+  hundreds-of-sites-per-metro view (the retail-flagship
+  pattern), bump to 28-32.
+- **`weight` drives heat intensity automatically.** The heat
+  layer renderer auto-picks the `weight` field by name (per
+  Better Map's `dataFitness.js` field aliasing). If you
+  rename `weight` in the SPL, also set the formatter's
+  `heatField` option (or whichever name the formatter schema
+  uses — check
+  [`docs/_machine/formatter-schema.json`](https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json)).
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/heat/>._
+
+# === END: https://fenre.github.io/better_map/recipes/csv-lookup-geo/heat/ ===
+
 # === BEGIN: https://fenre.github.io/better_map/recipes/csv-lookup-geo/markers/ ===
 
 # Recipes / CSV lookup (geo points) — markers
@@ -7108,6 +7323,239 @@ Why this minimal config:
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/kvstore-latlon/h3/ ===
+
+# Recipes / KV Store (lat/lon) — H3 hexbin
+
+> Source: `docs/recipes/kvstore-latlon/h3.md`  
+> URL: <https://fenre.github.io/better_map/recipes/kvstore-latlon/h3/>
+
+# KV Store (lat/lon collection) — H3 hexbin
+
+The regional-aggregate complement to the
+[kvstore-latlon/markers](./markers.md),
+[kvstore-latlon/heat](./heat.md), and
+[kvstore-latlon/supercluster](./supercluster.md) recipes — same
+`site_locations` KV-Store collection, same events-index join on
+`site_id` for activity weight, but rendered as a **hard-edged
+hexagonal partition** (Uber's H3 spatial index) instead of a
+continuous heat surface or discrete markers. Each hex cell
+shows the SUM of `event_count` for every site whose
+(`lat`, `lon`) falls inside the hex. Completes the
+`kvstore-latlon` source-row triplet (markers / heat /
+supercluster / h3 — every kvstore-latlon layer now ships).
+
+## 1. Source description
+
+Same `site_locations` KV-Store collection as the
+[markers](./markers.md), [heat](./heat.md), and
+[supercluster](./supercluster.md) siblings — an inventory of
+fixed sites with `site_id`, `site_name`, `lat`, `lon`,
+`site_type` columns. The events join is the same shape as the
+[heat sibling](./heat.md): an events index that carries a
+`site_id` field (extracted via CIM `FIELDALIAS`, forwarder
+`_meta`, or search-time `eval`), aggregated to
+`stats count BY site_id`, then joined to the KV-Store for
+coordinates.
+
+The DIFFERENCE between the heat sibling and this h3 recipe is
+the spatial-aggregation regime:
+
+- **Heat layer** smooths sites into Gaussian blobs that BLEND
+  across hex / region / city boundaries. Good for "where IS the
+  pressure" continuous-gradient views, bad for "which JURISDICTION
+  has the most pressure" boundary-aware views.
+- **H3 layer** (this recipe) partitions the world into
+  pre-computed hexagonal cells at a fixed resolution (here
+  resolution 3 — continental-scale hexes ~190 km across) and
+  SUMS the `event_count` of every site whose coordinates fall
+  inside each hex. Each hex shows up as a discrete coloured
+  polygon with a hard edge.
+
+This makes the h3 layer right for:
+
+- **Regional capacity briefings.** "Region 8b1 in continental
+  Europe drew 1.2M events; region 822 in eastern North America
+  drew 4.7M; region 8c4 in southeast Asia drew 89k." The hex
+  partition gives boundary-aware totals that are easy to
+  compare across continents.
+- **Board-level deployment-scope maps.** "We deploy in 12
+  H3-resolution-3 cells globally." The hard partition makes
+  the scope count concrete.
+- **Data-residency audits.** "Every active site in our fleet
+  lives in a hex whose lat/lon falls within the contracted
+  region." The hard partition surfaces residency violations as
+  hexes appearing OUTSIDE the contracted region with non-zero
+  `value`.
+
+**H3 hexbin vs heat vs markers vs supercluster — which to
+choose.**
+- Use **markers** when the panel question is "which SITE is
+  this?" (per-site identity, click for popup). Layer:
+  [markers](./markers.md).
+- Use **supercluster** when the panel question is "how many
+  sites do I have per region, with cluster-expand drilldown"
+  (200-250k sites, identity preserved via cluster expand-on-
+  click). Layer: [supercluster](./supercluster.md).
+- Use **heat** when the panel question is "where is the
+  activity SMOOTHLY DISTRIBUTED?" (continuous gradient, no
+  hard borders). Layer: [heat](./heat.md).
+- Use **H3 hexbin** (this recipe) when the panel question is
+  "which REGION (hard-bordered) has the most activity?"
+  (boundary-aware totals, sortable, drillable, auditable). The
+  hex resolution is the operator's control over what "region"
+  means — see §4 for resolution selection.
+
+**Typical sourcetype / index:** events index varies by use
+case (`web`, `firewall`, `wineventlog`, `aws:cloudtrail`, ...);
+the `site_locations` KV-Store is the same regardless. This
+recipe assumes the `site_locations` collection already exists —
+its one-time setup is documented in
+[kvstore-latlon/markers](./markers.md#1-source-description) and
+not duplicated here.
+
+## 2. SPL recipe
+
+```spl
+index=web sourcetype=access_combined earliest=-1h latest=now
+| stats count AS event_count BY site_id
+| lookup site_locations site_id OUTPUT site_name, lat, lon, site_type
+| where isnotnull(lat) AND isnotnull(lon)
+| eval value=event_count
+| rename site_id AS id
+| fields id, lat, lon, site_name, site_type, event_count, value
+| sort - event_count
+| head 5000
+```
+
+Why this exact shape, line by line:
+
+- **`index=web sourcetype=access_combined earliest=-1h latest=now`**
+  — same events index pattern as the
+  [heat sibling](./heat.md#2-spl-recipe). Change to whatever
+  events index represents "activity" in your install. A 1 h
+  window is the typical operations-dashboard slice; widen to
+  24 h for executive briefings, narrow to 5 min for live ops.
+- **`stats count AS event_count BY site_id`** — one row per
+  site, with the count of events on that site in the window.
+  This is the per-site activity total that becomes the
+  per-hex aggregate after the hex layer's spatial bucketing.
+- **`lookup site_locations site_id OUTPUT site_name, lat, lon,
+  site_type`** — pull coordinates AND display fields from the
+  KV Store. `site_id` is the join key on both sides (no `AS`
+  alias needed — same name).
+- **`where isnotnull(lat) AND isnotnull(lon)`** — drop any
+  `site_id` value that is in the events stream but missing
+  from `site_locations` (unregistered site, typo in the
+  hostname enrichment, decommissioned site). The h3 layer
+  REQUIRES coordinates on every row — un-coordinated rows
+  would be silently dropped by the hexbin algorithm anyway,
+  but explicit `where` makes the data-quality signal
+  surface-able in a companion table panel.
+- **`eval value=event_count`** — the h3 layer reads the
+  `value` field by name (per Better Map's `dataFitness.js`
+  field aliasing) for hexbin aggregation. Keeping a separate
+  alias rather than renaming `event_count` directly preserves
+  `event_count` for the per-feature popup ("this hex contains
+  N events across M sites").
+- **`rename site_id AS id`** — adopt Better Map's canonical
+  `id` alias, same convention as every other recipe in the
+  matrix. The `id` field is the per-site primary key, NOT
+  the per-hex key (the hex layer computes its own per-cell
+  key from the hexbin resolution + lat/lon bucket — see §4).
+- **`fields id, lat, lon, site_name, site_type, event_count,
+  value`** — explicit projection. Drops any transient columns
+  the lookup brought in beyond the documented contract.
+- **`sort - event_count`, `head 5000`** — render budget.
+  The h3 hexbin aggregator buckets BEFORE rendering, so the
+  per-cell cardinality is bounded by the H3 resolution
+  (resolution 3 ≈ 41,162 cells globally, of which a typical
+  fleet hits 1-200); the 5000-row pre-aggregation cap is on
+  the per-SITE rows feeding the aggregator. 5000 covers a
+  fleet of thousands of sites comfortably.
+
+## 3. Expected fields
+
+| field       | type   | example             |
+|-------------|--------|---------------------|
+| id          | string | DC-ATL-01           |
+| lat         | number | 33.7490             |
+| lon         | number | -84.3880            |
+| site_name   | string | Atlanta data center |
+| event_count | number | 1284                |
+| value       | number | 1284                |
+
+All six fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+`site_type` flows through as a feature property for the per-
+hex popup but is not strictly required by the h3 layer (the
+h3 renderer reads only `lat`, `lon`, and `value`; the
+descriptive columns survive the hex aggregation and appear in
+the per-hex popup as a list of contained-site properties).
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pointRenderer": "h3",
+  "hexbinAggregate": "sum",
+  "hexbinResolution": 3,
+  "hexbinOpacity": 0.7
+}
+```
+
+Why this specific config:
+
+- **`pointRenderer: "h3"`** — explicit pin to the H3 hexbin
+  renderer. The `auto` renderer would pick markers (≤ 200
+  features), then cluster (200-10000), then heat (≥ 10000) —
+  H3 is NEVER selected by `auto` because the spatial-
+  aggregation regime is the operator's design choice, not a
+  feature-count heuristic. Always pin explicitly when h3 is
+  the intended layer.
+- **`hexbinAggregate: "sum"`** — sum the `value` field across
+  every site in each hex. The alternatives are `count` (count
+  the SITES per hex, ignoring `value` — useful for "where do
+  we have deployment density?" but not for "where is the
+  activity volume concentrated?") and `avg` / `median` /
+  `max` / `min` (useful for "what's the per-site MEAN
+  activity?" but inverts the volume signal). For "regional
+  activity volume" the right aggregate is `sum`. This
+  matches the [cim-performance/h3](../cim-performance/h3.md)
+  recipe (which sums `load_pressure`) and the
+  [ot-datastreamer/h3](../ot-datastreamer/h3.md) recipe
+  (which sums `event_count` per regional OT hub).
+- **`hexbinResolution: 3`** — H3 resolution 3 gives hexes
+  ~190 km across — continental scale, right for the global-
+  fleet view (every cloud region in the world becomes one
+  hex; major datacenter clusters each get their own hex). For
+  per-country / per-state views, bump to resolution 4-5
+  (~60-25 km). For per-city views, resolution 6-7 (~10-4
+  km). For per-building views, resolution 8-9 (~1.5-0.6 km).
+  See [Uber's H3 resolution
+  reference](https://h3geo.org/docs/core-library/restable/)
+  for the full table — every increment of `+1` divides the
+  cell area by 7×.
+- **`hexbinOpacity: 0.7`** — matches the
+  [cim-performance/h3](../cim-performance/h3.md) recipe.
+  At 1.0 the hexes fully occlude the basemap labels making
+  the city / region names unreadable; at 0.5 the hexes are
+  washed out and the colour ramp loses precision; 0.7 is the
+  sweet spot for an executive / SRE audience that needs both
+  the per-hex colour ramp AND the underlying geography
+  context.
+- **`value` drives hex colour intensity automatically.** The
+  h3 layer renderer auto-picks the `value` field by name (per
+  Better Map's `dataFitness.js` field aliasing). If you
+  rename `value` in the SPL, also set the formatter's
+  `hexbinValueField` option (or whichever name the formatter
+  schema uses — check
+  [`docs/_machine/formatter-schema.json`](https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json)).
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/h3/>._
+
+# === END: https://fenre.github.io/better_map/recipes/kvstore-latlon/h3/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/kvstore-latlon/heat/ ===
 
@@ -13212,7 +13660,7 @@ Each entry below distils the corresponding YAML scaffold so an LLM can answer in
 
 # Appendix B — Per-source recipe matrix
 
-> Source of truth: `docs/_machine/recipes/index.yaml` (45 recipe(s), emission order)
+> Source of truth: `docs/_machine/recipes/index.yaml` (47 recipe(s), emission order)
 
 Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answer 'which recipe matches this data source?' without fetching every recipe page. Recipes carry one of three statuses: `verified` (smoke-tested against a live Splunk tenant with proof in the YAML metadata), `unverified` (the recipe follows the contract but has not yet been smoke-tested), or `deferred` (the recipe is known to be incomplete pending upstream work). The expected-field contract for each recipe lives in §3 of the recipe page (kept verbatim in this file under the matching `# === BEGIN: …/recipes/<source>/<layer>/ ===` block); follow the Page link below to jump to it.
 
@@ -13233,6 +13681,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `cim-performance--heat` | CIM Performance (CPU / memory / facilities) → Heatmap | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/heat.md](https://fenre.github.io/better_map/recipes/cim-performance/heat/) |
 | `cim-performance--markers` | CIM Performance (CPU / memory / facilities) → Markers | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/markers.md](https://fenre.github.io/better_map/recipes/cim-performance/markers/) |
 | `csv-lookup-geo--h3` | CSV lookup (geo points) → H3 hexbin | unverified | — | — | [docs/recipes/csv-lookup-geo/h3.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/h3/) |
+| `csv-lookup-geo--heat` | CSV lookup (geo polygons) → Heatmap | unverified | — | — | [docs/recipes/csv-lookup-geo/heat.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/heat/) |
 | `csv-lookup-geo--markers` | CSV lookup (geo polygons) → Markers | unverified | — | — | [docs/recipes/csv-lookup-geo/markers.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/markers/) |
 | `csv-lookup-geo--polygons` | CSV lookup (geo polygons) → Polygons | unverified | — | — | [docs/recipes/csv-lookup-geo/polygons.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/polygons/) |
 | `csv-lookup-geo--supercluster` | CSV lookup (geo polygons) → Supercluster | unverified | — | — | [docs/recipes/csv-lookup-geo/supercluster.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/supercluster/) |
@@ -13246,6 +13695,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `geo-us-states--choropleth` | US states (built-in geo lookup) → Choropleth | unverified | — | — | [docs/recipes/geo-us-states/choropleth.md](https://fenre.github.io/better_map/recipes/geo-us-states/choropleth/) |
 | `geo-us-states--extrusion-3d` | US states (built-in geo lookup) → 3D extrusion | unverified | — | — | [docs/recipes/geo-us-states/extrusion-3d.md](https://fenre.github.io/better_map/recipes/geo-us-states/extrusion-3d/) |
 | `itsi-kpi-base--markers` | ITSI service health (KPI base searches) → Markers | unverified | `SA-ITOA` | — | [docs/recipes/itsi-kpi-base/markers.md](https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/) |
+| `kvstore-latlon--h3` | KV Store (lat/lon collection) → H3 hexbin | unverified | — | — | [docs/recipes/kvstore-latlon/h3.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/h3/) |
 | `kvstore-latlon--heat` | KV Store (lat/lon collection) → Heatmap | unverified | — | — | [docs/recipes/kvstore-latlon/heat.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/heat/) |
 | `kvstore-latlon--markers` | KV Store (lat/lon collection) → Markers | unverified | — | — | [docs/recipes/kvstore-latlon/markers.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/) |
 | `kvstore-latlon--supercluster` | KV Store (lat/lon collection) → Supercluster | unverified | — | — | [docs/recipes/kvstore-latlon/supercluster.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/supercluster/) |
