@@ -4,7 +4,7 @@
 
 This file is the body-inclusive sibling of `llms.txt` and concatenates every page on the Better Map documentation site into a single, LLM-friendly text dump. The short companion index is at <https://fenre.github.io/better_map/llms.txt>. Pages appear in `mkdocs.yml` `nav:` declaration order. Each page block carries a stable `# === ... ===` separator plus the source-of-truth path on disk and the published URL so the same content can be grepped by either dimension.
 
-At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 44 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 45 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
 
 All page URLs resolve to publicly accessible Material-themed HTML on GitHub Pages. The project ships under the MIT licence; the canonical repo is <https://github.com/fenre/better_map>.
 
@@ -58,6 +58,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / NetFlow / sFlow / IPFIX — H3 hexbin (`docs/recipes/netflow-sflow-ipfix/h3.md`)
 - Recipes / NetFlow / sFlow / IPFIX — heatmap (`docs/recipes/netflow-sflow-ipfix/heat.md`)
 - Recipes / NetFlow / sFlow / IPFIX — markers (`docs/recipes/netflow-sflow-ipfix/markers.md`)
+- Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — H3 hexbin (`docs/recipes/ot-datastreamer/h3.md`)
 - Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — heatmap (`docs/recipes/ot-datastreamer/heat.md`)
 - Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — markers (`docs/recipes/ot-datastreamer/markers.md`)
 - Recipes / Splunk Stream (wire data) — H3 hexbin (`docs/recipes/splunk-stream/h3.md`)
@@ -1170,7 +1171,7 @@ generated from
 so it cannot drift from the recipe files.
 
 <!-- recipes-matrix trimmed for llms-full.txt token budget (see Wave 16 ROADMAP block); full matrix at <https://fenre.github.io/better_map/recipes/> and source-of-truth YAML at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>; per-recipe details (status, apps, expected-field contract, formatter options) are kept verbatim under the matching `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file -->
-**Total: 44 recipes · 15 source dir(s) · 9 layer type(s).**
+**Total: 45 recipes · 15 source dir(s) · 9 layer type(s).**
 
 Source dirs and the layer ids that already ship for each (any `(source, layer)` not listed below is an open cell in the E5 matrix and is a candidate for the next recipe wave):
 
@@ -1186,11 +1187,11 @@ Source dirs and the layer ids that already ship for each (any `(source, layer)` 
 - `kvstore-latlon`: heat, markers, supercluster
 - `meraki`: h3, heat, markers
 - `netflow-sflow-ipfix`: h3, heat, markers
-- `ot-datastreamer`: heat, markers
+- `ot-datastreamer`: h3, heat, markers
 - `splunk-stream`: h3, heat, markers
 - `thousandeyes`: markers, paths
 
-**OT-safety-relevant recipes (5):** `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `ot-datastreamer/heat`, `ot-datastreamer/markers`.
+**OT-safety-relevant recipes (6):** `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`.
 
 The remaining matrix cells from the E5 design — every layer × every
 source pattern — are tracked in
@@ -8705,6 +8706,255 @@ _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are o
 
 # === END: https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/markers/ ===
 
+# === BEGIN: https://fenre.github.io/better_map/recipes/ot-datastreamer/h3/ ===
+
+# Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — H3 hexbin
+
+> Source: `docs/recipes/ot-datastreamer/h3.md`  
+> URL: <https://fenre.github.io/better_map/recipes/ot-datastreamer/h3/>
+
+# OT Datastreamer / Edge Hub — H3 hexbin
+
+The discrete-cell regional complement to the
+[ot-datastreamer/markers](./markers.md) and
+[ot-datastreamer/heat](./heat.md) recipes — same
+`edge_hub_*` index union, same operator-maintained
+`edge_hub_sites.csv` lookup for physical lat / lon and
+Purdue / safety annotation, but rendered as
+**continental H3 hexbins** rather than per-appliance pins
+or per-site smooth heat blobs. The h3 layer surfaces
+**OT telemetry VOLUME as discrete hexagonal cells** that
+aggregate every site falling within their geographic
+bounds — natural for regional capacity briefings ("how
+much OT data lands in EMEA vs APAC vs NAMER?"), board-
+level scope-of-deployment maps ("which continents already
+host Edge Hub fleets?"), and licensing / data-residency
+audits ("is any OT telemetry crossing the Asian-region
+boundary we contracted for?"). Distinct from the heat
+companion (which renders smooth per-site blobs without
+hard borders) and the markers companion (which renders
+per-appliance pins with liveness colouring).
+
+**OT safety boundary (this recipe is `ot_safety_relevant:
+true`).** Like the companion markers and heat recipes,
+this panel rests on the
+[`/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc)
+contract: passive collection only, SIS-related signals
+read-only, no write-back to Level-0/1/2 zones, no SOAR
+actions wired to a Level-0/1/2 target. The hexbin form is
+**REGIONALLY AGGREGATED** (one hex covers thousands of km²
+at typical world-zoom + resolution 3) but EVERY rule still
+applies — and the regional aggregation makes safety-flag
+handling MORE delicate, not less (see §6 Gotchas — a hex
+showing `site_has_safety_hub=1` means at least ONE site
+in that hex carries SIS-relevant telemetry; the popup MUST
+NOT imply every site in the hex does).
+
+## 1. Source description
+
+Same Splunk **Edge Hub / OTI Datastreamer** event union as
+the companion [markers](./markers.md) and [heat](./heat.md)
+recipes — the OR of every `edge_hub_*` index plus the
+optional `bms` index, joined against the operator-
+maintained `edge_hub_sites.csv` lookup for physical lat /
+lon + Purdue level + safety classification.
+
+**Why h3 hexbin for OT telemetry.** Markers answer
+"which APPLIANCE is silent?" (per-hub investigation).
+Heat answers "which SITE is hottest?" (per-site pressure
+gradient). H3 hexbin answers "which REGION is generating
+the most OT telemetry, with hard partition borders so I
+can drill INTO a region?" — the right shape for **OT
+capacity-planning regional briefings**, **board-level
+deployment-scope maps**, and **data-residency audits**.
+The hard hexagonal partition is the key visual cue: a
+region executive can SEE the discrete boundary between
+EMEA and APAC, and click a hex to drill into the
+site-level detail that the heat layer renders smoothly.
+
+For per-region performance KPIs (e.g. "average Edge Hub
+event rate per hex"), this recipe's hexbin-aggregate-sum
+gives total volume; swap to `hexbinAggregate: "avg"` for
+per-site averages and `hexbinAggregate: "max"` for
+worst-case hex spotting (the busiest single site in each
+region).
+
+**Typical sourcetype / index:** anything matching
+`edge_hub_*` plus the `bms` index. The TA is
+`Splunk_TA_oti`. The site lookup is operator-maintained
+(see [ot-datastreamer/markers](./markers.md) §6 for the
+canonical `edge_hub_sites.csv` schema).
+
+## 2. SPL recipe
+
+```spl
+index=edge_hub_* OR index=bms earliest=-1h latest=now
+| stats count AS event_count BY host
+| lookup edge_hub_sites.csv host OUTPUT lat, lon, hub_name, site_id, zone_purdue_level, safety_related
+| where isnotnull(lat) AND isnotnull(lon)
+| stats sum(event_count) AS event_count, values(zone_purdue_level) AS purdue_levels, max(safety_related) AS site_has_safety_hub BY site_id, lat, lon
+| eval value=event_count
+| eval id=site_id
+| fields id, lat, lon, site_id, event_count, value, purdue_levels, site_has_safety_hub
+| sort - event_count
+| head 5000
+```
+
+Why this exact shape, line by line:
+
+- **`index=edge_hub_* OR index=bms earliest=-1h
+  latest=now`** — same union and time window as the
+  markers and heat companions. The 1 h window matches
+  industrial telemetry cadences and gives the hexbin a
+  meaningful pressure-of-recent-hour read; widen to
+  `-24h` for daily-total regional volume, or to `-30d`
+  with a summary-indexed roll-up (see §6 Gotchas) for
+  monthly capacity reporting.
+- **`stats count AS event_count BY host`** — first
+  aggregation: one row per Edge Hub appliance, with the
+  raw event count. Identical to the heat recipe's first
+  `stats` aggregation.
+- **`lookup edge_hub_sites.csv host OUTPUT lat, lon,
+  hub_name, site_id, zone_purdue_level, safety_related`**
+  — same operator-maintained site lookup as the
+  companions. Returns the per-hub physical lat/lon,
+  human-readable hub name, operator-defined site
+  grouping, Purdue level classification, and safety-
+  related boolean. Per
+  [`/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc)
+  Rule 5, the `safety_related` column is read-only
+  mirrored from the customer's Safety Requirements
+  Specification (SRS) — never authored by Splunk or
+  Better Map.
+- **`where isnotnull(lat) AND isnotnull(lon)`** — drop
+  hubs without recorded physical location. Real
+  transmitting hubs without lat/lon should be surfaced
+  in a companion table panel for operator backfill
+  (same pattern as the markers / heat recipes).
+- **`stats sum(event_count) AS event_count, values(...)
+  AS purdue_levels, max(safety_related) AS
+  site_has_safety_hub BY site_id, lat, lon`** —
+  collapses the per-hub rows to ONE row per site. The
+  hexbin layer's per-cell aggregation will then collapse
+  the per-site rows further into per-hex aggregates.
+  `values(zone_purdue_level)` collects the set of
+  Purdue levels active at the site (popup metadata).
+  `max(safety_related)` (treating `true=1, false=0`) is
+  a boolean OR — `1` if ANY hub at the site carries a
+  safety-related signal, else `0`. This is critical for
+  §6 Gotchas: the hexbin popup MUST carry the safety
+  annotation per Rule 6, and the operator MUST
+  understand that a hex showing
+  `site_has_safety_hub=1` means at least ONE site in
+  the hex carries SIS-relevant telemetry (NOT that
+  every site in the hex does).
+- **`eval value=event_count`** — **the H3 hexbin
+  contract**. The layer expects a `value` field per row
+  that it aggregates across rows in the same cell via
+  whichever aggregate function the formatter's
+  `hexbinAggregate` option picks. Setting `value` from
+  the per-site `event_count` makes the hexbin colour
+  represent "total telemetry volume in this region"
+  when `hexbinAggregate: "sum"` (the §4 default). For
+  per-site averages within each region, swap to
+  `hexbinAggregate: "avg"`; for worst-case-site
+  spotting, swap to `hexbinAggregate: "max"`.
+- **`eval id=site_id`** — adopt Better Map's `id`
+  alias. `site_id` is the natural identifier for a
+  per-site row; the hexbin layer's per-cell
+  aggregation does not require unique `id` values
+  (multiple sites can share a hex).
+- **`fields ...`** — explicit field list, includes
+  `event_count`, `purdue_levels`, and
+  `site_has_safety_hub` for popup display when the
+  operator clicks into a hex cell. The popup will
+  show per-site detail for every site that contributed
+  to the hex aggregate.
+- **`sort - event_count`** — busiest sites first;
+  combined with `head 5000` this gives the hexbin all
+  heavy-load sites even when the long-tail is
+  truncated. (`head 5000` is heavily defensive — the
+  largest multi-national OT operators run ~200 sites
+  globally; 5000 is 25× the largest known fleet.)
+- **`head 5000`** — render budget. Per-cell hex
+  aggregation collapses thousands of sites into
+  ~10-50 visible hexes at world-zoom + resolution 3,
+  so even at the truncation limit the rendered
+  geometry count stays low.
+
+Note every `|` starts its own physical line per the SPL
+pipe-per-line contract.
+
+## 3. Expected fields
+
+| field        | type    | example                       |
+|--------------|---------|-------------------------------|
+| id           | string  | HOU-EAST                      |
+| lat          | number  | 29.7604                       |
+| lon          | number  | -95.3698                      |
+| site_id      | string  | HOU-EAST                      |
+| event_count  | integer | 742183                        |
+| value        | number  | 742183                        |
+
+All six fields appear in `expected_fields` in the
+frontmatter and are cross-checked by
+`scripts/check-recipe-schema.py`. `purdue_levels` and
+`site_has_safety_hub` also flow through as feature
+properties but are popup metadata, not contract fields.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pointRenderer": "h3",
+  "hexbinAggregate": "sum",
+  "hexbinResolution": 3,
+  "hexbinOpacity": 0.7
+}
+```
+
+Why this specific config:
+
+- **`pointRenderer: "h3"`** — explicit pin to the H3
+  hexbin renderer. The `auto` renderer chooses a
+  layer based on feature count; for OT capacity panels
+  the hexbin is the intended shape regardless of the
+  number of sites in scope.
+- **`hexbinAggregate: "sum"`** — sums every site's
+  `value` (`event_count`) within each hex cell. The
+  right default for **regional capacity briefings**
+  (the per-hex value reads as "total OT telemetry
+  volume in this region"). For per-site averages
+  within each region, swap to `"avg"`; for worst-case
+  spotting, swap to `"max"`.
+- **`hexbinResolution: 3`** — **continental scope**.
+  H3 resolution 3 produces hexes of ~12,500 km² edge-
+  length at world zoom — roughly the size of a US
+  state or a small European country. This is the
+  right zoom for **board-level regional briefings**
+  (EMEA vs APAC vs NAMER comparisons) and **data-
+  residency audits** (one hex maps roughly to one
+  country-scale regulatory jurisdiction). For
+  national-scope drilldowns (e.g. "show me only US
+  hubs broken down by state"), bump to resolution 4
+  (~1,800 km² edge-length, ~US-state-sized). For
+  per-site drilldowns, switch to the heat or markers
+  companions — hexbin is the WRONG layer below
+  resolution 5.
+- **`hexbinOpacity: 0.7`** — same opacity as the
+  cim-performance/h3 recipe. At 1.0 the hexes fully
+  occlude the basemap labels; at 0.5 too washed out
+  for low-zoom regional reads; 0.7 is the sweet spot
+  for region names (continents, country borders) to
+  survive the hexagonal overlay.
+- **`value` field drives hex colouring automatically.**
+  Same as every h3 recipe — `dataFitness.js` auto-
+  picks the `value` field by name.
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/h3/>._
+
+# === END: https://fenre.github.io/better_map/recipes/ot-datastreamer/h3/ ===
+
 # === BEGIN: https://fenre.github.io/better_map/recipes/ot-datastreamer/heat/ ===
 
 # Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — heatmap
@@ -13167,7 +13417,7 @@ Each entry below distils the corresponding YAML scaffold so an LLM can answer in
 
 # Appendix B — Per-source recipe matrix
 
-> Source of truth: `docs/_machine/recipes/index.yaml` (44 recipe(s), emission order)
+> Source of truth: `docs/_machine/recipes/index.yaml` (45 recipe(s), emission order)
 
 Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answer 'which recipe matches this data source?' without fetching every recipe page. Recipes carry one of three statuses: `verified` (smoke-tested against a live Splunk tenant with proof in the YAML metadata), `unverified` (the recipe follows the contract but has not yet been smoke-tested), or `deferred` (the recipe is known to be incomplete pending upstream work). The expected-field contract for each recipe lives in §3 of the recipe page (kept verbatim in this file under the matching `# === BEGIN: …/recipes/<source>/<layer>/ ===` block); follow the Page link below to jump to it.
 
@@ -13210,6 +13460,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `netflow-sflow-ipfix--h3` | NetFlow / sFlow / IPFIX (flow records) → H3 hexbin | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/h3.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/h3/) |
 | `netflow-sflow-ipfix--heat` | NetFlow / sFlow / IPFIX (flow records) → Heatmap | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/heat.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/heat/) |
 | `netflow-sflow-ipfix--markers` | NetFlow / sFlow / IPFIX (flow records) → Markers | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/markers.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/markers/) |
+| `ot-datastreamer--h3` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → H3 hexbin | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/h3.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/h3/) |
 | `ot-datastreamer--heat` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Heatmap | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/heat.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/heat/) |
 | `ot-datastreamer--markers` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Markers | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/markers.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/markers/) |
 | `splunk-stream--h3` | Splunk Stream (wire data) → H3 hexbin | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/h3.md](https://fenre.github.io/better_map/recipes/splunk-stream/h3/) |

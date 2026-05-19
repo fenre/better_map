@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 44
+recipe_count: 45
 recipes:
 - id: cim-alerts--h3
   source:
@@ -1893,6 +1893,63 @@ recipes:
   - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
     path: docs/reference/bm-ct-1.md
   path: docs/recipes/netflow-sflow-ipfix/markers.md
+- id: ot-datastreamer--h3
+  source:
+    id: ot-datastreamer
+    display_name: OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet)
+    pattern: splunk-edge-hub
+  layer:
+    id: h3
+    display_name: H3 hexbin
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_TA_oti
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: HOU-EAST
+  - name: lat
+    type: number
+    example: '29.7604'
+  - name: lon
+    type: number
+    example: '-95.3698'
+  - name: site_id
+    type: string
+    example: HOU-EAST
+  - name: event_count
+    type: integer
+    example: '742183'
+  - name: value
+    type: number
+    example: '742183'
+  required_formatter_options:
+  - pointRenderer
+  - hexbinAggregate
+  - hexbinResolution
+  - hexbinOpacity
+  ot_safety_relevant: true
+  references:
+  - description: Companion recipe — same source, different layer (markers, per-appliance pins)
+    path: docs/recipes/ot-datastreamer/markers.md
+  - description: Companion recipe — same source, different layer (heat, smooth Gaussian site pressure)
+    path: docs/recipes/ot-datastreamer/heat.md
+  - description: splunk-edge-hub skill — Edge Hub indexes, sourcetypes, protocol-specific sources
+    path: ~/.cursor/skills/splunk-edge-hub/SKILL.md
+  - description: splunk-oti-datastreamer skill — OTI Datastreamer ingest pipeline, HEC tuning
+    path: ~/.cursor/skills/splunk-oti-datastreamer/SKILL.md
+  - description: splunk-edge-hub-protocols skill — Modbus, OPC-UA, MQTT, SNMP, BACnet protocol details
+    path: ~/.cursor/skills/splunk-edge-hub-protocols/SKILL.md
+  - description: Cursor rule — ot-safety.mdc (passive collection, SIS read-only, Purdue boundary)
+    path: .cursor/rules/ot-safety.mdc
+  - description: Layer reference — h3
+    path: docs/reference/layers.md
+  - description: Formatter schema — hexbinAggregate, hexbinResolution, hexbinOpacity
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/ot-datastreamer/h3.md
 - id: ot-datastreamer--heat
   source:
     id: ot-datastreamer
