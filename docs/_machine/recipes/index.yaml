@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 48
+recipe_count: 51
 recipes:
 - id: cim-alerts--h3
   source:
@@ -1451,6 +1451,65 @@ recipes:
   - description: featureJoin layer (us-states PMTiles preset; promoteId=stusps)
     path: better_map/appserver/static/visualizations/better_map/src/lib/layers/featureJoin.js
   path: docs/recipes/geo-us-states/extrusion-3d.md
+- id: itsi-kpi-base--h3
+  source:
+    id: itsi-kpi-base
+    display_name: ITSI service health (KPI base searches)
+    pattern: splunk-premium-itsi
+  layer:
+    id: h3
+    display_name: H3 hexbin
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: SA-ITOA
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: 8a283082a677fff
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '53.5511'
+  - name: lon
+    type: number
+    example: '9.9937'
+  - name: value
+    type: number
+    example: '7'
+    drives_formatter_option: hexbinAggregate
+  - name: unhealthy_services
+    type: integer
+    example: '7'
+  - name: total_services
+    type: integer
+    example: '23'
+  required_formatter_options:
+  - pointRenderer
+  - hexbinAggregate
+  - hexbinResolution
+  - hexbinOpacity
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (per-service identity)
+    path: docs/recipes/itsi-kpi-base/markers.md
+  - description: Companion recipe — same source, heatmap layer (smooth per-site density)
+    path: docs/recipes/itsi-kpi-base/heat.md
+  - description: Pattern reference — H3 hexbin from lookup-anchored sites
+    path: docs/recipes/kvstore-latlon/h3.md
+  - description: Pattern reference — H3 hexbin with sum aggregate on counted events
+    path: docs/recipes/es-risk/h3.md
+  - description: splunk-itsi skill — itsi_summary schema, SHKPI- service health, entity attributes
+    path: ~/.cursor/skills/splunk-itsi/SKILL.md
+  - description: splunk-itsi-content skill — ITSI service / KPI / entity content packaging
+    path: ~/.cursor/skills/splunk-itsi-content/SKILL.md
+  - description: Layer reference — h3
+    path: docs/reference/layers.md
+  - description: Formatter schema — hexbinAggregate, hexbinResolution, hexbinOpacity
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/itsi-kpi-base/h3.md
 - id: itsi-kpi-base--heat
   source:
     id: itsi-kpi-base
@@ -2407,6 +2466,125 @@ recipes:
   - description: dataFitness.js alias auto-detect (lat/lon/id auto-picked)
     path: better_map/appserver/static/visualizations/better_map/src/lib/dataFitness.js
   path: docs/recipes/splunk-stream/markers.md
+- id: thousandeyes--h3
+  source:
+    id: thousandeyes
+    display_name: Cisco ThousandEyes (agent fleet)
+    pattern: splunk-vendor-ta
+  layer:
+    id: h3
+    display_name: H3 hexbin
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: ta_cisco_thousandeyes
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: 37.7749_-122.4194
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '37.7749'
+  - name: lon
+    type: number
+    example: '-122.4194'
+  - name: value
+    type: number
+    example: '47'
+    drives_formatter_option: hexbinAggregate
+  - name: agent_count
+    type: integer
+    example: '12'
+  - name: test_count
+    type: integer
+    example: '47'
+  required_formatter_options:
+  - pointRenderer
+  - hexbinAggregate
+  - hexbinResolution
+  - hexbinOpacity
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (per-agent identity)
+    path: docs/recipes/thousandeyes/markers.md
+  - description: Companion recipe — same source, paths layer (hop-by-hop traceroute polylines)
+    path: docs/recipes/thousandeyes/paths.md
+  - description: Pattern reference — H3 hexbin with sum aggregate on counted entities
+    path: docs/recipes/cim-network-traffic/h3.md
+  - description: Pattern reference — H3 hexbin from lookup-anchored sites
+    path: docs/recipes/kvstore-latlon/h3.md
+  - description: ThousandEyes setup skill — sourcetypes, indexes, OAuth flow
+    path: ~/.cursor/skills/cisco-thousandeyes-setup/SKILL.md
+  - description: Cisco products skill — ThousandEyes data model and example SPL
+    path: ~/.cursor/skills/cisco-products/SKILL.md
+  - description: Layer reference — h3
+    path: docs/reference/layers.md
+  - description: Formatter schema — hexbinAggregate, hexbinResolution, hexbinOpacity
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/thousandeyes/h3.md
+- id: thousandeyes--heat
+  source:
+    id: thousandeyes
+    display_name: Cisco ThousandEyes (agent fleet)
+    pattern: splunk-vendor-ta
+  layer:
+    id: heat
+    display_name: Heatmap
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: ta_cisco_thousandeyes
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: 37.7749_-122.4194
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '37.7749'
+  - name: lon
+    type: number
+    example: '-122.4194'
+  - name: agent_count
+    type: integer
+    example: '12'
+  - name: test_count
+    type: integer
+    example: '47'
+  - name: weight
+    type: number
+    example: '1.0'
+    drives_formatter_option: heatmapWeight
+  required_formatter_options:
+  - pointRenderer
+  - heatmapOpacity
+  - heatmapRadius
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (per-agent identity)
+    path: docs/recipes/thousandeyes/markers.md
+  - description: Companion recipe — same source, H3 hexbin layer (jurisdictional aggregation)
+    path: docs/recipes/thousandeyes/h3.md
+  - description: Companion recipe — same source, paths layer (hop-by-hop traceroute polylines)
+    path: docs/recipes/thousandeyes/paths.md
+  - description: Pattern reference — heatmap with weight normalisation on lookup-anchored sites
+    path: docs/recipes/kvstore-latlon/heat.md
+  - description: Pattern reference — heatmap with eventstats max normalisation
+    path: docs/recipes/es-risk/heat.md
+  - description: ThousandEyes setup skill — sourcetypes, indexes, OAuth flow
+    path: ~/.cursor/skills/cisco-thousandeyes-setup/SKILL.md
+  - description: Cisco products skill — ThousandEyes data model and example SPL
+    path: ~/.cursor/skills/cisco-products/SKILL.md
+  - description: Layer reference — heatmap
+    path: docs/reference/layers.md
+  - description: Formatter schema — heatmapOpacity, heatmapRadius, heatmapWeight
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/thousandeyes/heat.md
 - id: thousandeyes--markers
   source:
     id: thousandeyes

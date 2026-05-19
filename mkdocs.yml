@@ -238,11 +238,14 @@ nav:
       - 'Cisco Cyber Vision (components + vulnerabilities) — H3 hexbin': recipes/cyber-vision/h3.md
       - 'Cisco Cyber Vision (components + vulnerabilities) — heatmap': recipes/cyber-vision/heat.md
       - 'Cisco Cyber Vision (components + vulnerabilities) — markers': recipes/cyber-vision/markers.md
+      - 'Cisco ThousandEyes (agent fleet) — H3 hexbin': recipes/thousandeyes/h3.md
+      - 'Cisco ThousandEyes (agent fleet) — heatmap': recipes/thousandeyes/heat.md
       - 'Cisco ThousandEyes (agent fleet) — markers': recipes/thousandeyes/markers.md
       - 'Cisco ThousandEyes (path visualization) — paths': recipes/thousandeyes/paths.md
       - 'ES Risk-Based Alerting (risk index) — H3 hexbin': recipes/es-risk/h3.md
       - 'ES Risk-Based Alerting (risk index) — heatmap': recipes/es-risk/heat.md
       - 'ES Risk-Based Alerting (risk index) — markers': recipes/es-risk/markers.md
+      - 'ITSI service health (KPI base searches) — H3 hexbin': recipes/itsi-kpi-base/h3.md
       - 'ITSI service health (KPI base searches) — heatmap': recipes/itsi-kpi-base/heat.md
       - 'ITSI service health (KPI base searches) — markers': recipes/itsi-kpi-base/markers.md
       - 'KV Store (lat/lon) — H3 hexbin': recipes/kvstore-latlon/h3.md
