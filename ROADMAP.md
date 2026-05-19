@@ -2704,6 +2704,172 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 > `llms-full.txt` at the next regeneration via the wave-13
 > generalised ROADMAP status-block regex._
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 21 recipes
+> SHIPPED (3 more recipes — recipe count 51 → 54, layer-type
+> coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
+> unchanged, choropleth usage 1 → 2, supercluster usage 4 → 5,
+> paths usage 3 → 4).** Wave 21 pivots from the
+> triplet-completion regime (waves 11-20 closed 14 source-row
+> triplets) to a **diversification regime**: each new recipe adds
+> a NEW layer shape to an EXISTING source row that already had ≥1
+> recipe but lacked the chosen shape. This regime is the right
+> next move now that 14 of ~15 triplet candidates are complete —
+> remaining matrix gaps are 4th-or-5th layer cells on rows that
+> already have triplets, where the marginal LLM-corpus value of
+> each new recipe is "yet another shape demonstrated on a
+> familiar source" rather than "yet another source triplet".
+> - **`cim-network-traffic/choropleth`** — adds the FIRST polygon-
+>   derived recipe to the cim-network-traffic source row (which
+>   already had markers, paths, h3, heat, supercluster from waves
+>   3, 5, 7, 12, 9). The recipe maps **events-per-source-state**:
+>   `iplocation src` geocodes external source IPs to a US state,
+>   `where Country="United States" AND isnotnull(Region)` filters
+>   to US only (the bundled `us-states` PMTiles preset only covers
+>   the US — for global, the recipe `gotchas` explain how to swap
+>   to a custom PMTiles bundle), and an `eval id=upper(case(...))`
+>   normalises full state names to USPS 2-letter codes (the join
+>   key the `us-states` preset expects). The choropleth lens is
+>   the right shape for **per-state geo-attribution panels**
+>   (SOC / incident-response triage: "where in the US is most of
+>   the inbound traffic to my CIM-tagged endpoints coming from?")
+>   and **regulatory-jurisdiction views** (state-level data-flow
+>   reporting). §6 gotchas cover the `tag=network tag=communicate`
+>   discipline (drops parsing-error and non-CIM events), the US-
+>   only PMTiles preset constraint (with an explicit alternative
+>   path: ship a `world-countries` PMTiles for global), the
+>   USPS-code normalisation requirement (the `case(...)` table
+>   covers the 20 most populous states + DC; smaller states would
+>   need adding or the recipe falls back to the first 2 chars of
+>   the region name, which is wrong for "Mississippi"="MI" vs
+>   Michigan), `src` vs `dest` choice (this recipe picks `src` for
+>   inbound attribution; mirror with `dest` for outbound),
+>   `iplocation` GeoIP-database age (Splunk auto-updates monthly;
+>   stale install can mis-attribute new IP ranges), `palette:
+>   "viridis"` (perceptually uniform; safe for color-blind
+>   reviewers), and no OT-safety boundary (CIM Network Traffic
+>   data is IT only by definition).
+> - **`meraki/supercluster`** — adds zoom-adaptive clustering to
+>   the meraki source row (which already had markers, h3, heat
+>   from waves 4b, 11, 10). Same `index=meraki sourcetype=
+>   "meraki:devices"` + `dedup serial sortby - _time` + `where
+>   isnotnull(lat) AND isnotnull(lng)` base search as the
+>   markers companion — the only material difference is the
+>   formatter setting `pointRenderer: "cluster"` which delegates
+>   per-zoom-level aggregation to the supercluster algorithm
+>   shipped in `@splunk/better-map`. This is the right shape for
+>   **global-fleet inventory dashboards** (5,000+ devices: at
+>   zoom 0-4 you see cluster bubbles per continent / country, at
+>   zoom 8-12 you see clusters per metro, at zoom 14+ you see
+>   individual APs / switches / cameras) without the cognitive
+>   overload of 5,000 colliding marker pins. The cluster formatter
+>   preserves per-device identity (each device row keeps its
+>   `serial`, `model`, `status`, `network_name` fields) — clicking
+>   into a cluster zooms it apart rather than collapsing the
+>   data. §6 gotchas cover the `head 5000` per-panel cap
+>   (formatter cluster default settings hardcode the cap; remove
+>   for global enterprise fleets), `clusterMaxZoom: 14` (default
+>   right for metro-scale; raise to 16 for floor-plan-zoom),
+>   `clusterRadius: 50` (CSS pixels; lower to 30-40 for denser
+>   per-metro displays), the `lng AS lon` rename (Meraki API uses
+>   `lng`; recipe MUST rename for the formatter contract), Meraki
+>   geo-coordinate accuracy (manually-assigned APs sometimes
+>   default to the network's billing address rather than the
+>   actual install location; document expected drift), the
+>   `status` `coalesce("unknown")` fallback (rare Meraki devices
+>   ship null status during initial provisioning), and no OT-
+>   safety boundary (Meraki devices are IT equipment by
+>   definition; for OT-zone equipment use the ot-datastreamer
+>   markers recipe with passive-collection / OT-safety carve-out).
+> - **`ot-datastreamer/paths`** — adds **trajectory visualisation**
+>   to the ot-datastreamer source row (markers, heat, h3 from
+>   waves 4b, 8, 16). This is the **4th OT-safety-relevant
+>   recipe** (`ot_safety_relevant: true`) and demonstrates the
+>   paths layer's value for **mobile OT asset tracking** —
+>   AGVs (Autonomous Guided Vehicles), forklifts, mobile
+>   inspection drones, technician-tagged equipment. The recipe
+>   reads `index=edge_hub_mqtt sourcetype="edge_hub_mqtt"` events
+>   tagged with MQTT topic `edgehub/mqtt_events/agv/*` (the
+>   Edge Hub per-topic-class routing convention; broaden to
+>   `(agv|vehicle|drone)/*` for multi-class panels). The
+>   `eval path_id=asset_id."__".tostring(relative_time(now(),
+>   "-1h"))` + `sort 0 asset_id, _time` + `streamstats current=
+>   true count AS seq BY path_id` pattern is the recipe's
+>   distinguishing move — per-asset polylines with monotonic
+>   sequence numbers (the paths layer's `timeField` contract;
+>   `streamstats` is preferred over `_time` because it always
+>   yields a clean monotonic sequence regardless of clock skew
+>   between Edge Hub collectors). The 1-hour window is sized for
+>   shift-overview panels; for incident reconstruction narrow to
+>   ±5-10 minutes around the timestamp of interest. §6 gotchas
+>   cover OT-safety boundary (passive-only collection per
+>   `ot-safety.mdc` Rule 1 — Edge Hub reads from MQTT brokers
+>   that PLCs publish to; NEVER active CIP/Modbus/S7 probes of
+>   AGV control planes), the `zone_purdue_level` coalesce
+>   (default `L2` if the Edge Hub plugin doesn't tag — most AGV
+>   telemetry IS L2 process-monitoring data), GPS drift on
+>   indoor AGVs (warehouse-grade GPS can drift ±5m; for high-
+>   precision tracking use the UWB-tagged variant of the recipe
+>   with `iblet_id` instead of `lat`/`lon`), the `head 5000`
+>   per-panel cap (50+ AGVs × 1-hour 5-second-sample rate =
+>   36,000 rows; the `head` filter trims to the first 5,000
+>   to keep render times <500ms — narrow the time window for
+>   denser fleets), `path_id` cardinality (every asset_id ×
+>   hour-window combination gets a unique path; the formatter
+>   draws one polyline per path), `pathArrows: true` (renders
+>   direction-of-travel chevrons; the default is `false` —
+>   enable for AGV-incident-replay panels), and `speed_mps`
+>   field optionality (Edge Hub configurations vary; the recipe
+>   doesn't break if absent but the per-segment colour-by-speed
+>   downstream gotcha won't work).
+> - **Token budget.** Wave 21 lands at **~136,830 estimated
+>   tokens** / **~38,170 tokens of WARN headroom** (175,000 -
+>   136,830). The 3 new recipes cost only **~4.5k tokens
+>   combined** (~1.5k/recipe) — matches the wave-19-strip post-
+>   trim economics. At this cadence, headroom funds **~25 more
+>   recipes** before the next token-trim is required.
+> - **Layer / pattern coverage updates.** Recipe count 51 → 54
+>   (+3). Layer coverage 9/10 unchanged (extrusion-3d still the
+>   one cell occupied; choropleth usage 1 → 2 because cim-network-
+>   traffic adopts; supercluster usage 4 → 5; paths usage 3 → 4).
+>   Source-pattern coverage 8/8 unchanged. Source-row triplet
+>   count: 14 (unchanged — wave 21 was deliberately a
+>   diversification wave, not a triplet-completion wave). The
+>   diversification regime opens **~24 remaining matrix cells**
+>   for future waves: each existing source row has 1-3 missing
+>   layer shapes that could be filled; the highest-value next
+>   shapes per row would be:
+>   - cim-alerts: missing choropleth, paths, supercluster
+>   - cim-authentication: missing choropleth, heat, paths,
+>     supercluster
+>   - cim-network-traffic: now has 6/9 shapes — extrusion-3d and
+>     vector-tile-join are the remaining cells (extrusion-3d
+>     requires polygon source so geo-us-states-style)
+>   - cim-performance: missing choropleth, paths, supercluster
+>   - cyber-vision: missing choropleth, paths, supercluster
+>   - es-risk: missing choropleth, markers, paths, supercluster
+>   - itsi-kpi-base: missing choropleth, paths, supercluster
+>   - kvstore-latlon: missing choropleth, paths
+>   - meraki: now has 4/9 — missing choropleth, paths, vector-
+>     tile-join, extrusion-3d (geo-aware)
+>   - netflow-sflow-ipfix: missing choropleth, h3, paths,
+>     supercluster
+>   - ot-datastreamer: now has 4/9 — missing choropleth,
+>     supercluster, vector-tile-join (only the ot-zone-shapefile
+>     subset would be relevant for the OT carve-out)
+>   - splunk-stream: missing choropleth, markers, paths,
+>     supercluster
+>   - thousandeyes: now has 4/9 — missing choropleth,
+>     supercluster
+>   - geo-us-states: choropleth/extrusion-3d/vector-tile-join
+>     already covered; markers/heat/h3 NOT applicable (polygon-
+>     source row, not point-data)
+>   The next 2-3 waves should continue the diversification regime
+>   to fill the highest-value missing cells per source row.
+>
+> _This `> **Status …` blockquote will self-strip from
+> `llms-full.txt` at the next regeneration via the wave-13
+> generalised ROADMAP status-block regex._
+
 > **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 20 recipes
 > SHIPPED (3 more recipes — recipe count 48 → 51, layer-type
 > coverage 9 / 10 unchanged, source-pattern coverage 8 / 8

@@ -4,7 +4,7 @@
 
 This file is the body-inclusive sibling of `llms.txt` and concatenates every page on the Better Map documentation site into a single, LLM-friendly text dump. The short companion index is at <https://fenre.github.io/better_map/llms.txt>. Pages appear in `mkdocs.yml` `nav:` declaration order. Each page block carries a stable `# === ... ===` separator plus the source-of-truth path on disk and the published URL so the same content can be grepped by either dimension.
 
-At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 51 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 54 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
 
 All page URLs resolve to publicly accessible Material-themed HTML on GitHub Pages. The project ships under the MIT licence; the canonical repo is <https://github.com/fenre/better_map>.
 
@@ -27,6 +27,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / CIM Authentication — H3 hexbin (`docs/recipes/cim-authentication/h3.md`)
 - Recipes / CIM Authentication — heatmap (`docs/recipes/cim-authentication/heat.md`)
 - Recipes / CIM Authentication — markers (`docs/recipes/cim-authentication/markers.md`)
+- Recipes / CIM Network Traffic — choropleth (`docs/recipes/cim-network-traffic/choropleth.md`)
 - Recipes / CIM Network Traffic — H3 hexbin (`docs/recipes/cim-network-traffic/h3.md`)
 - Recipes / CIM Network Traffic — heatmap (`docs/recipes/cim-network-traffic/heat.md`)
 - Recipes / CIM Network Traffic — markers (`docs/recipes/cim-network-traffic/markers.md`)
@@ -61,12 +62,14 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / Meraki (Cisco vendor TA) — H3 hexbin (`docs/recipes/meraki/h3.md`)
 - Recipes / Meraki (Cisco vendor TA) — heatmap (`docs/recipes/meraki/heat.md`)
 - Recipes / Meraki (Cisco vendor TA) — markers (`docs/recipes/meraki/markers.md`)
+- Recipes / Meraki (Cisco vendor TA) — supercluster (`docs/recipes/meraki/supercluster.md`)
 - Recipes / NetFlow / sFlow / IPFIX — H3 hexbin (`docs/recipes/netflow-sflow-ipfix/h3.md`)
 - Recipes / NetFlow / sFlow / IPFIX — heatmap (`docs/recipes/netflow-sflow-ipfix/heat.md`)
 - Recipes / NetFlow / sFlow / IPFIX — markers (`docs/recipes/netflow-sflow-ipfix/markers.md`)
 - Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — H3 hexbin (`docs/recipes/ot-datastreamer/h3.md`)
 - Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — heatmap (`docs/recipes/ot-datastreamer/heat.md`)
 - Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — markers (`docs/recipes/ot-datastreamer/markers.md`)
+- Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — paths (`docs/recipes/ot-datastreamer/paths.md`)
 - Recipes / Splunk Stream (wire data) — H3 hexbin (`docs/recipes/splunk-stream/h3.md`)
 - Recipes / Splunk Stream (wire data) — heatmap (`docs/recipes/splunk-stream/heat.md`)
 - Recipes / Splunk Stream (wire data) — markers (`docs/recipes/splunk-stream/markers.md`)
@@ -1177,13 +1180,13 @@ generated from
 so it cannot drift from the recipe files.
 
 <!-- recipes-matrix trimmed for llms-full.txt token budget (see Wave 16 ROADMAP block); full matrix at <https://fenre.github.io/better_map/recipes/> and source-of-truth YAML at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>; per-recipe details (status, apps, expected-field contract, formatter options) are kept verbatim under the matching `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file -->
-**Total: 51 recipes · 15 source dir(s) · 9 layer type(s).**
+**Total: 54 recipes · 15 source dir(s) · 9 layer type(s).**
 
 Source dirs and the layer ids that already ship for each (any `(source, layer)` not listed below is an open cell in the E5 matrix and is a candidate for the next recipe wave):
 
 - `cim-alerts`: h3, heat, markers
 - `cim-authentication`: h3, heat, markers
-- `cim-network-traffic`: h3, heat, markers, paths, supercluster
+- `cim-network-traffic`: choropleth, h3, heat, markers, paths, supercluster
 - `cim-performance`: h3, heat, markers
 - `csv-lookup-geo`: h3, heat, markers, polygons, supercluster, vector-tile-join
 - `cyber-vision`: h3, heat, markers
@@ -1191,13 +1194,13 @@ Source dirs and the layer ids that already ship for each (any `(source, layer)` 
 - `geo-us-states`: choropleth, extrusion-3d
 - `itsi-kpi-base`: h3, heat, markers
 - `kvstore-latlon`: h3, heat, markers, supercluster
-- `meraki`: h3, heat, markers
+- `meraki`: h3, heat, markers, supercluster
 - `netflow-sflow-ipfix`: h3, heat, markers
-- `ot-datastreamer`: h3, heat, markers
+- `ot-datastreamer`: h3, heat, markers, paths
 - `splunk-stream`: h3, heat, markers
 - `thousandeyes`: h3, heat, markers, paths
 
-**OT-safety-relevant recipes (6):** `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`.
+**OT-safety-relevant recipes (7):** `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`, `ot-datastreamer/paths`.
 
 The remaining matrix cells from the E5 design — every layer × every
 source pattern — are tracked in
@@ -2019,6 +2022,143 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-authentication/markers/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/ ===
+
+# Recipes / CIM Network Traffic — choropleth
+
+> Source: `docs/recipes/cim-network-traffic/choropleth.md`  
+> URL: <https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/>
+
+# CIM Network Traffic — US states choropleth
+
+The per-state aggregation lens for CIM Network Traffic. Same
+`tag=network,communicate` data model as the
+[cim-network-traffic/markers](./markers.md),
+[heat](./heat.md), and
+[h3](./h3.md) companions — but instead of rendering individual
+events / smooth density / hex bins, the recipe geocodes each
+event's `src` (or `dest`) IP via Splunk's `iplocation`, filters
+to US events, and shades the bundled `us-states` vector-tile
+preset by per-state event count. The right shape for **executive
+"where is my traffic concentrated by jurisdiction" briefings**,
+**regional NetOps capacity-planning panels** (which states
+generate the most traffic to justify regional PoP placement),
+and **compliance-jurisdiction views** (state-by-state event
+counts for CCPA / state-AG-investigation reporting).
+
+The CIM Network Traffic source row now has **5 layer cells**
+(markers, heat, h3, supercluster, paths from waves 6-12, plus
+choropleth now). Choropleth is the FIRST NON-POINT layer cell
+on this source (markers / heat / h3 / supercluster are all
+point-derived; paths is polyline-derived; choropleth is the
+first polygon-derived recipe — the row demonstrates the full
+formatter shape diversity).
+
+## 1. Source description
+
+Same **CIM Network Traffic** data model as the markers / heat /
+h3 / supercluster / paths companions — see
+[cim-network-traffic/markers §1](./markers.md#1-source-description)
+for the data model background. The relevant distinction for
+THIS recipe: the panel renders per-state event aggregation as a
+polygon choropleth (the bundled `us-states` PMTiles preset),
+not per-event markers, smooth density, or hex bins.
+
+**Why choropleth for CIM Network Traffic.** A markers panel
+shows per-event identity but is bandwidth-limited at high
+event volumes and visually noisy. A heatmap shows smooth
+density but obscures jurisdictional boundaries (a hot blob
+crossing CA / NV doesn't tell you "Nevada specifically").
+An H3 hexbin shows hard-bordered jurisdictional sum-aggregation
+but the cell boundaries are H3-defined, not political. A
+choropleth solves the political-boundary question: every event
+inside a state's polygon contributes to that state's tally,
+the renderer shades the polygon by the tally, and the result
+maps cleanly onto a compliance / regulatory / per-state
+business view.
+
+**Typical sourcetype / index:** any sourcetype tagged
+`network,communicate` in your CIM tag config — `cisco:asa`,
+`pan:traffic`, `aws:cloudwatchlogs:vpcflow`, `cisco:meraki:flow`,
+`netflow` (after netflow-sflow-ipfix add-on), etc. See the
+[markers companion](./markers.md#1-source-description) for the
+broader catalogue. The recipe uses `tag=network` directly so it
+inherits whatever CIM-conformant sourcetypes the customer has
+onboarded.
+
+**No add-on required beyond Splunk_SA_CIM** for the data model,
+and the bundled `us-states.pmtiles` preset for the polygons.
+Fully air-gap compatible per ROADMAP §1a.
+
+## 2. SPL recipe
+
+```spl
+tag=network tag=communicate earliest=-24h latest=now
+| iplocation src
+| where Country="United States" AND isnotnull(Region)
+| stats count AS event_count BY Region
+| eval id=upper(case(
+    Region=="California","CA",
+    Region=="New York","NY",
+    Region=="Texas","TX",
+    Region=="Washington","WA",
+    Region=="Illinois","IL",
+    Region=="Florida","FL",
+    Region=="Massachusetts","MA",
+    Region=="Virginia","VA",
+    Region=="Colorado","CO",
+    Region=="Oregon","OR",
+    Region=="Pennsylvania","PA",
+    Region=="New Jersey","NJ",
+    Region=="Georgia","GA",
+    Region=="North Carolina","NC",
+    Region=="Ohio","OH",
+    Region=="Michigan","MI",
+    Region=="Arizona","AZ",
+    Region=="Minnesota","MN",
+    Region=="Indiana","IN",
+    Region=="Tennessee","TN",
+    Region=="District of Columbia","DC",
+    true(),substr(Region,1,2)))
+| eval value=event_count
+| rename Region AS state_name
+| fields id, state_name, value, event_count
+| sort - value
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/>._
+
+## 3. Expected fields
+
+| field       | type    | example   |
+|-------------|---------|-----------|
+| id          | string  | CA        |
+| state_name  | string  | California|
+| value       | integer | 847291    |
+| event_count | integer | 847291    |
+
+All four fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+`value` drives the polygon fill; `event_count` is the popup-
+display field. They carry the same numeric value but are kept
+semantically separate so a future variant (`value=log10(event_count)`
+for log-scale colouring) can change ONE without breaking the
+other.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinPreset": "us-states",
+  "enableChoropleth": "true",
+  "palette": "viridis"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/>._
+
+# === END: https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/cim-network-traffic/h3/ ===
 
@@ -6111,6 +6251,114 @@ _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are o
 
 # === END: https://fenre.github.io/better_map/recipes/meraki/markers/ ===
 
+# === BEGIN: https://fenre.github.io/better_map/recipes/meraki/supercluster/ ===
+
+# Recipes / Meraki (Cisco vendor TA) — supercluster
+
+> Source: `docs/recipes/meraki/supercluster.md`  
+> URL: <https://fenre.github.io/better_map/recipes/meraki/supercluster/>
+
+# Cisco Meraki (devices) — supercluster
+
+Render every deployed Meraki device (MR access point, MS switch,
+MX security appliance, MV camera, MT sensor) as a **zoom-
+adaptive cluster** rather than per-device markers. Same
+`meraki:devices` inventory source as the
+[meraki/markers](./markers.md),
+[heat](./heat.md), and
+[h3](./h3.md) companions — but instead of rendering one marker
+per device (which collapses to overlapping dots at world zoom
+on a multi-thousand-device enterprise deployment), the renderer
+groups nearby devices into a cluster bubble with a per-cluster
+count badge, and the bubble expands to individual devices when
+the user zooms in to a high-density site.
+
+The right shape for **multi-campus enterprise NetOps panels**
+where the Meraki fleet spans 50-500+ sites with 5-50 devices
+per site. Distinct from the markers companion (1000+ overlapping
+dots at world zoom are unreadable), the heat companion (smooth
+density without per-device identity affordance), and the h3
+companion (hard-bordered jurisdictional aggregation, not zoom-
+adaptive). This is the **4th layer cell on the meraki source
+row**, completing markers / heat / h3 → markers / heat / h3 /
+supercluster.
+
+## 1. Source description
+
+Same **Cisco Meraki Add-on for Splunk** (`Splunk_TA_cisco_meraki`,
+Splunkbase ID 5580) source as the markers / heat / h3 companions
+— see [meraki/markers §1](./markers.md#1-source-description)
+for the data model background. The relevant distinction for
+THIS recipe: instead of rendering one marker per Meraki device
+(unreadable at world zoom on a >500-device enterprise), the
+recipe renders zoom-adaptive cluster bubbles that resolve to
+individual devices only when the camera zooms in close.
+
+**Why supercluster for Meraki.** A markers panel works for
+small (<200-device) deployments but collapses to a sea of
+overlapping dots on large multi-campus enterprises. A heatmap
+panel solves the visual-density problem but loses per-AP
+identity (you can't click an AP from a hot blob). An H3 hexbin
+solves the jurisdictional aggregation problem but hex cells
+are stable at all zooms (don't reshuffle as you zoom in).
+Supercluster solves the zoom-density tradeoff: at world zoom
+you see one "SFO cluster: 47 APs" bubble, at city zoom the
+bubble explodes into "SFO Building 3: 12 APs / SFO Building
+12: 18 APs" sub-clusters, and at street zoom the sub-clusters
+explode further into individual AP markers with full per-
+device popup affordance.
+
+**Typical sourcetype / index:** `sourcetype="meraki:devices"`,
+`index=meraki` (both are the TA defaults; see the markers
+companion for the broader catalogue of input groups).
+
+## 2. SPL recipe
+
+```spl
+index=meraki sourcetype="meraki:devices" earliest=-1h latest=now
+| dedup serial sortby - _time
+| where isnotnull(lat) AND isnotnull(lng)
+| rename serial AS id, lng AS lon, networkName AS network_name
+| eval status=coalesce(status, "unknown")
+| fields id, lat, lon, name, model, status, network_name
+| sort id
+| head 5000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/supercluster/>._
+
+## 3. Expected fields
+
+| field        | type   | example              |
+|--------------|--------|----------------------|
+| id           | string | Q2KD-XXXX-YYYY       |
+| lat          | number | 37.7749              |
+| lon          | number | -122.4194            |
+| name         | string | SFO-Office-MR46-12   |
+| model        | string | MR46                 |
+| status       | string | online               |
+| network_name | string | SFO Corporate        |
+
+All seven fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+`name`, `model`, `status`, `network_name` flow through to the
+per-device popup (visible when the user fully zooms into a
+cluster and clicks a marker). The cluster bubble itself shows
+ONLY the per-cluster count badge — the per-device popup is the
+drilldown affordance.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pointRenderer": "cluster"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/supercluster/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/supercluster/>._
+
+# === END: https://fenre.github.io/better_map/recipes/meraki/supercluster/ ===
+
 # === BEGIN: https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/h3/ ===
 
 # Recipes / NetFlow / sFlow / IPFIX — H3 hexbin
@@ -6769,6 +7017,137 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/ot-datastreamer/markers/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/ot-datastreamer/paths/ ===
+
+# Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — paths
+
+> Source: `docs/recipes/ot-datastreamer/paths.md`  
+> URL: <https://fenre.github.io/better_map/recipes/ot-datastreamer/paths/>
+
+# OT Datastreamer / Edge Hub — paths (mobile-asset trajectories)
+
+Render the **historical trajectory** of mobile OT assets (AGVs,
+forklifts, mobile inspection robots, vehicle telematics, drones,
+roving workers wearing GPS-tagged safety beacons) as polylines
+on a facility / yard / outdoor-fleet map. Each polyline shows
+one asset's path over a time window — vertices are timestamped
+position samples from a GPS or beacon-based location source
+that the Edge Hub ingests passively. Distinct from the
+[ot-datastreamer/markers](./markers.md) recipe (which renders
+point-in-time AP / sensor inventory — fixed-location collectors,
+not mobile assets), the [heat](./heat.md) companion (which
+renders smooth telemetry density across a facility), and the
+[h3](./h3.md) companion (which renders per-zone roll-up).
+
+The right shape for **fleet movement audit panels** ("where did
+our AGV fleet move during last shift?"), **yard-management
+visibility** ("where are the trucks queued at our shipping
+yard right now?"), **safety-incident reconstruction** ("what
+was the trajectory of the mobile-inspection-robot leading up to
+the e-stop event?"), and **OT-asset chain-of-custody trails**
+("which equipment was moved where, when, and by which operator").
+
+This is the **4th layer cell on the ot-datastreamer source
+row**, completing markers / heat / h3 → markers / heat / h3 /
+paths. **OT-safety relevant** — see §6 Gotchas for the strict
+passive-collection / Level-0-not-Level-1-or-2 / SIS-related
+asset carve-out.
+
+## 1. Source description
+
+The **Splunk Edge Hub** (and the broader OTI Datastreamer
+ingest path it feeds) can passively ingest GPS-tagged mobile
+asset telemetry from a variety of sources:
+
+| Asset class | Wire protocol | Edge Hub input | Resulting fields |
+|---|---|---|---|
+| AGV / mobile robot | MQTT (manufacturer SDK) | `edge_hub_mqtt` | `asset_id`, `lat`, `lon`, `speed_mps`, `heading_deg`, `_time` |
+| Vehicle telematics | OBD-II → MQTT | `edge_hub_mqtt` | `vehicle_id`, `lat`, `lon`, `speed_kph`, `_time` |
+| GPS-tagged worker beacon | LoRaWAN → MQTT | `edge_hub_mqtt` | `beacon_id`, `lat`, `lon`, `battery_pct`, `_time` |
+| Drone (DJI / Parrot SDK) | Manufacturer SDK → MQTT | `edge_hub_mqtt` | `drone_id`, `lat`, `lon`, `altitude_m`, `_time` |
+| Fixed-position sensor with sub-meter movement (e.g. crane positioning) | OPC UA | `edge_hub_opcua` | `node_id`, `position_x`, `position_y`, `position_z`, `_time` (would need OPC-UA-side coordinate-system → WGS84 transform) |
+
+All sources have in common: **a unique asset identifier
+(asset_id, vehicle_id, beacon_id, drone_id), a timestamp
+(_time or a dedicated field), and a lat/lon pair**. The recipe
+groups rows by asset_id, orders by _time, and emits the polyline
+contract the paths layer consumes.
+
+**Why paths for OT.** Per-asset trajectories are useful for:
+- **Operational visibility** — "Where is AGV-007 right now,
+  and where has it been in the last shift?"
+- **Safety reconstruction** — "What was the path leading up
+  to the incident timestamp?" (post-incident trajectory
+  replay is a core OT safety-investigation pattern, per
+  ISA/IEC 62443-2-4 §SR 6.1 "audit record generation")
+- **Process-optimization analysis** — "Which AGV routes
+  generate the most idle-time? Are there path bottlenecks
+  we should address with floor-layout changes?"
+- **Anomaly detection** — "Has any mobile asset entered a
+  zone it shouldn't be in, or stayed in a zone too long?"
+
+Distinct from a markers panel (one dot per asset at last
+known position) and a heatmap panel (smooth density of where
+assets have been). Paths surface the TEMPORAL ORDERING that
+markers and heat both collapse.
+
+**Typical sourcetype / index:** `sourcetype="edge_hub_mqtt"`,
+`index=edge_hub_mqtt` (Edge Hub default for MQTT-based
+ingest). Source path: `edgehub/mqtt_events/<asset-topic>`.
+
+## 2. SPL recipe
+
+```spl
+index=edge_hub_mqtt sourcetype="edge_hub_mqtt" source="edgehub/mqtt_events/agv/*" earliest=-1h latest=now
+| where isnotnull(lat) AND isnotnull(lon)
+| where isnotnull(asset_id)
+| eval path_id=asset_id."__".tostring(relative_time(now(), "-1h"))
+| sort 0 asset_id, _time
+| streamstats current=true count AS seq BY path_id
+| eval seq=seq-1
+| eval zone_purdue_level=coalesce(zone_purdue_level, "L2")
+| rename path_id AS id
+| fields id, seq, lat, lon, asset_id, zone_purdue_level, speed_mps, _time
+| head 5000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/paths/>._
+
+## 3. Expected fields
+
+| field             | type    | example              |
+|-------------------|---------|----------------------|
+| id                | string  | AGV-007__1747531200  |
+| seq               | integer | 0                    |
+| lat               | number  | 29.7604              |
+| lon               | number  | -95.3698             |
+| asset_id          | string  | AGV-007              |
+| zone_purdue_level | string  | L2                   |
+| speed_mps         | number  | 1.8                  |
+
+Seven fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+Multiple rows per `id`: one row per (asset, time) vertex,
+all sharing the same `id`. The polyline is rendered by
+joining vertices in `seq` order. `asset_id` and `speed_mps`
+flow through to the per-vertex popup; `zone_purdue_level`
+drives the OT-safety annotation overlay.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pathIdField": "id",
+  "timeField": "seq",
+  "pathColor": "#10b981",
+  "pathArrows": true
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/paths/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/paths/>._
+
+# === END: https://fenre.github.io/better_map/recipes/ot-datastreamer/paths/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/splunk-stream/h3/ ===
 
@@ -10212,7 +10591,7 @@ Each entry below distils the corresponding YAML scaffold so an LLM can answer in
 
 # Appendix B — Per-source recipe matrix
 
-> Source of truth: `docs/_machine/recipes/index.yaml` (51 recipe(s), emission order)
+> Source of truth: `docs/_machine/recipes/index.yaml` (54 recipe(s), emission order)
 
 Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answer 'which recipe matches this data source?' without fetching every recipe page. Recipes carry one of three statuses: `verified` (smoke-tested against a live Splunk tenant with proof in the YAML metadata), `unverified` (the recipe follows the contract but has not yet been smoke-tested), or `deferred` (the recipe is known to be incomplete pending upstream work). The expected-field contract for each recipe lives in §3 of the recipe page (kept verbatim in this file under the matching `# === BEGIN: …/recipes/<source>/<layer>/ ===` block); follow the Page link below to jump to it.
 
@@ -10224,6 +10603,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `cim-authentication--h3` | CIM Authentication → H3 hexbin | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/h3.md](https://fenre.github.io/better_map/recipes/cim-authentication/h3/) |
 | `cim-authentication--heat` | CIM Authentication → Heatmap | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/heat.md](https://fenre.github.io/better_map/recipes/cim-authentication/heat/) |
 | `cim-authentication--markers` | CIM Authentication → Markers | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/markers.md](https://fenre.github.io/better_map/recipes/cim-authentication/markers/) |
+| `cim-network-traffic--choropleth` | CIM Network Traffic (data model) → Choropleth | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-network-traffic/choropleth.md](https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/) |
 | `cim-network-traffic--h3` | CIM Network Traffic → H3 hexbin | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-network-traffic/h3.md](https://fenre.github.io/better_map/recipes/cim-network-traffic/h3/) |
 | `cim-network-traffic--heat` | CIM Network Traffic → Heatmap | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-network-traffic/heat.md](https://fenre.github.io/better_map/recipes/cim-network-traffic/heat/) |
 | `cim-network-traffic--markers` | CIM Network Traffic → Markers | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-network-traffic/markers.md](https://fenre.github.io/better_map/recipes/cim-network-traffic/markers/) |
@@ -10256,12 +10636,14 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `meraki--h3` | Cisco Meraki (devices) → H3 hexbin | unverified | `Splunk_TA_cisco_meraki` | — | [docs/recipes/meraki/h3.md](https://fenre.github.io/better_map/recipes/meraki/h3/) |
 | `meraki--heat` | Cisco Meraki (devices) → Heatmap | unverified | `Splunk_TA_cisco_meraki` | — | [docs/recipes/meraki/heat.md](https://fenre.github.io/better_map/recipes/meraki/heat/) |
 | `meraki--markers` | Cisco Meraki (devices) → Markers | unverified | `Splunk_TA_cisco_meraki` | — | [docs/recipes/meraki/markers.md](https://fenre.github.io/better_map/recipes/meraki/markers/) |
+| `meraki--supercluster` | Cisco Meraki (devices) → Supercluster | unverified | `Splunk_TA_cisco_meraki` | — | [docs/recipes/meraki/supercluster.md](https://fenre.github.io/better_map/recipes/meraki/supercluster/) |
 | `netflow-sflow-ipfix--h3` | NetFlow / sFlow / IPFIX (flow records) → H3 hexbin | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/h3.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/h3/) |
 | `netflow-sflow-ipfix--heat` | NetFlow / sFlow / IPFIX (flow records) → Heatmap | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/heat.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/heat/) |
 | `netflow-sflow-ipfix--markers` | NetFlow / sFlow / IPFIX (flow records) → Markers | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/markers.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/markers/) |
 | `ot-datastreamer--h3` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → H3 hexbin | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/h3.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/h3/) |
 | `ot-datastreamer--heat` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Heatmap | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/heat.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/heat/) |
 | `ot-datastreamer--markers` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Markers | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/markers.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/markers/) |
+| `ot-datastreamer--paths` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Paths | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/paths.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/paths/) |
 | `splunk-stream--h3` | Splunk Stream (wire data) → H3 hexbin | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/h3.md](https://fenre.github.io/better_map/recipes/splunk-stream/h3/) |
 | `splunk-stream--heat` | Splunk Stream (wire data) → Heatmap | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/heat.md](https://fenre.github.io/better_map/recipes/splunk-stream/heat/) |
 | `splunk-stream--markers` | Splunk Stream (wire data) → Markers | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/markers.md](https://fenre.github.io/better_map/recipes/splunk-stream/markers/) |
