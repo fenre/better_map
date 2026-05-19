@@ -4,7 +4,7 @@
 
 This file is the body-inclusive sibling of `llms.txt` and concatenates every page on the Better Map documentation site into a single, LLM-friendly text dump. The short companion index is at <https://fenre.github.io/better_map/llms.txt>. Pages appear in `mkdocs.yml` `nav:` declaration order. Each page block carries a stable `# === ... ===` separator plus the source-of-truth path on disk and the published URL so the same content can be grepped by either dimension.
 
-At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 78 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 81 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
 
 All page URLs resolve to publicly accessible Material-themed HTML on GitHub Pages. The project ships under the MIT licence; the canonical repo is <https://github.com/fenre/better_map>.
 
@@ -27,6 +27,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / CIM Alerts — paths (`docs/recipes/cim-alerts/paths.md`)
 - Recipes / CIM Alerts — supercluster (`docs/recipes/cim-alerts/supercluster.md`)
 - Recipes / CIM Authentication — 3D extrusion (`docs/recipes/cim-authentication/extrusion-3d.md`)
+- Recipes / CIM Authentication — choropleth (`docs/recipes/cim-authentication/choropleth.md`)
 - Recipes / CIM Authentication — H3 hexbin (`docs/recipes/cim-authentication/h3.md`)
 - Recipes / CIM Authentication — heatmap (`docs/recipes/cim-authentication/heat.md`)
 - Recipes / CIM Authentication — markers (`docs/recipes/cim-authentication/markers.md`)
@@ -78,6 +79,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / KV Store (lat/lon) — paths (`docs/recipes/kvstore-latlon/paths.md`)
 - Recipes / KV Store (lat/lon) — supercluster (`docs/recipes/kvstore-latlon/supercluster.md`)
 - Recipes / KV Store (geo polygons collection) — polygons (`docs/recipes/kvstore-latlon/polygons.md`)
+- Recipes / KV Store (geo polygons collection) — vector-tile join (`docs/recipes/kvstore-latlon/vector-tile-join.md`)
 - Recipes / Meraki (Cisco vendor TA) — 3D extrusion (`docs/recipes/meraki/extrusion-3d.md`)
 - Recipes / Meraki (Cisco vendor TA) — H3 hexbin (`docs/recipes/meraki/h3.md`)
 - Recipes / Meraki (Cisco vendor TA) — heatmap (`docs/recipes/meraki/heat.md`)
@@ -92,6 +94,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — heatmap (`docs/recipes/ot-datastreamer/heat.md`)
 - Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — markers (`docs/recipes/ot-datastreamer/markers.md`)
 - Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — paths (`docs/recipes/ot-datastreamer/paths.md`)
+- Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — supercluster (`docs/recipes/ot-datastreamer/supercluster.md`)
 - Recipes / Splunk Stream (wire data) — H3 hexbin (`docs/recipes/splunk-stream/h3.md`)
 - Recipes / Splunk Stream (wire data) — heatmap (`docs/recipes/splunk-stream/heat.md`)
 - Recipes / Splunk Stream (wire data) — markers (`docs/recipes/splunk-stream/markers.md`)
@@ -1204,12 +1207,12 @@ generated from
 so it cannot drift from the recipe files.
 
 <!-- recipes-matrix trimmed for llms-full.txt token budget (see Wave 16 ROADMAP block); full matrix at <https://fenre.github.io/better_map/recipes/> and source-of-truth YAML at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>; per-recipe details (status, apps, expected-field contract, formatter options) are kept verbatim under the matching `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file -->
-**Total: 78 recipes · 15 source dir(s) · 9 layer type(s).**
+**Total: 81 recipes · 15 source dir(s) · 9 layer type(s).**
 
 Source dirs and the layer ids that already ship for each (any `(source, layer)` not listed below is an open cell in the E5 matrix and is a candidate for the next recipe wave):
 
 - `cim-alerts`: h3, heat, markers, paths, supercluster
-- `cim-authentication`: extrusion-3d, h3, heat, markers, paths, supercluster
+- `cim-authentication`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster
 - `cim-network-traffic`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster
 - `cim-performance`: h3, heat, markers, paths, supercluster
 - `csv-lookup-geo`: h3, heat, markers, paths, polygons, supercluster, vector-tile-join
@@ -1217,14 +1220,14 @@ Source dirs and the layer ids that already ship for each (any `(source, layer)` 
 - `es-risk`: h3, heat, markers, paths, supercluster
 - `geo-us-states`: choropleth, extrusion-3d
 - `itsi-kpi-base`: h3, heat, markers, paths, supercluster
-- `kvstore-latlon`: h3, heat, markers, paths, polygons, supercluster
+- `kvstore-latlon`: h3, heat, markers, paths, polygons, supercluster, vector-tile-join
 - `meraki`: extrusion-3d, h3, heat, markers, supercluster
 - `netflow-sflow-ipfix`: h3, heat, markers, paths, supercluster
-- `ot-datastreamer`: h3, heat, markers, paths
+- `ot-datastreamer`: h3, heat, markers, paths, supercluster
 - `splunk-stream`: h3, heat, markers, paths, supercluster
 - `thousandeyes`: choropleth, h3, heat, markers, paths, supercluster
 
-**OT-safety-relevant recipes (9):** `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `cyber-vision/paths`, `cyber-vision/supercluster`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`, `ot-datastreamer/paths`.
+**OT-safety-relevant recipes (10):** `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `cyber-vision/paths`, `cyber-vision/supercluster`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`, `ot-datastreamer/paths`, `ot-datastreamer/supercluster`.
 
 The remaining matrix cells from the E5 design — every layer × every
 source pattern — are tracked in
@@ -2106,6 +2109,161 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/extrusion-3d/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-authentication/extrusion-3d/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/cim-authentication/choropleth/ ===
+
+# Recipes / CIM Authentication — choropleth
+
+> Source: `docs/recipes/cim-authentication/choropleth.md`  
+> URL: <https://fenre.github.io/better_map/recipes/cim-authentication/choropleth/>
+
+# CIM Authentication — US states choropleth
+
+The per-state aggregation lens for CIM Authentication failures.
+Same `tag=authentication action=failure` data-model filter as
+the [cim-authentication/markers](./markers.md),
+[heat](./heat.md), [h3](./h3.md), and
+[extrusion-3d](./extrusion-3d.md) companions — but instead of
+rendering individual failed-login events / smooth density /
+hex bins / 3D bars, the recipe geocodes each event's `src`
+(source IP) via Splunk's `iplocation`, filters to US events,
+and shades the bundled `us-states` vector-tile preset by
+per-state failed-login count.
+
+The right shape for **"where is our authentication-attack
+pressure concentrated by jurisdiction" executive briefings**,
+**state-by-state credential-stuffing posture views** (which
+states' employees are getting hit hardest by external
+brute-force attempts), and **compliance-jurisdiction
+reporting** (state-AG breach-notification preparation; many
+state laws specifically require per-state failed-login
+counts in any breach disclosure).
+
+The CIM Authentication source row now has **6 layer cells**
+(markers / heat / h3 / supercluster / paths / extrusion-3d
+from waves 6-29, plus choropleth now). Choropleth is the
+**second polygon-derived recipe** on this source (alongside
+extrusion-3d), and the first "shade-by-value" polygon recipe
+— extrusion-3d uses height for the value channel, choropleth
+uses colour. Pair the two on a single dashboard for a
+"colour + height" dual-encoded jurisdictional view of
+authentication failure pressure.
+
+## 1. Source description
+
+Same **CIM Authentication** data model as the markers / heat /
+h3 / supercluster / paths / extrusion-3d companions — see
+[cim-authentication/markers §1](./markers.md#1-source-description)
+for the data model background, the `tag=authentication` contract,
+the action sub-filter convention (`success` / `failure` /
+`pending`), and the broader catalogue of CIM-conformant
+sourcetypes (`bro:ssh`, `linux_secure`, `WinEventLog:Security`,
+`okta:*`, `azuread:audit`, etc.).
+
+The relevant distinction for THIS recipe: the panel renders
+per-state failed-login aggregation as a polygon choropleth (the
+bundled `us-states` PMTiles preset), not per-event markers,
+smooth density, hex bins, or 3D height bars.
+
+**Why choropleth for CIM Authentication.** A markers panel shows
+per-event identity but is bandwidth-limited at credential-
+stuffing attack volumes (10k+ events/min during an active
+attack). A heatmap shows smooth density but obscures
+jurisdictional boundaries (a hot blob crossing CA / NV doesn't
+tell you "Nevada specifically"). An H3 hexbin shows hard-bordered
+jurisdictional sum-aggregation but the cell boundaries are
+H3-defined, not political. An extrusion-3d shows per-state
+3D height bars but at extreme zoom-out the height differences
+are hard to read across more than ~10 states. A choropleth
+solves the political-boundary question with colour: every
+failed-login event inside a state's polygon contributes to
+that state's tally, the renderer shades the polygon by the
+tally, and the result maps cleanly onto state-AG
+breach-notification reporting and per-state security-posture
+views.
+
+**Typical sourcetype / index:** any sourcetype tagged
+`authentication` in your CIM tag config — `bro:ssh`,
+`linux_secure`, `WinEventLog:Security`, `okta:syslog`,
+`azuread:signin`, `cisco:ise:syslog`, `duo:authentication`,
+etc. See the [markers companion](./markers.md#1-source-description)
+for the broader catalogue. The recipe uses `tag=authentication
+action=failure` directly so it inherits whatever CIM-conformant
+sourcetypes the customer has onboarded.
+
+**No add-on required beyond Splunk_SA_CIM** for the data model,
+and the bundled `us-states.pmtiles` preset for the polygons.
+Fully air-gap compatible per ROADMAP §1a.
+
+## 2. SPL recipe
+
+```spl
+tag=authentication action=failure earliest=-24h latest=now
+| iplocation src
+| where Country="United States" AND isnotnull(Region)
+| stats count AS failure_count BY Region
+| eval id=upper(case(
+    Region=="California","CA",
+    Region=="New York","NY",
+    Region=="Texas","TX",
+    Region=="Washington","WA",
+    Region=="Illinois","IL",
+    Region=="Florida","FL",
+    Region=="Massachusetts","MA",
+    Region=="Virginia","VA",
+    Region=="Colorado","CO",
+    Region=="Oregon","OR",
+    Region=="Pennsylvania","PA",
+    Region=="New Jersey","NJ",
+    Region=="Georgia","GA",
+    Region=="North Carolina","NC",
+    Region=="Ohio","OH",
+    Region=="Michigan","MI",
+    Region=="Arizona","AZ",
+    Region=="Minnesota","MN",
+    Region=="Indiana","IN",
+    Region=="Tennessee","TN",
+    Region=="District of Columbia","DC",
+    true(),substr(Region,1,2)))
+| eval value=failure_count
+| rename Region AS state_name
+| fields id, state_name, value, failure_count
+| sort - value
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/choropleth/>._
+
+## 3. Expected fields
+
+| field         | type    | example     |
+|---------------|---------|-------------|
+| id            | string  | CA          |
+| state_name    | string  | California  |
+| value         | integer | 1842        |
+| failure_count | integer | 1842        |
+
+All four fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+`value` drives the polygon fill; `failure_count` is the
+popup-display field. They carry the same numeric value but are
+kept semantically separate so a future variant
+(`value=log10(failure_count)` for log-scale colouring, or
+`value=failure_count/state_population` for per-capita normalisation)
+can change ONE without breaking the other.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinPreset": "us-states",
+  "enableChoropleth": "true",
+  "palette": "magma"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/choropleth/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/choropleth/>._
+
+# === END: https://fenre.github.io/better_map/recipes/cim-authentication/choropleth/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/cim-authentication/h3/ ===
 
@@ -8264,6 +8422,150 @@ _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are o
 
 # === END: https://fenre.github.io/better_map/recipes/kvstore-latlon/polygons/ ===
 
+# === BEGIN: https://fenre.github.io/better_map/recipes/kvstore-latlon/vector-tile-join/ ===
+
+# Recipes / KV Store (geo polygons collection) — vector-tile join
+
+> Source: `docs/recipes/kvstore-latlon/vector-tile-join.md`  
+> URL: <https://fenre.github.io/better_map/recipes/kvstore-latlon/vector-tile-join/>
+
+# KV Store (geo polygons collection) — vector-tile join (customer PMTiles)
+
+Render a per-region metric value (sales by territory, incidents
+by service area, SLO compliance by jurisdiction, OT roll-up KPIs
+by plant zone) by joining a **KV Store collection** of metric
+values against a **customer-hosted PMTiles vector tileset** that
+defines the region polygons. The **second source** to demonstrate
+the vector-tile-join layer (alongside the existing
+[csv-lookup-geo/vector-tile-join](../csv-lookup-geo/vector-tile-join.md)
+companion), promoting the vector-tile-join layer **out of the
+singleton-trap region**.
+
+KV Store is the right home for the metric rows when the dataset:
+
+- changes frequently (a GIS / data team can `outputlookup`
+  updates without a Splunk app redeploy, or even mutate
+  individual rows via the KV Store REST API)
+- requires row-level RBAC (e.g., per-region metrics restricted
+  to the regional director's role)
+- needs to participate in joins with telemetry indexed elsewhere
+  (KV Store queries are first-class in SPL)
+- spans search heads in a SHC (KV replicates automatically;
+  CSVs require manual sync via the deployer or a deployment
+  server bundle)
+- carries more than a few thousand rows (CSV lookups are loaded
+  into search-head memory on every search; KV Store queries are
+  indexed and scale to ~millions of rows)
+
+The polygon geometry STILL lives on a customer-hosted PMTiles
+file (this recipe shares the PMTiles contract verbatim with the
+[csv-lookup-geo/vector-tile-join](../csv-lookup-geo/vector-tile-join.md)
+companion — see its §1 for the deep PMTiles + tippecanoe +
+promoteId background). The only thing this recipe changes is the
+**metric row source**: KV Store collection instead of CSV file.
+
+Zero Splunk add-ons required. The polygon geometry lives on a
+customer-hosted CDN (or on the Splunk app's own
+`appserver/static/` folder for air-gapped tenants). The metric
+rows live in the customer's KV Store. No external API calls.
+
+## 1. Source description
+
+A KV Store collection named `region_metrics_kv` (rename to match
+your install) holds one row per region, with columns:
+
+| column         | type   | purpose                                                |
+|----------------|--------|--------------------------------------------------------|
+| `country_code` | string | per-region unique key (joined to PMTiles `promoteId`)  |
+| `country_name` | string | human-readable label                                   |
+| `value`        | number | choropleth shading driver (sales, count, percentage)   |
+
+The collection is defined in `collections.conf` +
+`transforms.conf` per the three-file lookup contract (see the
+[splunk-lookups skill](https://github.com/fenre/better_map/blob/main/.cursor/rules/splunk-lookups.mdc)).
+The matching transforms.conf stanza uses `external_type = kvstore`
+and points at the collection by `collection = region_metrics_kv`.
+
+The polygon geometry side is **identical** to the
+[csv-lookup-geo/vector-tile-join](../csv-lookup-geo/vector-tile-join.md)
+companion — a customer-hosted PMTiles file, with a `source-layer`
+name and a `promoteId` property. See its §1 for the PMTiles
+contract, the `tippecanoe -aI` recipe for promoting GeoJSON `id`
+properties, and the air-gap-safe `featureJoinPreset` alternative.
+
+**Typical sourcetype / index:** none — `| inputlookup` runs
+against the KV Store collection directly, no event ingestion
+involved. (Production dashboards often run `| stats sum(value)
+BY region_id` over real events and feed THAT into the join — see
+§6 Gotchas for the "summary-search join" pattern, which works
+identically to the CSV companion.)
+
+**One-time setup** (skip if your collection already exists):
+
+```spl
+| makeresults
+| eval country_code="NLD", country_name="Netherlands", value=847.3
+| append [
+  | makeresults
+  | eval country_code="DEU", country_name="Germany", value=1342.6]
+| append [
+  | makeresults
+  | eval country_code="FRA", country_name="France", value=1058.2]
+| fields - _time
+| outputlookup region_metrics_kv
+```
+
+(The one-time setup is the only place `| makeresults` is allowed
+in this recipe — it is bootstrap data, not panel data. Per
+ROADMAP §1a and the Splunk SPL anti-pattern rules,
+`| makeresults` is BANNED in panel SPL because it bypasses
+time-range filtering and can't be distributed across indexers.)
+
+After the `| outputlookup`, the collection is queryable from any
+search head in the SHC (KV Store replicates automatically). For
+incremental updates use a saved-search that runs `| stats
+sum(value) BY country_code | outputlookup region_metrics_kv` on
+a schedule, OR mutate individual rows via the KV Store REST API
+(see the splunk-lookups skill for the curl invocation patterns).
+
+## 2. SPL recipe
+
+```spl
+| inputlookup region_metrics_kv
+| rename country_code AS id
+| fields id, country_name, value
+| sort - value
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/vector-tile-join/>._
+
+## 3. Expected fields
+
+| field         | type   | example     |
+|---------------|--------|-------------|
+| id            | string | NLD         |
+| country_name  | string | Netherlands |
+| value         | number | 847.3       |
+
+The polygon geometry itself is NOT a field — Better Map fetches
+it internally from the PMTiles URL configured in §4.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinUrl": "https://cdn.example.com/tilesets/world-countries.pmtiles",
+  "featureJoinPromoteId": "iso_a3",
+  "featureJoinSourceLayer": "countries",
+  "enableChoropleth": "true",
+  "palette": "viridis"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/vector-tile-join/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/vector-tile-join/>._
+
+# === END: https://fenre.github.io/better_map/recipes/kvstore-latlon/vector-tile-join/ ===
+
 # === BEGIN: https://fenre.github.io/better_map/recipes/meraki/extrusion-3d/ ===
 
 # Recipes / Meraki (Cisco vendor TA) — 3D extrusion
@@ -9917,6 +10219,140 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/paths/>._
 
 # === END: https://fenre.github.io/better_map/recipes/ot-datastreamer/paths/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/ot-datastreamer/supercluster/ ===
+
+# Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — supercluster
+
+> Source: `docs/recipes/ot-datastreamer/supercluster.md`  
+> URL: <https://fenre.github.io/better_map/recipes/ot-datastreamer/supercluster/>
+
+# OT Datastreamer / Edge Hub — supercluster
+
+Render every Edge Hub appliance across a multi-plant OT fleet as
+a **zoom-adaptive cluster** rather than per-appliance markers.
+The right shape for **global-OT-NetOps panels** where Edge Hub
+has been deployed across 50-500+ plants / refineries / substations
+worldwide, and a per-marker panel collapses to overlapping dots
+at world zoom.
+
+Same `edge_hub_*` index union and operator-maintained
+`edge_hub_sites.csv` lookup as the
+[ot-datastreamer/markers](./markers.md), [heat](./heat.md),
+[h3](./h3.md), and [paths](./paths.md) companions — but instead
+of per-appliance pins (unreadable at world zoom on large global
+fleets), per-site smooth heat blobs, regional H3 hexbins, or
+mobile-asset trajectories, the recipe renders zoom-adaptive
+cluster bubbles that resolve to individual appliances only when
+the camera zooms in close to a single plant. The **5th layer
+cell on the ot-datastreamer source row** — completing markers /
+heat / h3 / paths / supercluster for OT Datastreamer.
+
+**OT safety boundary (this recipe is `ot_safety_relevant:
+true`).** Same contract as all ot-datastreamer companions: the
+panel rests on the
+[`/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc)
+contract — passive collection only, SIS-related signals read-only,
+no write-back to Level-0/1/2 zones, no SOAR actions wired to a
+Level-0/1/2 target. The cluster bubble form is **VISUALLY
+AGGREGATED** (one bubble may cover 50+ appliances at world zoom)
+but EVERY safety rule still applies — and the visual aggregation
+makes safety-flag handling MORE delicate, not less (see §6
+Gotchas — a cluster bubble over a refinery may contain
+`safety_related="Y"` appliances whose individual designation is
+hidden by the count badge).
+
+## 1. Source description
+
+Same Splunk **Edge Hub / OTI Datastreamer** event union as the
+companion [markers](./markers.md), [heat](./heat.md),
+[h3](./h3.md), and [paths](./paths.md) recipes — the OR of every
+`edge_hub_*` index plus the optional `bms` index, joined against
+the operator-maintained `edge_hub_sites.csv` lookup for physical
+lat / lon + Purdue level + safety classification.
+
+The relevant distinction for THIS recipe: the panel renders
+per-appliance cluster bubbles rather than per-appliance markers,
+per-site heat blobs, regional H3 hexbins, or mobile-asset paths.
+At world zoom the operator sees one "Houston Refinery: 23 hubs"
+bubble; at refinery zoom the bubble explodes into
+"Process Area A: 8 / Tank Farm B: 6 / Utilities C: 9"
+sub-clusters; at floor zoom the sub-clusters resolve into
+individual hub markers with the full per-appliance popup.
+
+**Why supercluster for Edge Hub.** A markers panel works for
+≤50-hub single-plant deployments but collapses on
+multi-refinery / multi-substation global fleets where Edge Hub
+can be deployed across 200-500+ plants. The H3 hexbin companion
+solves the visual-density problem but H3 cells are stable across
+zoom levels — operators cannot zoom into a single hex cell to
+see the individual appliances. The heat companion shows per-site
+density without per-appliance identity. The paths companion is
+mobile-asset-specific (AGVs, vehicles, drones); for FIXED-
+LOCATION Edge Hub appliances the trajectory is degenerate (one
+point). Supercluster solves the world-zoom-density tradeoff:
+zoom-adaptive cluster bubbles at extreme zoom-out, individual
+markers at plant-zoom, full popup affordance preserved.
+
+**Typical sourcetype / index:** anything matching `edge_hub_*`
+plus the `bms` index (Building Management System events: HVAC,
+power monitoring, occupancy sensors). The TA is `Splunk_TA_oti`.
+The site lookup is the same operator-maintained
+`edge_hub_sites.csv` used by all companions — no additional
+lookup work needed if the markers / heat / h3 / paths companions
+are already deployed.
+
+## 2. SPL recipe
+
+```spl
+index=edge_hub_* OR index=bms earliest=-24h latest=now
+| stats count AS event_count BY host
+| lookup edge_hub_sites.csv host OUTPUT lat, lon, hub_name, site_id, zone_purdue_level, safety_related
+| where isnotnull(lat) AND isnotnull(lon)
+| eval safety_related=coalesce(safety_related, "N")
+| eval zone_purdue_level=coalesce(zone_purdue_level, "L2")
+| rename host AS id
+| fields id, lat, lon, hub_name, site_id, zone_purdue_level, safety_related, event_count
+| sort id
+| head 5000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/supercluster/>._
+
+## 3. Expected fields
+
+| field             | type    | example                       |
+|-------------------|---------|-------------------------------|
+| id                | string  | HUB-PLANT-A-01                |
+| lat               | number  | 29.7604                       |
+| lon               | number  | -95.3698                      |
+| hub_name          | string  | Plant A Process Floor Hub 01  |
+| site_id           | string  | SITE-PLANT-A                  |
+| zone_purdue_level | string  | L2                            |
+| safety_related    | string  | N                             |
+| event_count       | integer | 8473                          |
+
+All eight fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+`hub_name`, `site_id`, `zone_purdue_level`, `safety_related`,
+`event_count` flow through to the per-appliance popup (visible
+when the user fully zooms into a cluster and clicks a marker).
+The cluster bubble itself shows ONLY the per-cluster count badge
+— per-appliance identity, Purdue level, and safety classification
+are NOT visible at the cluster level.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pointRenderer": "cluster",
+  "idField": "id"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/supercluster/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/supercluster/>._
+
+# === END: https://fenre.github.io/better_map/recipes/ot-datastreamer/supercluster/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/splunk-stream/h3/ ===
 
@@ -13429,7 +13865,7 @@ Each entry below distils the corresponding YAML scaffold so an LLM can answer in
 
 # Appendix B — Per-source recipe matrix
 
-> Source of truth: `docs/_machine/recipes/index.yaml` (78 recipe(s), emission order)
+> Source of truth: `docs/_machine/recipes/index.yaml` (81 recipe(s), emission order)
 
 Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answer 'which recipe matches this data source?' without fetching every recipe page. Recipes carry one of three statuses: `verified` (smoke-tested against a live Splunk tenant with proof in the YAML metadata), `unverified` (the recipe follows the contract but has not yet been smoke-tested), or `deferred` (the recipe is known to be incomplete pending upstream work). The expected-field contract for each recipe lives in §3 of the recipe page (kept verbatim in this file under the matching `# === BEGIN: …/recipes/<source>/<layer>/ ===` block); follow the Page link below to jump to it.
 
@@ -13440,6 +13876,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `cim-alerts--markers` | CIM Alerts → Markers | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-alerts/markers.md](https://fenre.github.io/better_map/recipes/cim-alerts/markers/) |
 | `cim-alerts--paths` | CIM Alerts → Paths | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-alerts/paths.md](https://fenre.github.io/better_map/recipes/cim-alerts/paths/) |
 | `cim-alerts--supercluster` | CIM Alerts → Supercluster | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-alerts/supercluster.md](https://fenre.github.io/better_map/recipes/cim-alerts/supercluster/) |
+| `cim-authentication--choropleth` | CIM Authentication (data model) → Choropleth | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-authentication/choropleth.md](https://fenre.github.io/better_map/recipes/cim-authentication/choropleth/) |
 | `cim-authentication--extrusion-3d` | CIM Authentication → 3D extrusion | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/extrusion-3d.md](https://fenre.github.io/better_map/recipes/cim-authentication/extrusion-3d/) |
 | `cim-authentication--h3` | CIM Authentication → H3 hexbin | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/h3.md](https://fenre.github.io/better_map/recipes/cim-authentication/h3/) |
 | `cim-authentication--heat` | CIM Authentication → Heatmap | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/heat.md](https://fenre.github.io/better_map/recipes/cim-authentication/heat/) |
@@ -13488,6 +13925,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `kvstore-latlon--paths` | KV Store (lat/lon collection) → Paths | unverified | — | — | [docs/recipes/kvstore-latlon/paths.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/paths/) |
 | `kvstore-latlon--polygons` | KV Store (geo polygons collection) → Polygons | unverified | — | — | [docs/recipes/kvstore-latlon/polygons.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/polygons/) |
 | `kvstore-latlon--supercluster` | KV Store (lat/lon collection) → Supercluster | unverified | — | — | [docs/recipes/kvstore-latlon/supercluster.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/supercluster/) |
+| `kvstore-latlon--vector-tile-join` | KV Store (geo polygons collection) → Vector-tile join (customer PMTiles) | unverified | — | — | [docs/recipes/kvstore-latlon/vector-tile-join.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/vector-tile-join/) |
 | `meraki--extrusion-3d` | Cisco Meraki (devices) → 3D extrusion | unverified | `Splunk_TA_cisco_meraki` | — | [docs/recipes/meraki/extrusion-3d.md](https://fenre.github.io/better_map/recipes/meraki/extrusion-3d/) |
 | `meraki--h3` | Cisco Meraki (devices) → H3 hexbin | unverified | `Splunk_TA_cisco_meraki` | — | [docs/recipes/meraki/h3.md](https://fenre.github.io/better_map/recipes/meraki/h3/) |
 | `meraki--heat` | Cisco Meraki (devices) → Heatmap | unverified | `Splunk_TA_cisco_meraki` | — | [docs/recipes/meraki/heat.md](https://fenre.github.io/better_map/recipes/meraki/heat/) |
@@ -13502,6 +13940,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `ot-datastreamer--heat` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Heatmap | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/heat.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/heat/) |
 | `ot-datastreamer--markers` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Markers | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/markers.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/markers/) |
 | `ot-datastreamer--paths` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Paths | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/paths.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/paths/) |
+| `ot-datastreamer--supercluster` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Supercluster | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/supercluster.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/supercluster/) |
 | `splunk-stream--h3` | Splunk Stream (wire data) → H3 hexbin | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/h3.md](https://fenre.github.io/better_map/recipes/splunk-stream/h3/) |
 | `splunk-stream--heat` | Splunk Stream (wire data) → Heatmap | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/heat.md](https://fenre.github.io/better_map/recipes/splunk-stream/heat/) |
 | `splunk-stream--markers` | Splunk Stream (wire data) → Markers | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/markers.md](https://fenre.github.io/better_map/recipes/splunk-stream/markers/) |

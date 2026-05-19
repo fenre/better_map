@@ -221,6 +221,7 @@ nav:
       - 'CIM Alerts — paths': recipes/cim-alerts/paths.md
       - 'CIM Alerts — supercluster': recipes/cim-alerts/supercluster.md
       - 'CIM Authentication — 3D extrusion': recipes/cim-authentication/extrusion-3d.md
+      - 'CIM Authentication — choropleth': recipes/cim-authentication/choropleth.md
       - 'CIM Authentication — H3 hexbin': recipes/cim-authentication/h3.md
       - 'CIM Authentication — heatmap': recipes/cim-authentication/heat.md
       - 'CIM Authentication — markers': recipes/cim-authentication/markers.md
@@ -272,6 +273,7 @@ nav:
       - 'KV Store (lat/lon) — paths': recipes/kvstore-latlon/paths.md
       - 'KV Store (lat/lon) — supercluster': recipes/kvstore-latlon/supercluster.md
       - 'KV Store (geo polygons collection) — polygons': recipes/kvstore-latlon/polygons.md
+      - 'KV Store (geo polygons collection) — vector-tile join': recipes/kvstore-latlon/vector-tile-join.md
       - 'Meraki (Cisco vendor TA) — 3D extrusion': recipes/meraki/extrusion-3d.md
       - 'Meraki (Cisco vendor TA) — H3 hexbin': recipes/meraki/h3.md
       - 'Meraki (Cisco vendor TA) — heatmap': recipes/meraki/heat.md
@@ -286,6 +288,7 @@ nav:
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — heatmap': recipes/ot-datastreamer/heat.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — markers': recipes/ot-datastreamer/markers.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — paths': recipes/ot-datastreamer/paths.md
+      - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — supercluster': recipes/ot-datastreamer/supercluster.md
       - 'Splunk Stream (wire data) — H3 hexbin': recipes/splunk-stream/h3.md
       - 'Splunk Stream (wire data) — heatmap': recipes/splunk-stream/heat.md
       - 'Splunk Stream (wire data) — markers': recipes/splunk-stream/markers.md

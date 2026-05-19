@@ -1,5 +1,36 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-23): E5 Phase 2 wave 30 recipes SHIPPED
+> (3 more recipes — recipe count 78 → 81, layer-type coverage
+> **9 / 10 → 10 / 10 COMPLETE**, source-pattern coverage 8 / 8
+> unchanged, vector-tile-join usage **1 → 2 promoted OUT of
+> singleton-trap region — the LAST layer type to exit singleton
+> status**, choropleth usage 3 → 4, supercluster usage 13 → 14,
+> ot-datastreamer layer coverage 4 → 5).** Wave 30 closes a
+> defining milestone: with `kvstore-latlon/vector-tile-join`
+> (alongside the existing `csv-lookup-geo/vector-tile-join`
+> companion), **every layer type now ships at least 2 source
+> recipes** — no remaining singleton traps. The slate also adds
+> `cim-authentication/choropleth` (per-US-state failed-login
+> aggregation with a magma palette tuned for security audiences
+> — pairs naturally with the wave-29 `cim-authentication/
+> extrusion-3d` for a colour + height dual-encoded view) and
+> `ot-datastreamer/supercluster` (zoom-adaptive cluster bubbles
+> for global Edge Hub fleets across 50-500+ plants, completing
+> the 5th layer cell on the ot-datastreamer source row). Token
+> cost: ~5,282 tokens (163,564 → 168,846), leaving WARN headroom
+> at **6,154 tokens** — wave 31 will need a token-trim before
+> the next 3-recipe batch. Layer-shape coverage after wave 30:
+> markers 15, h3 14, heat 14, supercluster 14, paths 11,
+> choropleth 4, extrusion-3d 4, polygons 2, **vector-tile-join 2
+> (no longer singleton)**, h3 14. Source-pattern coverage:
+> 8 / 8. Recipe-to-source matrix density after wave 30: 81 cells
+> filled across 15 sources × 10 layer types (54.0% density). All
+> gates green (recipes/schema/coverage/manifest/formatter-schema/
+> reference-pages/llms-full drift + `mkdocs build --strict`).
+> Subsequent wave 31 token-trim + recipes will fold in below this
+> block.
+
 > **Status (v1.7-prep, 2026-05-22): E5 Phase 2 wave 30 token-trim
 > SHIPPED (extend the wave 29 `strip_roadmap_historical_subsections`
 > contract with one further H3 subsection — §1b "Competitive tier
