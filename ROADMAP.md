@@ -2704,6 +2704,111 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 > `llms-full.txt` at the next regeneration via the wave-13
 > generalised ROADMAP status-block regex._
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 22 recipes
+> SHIPPED (3 more recipes — recipe count 54 → 57, layer-type
+> coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
+> unchanged, paths usage 4 → 6, supercluster usage 5 → 6,
+> ot_safety_relevant recipe count 4 → 5).** Wave 22 continues
+> the **diversification regime** opened by wave 21, focused on
+> a **security-operations theme**: every new recipe is a SOC /
+> SecOps-pattern shape on a CIM-security or OT-security source
+> row. The diversification regime opened ~24 remaining matrix
+> cells in wave 21; wave 22 fills 3 of the highest-value cells
+> (paths and supercluster on security sources).
+> - **`cim-alerts/paths`** (NEW layer shape for source) —
+>   attacker-attribution view on the CIM Alerts data model.
+>   Groups events by `src` (source IP) instead of `dest`
+>   (target host), geocodes via `iplocation`, and uses
+>   `streamstats` to generate per-source monotonic sequence
+>   numbers — polyline formatter draws one line per attacker
+>   IP, vertex-ordered by alert firing time (kill-chain
+>   reconstruction). The `_time span=1m` bucket in the tstats
+>   aggregation preserves chronological ordering per (src,
+>   dest, signature) tuple (without `span=1m`, all events
+>   collapse into single-vertex paths — useless). The
+>   `eventstats count BY path_id` + `where hops_in_path >= 2`
+>   pattern discards single-vertex paths (geometric definition
+>   of a polyline). Right shape for **SOC kill-chain panels**
+>   (recon → exploit → privesc → exfil reconstruction) and
+>   **incident-response attacker-attribution briefings**. §6
+>   gotchas cover the CIM-acceleration requirement, the
+>   private-IP source dropout (RFC 1918 sources resolve to
+>   null), the 24h-window vs 7d-window trade-off (longer
+>   conflates campaigns), the `hops_in_path >= 2` discard
+>   (single-alert sources belong in the markers companion),
+>   and MITRE ATT&CK technique-mapping (downstream contract
+>   via `action.correlationsearch.annotations`). No OT-safety
+>   dependency (Level-3/4 SIEM artefacts only).
+> - **`cim-authentication/supercluster`** (NEW layer shape for
+>   source) — global-enterprise-footprint view on the CIM
+>   Authentication data model. Aggregates ALL auth events
+>   (not just failures — distinct from the markers companion
+>   which is SOC-centric on failed auths) per source IP,
+>   computes `success_rate=success_count/auth_count`, and
+>   uses the supercluster formatter for zoom-adaptive
+>   client-side aggregation. Right shape for **identity-team
+>   overview panels** (where is enterprise auth happening at
+>   global zoom; per-metro at country zoom; per-source-IP at
+>   city zoom). The `success_rate < 0.05 AND distinct_users
+>   >= 10` filter combo (in gotchas) is the canonical
+>   credential-stuffing signature. §6 gotchas cover the
+>   CIM-acceleration requirement, the IPv4-only regex guard
+>   (IPv6 sources need a parallel branch in Splunk 9.0+),
+>   the `success_rate=0.0` ambiguity (backup service vs
+>   credential-stuffer disambiguation via `distinct_users`),
+>   the 50k row cap (above 100k, drop to the h3 companion),
+>   and GeoIP-database staleness. No OT-safety dependency
+>   (CIM Authentication is IT-system identity by definition).
+> - **`cyber-vision/paths`** (NEW layer shape,
+>   **`ot_safety_relevant: true`**) — OT-lateral-movement
+>   reconstruction view on Cyber Vision's `flows` sourcetype.
+>   5th OT-safety-relevant recipe in the matrix (joining
+>   cyber-vision/markers, cyber-vision/h3, cyber-vision/heat,
+>   ot-datastreamer/paths). Aggregates per unique
+>   (src_asset, dest_asset, protocol) tuple, joins BOTH
+>   endpoints against the same `cybervision_sites.csv` lookup
+>   the markers companion uses, and uses an `append` branch
+>   to materialise the 2-vertex (src→dest) polyline structure
+>   (`mvexpand` cannot reconstruct the row-pair cleanly;
+>   `append` is the canonical SPL pattern for endpoint-pair
+>   polylines). Right shape for **OT-lateral-movement
+>   reconstruction panels** (when an event fires on a PLC,
+>   which other OT assets has it been communicating with?)
+>   and **Purdue-level-crossing detection** (surfaces
+>   `src_zone_purdue_level` ↔ `dest_zone_purdue_level` for
+>   immediate visual identification of illegitimate L3→L1
+>   bypasses). §6 gotchas embed the FULL OT-safety contract:
+>   passive-DPI reference design (Rule 1), Purdue-crossing
+>   alert taxonomy (legitimate vs never-legitimate flows
+>   per IEC 62443), Rule 2 never-disable-a-flow-event
+>   discipline, Rule 3 SOAR-action-zone limit (no auto-push
+>   to OT zone), 2-vertex polyline semantics (Cyber Vision
+>   sees flows not multi-hop traversals), high `protocol`
+>   cardinality (10-30 industrial protocols + IT overlays),
+>   and PII / GDPR posture (asset names embed plant-floor
+>   semantics).
+> - **Token budget.** Wave 22 lands at **~141,305 estimated
+>   tokens** / **~33,695 tokens of WARN headroom** (175,000 -
+>   141,305). The 3 new recipes cost **~4.5k tokens combined**
+>   (~1.5k/recipe) — matches the wave-19-strip post-trim
+>   economics. At this cadence, headroom funds **~22 more
+>   recipes** before the next token-trim is required.
+> - **Layer / pattern coverage updates.** Recipe count 54 → 57
+>   (+3). Layer coverage 9/10 unchanged. **paths usage 4 → 6**
+>   (cim-alerts + cyber-vision adopt), **supercluster usage 5 →
+>   6** (cim-authentication adopts). Source-pattern coverage
+>   8/8 unchanged. Source-row triplet count: 14 unchanged
+>   (wave 22 deliberately diversification). OT-safety-relevant
+>   recipe count: 4 → 5 (cyber-vision/paths joins
+>   ot-datastreamer/markers, ot-datastreamer/paths,
+>   cyber-vision/markers, cyber-vision/h3, cyber-vision/heat
+>   — actually 5 was already correct but cyber-vision/paths
+>   adds the FIRST paths-layer OT-safety recipe).
+>
+> _This `> **Status …` blockquote will self-strip from
+> `llms-full.txt` at the next regeneration via the wave-13
+> generalised ROADMAP status-block regex._
+
 > **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 21 recipes
 > SHIPPED (3 more recipes — recipe count 51 → 54, layer-type
 > coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
