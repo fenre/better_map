@@ -97,11 +97,13 @@ describe('safeRun — reporter chain', () => {
     });
 
     it('pushes failed envelopes onto the ring buffer (cap 50)', () => {
+        // Clear backoff between iterations so each call actually runs.
         for (let i = 0; i < 60; i++) {
             safeRun({
                 scope: LAYER_MARKERS,
                 action: function () { throw new Error('e' + i); }
             });
+            clearErrorState(LAYER_MARKERS);
         }
         const list = getRecentErrors();
         expect(list).toHaveLength(50);
@@ -278,12 +280,106 @@ describe('safeRun — rate limiting', () => {
     });
 
     it('still records every envelope in the ring buffer (rate-limit affects reporter only)', () => {
+        // Clear backoff between iterations so this test isolates the
+        // ring-buffer + rate-limit interaction from the backoff layer.
         let t = 1000;
         __setNow(function () { return t; });
         for (let i = 0; i < 5; i++) {
             t = 1000 + i * 10;
             safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('e' + i); } });
+            clearErrorState(LAYER_MARKERS);
         }
         expect(getRecentErrors()).toHaveLength(5);
+    });
+});
+
+describe('safeRun — backoff and quarantine', () => {
+    beforeEach(() => { __resetSafeRunState(); });
+
+    it('after first failure, immediate re-runs within 1s return {ok:false, error:{backoff:true}}', () => {
+        let t = 1000;
+        __setNow(function () { return t; });
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('a'); } });
+        t = 1100;
+        const r = safeRun({ scope: LAYER_MARKERS, action: function () { return 'never-runs'; } });
+        expect(r.ok).toBe(false);
+        expect(r.error.backoff).toBe(true);
+    });
+
+    it('after 1s, the action runs again', () => {
+        let t = 1000;
+        __setNow(function () { return t; });
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('a'); } });
+        t = 2001;
+        let ran = false;
+        const r = safeRun({
+            scope: LAYER_MARKERS,
+            action: function () { ran = true; return 42; }
+        });
+        expect(ran).toBe(true);
+        expect(r).toEqual({ ok: true, result: 42 });
+    });
+
+    it('successful run resets failure count', () => {
+        let t = 1000;
+        __setNow(function () { return t; });
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('a'); } });
+        t = 2001;
+        safeRun({ scope: LAYER_MARKERS, action: function () { return 'ok'; } });
+        // After a success, next failure starts a fresh backoff (1s, not 5s).
+        t = 3001;
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('b'); } });
+        t = 3500;
+        const r = safeRun({ scope: LAYER_MARKERS, action: function () { return 'x'; } });
+        expect(r.ok).toBe(false);
+        expect(r.error.backoff).toBe(true);
+    });
+
+    it('backoff schedule: 1s -> 5s -> 30s -> quarantined', () => {
+        let t = 1000;
+        __setNow(function () { return t; });
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('1'); } });
+        t = 2001;
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('2'); } });
+        t = 3002;
+        let r = safeRun({ scope: LAYER_MARKERS, action: function () {} });
+        expect(r.error.backoff).toBe(true);
+        t = 7003;
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('3'); } });
+        t = 8003;
+        r = safeRun({ scope: LAYER_MARKERS, action: function () {} });
+        expect(r.error.backoff).toBe(true);
+        t = 37004;
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('4'); } });
+        t = 100000;
+        r = safeRun({ scope: LAYER_MARKERS, action: function () {} });
+        expect(r.error.backoff).toBe(true);
+        expect(r.error.quarantined).toBe(true);
+    });
+
+    it('clearErrorState(scope) clears just that scope', () => {
+        let t = 1000;
+        __setNow(function () { return t; });
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('a'); } });
+        clearErrorState(LAYER_MARKERS);
+        let ran = false;
+        const r = safeRun({
+            scope: LAYER_MARKERS,
+            action: function () { ran = true; }
+        });
+        expect(ran).toBe(true);
+        expect(r.ok).toBe(true);
+    });
+
+    it('clearErrorState() with no scope clears everything', () => {
+        let t = 1000;
+        __setNow(function () { return t; });
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('a'); } });
+        safeRun({ scope: MAP_CREATE, action: function () { throw new Error('b'); } });
+        clearErrorState();
+        const r1 = safeRun({ scope: LAYER_MARKERS, action: function () { return 1; } });
+        const r2 = safeRun({ scope: MAP_CREATE, action: function () { return 2; } });
+        expect(r1.ok).toBe(true);
+        expect(r2.ok).toBe(true);
     });
 });
