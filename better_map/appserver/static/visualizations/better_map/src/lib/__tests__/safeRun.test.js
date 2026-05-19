@@ -383,3 +383,84 @@ describe('safeRun — backoff and quarantine', () => {
         expect(r2.ok).toBe(true);
     });
 });
+
+describe('safeRun — banner routing', () => {
+    let root;
+    beforeEach(() => {
+        document.body.innerHTML = '';
+        root = document.createElement('div');
+        document.body.appendChild(root);
+        __resetSafeRunState();
+        __resetBannerState();
+    });
+
+    it('recovery="soft" does NOT push a banner', () => {
+        safeRun({
+            scope: LAYER_MARKERS,
+            recovery: 'soft',
+            panelRoot: root,
+            action: function () { throw new Error('boom'); }
+        });
+        expect(getActiveBanners(root)).toHaveLength(0);
+    });
+
+    it('recovery="degrade" pushes a warning banner', () => {
+        safeRun({
+            scope: LAYER_MARKERS,
+            recovery: 'degrade',
+            panelRoot: root,
+            action: function () { throw new Error('boom'); }
+        });
+        const list = getActiveBanners(root);
+        expect(list).toHaveLength(1);
+        expect(list[0].severity).toBe('warning');
+    });
+
+    it('recovery="fatal" pushes a fatal banner', () => {
+        safeRun({
+            scope: MAP_CREATE,
+            recovery: 'fatal',
+            severity: 'fatal',
+            panelRoot: root,
+            action: function () { throw new Error('boom'); }
+        });
+        const list = getActiveBanners(root);
+        expect(list).toHaveLength(1);
+        expect(list[0].severity).toBe('fatal');
+    });
+
+    it('without panelRoot, banner is never pushed (no DOM target)', () => {
+        const r = safeRun({
+            scope: LAYER_MARKERS,
+            recovery: 'degrade',
+            action: function () { throw new Error('boom'); }
+        });
+        expect(r.ok).toBe(false);
+    });
+});
+
+describe('safeRun — destroy-flag suppression', () => {
+    let root;
+    beforeEach(() => {
+        document.body.innerHTML = '';
+        root = document.createElement('div');
+        document.body.appendChild(root);
+        __resetSafeRunState();
+        __resetBannerState();
+    });
+
+    it('panelRoot.dataset.bmDestroying suppresses banner but NOT ring buffer or event', () => {
+        root.dataset.bmDestroying = '1';
+        const events = [];
+        root.addEventListener('better_map:error', function (e) { events.push(e.detail); });
+        safeRun({
+            scope: LAYER_MARKERS,
+            recovery: 'degrade',
+            panelRoot: root,
+            action: function () { throw new Error('boom'); }
+        });
+        expect(getActiveBanners(root)).toHaveLength(0);   // banner suppressed
+        expect(events).toHaveLength(1);                    // event still dispatched
+        expect(getRecentErrors()).toHaveLength(1);         // ring buffer still grows
+    });
+});
