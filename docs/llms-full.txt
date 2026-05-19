@@ -4,7 +4,7 @@
 
 This file is the body-inclusive sibling of `llms.txt` and concatenates every page on the Better Map documentation site into a single, LLM-friendly text dump. The short companion index is at <https://fenre.github.io/better_map/llms.txt>. Pages appear in `mkdocs.yml` `nav:` declaration order. Each page block carries a stable `# === ... ===` separator plus the source-of-truth path on disk and the published URL so the same content can be grepped by either dimension.
 
-At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 81 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 84 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
 
 All page URLs resolve to publicly accessible Material-themed HTML on GitHub Pages. The project ships under the MIT licence; the canonical repo is <https://github.com/fenre/better_map>.
 
@@ -1101,13 +1101,13 @@ generated from
 so it cannot drift from the recipe files.
 
 <!-- recipes-matrix trimmed for llms-full.txt token budget (see Wave 16 ROADMAP block); full matrix at <https://fenre.github.io/better_map/recipes/> and source-of-truth YAML at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>; per-recipe details (status, apps, expected-field contract, formatter options) are kept verbatim under the matching `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file -->
-**Total: 81 recipes · 15 source dir(s) · 9 layer type(s).**
+**Total: 84 recipes · 15 source dir(s) · 9 layer type(s).**
 
 Source dirs and the layer ids that already ship for each (any `(source, layer)` not listed below is an open cell in the E5 matrix and is a candidate for the next recipe wave):
 
-- `cim-alerts`: h3, heat, markers, paths, supercluster
+- `cim-alerts`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster
 - `cim-authentication`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster
-- `cim-network-traffic`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster
+- `cim-network-traffic`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster, vector-tile-join
 - `cim-performance`: h3, heat, markers, paths, supercluster
 - `csv-lookup-geo`: h3, heat, markers, paths, polygons, supercluster, vector-tile-join
 - `cyber-vision`: h3, heat, markers, paths, supercluster
@@ -1238,6 +1238,349 @@ All three commands are also documented in
   their priority order.
 
 # === END: https://fenre.github.io/better_map/recipes/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/cim-alerts/extrusion-3d/ ===
+
+# Recipes / CIM Alerts — 3D extrusion
+
+> Source: `docs/recipes/cim-alerts/extrusion-3d.md`  
+> URL: <https://fenre.github.io/better_map/recipes/cim-alerts/extrusion-3d/>
+
+# CIM Alerts — US states 3D extrusion
+
+The third-dimension companion to the
+[cim-alerts/choropleth](./choropleth.md) recipe — same
+`tag=alert` data model, same per-state aggregation against
+`iplocation`-geocoded `dest`, same `us-states` PMTiles preset, but
+per-state shading is replaced by **per-state vertical extrusion**.
+Tall states generate more alerts; short states generate less. The
+right shape for **executive-briefing security panels where the
+absolute alert delta between states matters** (choropleth's colour
+ramp saturates at the top once a few states pass the 90th-percentile
+threshold — extrusion's height-encoding has unbounded headroom),
+**SOC capacity-planning panels where height pre-attentively
+communicates "this region needs more on-call coverage"**, and
+**per-jurisdiction compliance views** (HIPAA / state-AG / state-DPA
+notifications driven by per-state alert volumes) where the visual
+cliff over a state is itself the executive talking point.
+
+The CIM Alerts source row now has **6 layer cells** (markers, h3,
+heat, paths, supercluster, choropleth, plus extrusion-3d now) —
+joining cim-network-traffic and meraki on the leaderboard of
+most-covered source rows. Extrusion-3d on cim-alerts (5th cell on
+this layer overall, joining geo-us-states / cim-network-traffic /
+cim-authentication / meraki) is the canonical demo for "any
+CIM-tagged security data renders as a 3D extruded choropleth —
+not just network-traffic events".
+
+## 1. Source description
+
+Same **CIM Alerts** data model as the markers / h3 / heat / paths /
+supercluster / choropleth companions — see
+[cim-alerts/markers §1](./markers.md#1-source-description) for the
+data model background and the `tag=alert` contract. The relevant
+distinction for THIS recipe: the panel renders per-state alert
+aggregation as a **height-extruded polygon prism**, not a flat
+colour-shaded polygon. SPL is largely identical to the
+[choropleth companion](./choropleth.md#2-spl-recipe) — the
+differences live in the formatter config (§4).
+
+**Why extrusion-3d for CIM Alerts.** A security choropleth
+saturates fast: a multi-state phishing wave or a worm-propagation
+event pushes 5-10 states past the 90th percentile of alert volume
+within minutes, and a viridis-shaded choropleth can't distinguish
+"California fired 12k alerts" from "Texas fired 8k" — they're
+both "dark viridis" with a barely-visible hue gap. Extrusion-3d
+preserves rank visibility because height-encoding has unbounded
+headroom — California at 12,847 alerts is **20× taller** than
+Montana at 640 alerts, and the visual gap is impossible to miss
+even at globe zoom across the SOC.
+
+Combined with the additive choropleth (height + colour encode
+the same `value` — see §4), the panel becomes double-encoded:
+height for absolute rank, colour for severity tint. The
+incident-commander hand-off at shift change reads off the
+panel in under 5 seconds — the tallest prism over the most
+saturated colour identifies the highest-priority region without
+forcing the on-call to interpret a numeric legend.
+
+**Typical sourcetype / index:** anything tagged `alert` (check
+`| tstats values(sourcetype) WHERE \`cim_Alerts_indexes\` tag=alert`).
+Typical indexes: `notable` (ES correlation results),
+`itsi_tracked_alerts` (ITSI), `summary` (saved-search aggregation),
+and the SIEM-forwarder indexes (`pan_logs`, `crowdstrike`,
+`microsoft365`, etc.). See the
+[markers companion §1](./markers.md#1-source-description) for
+the broader catalogue and the per-vendor field-mapping notes.
+
+**No add-on required beyond Splunk_SA_CIM** for the data model,
+and the bundled `us-states.pmtiles` preset for the polygons.
+Fully air-gap compatible per ROADMAP §1a.
+
+## 2. SPL recipe
+
+```spl
+| tstats summariesonly=true count AS alert_count,
+    dc(Alerts.dest) AS distinct_hosts,
+    values(Alerts.severity) AS severities
+  FROM datamodel=Alerts WHERE earliest=-24h
+  BY Alerts.dest
+| rename "Alerts.dest" AS dest
+| iplocation dest
+| where Country="United States" AND isnotnull(Region)
+| stats sum(alert_count) AS alert_count,
+    sum(distinct_hosts) AS distinct_hosts,
+    values(severities) AS severities
+  BY Region
+| eval max_severity=case(
+    mvfind(severities, "^critical$") >= 0, "critical",
+    mvfind(severities, "^high$") >= 0, "high",
+    mvfind(severities, "^medium$") >= 0, "medium",
+    mvfind(severities, "^low$") >= 0, "low",
+    mvfind(severities, "^informational$") >= 0, "informational",
+    true(), "unknown")
+| eval id=upper(case(
+    Region=="California","CA",
+    Region=="New York","NY",
+    Region=="Texas","TX",
+    Region=="Washington","WA",
+    Region=="Illinois","IL",
+    Region=="Florida","FL",
+    Region=="Massachusetts","MA",
+    Region=="Virginia","VA",
+    Region=="Colorado","CO",
+    Region=="Oregon","OR",
+    Region=="Pennsylvania","PA",
+    Region=="New Jersey","NJ",
+    Region=="Georgia","GA",
+    Region=="North Carolina","NC",
+    Region=="Ohio","OH",
+    Region=="Michigan","MI",
+    Region=="Arizona","AZ",
+    Region=="Minnesota","MN",
+    Region=="Indiana","IN",
+    Region=="Tennessee","TN",
+    Region=="District of Columbia","DC",
+    true(),substr(Region,1,2)))
+| eval value=alert_count
+| rename Region AS state_name
+| fields id, state_name, value, alert_count, distinct_hosts,
+    max_severity
+| sort - value
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/extrusion-3d/>._
+
+## 3. Expected fields
+
+| field           | type    | example      |
+|-----------------|---------|--------------|
+| id              | string  | CA           |
+| state_name      | string  | California   |
+| value           | integer | 12847        |
+| alert_count     | integer | 12847        |
+| distinct_hosts  | integer | 318          |
+| max_severity    | string  | critical     |
+
+Six fields, all of which appear in `expected_fields` in the
+frontmatter and are cross-checked by `scripts/check-recipe-schema.py`.
+`value` drives the `extrusionHeightField` formatter option (per
+the `drives_formatter_option` annotation), which is what produces
+the per-state vertical extrusion. `alert_count` carries the same
+numeric value semantically separate from the extrusion-driver
+field — the popup shows "12,847 alerts" while the prism height
+comes from `value`. `distinct_hosts` and `max_severity` flow
+through to the popup so the incident commander can read host
+breadth + severity escalation per state alongside the height /
+colour encoding.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinPreset": "us-states",
+  "enable3DExtrusion": true,
+  "extrusionHeightField": "value",
+  "extrusionScale": 500.0,
+  "enableChoropleth": "true",
+  "palette": "magma"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/extrusion-3d/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/extrusion-3d/>._
+
+# === END: https://fenre.github.io/better_map/recipes/cim-alerts/extrusion-3d/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/cim-alerts/choropleth/ ===
+
+# Recipes / CIM Alerts — choropleth
+
+> Source: `docs/recipes/cim-alerts/choropleth.md`  
+> URL: <https://fenre.github.io/better_map/recipes/cim-alerts/choropleth/>
+
+# CIM Alerts — US states choropleth
+
+The per-state aggregation lens for CIM Alerts. Same `tag=alert`
+data model as the
+[cim-alerts/markers](./markers.md),
+[h3](./h3.md),
+[heat](./heat.md),
+[paths](./paths.md), and
+[supercluster](./supercluster.md) companions — but instead of
+rendering individual alerts / smooth density / hex bins / cluster
+bubbles, the recipe geocodes each alert's `dest` IP via Splunk's
+`iplocation`, filters to US events, and shades the bundled
+`us-states` vector-tile preset by per-state alert volume. The
+right shape for **executive "where is my alert pressure
+concentrated by jurisdiction" briefings**, **per-state HIPAA /
+state-DPA notification triage** (per-state alert volume drives
+the regulator's reach), and **per-state SOC capacity-planning
+panels** (which states justify expanded on-call coverage).
+
+The CIM Alerts source row now has **6 layer cells** (markers, h3,
+heat, paths, supercluster, plus choropleth now). Choropleth is
+the FIRST POLYGON-DERIVED layer cell on this source (markers / h3
+/ heat / supercluster are all point-derived; paths is polyline-
+derived; choropleth is the first polygon-shaded layer cell on
+cim-alerts — making this the source-row equivalent of the
+cim-network-traffic full polygon-shape diversity row). The
+[extrusion-3d companion](./extrusion-3d.md) lands in the same
+wave and stacks height on top of the same per-state
+aggregation — this recipe is the height-free sibling.
+
+## 1. Source description
+
+Same **CIM Alerts** data model as the markers / h3 / heat / paths
+/ supercluster companions — see
+[cim-alerts/markers §1](./markers.md#1-source-description) for
+the data model background and the `tag=alert` contract. The
+relevant distinction for THIS recipe: the panel renders per-state
+alert aggregation as a polygon choropleth (the bundled
+`us-states` PMTiles preset), not per-event markers, smooth
+density, hex bins, or cluster bubbles.
+
+**Why choropleth for CIM Alerts.** A markers panel shows
+per-host identity but is bandwidth-limited at high alert volumes
+and visually noisy. A heatmap shows smooth density but obscures
+jurisdictional boundaries (a hot blob crossing CA / NV doesn't
+tell you "Nevada specifically"). An H3 hexbin shows
+hard-bordered jurisdictional sum-aggregation but the cell
+boundaries are H3-defined, not political — useless for a
+state-AG-investigation panel that needs to answer "how many
+alerts hit California-resident systems this quarter". A choropleth
+solves the political-boundary question: every alert whose `dest`
+IP geocodes inside a state's polygon contributes to that state's
+tally, the renderer shades the polygon by the tally, and the
+result maps cleanly onto a compliance / regulatory / per-state
+business view.
+
+The 5-minute "tactical NOC hand-off — where is alert pressure
+concentrated right now by US state" answer reads off the
+choropleth panel from across the SOC at a glance; the operator
+then clicks the darkest state to drill into per-host attribution
+via the companion markers / supercluster panels.
+
+**Typical sourcetype / index:** anything tagged `alert` (check
+`| tstats values(sourcetype) WHERE \`cim_Alerts_indexes\` tag=alert`).
+Typical indexes: `notable` (ES correlation results),
+`itsi_tracked_alerts` (ITSI), `summary` (saved-search aggregation),
+and the SIEM-forwarder indexes (`pan_logs`, `crowdstrike`,
+`microsoft365`, etc.). See the
+[markers companion §1](./markers.md#1-source-description) for the
+broader catalogue.
+
+**No add-on required beyond Splunk_SA_CIM** for the data model,
+and the bundled `us-states.pmtiles` preset for the polygons.
+Fully air-gap compatible per ROADMAP §1a.
+
+## 2. SPL recipe
+
+```spl
+| tstats summariesonly=true count AS alert_count,
+    dc(Alerts.dest) AS distinct_hosts,
+    values(Alerts.severity) AS severities
+  FROM datamodel=Alerts WHERE earliest=-24h
+  BY Alerts.dest
+| rename "Alerts.dest" AS dest
+| iplocation dest
+| where Country="United States" AND isnotnull(Region)
+| stats sum(alert_count) AS alert_count,
+    sum(distinct_hosts) AS distinct_hosts,
+    values(severities) AS severities
+  BY Region
+| eval max_severity=case(
+    mvfind(severities, "^critical$") >= 0, "critical",
+    mvfind(severities, "^high$") >= 0, "high",
+    mvfind(severities, "^medium$") >= 0, "medium",
+    mvfind(severities, "^low$") >= 0, "low",
+    mvfind(severities, "^informational$") >= 0, "informational",
+    true(), "unknown")
+| eval id=upper(case(
+    Region=="California","CA",
+    Region=="New York","NY",
+    Region=="Texas","TX",
+    Region=="Washington","WA",
+    Region=="Illinois","IL",
+    Region=="Florida","FL",
+    Region=="Massachusetts","MA",
+    Region=="Virginia","VA",
+    Region=="Colorado","CO",
+    Region=="Oregon","OR",
+    Region=="Pennsylvania","PA",
+    Region=="New Jersey","NJ",
+    Region=="Georgia","GA",
+    Region=="North Carolina","NC",
+    Region=="Ohio","OH",
+    Region=="Michigan","MI",
+    Region=="Arizona","AZ",
+    Region=="Minnesota","MN",
+    Region=="Indiana","IN",
+    Region=="Tennessee","TN",
+    Region=="District of Columbia","DC",
+    true(),substr(Region,1,2)))
+| eval value=alert_count
+| rename Region AS state_name
+| fields id, state_name, value, alert_count, distinct_hosts,
+    max_severity
+| sort - value
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/choropleth/>._
+
+## 3. Expected fields
+
+| field           | type    | example      |
+|-----------------|---------|--------------|
+| id              | string  | CA           |
+| state_name      | string  | California   |
+| value           | integer | 12847        |
+| alert_count     | integer | 12847        |
+| distinct_hosts  | integer | 318          |
+| max_severity    | string  | critical     |
+
+Six fields, all of which appear in `expected_fields` in the
+frontmatter and are cross-checked by `scripts/check-recipe-schema.py`.
+`value` drives the choropleth shading; `alert_count`,
+`distinct_hosts`, `max_severity`, and `state_name` flow through
+as feature properties on the joined polygon for popups.
+
+The polygon geometry itself is NOT a field — Better Map fetches
+it internally from the `us-states.pmtiles` preset configured in
+§4.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinPreset": "us-states",
+  "enableChoropleth": "true",
+  "palette": "magma"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/choropleth/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/choropleth/>._
+
+# === END: https://fenre.github.io/better_map/recipes/cim-alerts/choropleth/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/cim-alerts/h3/ ===
 
@@ -3459,6 +3802,147 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-network-traffic/supercluster/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/cim-network-traffic/vector-tile-join/ ===
+
+# Recipes / CIM Network Traffic — vector-tile join
+
+> Source: `docs/recipes/cim-network-traffic/vector-tile-join.md`  
+> URL: <https://fenre.github.io/better_map/recipes/cim-network-traffic/vector-tile-join/>
+
+# CIM Network Traffic — vector-tile join (customer PMTiles)
+
+Render per-country network traffic volume by joining
+**CIM-Network-Traffic events** (geocoded to country via Splunk's
+built-in `iplocation`) against a **customer-hosted world-countries
+PMTiles vector tileset**. The **third source** to demonstrate
+the vector-tile-join layer, joining the existing
+[csv-lookup-geo/vector-tile-join](../csv-lookup-geo/vector-tile-join.md)
+and [kvstore-latlon/vector-tile-join](../kvstore-latlon/vector-tile-join.md)
+companions — and the **FIRST event-source vector-tile-join recipe**
+(both existing companions are lookup-source: metric rows already
+pre-aggregated and stored in CSV/KV Store before the panel runs).
+
+This recipe demonstrates the **on-the-fly aggregation** pattern:
+the panel queries the CIM Network Traffic data model directly,
+geocodes events as they arrive, aggregates per-country, and feeds
+the result to the same `featureJoin` layer that the two
+companions use. No lookup table to maintain, no scheduled saved
+search to keep fresh — the panel is self-contained.
+
+The CIM Network Traffic source row now has **8 layer cells**
+(markers, heat, h3, supercluster, paths, choropleth,
+extrusion-3d, plus vector-tile-join now) — the joint-most-covered
+source row in the recipe matrix alongside meraki (8 cells). The
+vector-tile-join layer column moves from 2 cells to 3, exiting
+its previous "singleton-trap exit" status from wave 30 with a
+second non-lookup-source to demonstrate the layer's full breadth.
+
+## 1. Source description
+
+Same **CIM Network Traffic** data model as the markers / heat /
+h3 / supercluster / paths / choropleth / extrusion-3d
+companions — see
+[cim-network-traffic/markers §1](./markers.md#1-source-description)
+for the data model background and the `tag=network,communicate`
+contract. The relevant distinction for THIS recipe: the panel
+renders per-COUNTRY (not per-state) event aggregation against a
+**customer-hosted world-countries PMTiles tileset**, not the
+bundled `us-states` preset that the
+[choropleth](./choropleth.md) and
+[extrusion-3d](./extrusion-3d.md) companions use.
+
+**Why vector-tile-join (customer PMTiles) for CIM Network
+Traffic.** The bundled `us-states.pmtiles` covers only the 50
+US states + DC. For a global tenant whose ingress / egress spans
+multiple continents — a multinational with EMEA / APAC / AMER
+offices, a SaaS vendor with global users, a CDN-fronted retail
+property, a managed-services provider with multi-tenant
+customers — the panel must shade COUNTRIES, not US states.
+Better Map's `featureJoin` layer is geometry-agnostic at the
+layer level — any PMTiles tileset with a `source-layer` name
+and a per-feature `promoteId` property works — but the bundled
+presets only cover US-jurisdiction polygons. Shipping a custom
+`world-countries.pmtiles` tileset (≈ 5-15 MB, public-domain
+from Natural Earth via [protomaps/basemaps-assets](https://github.com/protomaps/basemaps-assets))
+unlocks global per-country rendering.
+
+The 5-minute "executive briefing — where is our network traffic
+coming from globally" answer reads off this panel from across
+the boardroom; the NetOps team uses the same panel to justify
+regional PoP placement in continents currently un-shaded; the
+compliance team uses it for GDPR / CCPA per-jurisdiction traffic
+attribution.
+
+**Typical sourcetype / index:** any sourcetype tagged
+`network,communicate` in your CIM tag config — `cisco:asa`,
+`pan:traffic`, `aws:cloudwatchlogs:vpcflow`,
+`azure:nsg:flow`, `gcp:vpc:flow`, `cisco:meraki:flow`,
+`netflow` (after the
+[Splunk Add-on for NetFlow](https://splunkbase.splunk.com/app/2989)
+is installed), `stream:tcp` (after Splunk Stream is configured).
+See the
+[choropleth companion §1](./choropleth.md#1-source-description)
+for the broader catalogue.
+
+**No add-on required beyond Splunk_SA_CIM** for the data model
+and Splunk's built-in `iplocation` for geocoding. The PMTiles
+file is customer-hosted (on the Splunk app's own
+`appserver/static/` folder for air-gapped tenants, or on a
+customer CDN for non-air-gapped). No external API calls. Fully
+air-gap compatible per ROADMAP §1a when the PMTiles file is
+bundled into the app.
+
+## 2. SPL recipe
+
+```spl
+tag=network tag=communicate earliest=-24h latest=now
+| iplocation src
+| where isnotnull(Country) AND Country != ""
+| stats count AS event_count BY Country
+| lookup iso_country_codes country_name AS Country OUTPUT iso_a3 AS id
+| where isnotnull(id) AND id != ""
+| eval value=event_count
+| rename Country AS country_name
+| fields id, country_name, value, event_count
+| sort - value
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/vector-tile-join/>._
+
+## 3. Expected fields
+
+| field        | type    | example       |
+|--------------|---------|---------------|
+| id           | string  | USA           |
+| country_name | string  | United States |
+| value        | integer | 8472913       |
+| event_count  | integer | 8472913       |
+
+Four fields, all of which appear in `expected_fields` in the
+frontmatter and are cross-checked by `scripts/check-recipe-schema.py`.
+`value` drives the choropleth shading; `country_name` and
+`event_count` flow through as feature properties on the joined
+polygon for popups.
+
+The polygon geometry itself is NOT a field — Better Map fetches
+it internally from the PMTiles URL configured in §4.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinUrl": "https://cdn.example.com/tilesets/world-countries.pmtiles",
+  "featureJoinPromoteId": "iso_a3",
+  "featureJoinSourceLayer": "countries",
+  "enableChoropleth": "true",
+  "palette": "viridis"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/vector-tile-join/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/vector-tile-join/>._
+
+# === END: https://fenre.github.io/better_map/recipes/cim-network-traffic/vector-tile-join/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/cim-performance/h3/ ===
 
@@ -13611,12 +14095,14 @@ The full per-integration matrix (status, app required, Splunk version min, endpo
 
 # Appendix B — Per-source recipe matrix
 
-> Source of truth: `docs/_machine/recipes/index.yaml` (81 recipe(s), emission order)
+> Source of truth: `docs/_machine/recipes/index.yaml` (84 recipe(s), emission order)
 
 Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answer 'which recipe matches this data source?' without fetching every recipe page. Recipes carry one of three statuses: `verified` (smoke-tested against a live Splunk tenant with proof in the YAML metadata), `unverified` (the recipe follows the contract but has not yet been smoke-tested), or `deferred` (the recipe is known to be incomplete pending upstream work). The expected-field contract for each recipe lives in §3 of the recipe page (kept verbatim in this file under the matching `# === BEGIN: …/recipes/<source>/<layer>/ ===` block); follow the Page link below to jump to it.
 
 | Recipe ID | Source → Layer | Status | Apps required | Verified against | Page |
 | :-- | :-- | :-- | :-- | :-- | :-- |
+| `cim-alerts--choropleth` | CIM Alerts → Choropleth | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-alerts/choropleth.md](https://fenre.github.io/better_map/recipes/cim-alerts/choropleth/) |
+| `cim-alerts--extrusion-3d` | CIM Alerts → 3D extrusion | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-alerts/extrusion-3d.md](https://fenre.github.io/better_map/recipes/cim-alerts/extrusion-3d/) |
 | `cim-alerts--h3` | CIM Alerts → H3 hexbin | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-alerts/h3.md](https://fenre.github.io/better_map/recipes/cim-alerts/h3/) |
 | `cim-alerts--heat` | CIM Alerts → Heatmap | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-alerts/heat.md](https://fenre.github.io/better_map/recipes/cim-alerts/heat/) |
 | `cim-alerts--markers` | CIM Alerts → Markers | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-alerts/markers.md](https://fenre.github.io/better_map/recipes/cim-alerts/markers/) |
@@ -13636,6 +14122,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `cim-network-traffic--markers` | CIM Network Traffic → Markers | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-network-traffic/markers.md](https://fenre.github.io/better_map/recipes/cim-network-traffic/markers/) |
 | `cim-network-traffic--paths` | CIM Network Traffic → Paths | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-network-traffic/paths.md](https://fenre.github.io/better_map/recipes/cim-network-traffic/paths/) |
 | `cim-network-traffic--supercluster` | CIM Network Traffic → Supercluster | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-network-traffic/supercluster.md](https://fenre.github.io/better_map/recipes/cim-network-traffic/supercluster/) |
+| `cim-network-traffic--vector-tile-join` | CIM Network Traffic (data model) → Vector-tile join (customer PMTiles) | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-network-traffic/vector-tile-join.md](https://fenre.github.io/better_map/recipes/cim-network-traffic/vector-tile-join/) |
 | `cim-performance--h3` | CIM Performance (CPU / memory / facilities) → H3 hexbin | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/h3.md](https://fenre.github.io/better_map/recipes/cim-performance/h3/) |
 | `cim-performance--heat` | CIM Performance (CPU / memory / facilities) → Heatmap | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/heat.md](https://fenre.github.io/better_map/recipes/cim-performance/heat/) |
 | `cim-performance--markers` | CIM Performance (CPU / memory / facilities) → Markers | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/markers.md](https://fenre.github.io/better_map/recipes/cim-performance/markers/) |

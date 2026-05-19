@@ -1,5 +1,46 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-25): E5 Phase 2 wave 31 recipes
+> SHIPPED — 3 new recipes (`cim-alerts/extrusion-3d` +
+> `cim-alerts/choropleth` + `cim-network-traffic/vector-tile-join`),
+> bringing total recipe count from 81 → 84.** All three are
+> diversification entries that expand layer-type coverage on
+> already-shipping sources rather than adding new sources to the
+> matrix: `extrusion-3d` advances 4 → 5 cells (joins geo-us-states,
+> cim-network-traffic, cim-authentication, meraki), `choropleth`
+> advances 4 → 5 cells (joins geo-us-states, cim-network-traffic,
+> cim-authentication, thousandeyes), and `vector-tile-join`
+> advances 2 → 3 cells, exiting the wave-30 singleton-trap-exit
+> state of the layer (joins csv-lookup-geo + kvstore-latlon with
+> the first EVENT-SOURCE vector-tile-join — both existing companions
+> were lookup-source). The `cim-network-traffic/vector-tile-join`
+> recipe is the canonical demo for "you can drive a customer-PMTiles
+> world-countries choropleth directly from on-the-fly CIM event
+> aggregation, no intermediate lookup required" — the §2 SPL
+> geocodes via `iplocation src`, aggregates per-country, joins via
+> ISO-3166-1 alpha-3 lookup, and drives the same `featureJoin`
+> layer the lookup-source companions use. The CIM Alerts source
+> row now has 7 layer cells (up from 5) — joint with cim-
+> network-traffic (8) and meraki (8) at the top of the matrix
+> alongside cim-authentication (7). All recipes follow the
+> wave-13 generalised recipe contract (`schema_version: 1` +
+> frontmatter + §1-§6) and pass `check-recipe-schema.py`. Token
+> cost: ~5,538 tokens net (165,157 → 170,695, 4,305 WARN headroom
+> remaining). Next wave needs another token-trim before recipes
+> can ship — `build-llms-full-txt.py` analysis suggests the
+> reference-pages auto-generation block in the Recipes index
+> (already trimmed once in wave 16) and the per-recipe pre-formatter
+> JSON walkthrough commentary (already trimmed in wave 19) are
+> harder targets, so the next trim will likely focus on the
+> per-recipe `## 6. Gotchas` blocks (currently full prose; could
+> be compacted to a bullet matrix with cross-references to a
+> shared gotchas reference). All gates green locally
+> (`build-llms-full-txt.py --check`, `build-llms-txt.py --check`,
+> `check-recipe-schema.py`, `build-reference-pages.py --check`,
+> `check-manifest.py`, `check-formatter-schema.py`,
+> `check-formatter-coverage.py`, `mkdocs build --strict`).
+> Subsequent wave 32 trim + recipes will fold in below this block.
+
 > **Status (v1.7-prep, 2026-05-24): E5 Phase 2 wave 31 token-trim
 > SHIPPED (two complementary trims to `build-llms-full-txt.py` —
 > (a) drop the redundant top-of-file `## Table of contents` block;

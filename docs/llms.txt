@@ -46,6 +46,8 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 ## Recipes (per-source playbooks)
 
 - [Recipes overview](https://fenre.github.io/better_map/recipes/): the recipe contract, the six-section structure, the CI gate, the JSON Schema, and how to add a new recipe. The machine-readable index of every shipped recipe is at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>.
+- [CIM Alerts → Choropleth (unverified)](https://fenre.github.io/better_map/recipes/cim-alerts/choropleth/): apps required: Splunk_SA_CIM, builtin:iplocation.
+- [CIM Alerts → 3D extrusion (unverified)](https://fenre.github.io/better_map/recipes/cim-alerts/extrusion-3d/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Alerts → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/cim-alerts/h3/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Alerts → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/cim-alerts/heat/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Alerts → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-alerts/markers/): apps required: Splunk_SA_CIM, builtin:iplocation.
@@ -65,6 +67,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [CIM Network Traffic → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/markers/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Network Traffic → Paths (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/paths/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Network Traffic → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/supercluster/): apps required: Splunk_SA_CIM.
+- [CIM Network Traffic (data model) → Vector-tile join (customer PMTiles) (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/vector-tile-join/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Performance (CPU / memory / facilities) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/cim-performance/h3/): apps required: Splunk_SA_CIM.
 - [CIM Performance (CPU / memory / facilities) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/cim-performance/heat/): apps required: Splunk_SA_CIM.
 - [CIM Performance (CPU / memory / facilities) → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-performance/markers/): apps required: Splunk_SA_CIM.
