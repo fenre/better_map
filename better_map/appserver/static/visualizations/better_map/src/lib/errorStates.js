@@ -91,3 +91,110 @@ export function clearErrorBanner(el) {
         banner.textContent = '';
     }
 }
+
+// ===================================================================
+// v1.8.0 — banner stacking via pushBanner
+//
+// renderErrorBanner / clearErrorBanner stay single-slot DOM, but
+// pushBanner manages a per-container envelope list and decides which
+// envelope wins the slot. Priority: fatal > warning > info; ties
+// broken by insertion order (first-pushed wins). When 2+ are active,
+// a "+N more" badge appears. safeRun.js is the primary caller.
+// ===================================================================
+
+const SEVERITY_RANK = { fatal: 3, warning: 2, info: 1 };
+const BADGE_CLASS = CLASS + '__badge';
+
+// Slot indirection so __resetBannerState can swap atomically.
+const _bannerStateSlot = { active: new WeakMap(), inserted: 0 };
+
+function _entriesFor(el) {
+    let list = _bannerStateSlot.active.get(el);
+    if (!list) {
+        list = [];
+        _bannerStateSlot.active.set(el, list);
+    }
+    return list;
+}
+
+function _pickWinner(entries) {
+    if (entries.length === 0) return null;
+    return entries.slice().sort(function (a, b) {
+        const ra = SEVERITY_RANK[a.severity] || 0;
+        const rb = SEVERITY_RANK[b.severity] || 0;
+        if (rb !== ra) return rb - ra;
+        return a._inserted - b._inserted;
+    })[0];
+}
+
+function _renderStack(el) {
+    const entries = _entriesFor(el);
+    const winner = _pickWinner(entries);
+    if (!winner) {
+        clearErrorBanner(el);
+        return;
+    }
+    renderErrorBanner(el, {
+        kind: winner.severity,
+        message: winner.message,
+        dismissible: winner.severity !== 'fatal'
+    });
+    const banner = el.querySelector('.' + CLASS);
+    if (!banner) return;
+    const oldBadge = banner.querySelector('.' + BADGE_CLASS);
+    if (oldBadge) oldBadge.remove();
+    if (entries.length > 1) {
+        const badge = document.createElement('span');
+        badge.className = BADGE_CLASS;
+        badge.textContent = '+' + (entries.length - 1) + ' more';
+        badge.setAttribute(
+            'aria-label',
+            (entries.length - 1) + ' additional notice' + (entries.length - 1 === 1 ? '' : 's')
+        );
+        const close = banner.querySelector('.' + CLASS + '__close');
+        if (close) {
+            banner.insertBefore(badge, close);
+        } else {
+            banner.appendChild(badge);
+        }
+    }
+}
+
+export function pushBanner(el, envelope) {
+    if (!el || !envelope || !envelope.scope) return;
+    const entries = _entriesFor(el);
+    const existingIdx = entries.findIndex(function (e) {
+        return e.scope === envelope.scope;
+    });
+    const entry = Object.assign({}, envelope, { _inserted: _bannerStateSlot.inserted++ });
+    if (existingIdx >= 0) {
+        entries[existingIdx] = entry;
+    } else {
+        entries.push(entry);
+    }
+    _renderStack(el);
+}
+
+export function dismissBanner(el, scope) {
+    if (!el) return;
+    const entries = _entriesFor(el);
+    if (scope == null) {
+        entries.length = 0;
+    } else {
+        const idx = entries.findIndex(function (e) {
+            return e.scope === scope;
+        });
+        if (idx >= 0) entries.splice(idx, 1);
+    }
+    _renderStack(el);
+}
+
+export function getActiveBanners(el) {
+    if (!el) return [];
+    return _entriesFor(el).slice();
+}
+
+export function __resetBannerState() {
+    _bannerStateSlot.active = new WeakMap();
+    _bannerStateSlot.inserted = 0;
+}

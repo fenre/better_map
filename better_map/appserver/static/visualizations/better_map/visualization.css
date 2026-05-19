@@ -95,6 +95,18 @@
     background: rgba(255, 255, 255, 0.12);
 }
 
+/* v1.8.0 — pushBanner stacking badge (e.g. "+2 more") */
+.better_map-viz .better_map-error__badge {
+    margin-left: 8px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.12);
+    color: inherit;
+    flex: 0 0 auto;
+}
+
 .better_map-viz .better_map-perf-hud {
     position: absolute;
     top: 12px;
