@@ -1368,7 +1368,6 @@ Fully air-gap compatible per ROADMAP §1a.
     max_severity
 | sort - value
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/extrusion-3d/>._
 
 ## 3. Expected fields
 
@@ -1405,9 +1404,8 @@ colour encoding.
   "palette": "magma"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/extrusion-3d/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/extrusion-3d/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/extrusion-3d/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-alerts/extrusion-3d/ ===
 
@@ -1544,7 +1542,6 @@ Fully air-gap compatible per ROADMAP §1a.
     max_severity
 | sort - value
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/choropleth/>._
 
 ## 3. Expected fields
 
@@ -1576,9 +1573,8 @@ it internally from the `us-states.pmtiles` preset configured in
   "palette": "magma"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/choropleth/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/choropleth/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/choropleth/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-alerts/choropleth/ ===
 
@@ -1681,7 +1677,6 @@ index does not appear in the SPL.
 | sort - value
 | head 10000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/h3/>._
 
 ## 3. Expected fields
 
@@ -1711,9 +1706,8 @@ per-cell popup.
   "hexbinOpacity": 0.7
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/h3/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/h3/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/h3/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-alerts/h3/ ===
 
@@ -1811,7 +1805,6 @@ in the SPL.
 | sort - alert_count
 | head 10000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/heat/>._
 
 ## 3. Expected fields
 
@@ -1841,9 +1834,8 @@ popup will show the strongest contributing host).
   "heatmapRadius": 30
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/heat/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/heat/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/heat/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-alerts/heat/ ===
 
@@ -1934,7 +1926,6 @@ optional CIM-Alerts field with vendor mapping examples.
 | sort - alert_count
 | head 500
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/markers/>._
 
 ## 3. Expected fields
 
@@ -1960,9 +1951,8 @@ and are cross-checked by `scripts/check-recipe-schema.py`.
   "markerColor": "#d62728"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/markers/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/markers/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-alerts/markers/ ===
 
@@ -2040,7 +2030,6 @@ enabled; without it, `summariesonly=true` returns zero rows.
 | sort id, + seq
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/paths/>._
 
 ## 3. Expected fields
 
@@ -2069,9 +2058,8 @@ and `_time` also flow through as feature properties for the popup.
   "pathArrows": true
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/paths/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/paths/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/paths/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-alerts/paths/ ===
 
@@ -2174,7 +2162,6 @@ air-gap compatible per ROADMAP §1a.
 | sort - alert_count
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/supercluster/>._
 
 ## 3. Expected fields
 
@@ -2203,9 +2190,8 @@ per-host popup when a cluster is expanded to individual markers.
   "pointRenderer": "cluster"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/supercluster/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/supercluster/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-alerts/supercluster/ ===
 
@@ -2311,7 +2297,6 @@ air-gap compatible per ROADMAP §1a.
 | fields id, state_name, value, distinct_users
 | sort - value
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/extrusion-3d/>._
 
 ## 3. Expected fields
 
@@ -2341,9 +2326,8 @@ joins polygon to SPL row on `id`.
   "palette": "viridis"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/extrusion-3d/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/extrusion-3d/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/extrusion-3d/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-authentication/extrusion-3d/ ===
 
@@ -2467,7 +2451,6 @@ tag=authentication action=failure earliest=-24h latest=now
 | fields id, state_name, value, failure_count
 | sort - value
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/choropleth/>._
 
 ## 3. Expected fields
 
@@ -2496,9 +2479,8 @@ can change ONE without breaking the other.
   "palette": "magma"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/choropleth/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/choropleth/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/choropleth/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-authentication/choropleth/ ===
 
@@ -2589,7 +2571,6 @@ appear in the SPL.
 | sort - value
 | head 10000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/h3/>._
 
 ## 3. Expected fields
 
@@ -2618,9 +2599,8 @@ layer-required aggregation field; `src_country` and
   "hexbinOpacity": 0.7
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/h3/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/h3/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/h3/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-authentication/h3/ ===
 
@@ -2690,7 +2670,6 @@ the SPL.
 | sort - failure_count
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/heat/>._
 
 ## 3. Expected fields
 
@@ -2717,9 +2696,8 @@ not strictly required by the heat layer.
   "heatmapRadius": 24
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/heat/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/heat/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/heat/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-authentication/heat/ ===
 
@@ -2792,7 +2770,6 @@ SPL — that is the whole point of CIM.
 | sort - failure_count
 | head 500
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/markers/>._
 
 ## 3. Expected fields
 
@@ -2817,9 +2794,8 @@ cross-checked by `scripts/check-recipe-schema.py`.
   "markerColor": "#d62728"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/markers/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/markers/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-authentication/markers/ ===
 
@@ -2903,7 +2879,6 @@ the source index does not appear in the SPL.
 | sort id, + seq
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/paths/>._
 
 ## 3. Expected fields
 
@@ -2932,9 +2907,8 @@ also flows through as a feature property for the popup.
   "pathArrows": true
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/paths/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/paths/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/paths/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-authentication/paths/ ===
 
@@ -3007,7 +2981,6 @@ source index does not appear in the SPL.
 | sort - auth_count
 | head 50000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/supercluster/>._
 
 ## 3. Expected fields
 
@@ -3033,9 +3006,8 @@ and are cross-checked by `scripts/check-recipe-schema.py`.
   "pointRenderer": "cluster"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/supercluster/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/supercluster/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-authentication/supercluster/ ===
 
@@ -3142,7 +3114,6 @@ tag=network tag=communicate earliest=-24h latest=now
 | fields id, state_name, value, event_count
 | sort - value
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/>._
 
 ## 3. Expected fields
 
@@ -3170,9 +3141,8 @@ other.
   "palette": "viridis"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/ ===
 
@@ -3276,7 +3246,6 @@ tag=network tag=communicate earliest=-24h latest=now
 | fields id, state_name, value, event_count
 | sort - value
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/extrusion-3d/>._
 
 ## 3. Expected fields
 
@@ -3308,9 +3277,8 @@ events" while the prism height comes from `value`.
   "palette": "viridis"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/extrusion-3d/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/extrusion-3d/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/extrusion-3d/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-network-traffic/extrusion-3d/ ===
 
@@ -3377,7 +3345,6 @@ the SPL — that is the whole point of CIM.
 | sort - value
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/h3/>._
 
 ## 3. Expected fields
 
@@ -3406,9 +3373,8 @@ country dominates this hex?").
   "hexbinOpacity": 0.7
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/h3/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/h3/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/h3/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-network-traffic/h3/ ===
 
@@ -3482,7 +3448,6 @@ appear in the SPL — that is the whole point of CIM.
 | sort - byte_count
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/heat/>._
 
 ## 3. Expected fields
 
@@ -3509,9 +3474,8 @@ not strictly required by the heat layer.
   "heatmapRadius": 28
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/heat/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/heat/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/heat/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-network-traffic/heat/ ===
 
@@ -3569,7 +3533,6 @@ index does not appear in the SPL — that is the whole point of CIM.
 | sort - value
 | head 500
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/markers/>._
 
 ## 3. Expected fields
 
@@ -3591,9 +3554,8 @@ cross-checked by `scripts/check-recipe-schema.py`.
   "pointRenderer": "cluster"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/markers/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/markers/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-network-traffic/markers/ ===
 
@@ -3666,7 +3628,6 @@ data model.
 | fields id, seq, lat, lon, src_country, dest_country, total_bytes
 | sort id, seq
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/paths/>._
 
 ## 3. Expected fields
 
@@ -3699,9 +3660,8 @@ regardless of which vertex the user hovers.
   "pathArrows": true
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/paths/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/paths/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/paths/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-network-traffic/paths/ ===
 
@@ -3771,7 +3731,6 @@ destinations as seen from your perimeter).
 | sort - bytes
 | head 10000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/supercluster/>._
 
 ## 3. Expected fields
 
@@ -3797,9 +3756,8 @@ as optional popup metadata, not core layer inputs.
   "pointRenderer": "cluster"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/supercluster/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/supercluster/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-network-traffic/supercluster/ ===
 
@@ -3907,7 +3865,6 @@ tag=network tag=communicate earliest=-24h latest=now
 | fields id, country_name, value, event_count
 | sort - value
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/vector-tile-join/>._
 
 ## 3. Expected fields
 
@@ -3938,9 +3895,8 @@ it internally from the PMTiles URL configured in §4.
   "palette": "viridis"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/vector-tile-join/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/vector-tile-join/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/vector-tile-join/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-network-traffic/vector-tile-join/ ===
 
@@ -4042,7 +3998,6 @@ markers companion).
 | sort - value
 | head 10000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/h3/>._
 
 ## 3. Expected fields
 
@@ -4071,9 +4026,8 @@ the operator clicks into a hex cell.
   "hexbinOpacity": 0.7
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/h3/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/h3/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/h3/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-performance/h3/ ===
 
@@ -4189,7 +4143,6 @@ markers and h3 companions).
 | sort - load_pressure
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/heat/>._
 
 ## 3. Expected fields
 
@@ -4218,9 +4171,8 @@ per-feature popup directly).
   "heatmapRadius": 28
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/heat/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/heat/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/heat/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-performance/heat/ ===
 
@@ -4315,7 +4267,6 @@ in §6 Gotchas.
 | sort - signal_count, - cpu_load_percent
 | head 1000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/markers/>._
 
 ## 3. Expected fields
 
@@ -4344,9 +4295,8 @@ information, not required for the panel to render).
   "markerColor": "#ff7f0e"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/markers/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/markers/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-performance/markers/ ===
 
@@ -4419,7 +4369,6 @@ markers companion §1.
 | sort id, + seq
 | head 2000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/paths/>._
 
 ## 3. Expected fields
 
@@ -4447,9 +4396,8 @@ are cross-checked by `scripts/check-recipe-schema.py`.
   "pathArrows": true
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/paths/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/paths/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/paths/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-performance/paths/ ===
 
@@ -4533,7 +4481,6 @@ customer-equivalent hostname → lat/lon/datacenter map.
 | sort - breach_count
 | head 10000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/supercluster/>._
 
 ## 3. Expected fields
 
@@ -4558,9 +4505,8 @@ are cross-checked by `scripts/check-recipe-schema.py`.
   "idField": "id"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/supercluster/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/supercluster/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-performance/supercluster/ ===
 
@@ -4664,7 +4610,6 @@ for the full transforms.conf stanza pattern.
 | sort - value
 | head 10000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/h3/>._
 
 ## 3. Expected fields
 
@@ -4689,9 +4634,8 @@ are cross-checked by `scripts/check-recipe-schema.py`.
   "hexbinOpacity": 0.7
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/h3/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/h3/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/h3/>._
 
 # === END: https://fenre.github.io/better_map/recipes/csv-lookup-geo/h3/ ===
 
@@ -4789,7 +4733,6 @@ index=web sourcetype=access_combined earliest=-1h latest=now
 | sort - event_count
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/heat/>._
 
 ## 3. Expected fields
 
@@ -4821,9 +4764,8 @@ panel that pops up on hover / click of a hot region).
   "heatmapRadius": 24
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/heat/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/heat/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/heat/>._
 
 # === END: https://fenre.github.io/better_map/recipes/csv-lookup-geo/heat/ ===
 
@@ -4912,7 +4854,6 @@ version-controlled, AppInspect-clean.
 | fields id, lat, lon, site_name, site_category
 | sort + site_name
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/markers/>._
 
 ## 3. Expected fields
 
@@ -4940,9 +4881,8 @@ absent).
   "idField": "id"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/markers/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/markers/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/csv-lookup-geo/markers/ ===
 
@@ -5043,7 +4983,6 @@ friendly, version-controlled, AppInspect-clean.
 | sort 0 id, + seq
 | fields id, seq, lat, lon, site_id, site_name, route_name
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/paths/>._
 
 ## 3. Expected fields
 
@@ -5074,9 +5013,8 @@ flow through as feature properties for per-vertex popups.
   "pathArrows": true
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/paths/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/paths/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/paths/>._
 
 # === END: https://fenre.github.io/better_map/recipes/csv-lookup-geo/paths/ ===
 
@@ -5139,7 +5077,6 @@ from your CMDB / asset management system.
 | sort + asset_name
 | head 10000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/supercluster/>._
 
 ## 3. Expected fields
 
@@ -5161,9 +5098,8 @@ and are cross-checked by `scripts/check-recipe-schema.py`.
   "pointRenderer": "cluster"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/supercluster/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/supercluster/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/csv-lookup-geo/supercluster/ ===
 
@@ -5244,7 +5180,6 @@ documents the CSV+transforms.conf contract.
 | rename zone_id AS id
 | fields id, zone_name, zone_type, geojson, area_m2
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/polygons/>._
 
 ## 3. Expected fields
 
@@ -5275,9 +5210,8 @@ for the auto-detect priority.
   "polygonOpacity": 0.35
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/polygons/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/polygons/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/polygons/>._
 
 # === END: https://fenre.github.io/better_map/recipes/csv-lookup-geo/polygons/ ===
 
@@ -5382,7 +5316,6 @@ for the full transforms.conf stanza pattern.
 | fields id, country_name, value
 | sort - value
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/vector-tile-join/>._
 
 ## 3. Expected fields
 
@@ -5406,9 +5339,8 @@ internally from the PMTiles URL configured in §4.
   "palette": "viridis"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/vector-tile-join/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/vector-tile-join/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/vector-tile-join/>._
 
 # === END: https://fenre.github.io/better_map/recipes/csv-lookup-geo/vector-tile-join/ ===
 
@@ -5519,7 +5451,6 @@ index=cybervision sourcetype="cisco:cybervision:components" earliest=-24h latest
 | sort - max_cvss, id
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/h3/>._
 
 ## 3. Expected fields
 
@@ -5550,9 +5481,8 @@ per-cell popup.
   "hexbinOpacity": 0.7
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/h3/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/h3/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/h3/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cyber-vision/h3/ ===
 
@@ -5670,7 +5600,6 @@ index=cybervision sourcetype="cisco:cybervision:components" earliest=-24h latest
 | sort - cve_intensity, id
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/heat/>._
 
 ## 3. Expected fields
 
@@ -5704,9 +5633,8 @@ safety / Purdue-level annotation).
   "heatmapRadius": 28
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/heat/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/heat/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/heat/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cyber-vision/heat/ ===
 
@@ -5794,7 +5722,6 @@ index=cybervision sourcetype="cisco:cybervision:components" earliest=-24h latest
 | sort - max_cvss, - cve_count, asset_name
 | head 1000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/markers/>._
 
 ## 3. Expected fields
 
@@ -5822,9 +5749,8 @@ also flow through as feature properties for the popup.
   "markerColor": "#1f77b4"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/markers/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/markers/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cyber-vision/markers/ ===
 
@@ -5944,7 +5870,6 @@ index=cybervision sourcetype="cisco:cybervision:flows" earliest=-24h latest=now
 | sort id, + seq
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/paths/>._
 
 ## 3. Expected fields
 
@@ -5976,9 +5901,8 @@ through as feature properties for the popup.
   "pathArrows": true
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/paths/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/paths/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/paths/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cyber-vision/paths/ ===
 
@@ -6074,7 +5998,6 @@ index=cybervision sourcetype="cisco:cybervision:components" earliest=-24h latest
 | sort id
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/supercluster/>._
 
 ## 3. Expected fields
 
@@ -6105,9 +6028,8 @@ ONLY the per-cluster count badge.
   "idField": "id"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/supercluster/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/supercluster/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cyber-vision/supercluster/ ===
 
@@ -6200,7 +6122,6 @@ index=thousandeyes_agents sourcetype="cisco:thousandeyes:agents" earliest=-24h l
 | sort - value
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/h3/>._
 
 ## 3. Expected fields
 
@@ -6236,9 +6157,8 @@ render time by the h3 layer based on the formatter's
   "hexbinOpacity": 0.7
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/h3/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/h3/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/h3/>._
 
 # === END: https://fenre.github.io/better_map/recipes/thousandeyes/h3/ ===
 
@@ -6356,7 +6276,6 @@ index=thousandeyes_agents sourcetype="cisco:thousandeyes:agents" earliest=-24h l
 | fields id, state_name, value, agent_count, online_count
 | sort - value
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/choropleth/>._
 
 ## 3. Expected fields
 
@@ -6382,9 +6301,8 @@ and are cross-checked by `scripts/check-recipe-schema.py`.
   "palette": "viridis"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/choropleth/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/choropleth/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/choropleth/>._
 
 # === END: https://fenre.github.io/better_map/recipes/thousandeyes/choropleth/ ===
 
@@ -6485,7 +6403,6 @@ index=thousandeyes_agents sourcetype="cisco:thousandeyes:agents" earliest=-24h l
 | sort - test_count
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/heat/>._
 
 ## 3. Expected fields
 
@@ -6515,9 +6432,8 @@ layers don't expose per-feature popup directly).
   "heatmapRadius": 28
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/heat/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/heat/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/heat/>._
 
 # === END: https://fenre.github.io/better_map/recipes/thousandeyes/heat/ ===
 
@@ -6614,7 +6530,6 @@ index=thousandeyes_agents sourcetype="cisco:thousandeyes:agents" earliest=-24h l
 | sort - test_count, agent_name
 | head 2000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/markers/>._
 
 ## 3. Expected fields
 
@@ -6643,9 +6558,8 @@ properties for the popup.
   "markerColor": "#9333ea"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/markers/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/markers/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/thousandeyes/markers/ ===
 
@@ -6715,7 +6629,6 @@ index=thousandeyes_agents sourcetype="cisco:thousandeyes:agents" earliest=-24h l
 | sort agent_name
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/supercluster/>._
 
 ## 3. Expected fields
 
@@ -6742,9 +6655,8 @@ the cluster splits into individual markers).
   "idField": "id"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/supercluster/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/supercluster/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/thousandeyes/supercluster/ ===
 
@@ -6833,7 +6745,6 @@ index=thousandeyes_pathvis sourcetype="cisco:thousandeyes:path-vis" earliest=-1h
 | sort id, + seq
 | head 1000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/paths/>._
 
 ## 3. Expected fields
 
@@ -6867,9 +6778,8 @@ detail the popup surfaces).
   "pathArrows": true
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/paths/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/paths/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/paths/>._
 
 # === END: https://fenre.github.io/better_map/recipes/thousandeyes/paths/ ===
 
@@ -6962,7 +6872,6 @@ fallback).
 | sort - value
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/h3/>._
 
 ## 3. Expected fields
 
@@ -6991,9 +6900,8 @@ per-cell drilldown popup.
   "hexbinOpacity": 0.7
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/h3/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/h3/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/h3/>._
 
 # === END: https://fenre.github.io/better_map/recipes/es-risk/h3/ ===
 
@@ -7093,7 +7001,6 @@ your A&I lookups lack geographic columns.
 | sort - total_risk
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/heat/>._
 
 ## 3. Expected fields
 
@@ -7123,9 +7030,8 @@ the popup will show the strongest contributing entity).
   "heatmapRadius": 32
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/heat/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/heat/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/heat/>._
 
 # === END: https://fenre.github.io/better_map/recipes/es-risk/heat/ ===
 
@@ -7212,7 +7118,6 @@ carry lat/lon, see §6 Gotchas for the fallback path
 | sort - total_risk
 | head 500
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/markers/>._
 
 ## 3. Expected fields
 
@@ -7238,9 +7143,8 @@ cross-checked by `scripts/check-recipe-schema.py`.
   "markerColor": "#d62728"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/markers/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/markers/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/es-risk/markers/ ===
 
@@ -7335,7 +7239,6 @@ geographic spread is minimal.
 | sort 0 id, + seq
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/paths/>._
 
 ## 3. Expected fields
 
@@ -7370,9 +7273,8 @@ T1059.001 — Suspicious PowerShell Process — 30 risk").
   "pathArrows": true
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/paths/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/paths/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/paths/>._
 
 # === END: https://fenre.github.io/better_map/recipes/es-risk/paths/ ===
 
@@ -7445,7 +7347,6 @@ macro. Same A&I lookup contract (`identity_lookup_expanded` +
 | sort - total_risk
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/supercluster/>._
 
 ## 3. Expected fields
 
@@ -7470,9 +7371,8 @@ are cross-checked by `scripts/check-recipe-schema.py`.
   "idField": "id"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/supercluster/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/supercluster/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/es-risk/supercluster/ ===
 
@@ -7568,7 +7468,6 @@ index=itsi_summary kpi_id="SHKPI-*" entity_key="N/A" earliest=-15m latest=now
 | sort - value
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/>._
 
 ## 3. Expected fields
 
@@ -7602,9 +7501,8 @@ h3 layer based on the formatter's `hexbinResolution`.
   "hexbinOpacity": 0.7
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/>._
 
 # === END: https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/ ===
 
@@ -7696,7 +7594,6 @@ index=itsi_summary kpi_id="SHKPI-*" entity_key="N/A" earliest=-15m latest=now
 | sort - unhealthy_services
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/heat/>._
 
 ## 3. Expected fields
 
@@ -7728,9 +7625,8 @@ Gotchas.
   "heatmapRadius": 32
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/heat/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/heat/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/heat/>._
 
 # === END: https://fenre.github.io/better_map/recipes/itsi-kpi-base/heat/ ===
 
@@ -7814,7 +7710,6 @@ index=itsi_summary kpi_id="SHKPI-*" entity_key="N/A" earliest=-15m latest=now
 | sort - alert_level, - critical_kpi_count, service_title
 | head 500
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/>._
 
 ## 3. Expected fields
 
@@ -7840,9 +7735,8 @@ cross-checked by `scripts/check-recipe-schema.py`.
   "markerColor": "#2ca02c"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/ ===
 
@@ -7944,7 +7838,6 @@ service tree at Configuration → Services.
 | sort 0 id, + seq
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/paths/>._
 
 ## 3. Expected fields
 
@@ -7971,9 +7864,8 @@ and are cross-checked by `scripts/check-recipe-schema.py`.
   "pathArrows": true
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/paths/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/paths/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/paths/>._
 
 # === END: https://fenre.github.io/better_map/recipes/itsi-kpi-base/paths/ ===
 
@@ -8047,7 +7939,6 @@ index=itsi_summary kpi_id="SHKPI-*" entity_key="N/A" earliest=-15m latest=now
 | sort - alert_level, service_title
 | head 1000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/supercluster/>._
 
 ## 3. Expected fields
 
@@ -8071,9 +7962,8 @@ cross-checked by `scripts/check-recipe-schema.py`.
   "idField": "id"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/supercluster/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/supercluster/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/itsi-kpi-base/supercluster/ ===
 
@@ -8181,7 +8071,6 @@ index=web sourcetype=access_combined earliest=-1h latest=now
 | sort - event_count
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/h3/>._
 
 ## 3. Expected fields
 
@@ -8212,9 +8101,8 @@ the per-hex popup as a list of contained-site properties).
   "hexbinOpacity": 0.7
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/h3/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/h3/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/h3/>._
 
 # === END: https://fenre.github.io/better_map/recipes/kvstore-latlon/h3/ ===
 
@@ -8284,7 +8172,6 @@ index=web sourcetype=access_combined earliest=-1h latest=now
 | sort - event_count
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/heat/>._
 
 ## 3. Expected fields
 
@@ -8311,9 +8198,8 @@ but is not strictly required by the heat layer.
   "heatmapRadius": 24
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/heat/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/heat/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/heat/>._
 
 # === END: https://fenre.github.io/better_map/recipes/kvstore-latlon/heat/ ===
 
@@ -8383,7 +8269,6 @@ inside dashboard `dataSources` queries.)
 | rename site_id AS id
 | fields id, lat, lon, site_name, site_type
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/>._
 
 ## 3. Expected fields
 
@@ -8405,9 +8290,8 @@ are cross-checked by `scripts/check-recipe-schema.py`.
   "pointRenderer": "markers"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/ ===
 
@@ -8545,7 +8429,6 @@ utilisation), join to a metrics index in §6 Gotchas.
 | sort 0 id, + seq
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/paths/>._
 
 ## 3. Expected fields
 
@@ -8575,9 +8458,8 @@ per-vertex feature properties for the popup.
   "pathArrows": false
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/paths/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/paths/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/paths/>._
 
 # === END: https://fenre.github.io/better_map/recipes/kvstore-latlon/paths/ ===
 
@@ -8657,7 +8539,6 @@ master location table.
 | sort + site_name
 | head 50000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/supercluster/>._
 
 ## 3. Expected fields
 
@@ -8679,9 +8560,8 @@ and are cross-checked by `scripts/check-recipe-schema.py`.
   "pointRenderer": "cluster"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/supercluster/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/supercluster/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/kvstore-latlon/supercluster/ ===
 
@@ -8767,7 +8647,6 @@ nightly saved-search.
 | rename zone_id AS id
 | fields id, zone_name, zone_type, geojson, owner_team
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/polygons/>._
 
 ## 3. Expected fields
 
@@ -8794,9 +8673,8 @@ drilldown actions can reference them by name.
   "polygonOpacity": 0.35
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/polygons/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/polygons/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/polygons/>._
 
 # === END: https://fenre.github.io/better_map/recipes/kvstore-latlon/polygons/ ===
 
@@ -8914,7 +8792,6 @@ a schedule, OR mutate individual rows via the KV Store REST API
 | fields id, country_name, value
 | sort - value
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/vector-tile-join/>._
 
 ## 3. Expected fields
 
@@ -8938,9 +8815,8 @@ it internally from the PMTiles URL configured in §4.
   "palette": "viridis"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/vector-tile-join/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/vector-tile-join/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/vector-tile-join/>._
 
 # === END: https://fenre.github.io/better_map/recipes/kvstore-latlon/vector-tile-join/ ===
 
@@ -9053,7 +8929,6 @@ index=meraki sourcetype="meraki:devices" earliest=-1h latest=now
 | fields id, state_name, value, device_count, alerting_count
 | sort - value
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/extrusion-3d/>._
 
 ## 3. Expected fields
 
@@ -9082,9 +8957,8 @@ and are cross-checked by `scripts/check-recipe-schema.py`.
   "palette": "viridis"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/extrusion-3d/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/extrusion-3d/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/extrusion-3d/>._
 
 # === END: https://fenre.github.io/better_map/recipes/meraki/extrusion-3d/ ===
 
@@ -9171,7 +9045,6 @@ index=meraki sourcetype="meraki:devices" earliest=-1h latest=now
 | sort - value
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/h3/>._
 
 ## 3. Expected fields
 
@@ -9201,9 +9074,8 @@ computed client-side by the hex layer via
   "hexbinOpacity": 0.7
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/h3/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/h3/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/h3/>._
 
 # === END: https://fenre.github.io/better_map/recipes/meraki/h3/ ===
 
@@ -9312,7 +9184,6 @@ index=meraki sourcetype="meraki:devices" earliest=-1h latest=now
 | sort - device_count
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/heat/>._
 
 ## 3. Expected fields
 
@@ -9340,9 +9211,8 @@ and `alerting_count` are carried for the per-site popup.
   "heatmapRadius": 28
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/heat/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/heat/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/heat/>._
 
 # === END: https://fenre.github.io/better_map/recipes/meraki/heat/ ===
 
@@ -9426,7 +9296,6 @@ index=meraki sourcetype="meraki:devices" earliest=-1h latest=now
 | sort id
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/markers/>._
 
 ## 3. Expected fields
 
@@ -9452,9 +9321,8 @@ cross-checked by `scripts/check-recipe-schema.py`.
   "markerColor": "#2ca02c"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/markers/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/markers/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/meraki/markers/ ===
 
@@ -9531,7 +9399,6 @@ index=meraki sourcetype="meraki:devices" earliest=-1h latest=now
 | sort id
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/supercluster/>._
 
 ## 3. Expected fields
 
@@ -9560,9 +9427,8 @@ drilldown affordance.
   "pointRenderer": "cluster"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/supercluster/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/supercluster/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/meraki/supercluster/ ===
 
@@ -9624,7 +9490,6 @@ index=netflow sourcetype="cisco:netflow"
 | eval id=dest_ip, value=bytes
 | fields id, lat, lon, value, dest_country, flow_count, bytes
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/h3/>._
 
 ## 3. Expected fields
 
@@ -9650,9 +9515,8 @@ are cross-checked by `scripts/check-recipe-schema.py`.
   "hexbinOpacity": 0.7
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/h3/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/h3/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/h3/>._
 
 # === END: https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/h3/ ===
 
@@ -9723,7 +9587,6 @@ index=netflow sourcetype="cisco:netflow"
 | sort - bytes
 | head 10000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/heat/>._
 
 ## 3. Expected fields
 
@@ -9748,9 +9611,8 @@ and are cross-checked by `scripts/check-recipe-schema.py`.
   "heatmapRadius": 28
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/heat/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/heat/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/heat/>._
 
 # === END: https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/heat/ ===
 
@@ -9825,7 +9687,6 @@ index=netflow sourcetype="cisco:netflow" earliest=-1h latest=now
 | sort - bytes
 | head 2000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/markers/>._
 
 ## 3. Expected fields
 
@@ -9852,9 +9713,8 @@ investigation context.
   "pointRenderer": "cluster"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/markers/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/markers/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/markers/ ===
 
@@ -9960,7 +9820,6 @@ index=netflow sourcetype="cisco:netflow" earliest=-1h latest=now
 | sort id, + seq
 | head 2000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/paths/>._
 
 ## 3. Expected fields
 
@@ -9990,9 +9849,8 @@ and are cross-checked by `scripts/check-recipe-schema.py`.
   "pathArrows": true
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/paths/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/paths/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/paths/>._
 
 # === END: https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/paths/ ===
 
@@ -10068,7 +9926,6 @@ index=netflow sourcetype="cisco:netflow" earliest=-1h latest=now
 | sort - bytes
 | head 10000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/supercluster/>._
 
 ## 3. Expected fields
 
@@ -10094,9 +9951,8 @@ are cross-checked by `scripts/check-recipe-schema.py`.
   "idField": "id"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/supercluster/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/supercluster/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/supercluster/ ===
 
@@ -10193,7 +10049,6 @@ index=edge_hub_* OR index=bms earliest=-1h latest=now
 | sort - event_count
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/h3/>._
 
 ## 3. Expected fields
 
@@ -10222,9 +10077,8 @@ properties but are popup metadata, not contract fields.
   "hexbinOpacity": 0.7
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/h3/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/h3/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/h3/>._
 
 # === END: https://fenre.github.io/better_map/recipes/ot-datastreamer/h3/ ===
 
@@ -10304,7 +10158,6 @@ index=edge_hub_* OR index=bms earliest=-1h latest=now
 | sort - event_count
 | head 2000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/heat/>._
 
 ## 3. Expected fields
 
@@ -10332,9 +10185,8 @@ fields.
   "heatmapRadius": 32
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/heat/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/heat/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/heat/>._
 
 # === END: https://fenre.github.io/better_map/recipes/ot-datastreamer/heat/ ===
 
@@ -10432,7 +10284,6 @@ index=edge_hub_* OR index=bms earliest=-1h latest=now
 | sort - event_count, id
 | head 1000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/markers/>._
 
 ## 3. Expected fields
 
@@ -10461,9 +10312,8 @@ the popup, not required for the panel to render).
   "markerColor": "#1f77b4"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/markers/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/markers/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/ot-datastreamer/markers/ ===
 
@@ -10560,7 +10410,6 @@ index=edge_hub_mqtt sourcetype="edge_hub_mqtt" source="edgehub/mqtt_events/agv/*
 | fields id, seq, lat, lon, asset_id, zone_purdue_level, speed_mps, _time
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/paths/>._
 
 ## 3. Expected fields
 
@@ -10592,9 +10441,8 @@ drives the OT-safety annotation overlay.
   "pathArrows": true
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/paths/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/paths/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/paths/>._
 
 # === END: https://fenre.github.io/better_map/recipes/ot-datastreamer/paths/ ===
 
@@ -10694,7 +10542,6 @@ index=edge_hub_* OR index=bms earliest=-24h latest=now
 | sort id
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/supercluster/>._
 
 ## 3. Expected fields
 
@@ -10726,9 +10573,8 @@ are NOT visible at the cluster level.
   "idField": "id"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/supercluster/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/supercluster/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/ot-datastreamer/supercluster/ ===
 
@@ -10833,7 +10679,6 @@ index=wire_data sourcetype="stream:tls"
 | sort - bytes_out
 | head 10000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/h3/>._
 
 ## 3. Expected fields
 
@@ -10863,9 +10708,8 @@ filtering for data-residency audits.
   "hexbinOpacity": 0.7
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/h3/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/h3/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/h3/>._
 
 # === END: https://fenre.github.io/better_map/recipes/splunk-stream/h3/ ===
 
@@ -10930,7 +10774,6 @@ index=wire_data sourcetype="stream:tls"
 | sort - bytes_out
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/heat/>._
 
 ## 3. Expected fields
 
@@ -10957,9 +10800,8 @@ is not strictly required by the heat layer.
   "heatmapRadius": 28
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/heat/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/heat/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/heat/>._
 
 # === END: https://fenre.github.io/better_map/recipes/splunk-stream/heat/ ===
 
@@ -11023,7 +10865,6 @@ index=wire_data sourcetype="stream:tls"
 | eval popup="<b>".dest_ip.":".dest_port."</b><br/>SNI: ".sni."<br/>".bytes_out." bytes from ".src_ip
 | fields id, lat, lon, src_ip, dest_ip, dest_country, app, bytes_out, popup
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/markers/>._
 
 ## 3. Expected fields
 
@@ -11049,9 +10890,8 @@ are cross-checked by `scripts/check-recipe-schema.py`.
   "idField": "id"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/markers/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/markers/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/splunk-stream/markers/ ===
 
@@ -11151,7 +10991,6 @@ index=wire_data sourcetype="stream:tls" earliest=-1h latest=now
 | sort 0 id, + seq
 | head 5000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/paths/>._
 
 ## 3. Expected fields
 
@@ -11182,9 +11021,8 @@ the popup.
   "pathArrows": true
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/paths/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/paths/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/paths/>._
 
 # === END: https://fenre.github.io/better_map/recipes/splunk-stream/paths/ ===
 
@@ -11253,7 +11091,6 @@ index=wire_data sourcetype="stream:tls" earliest=-1h latest=now
 | sort - bytes_out
 | head 10000
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/supercluster/>._
 
 ## 3. Expected fields
 
@@ -11279,9 +11116,8 @@ are cross-checked by `scripts/check-recipe-schema.py`.
   "idField": "id"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/supercluster/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/supercluster/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/splunk-stream/supercluster/ ===
 
@@ -11350,7 +11186,6 @@ index=_internal sourcetype=splunkd_ui_access earliest=-24h latest=now
 | fields id, state_name, value
 | sort - value
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/geo-us-states/extrusion-3d/>._
 
 ## 3. Expected fields
 
@@ -11379,9 +11214,8 @@ preset — Better Map joins polygon to SPL row on `id`.
   "palette": "viridis"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/geo-us-states/extrusion-3d/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/geo-us-states/extrusion-3d/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/geo-us-states/extrusion-3d/>._
 
 # === END: https://fenre.github.io/better_map/recipes/geo-us-states/extrusion-3d/ ===
 
@@ -11451,7 +11285,6 @@ index=_internal sourcetype=splunkd_ui_access earliest=-24h latest=now
 | fields id, state_name, value
 | sort - value
 ```
-_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/geo-us-states/choropleth/>._
 
 ## 3. Expected fields
 
@@ -11473,9 +11306,8 @@ internally via the `us-states` PMTiles preset.
   "palette": "viridis"
 }
 ```
-_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/geo-us-states/choropleth/>._
 
-_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/geo-us-states/choropleth/>._
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/geo-us-states/choropleth/>._
 
 # === END: https://fenre.github.io/better_map/recipes/geo-us-states/choropleth/ ===
 
