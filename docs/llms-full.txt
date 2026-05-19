@@ -4,7 +4,7 @@
 
 This file is the body-inclusive sibling of `llms.txt` and concatenates every page on the Better Map documentation site into a single, LLM-friendly text dump. The short companion index is at <https://fenre.github.io/better_map/llms.txt>. Pages appear in `mkdocs.yml` `nav:` declaration order. Each page block carries a stable `# === ... ===` separator plus the source-of-truth path on disk and the published URL so the same content can be grepped by either dimension.
 
-At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 48 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 51 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
 
 All page URLs resolve to publicly accessible Material-themed HTML on GitHub Pages. The project ships under the MIT licence; the canonical repo is <https://github.com/fenre/better_map>.
 
@@ -44,11 +44,14 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / Cisco Cyber Vision (components + vulnerabilities) — H3 hexbin (`docs/recipes/cyber-vision/h3.md`)
 - Recipes / Cisco Cyber Vision (components + vulnerabilities) — heatmap (`docs/recipes/cyber-vision/heat.md`)
 - Recipes / Cisco Cyber Vision (components + vulnerabilities) — markers (`docs/recipes/cyber-vision/markers.md`)
+- Recipes / Cisco ThousandEyes (agent fleet) — H3 hexbin (`docs/recipes/thousandeyes/h3.md`)
+- Recipes / Cisco ThousandEyes (agent fleet) — heatmap (`docs/recipes/thousandeyes/heat.md`)
 - Recipes / Cisco ThousandEyes (agent fleet) — markers (`docs/recipes/thousandeyes/markers.md`)
 - Recipes / Cisco ThousandEyes (path visualization) — paths (`docs/recipes/thousandeyes/paths.md`)
 - Recipes / ES Risk-Based Alerting (risk index) — H3 hexbin (`docs/recipes/es-risk/h3.md`)
 - Recipes / ES Risk-Based Alerting (risk index) — heatmap (`docs/recipes/es-risk/heat.md`)
 - Recipes / ES Risk-Based Alerting (risk index) — markers (`docs/recipes/es-risk/markers.md`)
+- Recipes / ITSI service health (KPI base searches) — H3 hexbin (`docs/recipes/itsi-kpi-base/h3.md`)
 - Recipes / ITSI service health (KPI base searches) — heatmap (`docs/recipes/itsi-kpi-base/heat.md`)
 - Recipes / ITSI service health (KPI base searches) — markers (`docs/recipes/itsi-kpi-base/markers.md`)
 - Recipes / KV Store (lat/lon) — H3 hexbin (`docs/recipes/kvstore-latlon/h3.md`)
@@ -1174,7 +1177,7 @@ generated from
 so it cannot drift from the recipe files.
 
 <!-- recipes-matrix trimmed for llms-full.txt token budget (see Wave 16 ROADMAP block); full matrix at <https://fenre.github.io/better_map/recipes/> and source-of-truth YAML at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>; per-recipe details (status, apps, expected-field contract, formatter options) are kept verbatim under the matching `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file -->
-**Total: 48 recipes · 15 source dir(s) · 9 layer type(s).**
+**Total: 51 recipes · 15 source dir(s) · 9 layer type(s).**
 
 Source dirs and the layer ids that already ship for each (any `(source, layer)` not listed below is an open cell in the E5 matrix and is a candidate for the next recipe wave):
 
@@ -1186,13 +1189,13 @@ Source dirs and the layer ids that already ship for each (any `(source, layer)` 
 - `cyber-vision`: h3, heat, markers
 - `es-risk`: h3, heat, markers
 - `geo-us-states`: choropleth, extrusion-3d
-- `itsi-kpi-base`: heat, markers
+- `itsi-kpi-base`: h3, heat, markers
 - `kvstore-latlon`: h3, heat, markers, supercluster
 - `meraki`: h3, heat, markers
 - `netflow-sflow-ipfix`: h3, heat, markers
 - `ot-datastreamer`: h3, heat, markers
 - `splunk-stream`: h3, heat, markers
-- `thousandeyes`: markers, paths
+- `thousandeyes`: h3, heat, markers, paths
 
 **OT-safety-relevant recipes (6):** `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`.
 
@@ -4042,6 +4045,270 @@ _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are o
 
 # === END: https://fenre.github.io/better_map/recipes/cyber-vision/markers/ ===
 
+# === BEGIN: https://fenre.github.io/better_map/recipes/thousandeyes/h3/ ===
+
+# Recipes / Cisco ThousandEyes (agent fleet) — H3 hexbin
+
+> Source: `docs/recipes/thousandeyes/h3.md`  
+> URL: <https://fenre.github.io/better_map/recipes/thousandeyes/h3/>
+
+# Cisco ThousandEyes (agent fleet) — H3 hexbin
+
+The geographic-aggregation complement to the
+[thousandeyes/markers](./markers.md) and
+[thousandeyes/paths](./paths.md) recipes — same
+`thousandeyes_agents` inventory + `thousandeyes_tests`
+test-load join, but rendered as H3 hexagonal cells rather
+than per-agent markers. The H3 layer surfaces **per-
+region DEM AGENT FOOTPRINT** as hex cell colour intensity:
+hot hexes indicate continental jurisdictions / metro
+regions with the densest agent coverage AND the highest
+aggregate test load; cool hexes indicate sparse coverage.
+This is the natural shape for a **DEM capacity-planning
+board view** (the question is "which geographic region
+has dense / sparse agent coverage?" rather than "which
+individual agent is overloaded" — use markers for that,
+or "what path does each measurement traverse" — use
+paths for that).
+
+## 1. Source description
+
+Same **Cisco ThousandEyes** sources as the markers
+companion — see [thousandeyes/markers §1](./markers.md#1-source-description)
+for the agent / test data model background. The relevant
+distinction for THIS recipe: instead of one marker per
+agent (which collapses to overlapping circles at world
+zoom on a heavy-cloud-agent deployment), the recipe
+aggregates agents AND their test-load BY (`lat`, `lon`)
+site and renders the per-site agent footprint as H3
+hexagonal cells.
+
+**Why H3 hexbin for ThousandEyes.** A markers view at
+world zoom collapses dense per-cloud-region agent
+clusters (10-50 agents in `us-east-1`, `us-west-2`,
+`eu-west-1`, etc.) into overlapping circles even with
+the markers companion's `cluster` renderer. A heat view
+(not yet shipped for thousandeyes) would solve the
+density problem with a smooth Gaussian gradient, but
+the heat blobs have NO hard borders — DEM capacity
+planning that needs "how many agents in the APAC
+jurisdiction?" cannot answer that from a Gaussian
+gradient. An H3 hexbin AGGREGATES the underlying agents
+into regular hexagonal cells (Uber's open H3 grid
+system) and lets the viewer count "how many agents
+live in THIS hex." The continental-scale resolution-3
+cells map roughly to "North America" / "Western
+Europe" / "APAC" — exactly the granularity a DEM
+strategy review uses to plan agent footprint expansion.
+
+**Typical sourcetype / index:** same as markers —
+`index=thousandeyes_agents sourcetype="cisco:thousandeyes:agents"`
+for the inventory, `index=thousandeyes_tests
+sourcetype="cisco:thousandeyes:tests"` for the test
+load join. App required: `ta_cisco_thousandeyes`
+(Splunkbase id 7719). The H3 cell id is computed by
+Better Map's h3 layer renderer at render time from the
+`lat` / `lon` columns; the SPL does NOT pre-compute H3
+cells (resolution-tuning stays in the formatter so an
+operator can switch from continental resolution 3 to
+metro resolution 7 mid-investigation without re-running
+SPL).
+
+## 2. SPL recipe
+
+```spl
+index=thousandeyes_agents sourcetype="cisco:thousandeyes:agents" earliest=-24h latest=now
+| dedup agent_id sortby - _time
+| where is_online="true"
+| where isnotnull(agent_lat) AND isnotnull(agent_lon)
+| join type=left agent_id [
+    search index=thousandeyes_tests sourcetype="cisco:thousandeyes:tests" earliest=-24h latest=now
+    | stats dc(test_id) AS test_count BY agent_id
+  ]
+| fillnull value=0 test_count
+| stats count AS agent_count, sum(test_count) AS test_count BY agent_lat, agent_lon
+| rename agent_lat AS lat, agent_lon AS lon
+| eval value=test_count
+| eval id=lat . "_" . lon
+| fields id, lat, lon, value, agent_count, test_count
+| sort - value
+| head 5000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/h3/>._
+
+## 3. Expected fields
+
+| field       | type    | example            |
+|-------------|---------|--------------------|
+| id          | string  | 37.7749_-122.4194  |
+| lat         | number  | 37.7749            |
+| lon         | number  | -122.4194          |
+| value       | number  | 47                 |
+| agent_count | integer | 12                 |
+| test_count  | integer | 47                 |
+
+All six fields appear in `expected_fields` in the
+frontmatter and are cross-checked by
+`scripts/check-recipe-schema.py`. `value` is the h3-
+layer-required aggregation field (drives
+`hexbinAggregate`); `agent_count` and `test_count` are
+carried for the per-site popup at high zoom (where the
+h3 renderer reverts to per-feature markers). The `id`
+shown in the example column is illustrative — the
+actual SPL derives `id = lat . "_" . lon`; the H3 cell
+id itself (`8a283082a677fff`-style) is computed at
+render time by the h3 layer based on the formatter's
+`hexbinResolution`.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pointRenderer": "h3",
+  "hexbinAggregate": "sum",
+  "hexbinResolution": 3,
+  "hexbinOpacity": 0.7
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/h3/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/h3/>._
+
+# === END: https://fenre.github.io/better_map/recipes/thousandeyes/h3/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/thousandeyes/heat/ ===
+
+# Recipes / Cisco ThousandEyes (agent fleet) — heatmap
+
+> Source: `docs/recipes/thousandeyes/heat.md`  
+> URL: <https://fenre.github.io/better_map/recipes/thousandeyes/heat/>
+
+# Cisco ThousandEyes (agent fleet) — heatmap
+
+The per-site density complement to the
+[thousandeyes/markers](./markers.md),
+[thousandeyes/h3](./h3.md), and
+[thousandeyes/paths](./paths.md) recipes — same
+`thousandeyes_agents` inventory + `thousandeyes_tests`
+test-load join, but rendered as a weighted heat surface
+rather than markers / hex cells / polylines. The heat
+layer surfaces **DEM AGENT TEST-LOAD CONCENTRATION** as
+smooth Gaussian colour intensity: hot blobs indicate
+regions where the densest agent populations are
+generating the most aggregate measurement load; cool
+blobs indicate sparse coverage. This is the natural
+shape for **executive DEM coverage briefings** (where
+is the smooth coverage? where are the gaps?) and
+**capacity-planning slide decks** (the question is
+"where is my DEM footprint smoothly distributed?"
+rather than "which agent has the most tests" — use
+markers for that, or "what's the per-region count" —
+use H3 hexbin for that).
+
+Completes the **thousandeyes source-row triplet** —
+markers (wave 11), H3 hexbin + heatmap (this wave),
+plus the paths layer (wave 5) — all four layers
+coexisting via the BM-CT-1 layer contract on the same
+Dashboard Studio panel. This is the **14th source-row
+triplet completed in the matrix**, leaving only
+`geo-us-states` (geo-shape source row, intentionally
+NOT a markers / heat / h3 target — its choropleth +
+extrusion-3d coverage IS its triplet).
+
+## 1. Source description
+
+Same **Cisco ThousandEyes** sources as the markers /
+h3 / paths companions — see
+[thousandeyes/markers §1](./markers.md#1-source-description)
+for the agent / test data model background. The relevant
+distinction for THIS recipe: instead of one marker per
+agent (which collapses to overlapping circles at world
+zoom on a heavy-cloud-agent deployment) OR hex cells
+with hard borders (jurisdictional aggregation that
+loses the SMOOTH density signal), the recipe aggregates
+agents AND their test-load BY (`lat`, `lon`) site and
+renders the per-site agent-and-test density as a smooth
+Gaussian heat surface.
+
+**Why heatmap for ThousandEyes.** A markers view shows
+per-agent identity but at world zoom the dots overlap
+in cloud-region clusters. An H3 hexbin shows
+jurisdictional aggregation with hard borders but the
+hard borders create false "this region has 0 agents"
+gaps at the cell boundaries (a real agent located right
+on a hex border still contributes to exactly one cell
+— misleading for a smooth-coverage panel). A heatmap
+solves both: smooth radial blobs visually show
+coverage as a continuous gradient with no hard
+boundaries, no per-feature popup clutter, no per-cell
+discretisation artefacts. The right shape when the
+audience asks "what's our DEM agent coverage smoothly
+look like?" or "where are the gaps in our coverage?"
+
+**Typical sourcetype / index:** same as markers / h3 —
+`index=thousandeyes_agents sourcetype="cisco:thousandeyes:agents"`
+for the inventory, `index=thousandeyes_tests
+sourcetype="cisco:thousandeyes:tests"` for the test
+load join. App required: `ta_cisco_thousandeyes`
+(Splunkbase id 7719).
+
+## 2. SPL recipe
+
+```spl
+index=thousandeyes_agents sourcetype="cisco:thousandeyes:agents" earliest=-24h latest=now
+| dedup agent_id sortby - _time
+| where is_online="true"
+| where isnotnull(agent_lat) AND isnotnull(agent_lon)
+| join type=left agent_id [
+    search index=thousandeyes_tests sourcetype="cisco:thousandeyes:tests" earliest=-24h latest=now
+    | stats dc(test_id) AS test_count BY agent_id
+  ]
+| fillnull value=0 test_count
+| stats count AS agent_count, sum(test_count) AS test_count BY agent_lat, agent_lon
+| rename agent_lat AS lat, agent_lon AS lon
+| eventstats max(test_count) AS max_test_count
+| eval weight=round(if(max_test_count > 0, test_count / max_test_count, 0), 2)
+| eval id=lat . "_" . lon
+| fields id, lat, lon, agent_count, test_count, weight
+| sort - test_count
+| head 5000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/heat/>._
+
+## 3. Expected fields
+
+| field       | type    | example            |
+|-------------|---------|--------------------|
+| id          | string  | 37.7749_-122.4194  |
+| lat         | number  | 37.7749            |
+| lon         | number  | -122.4194          |
+| agent_count | integer | 12                 |
+| test_count  | integer | 47                 |
+| weight      | number  | 1.0                |
+
+All six fields appear in `expected_fields` in the
+frontmatter and are cross-checked by
+`scripts/check-recipe-schema.py`. `weight` is the
+heat-layer-required intensity field; `agent_count`
+and `test_count` are carried for popup display when
+paired with a companion markers overlay (heat
+layers don't expose per-feature popup directly).
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pointRenderer": "heatmap",
+  "heatmapOpacity": 0.7,
+  "heatmapRadius": 28
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/heat/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/heat/>._
+
+# === END: https://fenre.github.io/better_map/recipes/thousandeyes/heat/ ===
+
 # === BEGIN: https://fenre.github.io/better_map/recipes/thousandeyes/markers/ ===
 
 # Recipes / Cisco ThousandEyes (agent fleet) — markers
@@ -4665,6 +4932,138 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/es-risk/markers/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/ ===
+
+# Recipes / ITSI service health (KPI base searches) — H3 hexbin
+
+> Source: `docs/recipes/itsi-kpi-base/h3.md`  
+> URL: <https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/>
+
+# ITSI service health — H3 hexbin
+
+The geographic-aggregation complement to the
+[itsi-kpi-base/markers](./markers.md) and
+[itsi-kpi-base/heat](./heat.md) recipes — same `itsi_summary`
+⋈ `itsi_services` join, same `SHKPI-`-prefixed service-health
+filter, same `info_lat` / `info_lon` geo-attribute prerequisite,
+but rendered as H3 hexagonal cells rather than markers or a
+heat surface. The H3 layer surfaces **per-region service-
+health PRESSURE** as hex cell colour intensity: hot hexes
+indicate continental jurisdictions / metro regions with the
+highest aggregate UNHEALTHY-SERVICE-COUNT; cool hexes
+indicate quiet regions. This is the natural shape for a
+**multi-region SRE board view** (the question is "which
+geographic region's services are degraded right now, with
+hard hex borders for jurisdictional reporting?" rather than
+"which individual service should I investigate" — use markers
+for that, or "where is pressure smoothly concentrated" — use
+heat for that).
+
+Completes the **itsi-kpi-base source-row triplet** — markers
+(wave 11), heat (wave 18), H3 hexbin (this wave) — all three
+layers coexisting via the BM-CT-1 layer contract on the same
+Dashboard Studio panel. This is the **13th source-row triplet
+completed in the matrix** (after cim-alerts, cim-authentication,
+cim-network-traffic, cim-performance, csv-lookup-geo,
+cyber-vision, es-risk, kvstore-latlon, meraki,
+netflow-sflow-ipfix, ot-datastreamer, splunk-stream — leaving
+only `thousandeyes` as the last triplet target).
+
+## 1. Source description
+
+Same Splunk **IT Service Intelligence (ITSI)** `itsi_summary`
+index + `itsi_services` KV-Store collection as the
+[markers](./markers.md) and [heat](./heat.md) companions. The
+recipe assumes the same prerequisite — that the operator has
+populated `info_lat` + `info_lon` as custom service attributes
+via the ITSI UI (Configuration → Service Templates → custom
+attributes) or via the ITSI REST API. Without that, all three
+recipes return zero rows.
+
+**Why H3 hexbin for ITSI service health.** A markers view
+at world zoom collapses dense per-datacenter service clusters
+into overlapping circles that hide individual service
+identity behind visual noise. A heat view solves the density
+problem with a smooth Gaussian gradient but the heat blobs
+have NO hard borders — board-level reporting that needs
+"how many unhealthy services in the EU jurisdiction this
+quarter?" cannot answer that from a Gaussian gradient. An
+H3 hexbin AGGREGATES the underlying services into regular
+hexagonal cells (Uber's open H3 grid system) and lets the
+viewer count "how many unhealthy services live in THIS
+hex." The continental-scale resolution-3 cells map roughly
+to "Western Europe" / "US East Coast" / "Southeast Asia" —
+exactly the granularity an SRE / governance board uses to
+think about geographic blast-radius.
+
+**Typical sourcetype / index:** `index=itsi_summary`
+(same as the companion recipes). The KV-Store lookup uses
+the same `itsi_services` collection (or the built-in
+`` `itsi_services` `` macro if exposed). The H3 cell id
+is computed by Better Map's h3 layer renderer at render time
+from the `lat` / `lon` columns; the SPL does NOT pre-compute
+H3 cells (the renderer's resolution selector is the formatter
+config option `hexbinResolution`, not a fixed SPL choice —
+keeping resolution-tuning in the formatter avoids re-running
+SPL when an operator wants to switch from continental
+resolution 3 to country resolution 5 mid-investigation).
+
+## 2. SPL recipe
+
+```spl
+index=itsi_summary kpi_id="SHKPI-*" entity_key="N/A" earliest=-15m latest=now
+| stats latest(alert_level) AS alert_level BY itsi_service_id
+| lookup itsi_services _key AS itsi_service_id OUTPUT info_lat AS lat, info_lon AS lon
+| where isnotnull(lat) AND isnotnull(lon)
+| eval alert_level=tonumber(alert_level)
+| eval is_unhealthy=if(alert_level >= 3, 1, 0)
+| stats sum(is_unhealthy) AS unhealthy_services, count AS total_services BY lat, lon
+| eval value=unhealthy_services
+| eval id=lat . "_" . lon
+| fields id, lat, lon, value, unhealthy_services, total_services
+| sort - value
+| head 5000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/>._
+
+## 3. Expected fields
+
+| field              | type    | example          |
+|--------------------|---------|------------------|
+| id                 | string  | 8a283082a677fff  |
+| lat                | number  | 53.5511          |
+| lon                | number  | 9.9937           |
+| value              | number  | 7                |
+| unhealthy_services | integer | 7                |
+| total_services     | integer | 23               |
+
+All six fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+`value` is the h3-layer-required aggregation field (drives
+`hexbinAggregate`); `unhealthy_services` and `total_services`
+are carried for the per-site popup at high zoom (where the
+h3 renderer reverts to per-feature markers). The `id` shown
+in the example column is illustrative — the actual SPL
+derives `id = lat . "_" . lon`; the H3 cell id itself
+(`8a283082a677fff`-style) is computed at render time by the
+h3 layer based on the formatter's `hexbinResolution`.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pointRenderer": "h3",
+  "hexbinAggregate": "sum",
+  "hexbinResolution": 3,
+  "hexbinOpacity": 0.7
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/>._
+
+# === END: https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/itsi-kpi-base/heat/ ===
 
@@ -9813,7 +10212,7 @@ Each entry below distils the corresponding YAML scaffold so an LLM can answer in
 
 # Appendix B — Per-source recipe matrix
 
-> Source of truth: `docs/_machine/recipes/index.yaml` (48 recipe(s), emission order)
+> Source of truth: `docs/_machine/recipes/index.yaml` (51 recipe(s), emission order)
 
 Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answer 'which recipe matches this data source?' without fetching every recipe page. Recipes carry one of three statuses: `verified` (smoke-tested against a live Splunk tenant with proof in the YAML metadata), `unverified` (the recipe follows the contract but has not yet been smoke-tested), or `deferred` (the recipe is known to be incomplete pending upstream work). The expected-field contract for each recipe lives in §3 of the recipe page (kept verbatim in this file under the matching `# === BEGIN: …/recipes/<source>/<layer>/ ===` block); follow the Page link below to jump to it.
 
@@ -9847,6 +10246,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `es-risk--markers` | ES Risk-Based Alerting (risk index) → Markers | unverified | `SplunkEnterpriseSecuritySuite`, `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/es-risk/markers.md](https://fenre.github.io/better_map/recipes/es-risk/markers/) |
 | `geo-us-states--choropleth` | US states (built-in geo lookup) → Choropleth | unverified | — | — | [docs/recipes/geo-us-states/choropleth.md](https://fenre.github.io/better_map/recipes/geo-us-states/choropleth/) |
 | `geo-us-states--extrusion-3d` | US states (built-in geo lookup) → 3D extrusion | unverified | — | — | [docs/recipes/geo-us-states/extrusion-3d.md](https://fenre.github.io/better_map/recipes/geo-us-states/extrusion-3d/) |
+| `itsi-kpi-base--h3` | ITSI service health (KPI base searches) → H3 hexbin | unverified | `SA-ITOA` | — | [docs/recipes/itsi-kpi-base/h3.md](https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/) |
 | `itsi-kpi-base--heat` | ITSI service health (KPI base searches) → Heatmap | unverified | `SA-ITOA` | — | [docs/recipes/itsi-kpi-base/heat.md](https://fenre.github.io/better_map/recipes/itsi-kpi-base/heat/) |
 | `itsi-kpi-base--markers` | ITSI service health (KPI base searches) → Markers | unverified | `SA-ITOA` | — | [docs/recipes/itsi-kpi-base/markers.md](https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/) |
 | `kvstore-latlon--h3` | KV Store (lat/lon collection) → H3 hexbin | unverified | — | — | [docs/recipes/kvstore-latlon/h3.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/h3/) |
@@ -9865,6 +10265,8 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `splunk-stream--h3` | Splunk Stream (wire data) → H3 hexbin | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/h3.md](https://fenre.github.io/better_map/recipes/splunk-stream/h3/) |
 | `splunk-stream--heat` | Splunk Stream (wire data) → Heatmap | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/heat.md](https://fenre.github.io/better_map/recipes/splunk-stream/heat/) |
 | `splunk-stream--markers` | Splunk Stream (wire data) → Markers | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/markers.md](https://fenre.github.io/better_map/recipes/splunk-stream/markers/) |
+| `thousandeyes--h3` | Cisco ThousandEyes (agent fleet) → H3 hexbin | unverified | `ta_cisco_thousandeyes` | — | [docs/recipes/thousandeyes/h3.md](https://fenre.github.io/better_map/recipes/thousandeyes/h3/) |
+| `thousandeyes--heat` | Cisco ThousandEyes (agent fleet) → Heatmap | unverified | `ta_cisco_thousandeyes` | — | [docs/recipes/thousandeyes/heat.md](https://fenre.github.io/better_map/recipes/thousandeyes/heat/) |
 | `thousandeyes--markers` | Cisco ThousandEyes (agent fleet) → Markers | unverified | `ta_cisco_thousandeyes` | — | [docs/recipes/thousandeyes/markers.md](https://fenre.github.io/better_map/recipes/thousandeyes/markers/) |
 | `thousandeyes--paths` | Cisco ThousandEyes (path visualization) → Paths | unverified | `ta_cisco_thousandeyes` | — | [docs/recipes/thousandeyes/paths.md](https://fenre.github.io/better_map/recipes/thousandeyes/paths/) |
 

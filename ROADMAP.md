@@ -2704,6 +2704,102 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 > `llms-full.txt` at the next regeneration via the wave-13
 > generalised ROADMAP status-block regex._
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 20 recipes
+> SHIPPED (3 more recipes — recipe count 48 → 51, layer-type
+> coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
+> unchanged, heat usage 8 → 9, h3 usage 11 → 13).** Wave 20
+> completes the **13th and 14th source-row triplets**:
+> - **`itsi-kpi-base/h3`** — closes the ITSI service-health
+>   triplet (markers from wave 11, heat from wave 18, h3 from
+>   wave 20). The H3 hexbin shape suits **regional-jurisdiction
+>   service-degradation roll-up panels** (e.g. "how many critical
+>   ITSI services across each AWS region right now") and pairs
+>   the same `index=itsi_summary kpi_id="SHKPI-*" entity_key="N/A"`
+>   service-health-KPI base search with the `itsi_services`
+>   collection geo-lookup that the markers and heat companions
+>   use. The `eval is_unhealthy=if(alert_level >= 3, 1, 0)` +
+>   `stats sum(is_unhealthy)` pivot is the recipe's distinguishing
+>   move — turns alert_level severity into a per-region count of
+>   unhealthy services. §6 gotchas cover threshold tuning
+>   (`alert_level >= 3` vs `>= 2` vs `>= 4`), the geo-lookup
+>   semi-join cardinality risk, the `kpi_id="SHKPI-*"` MUST-filter
+>   discipline, the 60-min ITSI summary-pipeline lag, the missing
+>   `info_lat`/`info_lon` failure mode (services collapsed to
+>   `sum(0)`=0 unhealthy), `hexbinResolution: 3` (~600km cell
+>   diameter, the right scale for jurisdictional roll-up at
+>   global zoom), and no OT-safety boundary (IT-service health).
+> - **`thousandeyes/h3`** — opens the ThousandEyes source row to
+>   h3 layer coverage (markers wave 11, paths wave 5, h3 + heat
+>   wave 20). The recipe pairs the agent-inventory base search
+>   (`index=thousandeyes_agents` + `dedup agent_id sortby - _time`
+>   + `is_online="true"`) with the test-load join subsearch
+>   (`dc(test_id) BY agent_id`) and aggregates per-site agent
+>   AND test counts via `stats count, sum(test_count) BY
+>   agent_lat, agent_lon`. The h3 lens is the right shape for
+>   **per-region DEM coverage briefings** (jurisdictional sum-
+>   aggregation showing test-load concentration). §6 gotchas
+>   cover the `is_online="true"` non-negotiable filter (offline
+>   agents inflate live coverage), agent-location auto-geocode
+>   data quality (cloud-region centroid drift; BGP-NOC fallback
+>   can be hundreds of km off; document the floor), the per-
+>   panel vs cross-panel weight-comparison trap (each panel's
+>   `weight` is normalised to its own `max`), GDPR considerations
+>   (h3-resolution-3 is safer than markers but still surfaces
+>   per-cell counts), the `value=test_count` vs `=agent_count`
+>   semantic-meaning swap, and no OT-safety boundary.
+> - **`thousandeyes/heat`** — completes the ThousandEyes triplet
+>   with the smooth-density complement. Same agent-inventory +
+>   test-load aggregation as the h3 companion but rendered as a
+>   weighted Gaussian heat surface via the
+>   `eventstats max(test_count) AS max_test_count` /
+>   `eval weight=test_count/max_test_count` normalisation pattern
+>   (identical to es-risk/heat, itsi-kpi-base/heat,
+>   cim-performance/heat). The right shape for **executive DEM
+>   coverage panels** ("where is coverage smooth? where are the
+>   gaps?") and **capacity-planning slide decks**, distinct from
+>   the markers companion (per-agent identity), the h3 companion
+>   (hard-bordered jurisdictional aggregation), and the paths
+>   companion (hop-by-hop test polylines). §6 gotchas cover the
+>   same `is_online="true"` filter, the `weight` semantic choice
+>   (test_count vs agent_count → different panel meanings), the
+>   `heatmapRadius: 28` default (right for global SRE leadership
+>   view; drop to 18-22 for sub-region granularity), no hard
+>   borders by design (use h3 for jurisdictional aggregation),
+>   GDPR considerations (smoother than markers, less safe than
+>   h3-resolution-3), agent-location data-quality cascade into
+>   blob centroid, and no OT-safety boundary.
+> - **Token budget.** Wave 20 lands at **~132,281 estimated
+>   tokens** / **~42,719 tokens of WARN headroom** (175,000 -
+>   132,281). The 3 new recipes cost only **~4.6k tokens
+>   combined** (~1.5k/recipe) — dramatically cheaper than the
+>   pre-wave-19 cost of ~3k/recipe because the wave-19 walkthrough
+>   strip removes ~1.5k of pedagogical prose from each new recipe
+>   before it lands in `llms-full.txt`. The new economics: at
+>   ~1.5k/recipe headroom funds **~28 more recipes** before the
+>   next token-trim is required. The cadence relaxes further:
+>   wave 21+ can ship 3-5 recipes per wave routinely.
+> - **Layer / pattern coverage updates.** Recipe count 48 → 51
+>   (+3). Layer coverage 9/10 unchanged (extrusion-3d still the
+>   one cell occupied; choropleth/vector-tile-join/cluster/heat/
+>   h3/markers/paths/supercluster all already covered). Source-
+>   pattern coverage 8/8 unchanged (all 8 patterns covered since
+>   wave 3). Source-row triplet count: 12 → 14 (out of ~15
+>   triplet candidates; geo-us-states is intentionally NOT a
+>   markers/heat/h3 target — its choropleth+extrusion-3d
+>   coverage is the triplet equivalent). Two recipes per row
+>   that don't have triplets yet, in projected wave order:
+>   **aiAssistant** (no recipes; the source is the AI assistant
+>   itself, intentionally NOT a map-data target), and
+>   **purdue/mitre/rba/soar/esNotable** (security workflow
+>   integrations, not map sources). The matrix is functionally
+>   complete for map-data sources; remaining waves harvest
+>   second-companion shapes (h3 / heat / supercluster) on rows
+>   that already have ≥1 layer.
+>
+> _This `> **Status …` blockquote will self-strip from
+> `llms-full.txt` at the next regeneration via the wave-13
+> generalised ROADMAP status-block regex._
+
 > **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 17 recipes
 > SHIPPED (2 more recipes — recipe count 45 → 47, layer-type
 > coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
