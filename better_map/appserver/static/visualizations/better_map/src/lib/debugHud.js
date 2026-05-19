@@ -22,7 +22,7 @@
  * Enable via the formatter option `showDebugHud=true`.
  */
 
-const HUD_VERSION = 'v1.6.3';
+const HUD_VERSION = 'v1.8.0-alpha';
 const PATHS_SOURCE_ID = 'better_map_paths_src';
 const PATHS_LAYER_PREFIX = 'better_map_paths_';
 
@@ -104,6 +104,40 @@ export function createDebugHud(container) {
         // setData-not-tiling investigation.
         sourceProbeLine: '(no setData probe yet)'
     };
+
+    // v1.8.0 stability release — Errors-tab scaffold. Tracks envelopes
+    // dispatched via the better_map:error CustomEvent (from safeRun()).
+    // Kept separate from state.errors (which holds MapLibre internal events)
+    // so the two streams can be reasoned about independently.
+    state.errorCounts = {};      // scope -> count
+    state.errorTotal = 0;
+    state.lastError = null;
+
+    const errorsEl = document.createElement('div');
+    errorsEl.className = 'better_map-debug-hud__errors';
+    errorsEl.style.borderTop = '1px solid rgba(76, 217, 196, 0.22)';
+    errorsEl.style.marginTop = '6px';
+    errorsEl.style.paddingTop = '6px';
+    el.appendChild(errorsEl);
+
+    function renderErrorsLine() {
+        const scopes = Object.keys(state.errorCounts).sort();
+        const parts = scopes.map(function (s) { return s + ' x' + state.errorCounts[s]; });
+        const head = 'errors=' + state.errorTotal;
+        errorsEl.textContent = head + (parts.length ? ' | ' + parts.join(' | ') : '');
+    }
+
+    function onError(e) {
+        const envelope = (e && e.detail) || {};
+        const scope = envelope.scope || 'unknown';
+        state.errorCounts[scope] = (state.errorCounts[scope] || 0) + 1;
+        state.errorTotal += 1;
+        state.lastError = envelope;
+        renderErrorsLine();
+    }
+
+    container.addEventListener('better_map:error', onError);
+    renderErrorsLine();
 
     // Globally hook fetch ONCE (idempotent across multiple HUD instances) so we
     // can capture every MapLibre internal request and compare to our probes.
