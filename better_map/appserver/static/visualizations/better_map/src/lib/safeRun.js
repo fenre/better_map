@@ -27,12 +27,16 @@ import { UNKNOWN } from './errorScopes.js';
 
 // Test-only state. Mutable slot fields so __resetSafeRunState can
 // swap atomically without re-exporting bindings.
+const BACKOFF_SCHEDULE_MS = [1000, 5000, 30000];   // index = failureCount-1
+const QUARANTINE_AT = BACKOFF_SCHEDULE_MS.length + 1;
+
 const _state = {
     ringBuffer: [],
     ringCap: 50,
     reporter: null,
     nowFn: null,
-    lastReportedAt: {}        // map<rateLimitKey, timestamp-ms>
+    lastReportedAt: {},       // map<rateLimitKey, timestamp-ms>
+    backoff: {}               // map<scope, { failures: number, nextAllowedAt: number }>
 };
 
 function _now() {
@@ -129,23 +133,79 @@ function _isThenable(v) {
         && typeof v.then === 'function';
 }
 
+function _getBackoff(scope) {
+    if (!_state.backoff[scope]) {
+        _state.backoff[scope] = { failures: 0, nextAllowedAt: 0 };
+    }
+    return _state.backoff[scope];
+}
+
+function _onSuccess(scope) {
+    if (_state.backoff[scope]) {
+        delete _state.backoff[scope];
+    }
+}
+
+function _onFailure(scope, now) {
+    const b = _getBackoff(scope);
+    b.failures += 1;
+    if (b.failures >= QUARANTINE_AT) {
+        b.nextAllowedAt = Infinity;
+    } else {
+        b.nextAllowedAt = now + BACKOFF_SCHEDULE_MS[b.failures - 1];
+    }
+}
+
+function _isQuarantined(scope) {
+    const b = _state.backoff[scope];
+    return !!b && b.nextAllowedAt === Infinity;
+}
+
 export function safeRun(opts) {
     if (!opts || typeof opts !== 'object') {
         opts = { action: function () {} };
     }
     const action = typeof opts.action === 'function' ? opts.action : function () {};
+    const scope = opts.scope || UNKNOWN;
+    const now = _now();
+    const b = _state.backoff[scope];
+    if (b && now < b.nextAllowedAt) {
+        return {
+            ok: false,
+            error: {
+                scope: scope,
+                severity: opts.severity || 'warning',
+                recovery: opts.recovery || 'soft',
+                message: 'backoff',
+                cause: null,
+                stack: '',
+                timestamp: now,
+                dataShape: null,
+                backoff: true,
+                quarantined: _isQuarantined(scope)
+            }
+        };
+    }
     let result;
     try {
         result = action();
     } catch (err) {
+        _onFailure(scope, now);
         return _handleFailure(opts, err);
     }
     if (_isThenable(result)) {
         return result.then(
-            function (value) { return { ok: true, result: value }; },
-            function (err) { return _handleFailure(opts, err); }
+            function (value) {
+                _onSuccess(scope);
+                return { ok: true, result: value };
+            },
+            function (err) {
+                _onFailure(scope, _now());
+                return _handleFailure(opts, err);
+            }
         );
     }
+    _onSuccess(scope);
     return { ok: true, result: result };
 }
 
@@ -158,9 +218,16 @@ export function getRecentErrors(filter) {
     return all;
 }
 
-export function clearErrorState(/* scope */) {
-    // Backoff/quarantine state lives in Task 7; for now just clear ring buffer.
-    _state.ringBuffer.length = 0;
+export function clearErrorState(scope) {
+    if (scope == null) {
+        _state.ringBuffer.length = 0;
+        _state.backoff = {};
+        _state.lastReportedAt = {};
+    } else {
+        delete _state.backoff[scope];
+        delete _state.lastReportedAt[scope];
+        // Ring buffer kept; it's a global log, not a per-scope state.
+    }
 }
 
 // Test hooks (prefixed __ to discourage prod use).
@@ -177,4 +244,5 @@ export function __resetSafeRunState() {
     _state.reporter = null;
     _state.nowFn = null;
     _state.lastReportedAt = {};
+    _state.backoff = {};
 }
