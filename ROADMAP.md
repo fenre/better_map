@@ -1,5 +1,39 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-26): E5 Phase 2 wave 32 token-trim
+> SHIPPED — consolidated three per-recipe pointer footers into one;
+> reclaimed 7,397 tokens (170,695 → 163,298, 11,702 WARN headroom).**
+> Pre-wave-32 every recipe carried THREE pointer footers that all
+> pointed to the same URL with the same "read it in the full recipe
+> at <URL>" boilerplate: one after the §2 SPL fence ("Per-stage
+> rationale ..."), one after the §4 JSON fence ("Per-option
+> rationale ..."), and one at the end of the recipe ("§5 Screenshot,
+> §6 Gotchas, and the trailing Verification status section ..."). At
+> ~220 chars × 3 footers per recipe × 84 recipes the cumulative cost
+> hit ~10k tokens of pure boilerplate duplication. Wave 32 drops the
+> standalone §2/§4 walkthrough pointers from
+> `strip_recipe_walkthroughs()` and absorbs their semantics into the
+> consolidated trailing pointer emitted by `strip_recipe_advisory()`
+> — one footer per recipe instead of three. Net reclaim: ~7-9k
+> tokens (the consolidated footer is ~290 chars vs the prior 3×220
+> = 660 chars). Zero information loss: every dropped footer pointed
+> to the same URL, the page URL is already prominent in the
+> `# === BEGIN: <URL> ===` page block opener and the `> URL:`
+> source line, and the consolidated footer enumerates all five
+> omitted sections so an LLM consumer knows exactly what is
+> available in the full recipe. Implementation: `del page_url` in
+> `strip_recipe_walkthroughs()` (ABI compat — caller still passes
+> the URL but the helper no longer uses it), updated docstring on
+> `strip_recipe_advisory()` to document the consolidation, updated
+> module docstring with the wave-32 trim entry. All gates green
+> locally (`build-llms-full-txt.py --check`, `build-llms-txt.py
+> --check`, `check-recipe-schema.py`, `build-reference-pages.py
+> --check`, `check-manifest.py`, `check-formatter-schema.py`,
+> `check-formatter-coverage.py`). The 11,702-token WARN headroom
+> unlocks at least one more wave of 3 recipes (typical wave-31-style
+> diversification slate adds ~5.5-7k tokens). Subsequent wave 32
+> recipes will fold in below this block.
+
 > **Status (v1.7-prep, 2026-05-25): E5 Phase 2 wave 31 recipes
 > SHIPPED — 3 new recipes (`cim-alerts/extrusion-3d` +
 > `cim-alerts/choropleth` + `cim-network-traffic/vector-tile-join`),

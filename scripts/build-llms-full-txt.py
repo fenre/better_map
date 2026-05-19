@@ -102,7 +102,17 @@ of v1.6 self-audit / single-release verification table / doc-edit
 history / narrative-competitive positioning / open-question-escalation
 list / destination-state v2.0 sign-off checklist whose live items are
 already tracked in current Theme work-items (G1/G2/G3/G8 + R11) or
-recoverable via ``git log -- ROADMAP.md``):
+recoverable via ``git log -- ROADMAP.md`` — and in wave 32 by
+consolidating the THREE per-recipe pointer footers (after §2 SPL
+fence, after §4 JSON fence, after §5+ trim) into ONE trailing
+pointer per recipe — by wave 31 each recipe carried 3×~220-char
+footers all pointing to the same URL with the same "read in the
+full recipe" boilerplate (~140 tokens / recipe × 84 recipes ≈ ~10k
+tokens of pure duplication); the consolidated footer (~290 chars)
+preserves the URL signposting at one location per recipe with zero
+information loss; see ``strip_recipe_advisory`` for the consolidated
+pointer text and ``strip_recipe_walkthroughs`` for the ``del
+page_url`` ABI-compat shim):
 
   * Per-page warning at **50,000 estimated tokens** — one page should
     not dominate the corpus.
@@ -673,7 +683,7 @@ def is_recipe_page(relpath: str) -> bool:
 
 
 def strip_recipe_advisory(body: str, page_url: str) -> str:
-    """Trim recipe page body at `## 5. Screenshot` and append a URL pointer.
+    """Trim recipe page body at `## 5. Screenshot` and append one pointer.
 
     §5 Screenshot (currently a D5-harness-pending boilerplate stub),
     §6 Gotchas, and the trailing `## Verification status` section
@@ -681,8 +691,15 @@ def strip_recipe_advisory(body: str, page_url: str) -> str:
     needs the frontmatter, §1 Source description, §2 SPL recipe,
     §3 Expected fields, and §4 Recommended formatter config — all of
     which precede §5. The advisory content is recoverable via the
-    URL pointer appended below for any agent that's debugging a
-    recipe and needs the gotchas.
+    consolidated URL pointer appended below.
+
+    The pointer also covers the per-stage SPL walkthrough (§2) and
+    per-option config walkthrough (§4) that ``strip_recipe_walkthroughs``
+    drops in the same render pass — that helper used to insert its
+    own inline footers after the §2 and §4 fences, but wave 32
+    consolidated all three pointers into this single trailing line
+    (reclaiming ~7-9k tokens of duplicative "read it in the full recipe
+    at <URL>" boilerplate × 84 recipes; see the wave-32 ROADMAP block).
 
     Trim history:
       * Wave 4a (initial): trimmed at `## 6. Gotchas`.
@@ -692,6 +709,12 @@ def strip_recipe_advisory(body: str, page_url: str) -> str:
         tokens of pure duplication). When D5 ships and §5 carries
         actual per-recipe screenshot links / alt-text / metadata,
         revisit moving the trim point back to §6.
+      * Wave 32 (consolidation): merged the standalone §2/§4
+        walkthrough pointer footers (formerly emitted by
+        ``strip_recipe_walkthroughs``) into this single trailing
+        pointer so each recipe carries one breadcrumb instead of
+        three. Zero information loss — every previous footer pointed
+        to the same URL with the same boilerplate.
 
     If the recipe does not have a `## 5. Screenshot` heading (every
     current recipe has one, but the helper is defensive), the body
@@ -703,9 +726,11 @@ def strip_recipe_advisory(body: str, page_url: str) -> str:
     trimmed = body[: match.start()].rstrip() + "\n"
     pointer = (
         "\n"
-        "_§5 Screenshot, §6 Gotchas, and the trailing Verification "
-        "status section are omitted from llms-full.txt for "
-        f"token-budget; read them in the full recipe at <{page_url}>._\n"
+        "_Per-stage SPL rationale (§2 walkthrough), per-option config "
+        "rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and "
+        "the trailing Verification status section are omitted from "
+        f"llms-full.txt for token-budget; read them in the full "
+        f"recipe at <{page_url}>._\n"
     )
     return trimmed + pointer
 
@@ -718,9 +743,9 @@ def strip_recipe_walkthroughs(body: str, page_url: str) -> tuple[str, int]:
     For each `## 2. SPL recipe` section the helper keeps the heading and
     the immediately-following ```spl ... ``` fence (the contract), then
     drops every line of prose between the closing fence and the next
-    `## 3.` heading and inserts a one-line pointer. The same trim
-    applies to each `## 4. Recommended formatter config` section
-    (keeping the ```json ... ``` fence, dropping the prose until `## 5.`).
+    `## 3.` heading. The same trim applies to each `## 4. Recommended
+    formatter config` section (keeping the ```json ... ``` fence,
+    dropping the prose until `## 5.`).
 
     Recipes whose §2 / §4 do not match the expected ` ```spl ` /
     ` ```json ` fence prefix are passed through unchanged for that
@@ -729,34 +754,32 @@ def strip_recipe_walkthroughs(body: str, page_url: str) -> tuple[str, int]:
     a metric-store walkthrough, would silently retain its walkthrough
     rather than corrupt the output).
 
+    Wave 32: the per-section pointer footers ("Per-stage rationale ...
+    read it in the full recipe at <URL>") that used to land right after
+    each fence are no longer emitted. The consolidated pointer at the
+    end of each recipe (see ``strip_recipe_advisory``) covers them.
+    Saves ~3 footers per recipe × ~500 chars × 84 recipes ≈ ~7-9k
+    tokens with zero information loss. The ``page_url`` argument is
+    retained for ABI compatibility and for any future trim that needs
+    a per-section breadcrumb again.
+
     The walkthroughs remain verbatim in the rendered MkDocs site and in
     the per-page source under `docs/recipes/<source>/<layer>.md`; this
-    trim only affects llms-full.txt. See the wave-19 ROADMAP status
-    block for the budget arithmetic and the rationale.
+    trim only affects llms-full.txt. See the wave-19 + wave-32 ROADMAP
+    status blocks for the budget arithmetic and the rationale.
     """
+    del page_url  # wave 32: pointer moved to strip_recipe_advisory()
     trimmed = 0
 
     def _replace_spl(m: re.Match[str]) -> str:
         nonlocal trimmed
         trimmed += 1
-        pointer = (
-            "\n"
-            "_Per-stage rationale (the \"Why this exact shape, line by "
-            "line\" walkthrough) is omitted from llms-full.txt for "
-            f"token-budget; read it in the full recipe at <{page_url}>._\n\n"
-        )
-        return m.group("heading") + m.group("fence") + pointer
+        return m.group("heading") + m.group("fence") + "\n\n"
 
     def _replace_json(m: re.Match[str]) -> str:
         nonlocal trimmed
         trimmed += 1
-        pointer = (
-            "\n"
-            "_Per-option rationale (the \"Why this specific config\" "
-            "walkthrough) is omitted from llms-full.txt for "
-            f"token-budget; read it in the full recipe at <{page_url}>._\n\n"
-        )
-        return m.group("heading") + m.group("fence") + pointer
+        return m.group("heading") + m.group("fence") + "\n\n"
 
     body = _RECIPE_SPL_SECTION.sub(_replace_spl, body)
     body = _RECIPE_JSON_SECTION.sub(_replace_json, body)
