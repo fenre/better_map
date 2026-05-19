@@ -4,7 +4,7 @@
 
 This file is the body-inclusive sibling of `llms.txt` and concatenates every page on the Better Map documentation site into a single, LLM-friendly text dump. The short companion index is at <https://fenre.github.io/better_map/llms.txt>. Pages appear in `mkdocs.yml` `nav:` declaration order. Each page block carries a stable `# === ... ===` separator plus the source-of-truth path on disk and the published URL so the same content can be grepped by either dimension.
 
-At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 72 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 75 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
 
 All page URLs resolve to publicly accessible Material-themed HTML on GitHub Pages. The project ships under the MIT licence; the canonical repo is <https://github.com/fenre/better_map>.
 
@@ -55,6 +55,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / Cisco Cyber Vision (components + vulnerabilities) — paths (`docs/recipes/cyber-vision/paths.md`)
 - Recipes / Cisco Cyber Vision (components + vulnerabilities) — supercluster (`docs/recipes/cyber-vision/supercluster.md`)
 - Recipes / Cisco ThousandEyes (agent fleet) — H3 hexbin (`docs/recipes/thousandeyes/h3.md`)
+- Recipes / Cisco ThousandEyes (agent fleet) — choropleth (`docs/recipes/thousandeyes/choropleth.md`)
 - Recipes / Cisco ThousandEyes (agent fleet) — heatmap (`docs/recipes/thousandeyes/heat.md`)
 - Recipes / Cisco ThousandEyes (agent fleet) — markers (`docs/recipes/thousandeyes/markers.md`)
 - Recipes / Cisco ThousandEyes (agent fleet) — supercluster (`docs/recipes/thousandeyes/supercluster.md`)
@@ -72,6 +73,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / KV Store (lat/lon) — H3 hexbin (`docs/recipes/kvstore-latlon/h3.md`)
 - Recipes / KV Store (lat/lon) — heatmap (`docs/recipes/kvstore-latlon/heat.md`)
 - Recipes / KV Store (lat/lon) — markers (`docs/recipes/kvstore-latlon/markers.md`)
+- Recipes / KV Store (lat/lon) — paths (`docs/recipes/kvstore-latlon/paths.md`)
 - Recipes / KV Store (lat/lon) — supercluster (`docs/recipes/kvstore-latlon/supercluster.md`)
 - Recipes / Meraki (Cisco vendor TA) — 3D extrusion (`docs/recipes/meraki/extrusion-3d.md`)
 - Recipes / Meraki (Cisco vendor TA) — H3 hexbin (`docs/recipes/meraki/h3.md`)
@@ -90,6 +92,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / Splunk Stream (wire data) — H3 hexbin (`docs/recipes/splunk-stream/h3.md`)
 - Recipes / Splunk Stream (wire data) — heatmap (`docs/recipes/splunk-stream/heat.md`)
 - Recipes / Splunk Stream (wire data) — markers (`docs/recipes/splunk-stream/markers.md`)
+- Recipes / Splunk Stream (wire data) — paths (`docs/recipes/splunk-stream/paths.md`)
 - Recipes / Splunk Stream (wire data) — supercluster (`docs/recipes/splunk-stream/supercluster.md`)
 - Recipes / US states — 3D extrusion (`docs/recipes/geo-us-states/extrusion-3d.md`)
 - Recipes / US states — choropleth (`docs/recipes/geo-us-states/choropleth.md`)
@@ -1198,7 +1201,7 @@ generated from
 so it cannot drift from the recipe files.
 
 <!-- recipes-matrix trimmed for llms-full.txt token budget (see Wave 16 ROADMAP block); full matrix at <https://fenre.github.io/better_map/recipes/> and source-of-truth YAML at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>; per-recipe details (status, apps, expected-field contract, formatter options) are kept verbatim under the matching `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file -->
-**Total: 72 recipes · 15 source dir(s) · 9 layer type(s).**
+**Total: 75 recipes · 15 source dir(s) · 9 layer type(s).**
 
 Source dirs and the layer ids that already ship for each (any `(source, layer)` not listed below is an open cell in the E5 matrix and is a candidate for the next recipe wave):
 
@@ -1211,12 +1214,12 @@ Source dirs and the layer ids that already ship for each (any `(source, layer)` 
 - `es-risk`: h3, heat, markers, paths, supercluster
 - `geo-us-states`: choropleth, extrusion-3d
 - `itsi-kpi-base`: h3, heat, markers, paths, supercluster
-- `kvstore-latlon`: h3, heat, markers, supercluster
+- `kvstore-latlon`: h3, heat, markers, paths, supercluster
 - `meraki`: extrusion-3d, h3, heat, markers, supercluster
 - `netflow-sflow-ipfix`: h3, heat, markers, paths, supercluster
 - `ot-datastreamer`: h3, heat, markers, paths
-- `splunk-stream`: h3, heat, markers, supercluster
-- `thousandeyes`: h3, heat, markers, paths, supercluster
+- `splunk-stream`: h3, heat, markers, paths, supercluster
+- `thousandeyes`: choropleth, h3, heat, markers, paths, supercluster
 
 **OT-safety-relevant recipes (9):** `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `cyber-vision/paths`, `cyber-vision/supercluster`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`, `ot-datastreamer/paths`.
 
@@ -5428,6 +5431,152 @@ _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are o
 
 # === END: https://fenre.github.io/better_map/recipes/thousandeyes/h3/ ===
 
+# === BEGIN: https://fenre.github.io/better_map/recipes/thousandeyes/choropleth/ ===
+
+# Recipes / Cisco ThousandEyes (agent fleet) — choropleth
+
+> Source: `docs/recipes/thousandeyes/choropleth.md`  
+> URL: <https://fenre.github.io/better_map/recipes/thousandeyes/choropleth/>
+
+# Cisco ThousandEyes (agent fleet) — US states choropleth
+
+Aggregate the ThousandEyes enterprise + cloud agent fleet by US
+state and render as a **flat-fill choropleth** over the bundled
+`us-states.pmtiles` preset. The right shape for **executive
+DEM-coverage panels** where a leadership reviewer needs an
+immediate "is my measurement coverage uniform across the US?"
+read without per-agent detail — colour-saturated states are
+well-covered, light states are under-covered, blanks are
+uncovered entirely.
+
+The **3rd choropleth recipe in the matrix** (joining cim-
+network-traffic/choropleth and geo-us-states/choropleth) — this
+is the milestone that takes the choropleth layer **OUT of
+singleton-trap status** (was 2 sources, now 3), demonstrating
+that the polygon-join pattern composes naturally with the
+ThousandEyes vendor-TA source. Same `cisco:thousandeyes:agents`
+inventory feed as the
+[markers](./markers.md), [h3](./h3.md),
+[heat](./heat.md), and [supercluster](./supercluster.md)
+companions; aggregation grain is **per-state** rather than
+per-agent.
+
+## 1. Source description
+
+Same **Cisco ThousandEyes App for Splunk**
+(`ta_cisco_thousandeyes`, Splunkbase ID 7719) source as all
+thousandeyes companions — see
+[thousandeyes/markers §1](./markers.md#1-source-description)
+for the full platform background and the `cisco:thousandeyes:agents`
+sourcetype contract.
+
+The relevant distinction for THIS recipe: instead of rendering
+one marker per agent, the recipe aggregates by US state (via
+`iplocation` on `agent_ip` since `agent_lat`/`agent_lon` are
+not natively state-attributed) and renders one polygon fill
+per state coloured by agent density.
+
+**Why choropleth for ThousandEyes.** A markers panel shows
+WHERE individual agents live; a heat or H3 panel shows their
+density grain-by-grain. But neither directly answers the
+**leadership-coverage question**: "across the 50 US states,
+which ones have ≥1 enterprise agent and which are blind?"
+A choropleth solves this in one panel: states with ≥1 agent
+get coloured, states with zero are blank (or rendered in the
+neutral base-polygon colour). This is the right shape for
+**DEM-strategy panels** (CIO asks "where's our coverage
+gap?"), **sales-engineering RFPs** (proving multi-state
+measurement reach), and **regional account-planning views**
+(per-state agent count is the proxy for "depth of coverage in
+this customer's footprint").
+
+**Why `iplocation` and not `agent_lat`/`agent_lon` directly.**
+ThousandEyes agents have lat/lon but no native state
+attribution. The cleanest state aggregation reuses Splunk's
+bundled `iplocation` on the agent's public IP (`agent_ip` from
+the agent inventory record) — same pattern as
+[cim-network-traffic/choropleth](../cim-network-traffic/choropleth.md)
+and [meraki/extrusion-3d](../meraki/extrusion-3d.md). For a
+point-level extrusion-3d view (one prism per agent location),
+the
+[H3 hexbin companion](./h3.md) at high resolution is closer.
+
+**Typical sourcetype / index:** `sourcetype="cisco:thousandeyes:agents"`,
+`index=thousandeyes_agents` (defaults; see the markers
+companion for the broader catalogue).
+
+## 2. SPL recipe
+
+```spl
+index=thousandeyes_agents sourcetype="cisco:thousandeyes:agents" earliest=-24h latest=now
+| dedup agent_id sortby - _time
+| where isnotnull(agent_ip)
+| iplocation agent_ip
+| where Country="United States" AND isnotnull(Region)
+| eval is_online=if(is_online="true", 1, 0)
+| stats count AS agent_count,
+    sum(is_online) AS online_count
+  BY Region
+| eval id=upper(case(
+    Region=="California","CA",
+    Region=="New York","NY",
+    Region=="Texas","TX",
+    Region=="Washington","WA",
+    Region=="Illinois","IL",
+    Region=="Florida","FL",
+    Region=="Massachusetts","MA",
+    Region=="Virginia","VA",
+    Region=="Colorado","CO",
+    Region=="Oregon","OR",
+    Region=="Pennsylvania","PA",
+    Region=="New Jersey","NJ",
+    Region=="Georgia","GA",
+    Region=="North Carolina","NC",
+    Region=="Ohio","OH",
+    Region=="Michigan","MI",
+    Region=="Arizona","AZ",
+    Region=="Minnesota","MN",
+    Region=="Indiana","IN",
+    Region=="Tennessee","TN",
+    Region=="District of Columbia","DC",
+    true(),substr(Region,1,2)))
+| eval value=agent_count
+| rename Region AS state_name
+| fields id, state_name, value, agent_count, online_count
+| sort - value
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/choropleth/>._
+
+## 3. Expected fields
+
+| field        | type    | example     |
+|--------------|---------|-------------|
+| id           | string  | CA          |
+| state_name   | string  | California  |
+| value        | integer | 47          |
+| agent_count  | integer | 47          |
+| online_count | integer | 44          |
+
+All five fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+`value` drives the choropleth colour; `state_name`,
+`agent_count`, `online_count` flow through to the popup.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinPreset": "us-states",
+  "enableChoropleth": "true",
+  "palette": "viridis"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/choropleth/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/choropleth/>._
+
+# === END: https://fenre.github.io/better_map/recipes/thousandeyes/choropleth/ ===
+
 # === BEGIN: https://fenre.github.io/better_map/recipes/thousandeyes/heat/ ===
 
 # Recipes / Cisco ThousandEyes (agent fleet) — heatmap
@@ -7450,6 +7599,176 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/kvstore-latlon/paths/ ===
+
+# Recipes / KV Store (lat/lon) — paths
+
+> Source: `docs/recipes/kvstore-latlon/paths.md`  
+> URL: <https://fenre.github.io/better_map/recipes/kvstore-latlon/paths/>
+
+# KV Store (lat/lon collection) — paths
+
+Render **site-to-site connectivity edges** (WAN circuits,
+replication links, DR-failover partnerships) as polylines
+on a world map by reading two KV-Store collections:
+`site_locations` (the inventory used by all kvstore-latlon
+siblings) and a new `site_connections` collection that
+describes the edges between sites. The recipe joins each
+edge to both endpoint sites and emits a 2-vertex polyline
+per connection.
+
+The right shape for **infrastructure-topology panels** where
+the operator needs to see the GRAPH of how their sites are
+interconnected — not the sites themselves (the
+[markers companion](./markers.md) is for that) but the
+LINKS between sites. Pair with the markers companion in the
+same dashboard for a "sites + edges" topology view.
+
+The **5th and final layer cell on the kvstore-latlon source
+row** — completing markers / heat / h3 / supercluster /
+paths for the KV Store inventory source. Every kvstore-latlon
+layer now ships.
+
+## 1. Source description
+
+Same `site_locations` KV-Store collection as the
+[markers](./markers.md), [heat](./heat.md), [h3](./h3.md),
+and [supercluster](./supercluster.md) siblings — see
+[kvstore-latlon/markers §1](./markers.md#1-source-description)
+for the one-time `collections.conf` / `transforms.conf` /
+seed-data setup.
+
+The relevant addition for THIS recipe: a SECOND KV-Store
+collection — `site_connections` — that describes edges
+between sites. The recommended schema:
+
+| field           | type   | example     | meaning                       |
+|-----------------|--------|-------------|-------------------------------|
+| connection_id   | string | WAN-ATL-FRA | unique edge identifier        |
+| src_site_id     | string | DC-ATL-01   | source site (joins `site_locations`) |
+| dest_site_id    | string | DC-FRA-01   | destination site (joins `site_locations`) |
+| connection_type | string | wan_mpls    | edge category (popup display) |
+| bandwidth_mbps  | int    | 10000       | edge capacity (popup display) |
+| is_primary      | bool   | true        | primary vs backup edge (optional) |
+
+One-time setup (mirrors the
+[csv-lookup-geo/paths](../csv-lookup-geo/paths.md) two-input
+pattern but uses KV Store for both):
+
+```ini
+# default/collections.conf
+[site_connections]
+field.connection_id = string
+field.src_site_id = string
+field.dest_site_id = string
+field.connection_type = string
+field.bandwidth_mbps = number
+field.is_primary = bool
+replicate = false
+accelerated_fields.con_id = {"connection_id": 1}
+
+# default/transforms.conf
+[site_connections]
+external_type = kvstore
+collection = site_connections
+fields_list = _key, connection_id, src_site_id, dest_site_id, connection_type, bandwidth_mbps, is_primary
+case_sensitive_match = false
+max_matches = 1
+```
+
+Seed-data flow once the collections are stood up — `|
+makeresults | eval ... | outputlookup site_connections`
+inside a setup search (one row per edge). REST API alternative
+documented in the
+[splunk-lookups skill](https://github.com/fenre/better_map/blob/main/.cursor/skills/splunk-lookups/SKILL.md#kv-store-population-via-rest-api).
+
+**Why paths for kvstore-latlon.** A markers panel shows WHERE
+your sites are; the heat / h3 / supercluster panels show their
+density patterns. But none of these answer the
+**topology-comprehension question**: "which sites have a
+direct link to which other sites, and what's the shape of
+the resulting graph?" The paths layer makes the edges
+visible, which is the prerequisite for any
+network-engineering, DR-readiness, or capacity-planning
+conversation.
+
+**Why a separate `site_connections` collection (not a
+self-join on `site_locations`).** A single-collection
+self-join would require encoding the edge list as multi-
+value fields on the site rows (e.g., `peers = mvappend(...)`)
+which is awkward to maintain, harder to query, and loses the
+per-edge attributes (bandwidth, connection_type). The
+two-collection pattern is the standard graph-modelling
+shape for KV Store (nodes table + edges table — same as
+SQL).
+
+**Typical sourcetype / index:** N/A — this recipe is
+purely lookup-driven. The base search is `| inputlookup
+site_connections`. The events index is irrelevant; the
+edges are static topology, not telemetry. For
+**dynamic edge weighting** (e.g., colour edges by current
+utilisation), join to a metrics index in §6 Gotchas.
+
+## 2. SPL recipe
+
+```spl
+| inputlookup site_connections
+| lookup site_locations site_id AS src_site_id
+    OUTPUT lat AS src_lat, lon AS src_lon, site_name AS src_site_name
+| lookup site_locations site_id AS dest_site_id
+    OUTPUT lat AS dest_lat, lon AS dest_lon, site_name AS dest_site_name
+| where isnotnull(src_lat) AND isnotnull(src_lon)
+    AND isnotnull(dest_lat) AND isnotnull(dest_lon)
+| rename connection_id AS id
+| eval vertex=mvrange(0, 2, 1)
+| mvexpand vertex
+| eval vertex_num=tonumber(vertex)
+| eval lat=case(vertex_num=0, src_lat, vertex_num=1, dest_lat),
+       lon=case(vertex_num=0, src_lon, vertex_num=1, dest_lon),
+       site_id=case(vertex_num=0, src_site_id, vertex_num=1, dest_site_id),
+       site_name=case(vertex_num=0, src_site_name, vertex_num=1, dest_site_name),
+       role=case(vertex_num=0, "src", vertex_num=1, "dest"),
+       seq=vertex_num
+| fields id, seq, lat, lon, src_site_id, dest_site_id, site_id, site_name, role, connection_type, bandwidth_mbps
+| sort 0 id, + seq
+| head 5000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/paths/>._
+
+## 3. Expected fields
+
+| field           | type    | example     |
+|-----------------|---------|-------------|
+| id              | string  | WAN-ATL-FRA |
+| seq             | integer | 0           |
+| lat             | number  | 33.7490     |
+| lon             | number  | -84.3880    |
+| src_site_id     | string  | DC-ATL-01   |
+| dest_site_id    | string  | DC-FRA-01   |
+| connection_type | string  | wan_mpls    |
+| bandwidth_mbps  | integer | 10000       |
+
+All eight fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+`site_id`, `site_name`, and `role` also flow through as
+per-vertex feature properties for the popup.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pathIdField": "id",
+  "timeField": "seq",
+  "pathColor": "#17becf",
+  "pathArrows": false
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/paths/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/paths/>._
+
+# === END: https://fenre.github.io/better_map/recipes/kvstore-latlon/paths/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/kvstore-latlon/supercluster/ ===
 
@@ -9531,6 +9850,139 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/splunk-stream/markers/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/splunk-stream/paths/ ===
+
+# Recipes / Splunk Stream (wire data) — paths
+
+> Source: `docs/recipes/splunk-stream/paths.md`  
+> URL: <https://fenre.github.io/better_map/recipes/splunk-stream/paths/>
+
+# Splunk Stream (wire data) — paths
+
+Render **outbound TLS session flows** as polylines on a world
+map by reading Splunk Stream's `stream:tls` sourcetype,
+`iplocation`-geocoding the destination IP (the source IP is
+typically RFC-1918 and won't geo), and drawing one 2-vertex
+polyline per (src, dest) pair with the source's customer-
+supplied office coordinates as vertex 0 and the destination's
+geocoded location as vertex 1.
+
+The right shape for **security-investigation panels** where
+the SOC needs to see "which OFFICES are talking to which
+INTERNET DESTINATIONS" at-a-glance — markers show the
+endpoints, but paths show the CONNECTIONS. Pair with the
+[cim-authentication/paths](../cim-authentication/paths.md)
+recipe to overlay both auth-trajectory (impossible-travel)
+polylines and wire-data flow polylines on the same map.
+
+The **5th layer cell on the splunk-stream source row** —
+completing markers / heat / h3 / supercluster / paths for
+Splunk Stream.
+
+## 1. Source description
+
+Same **Splunk Stream** wire-data source as the
+[markers](./markers.md), [heat](./heat.md), [h3](./h3.md),
+and [supercluster](./supercluster.md) companions — see
+[splunk-stream/markers §1](./markers.md#1-source-description)
+for the streamfwd / `Splunk_TA_stream` reference architecture
+and the rationale for binding to `sourcetype="stream:tls"` as
+the canonical session-aware feed.
+
+The relevant distinction for THIS recipe: it draws ONE
+polyline per (src_ip, dest_ip, dest_port) tuple, with two
+vertices (source and destination). Source-side vertices need
+geographic attribution: since `src_ip` is typically
+RFC-1918 private space (10/8 / 172.16/12 / 192.168/16) and
+`iplocation` returns NULL on these, the recipe joins
+against a customer-maintained `office_sites.csv` lookup
+that maps source IP subnets to office coordinates. The
+destination vertex uses `iplocation` on `dest_ip` directly.
+
+**Why paths for Splunk Stream.** A markers panel renders the
+destinations as endpoints — but loses the source attribution
+that makes wire-data investigations actionable. A
+data-exfiltration alert ("250 GB to AWS Mumbai in 2 hours")
+benefits dramatically from seeing the SOURCE OFFICE that
+exfiltrated the data — "is this our Dublin office that
+should be talking to AWS Mumbai for legitimate business, or
+is this our Tokyo office that has no business reaching that
+region?". The paths layer makes this immediate. This is the
+right shape for **DLP investigation panels**,
+**lateral-movement detection across multi-office WANs**,
+and **traffic-pattern audits** where the source-destination
+pair is the unit of investigation.
+
+**Typical sourcetype / index:** `sourcetype="stream:tls"`,
+`index=wire_data` (defaults per the
+[splunk-stream-setup](https://github.com/fenre/better_map/blob/main/.cursor/skills/splunk-stream-setup/SKILL.md)
+skill).
+
+## 2. SPL recipe
+
+```spl
+index=wire_data sourcetype="stream:tls" earliest=-1h latest=now
+| stats sum(bytes_out) AS bytes_out,
+    latest(app) AS app,
+    latest(server_name) AS sni,
+    count AS session_count
+  BY src_ip, dest_ip, dest_port
+| where session_count >= 3
+| lookup office_sites.csv src_subnet AS src_ip
+    OUTPUT lat AS src_lat, lon AS src_lon, site_name AS src_site_name
+| iplocation dest_ip
+| where isnotnull(src_lat) AND isnotnull(src_lon)
+    AND isnotnull(lat) AND isnotnull(lon)
+| rename lat AS dest_lat, lon AS dest_lon, Country AS dest_country
+| eval id="FLOW-" . src_ip . "-" . dest_ip . "-" . dest_port
+| eval vertex=mvrange(0, 2, 1)
+| mvexpand vertex
+| eval vertex_num=tonumber(vertex)
+| eval lat=case(vertex_num=0, src_lat, vertex_num=1, dest_lat),
+       lon=case(vertex_num=0, src_lon, vertex_num=1, dest_lon),
+       role=case(vertex_num=0, "src", vertex_num=1, "dest"),
+       seq=vertex_num
+| fields id, seq, lat, lon, src_ip, dest_ip, dest_port, app, sni, bytes_out, session_count, role, src_site_name, dest_country
+| sort 0 id, + seq
+| head 5000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/paths/>._
+
+## 3. Expected fields
+
+| field         | type    | example                              |
+|---------------|---------|--------------------------------------|
+| id            | string  | FLOW-10.0.0.42-203.0.113.45-443      |
+| seq           | integer | 0                                    |
+| lat           | number  | 37.7749                              |
+| lon           | number  | -122.4194                            |
+| src_ip        | string  | 10.0.0.42                            |
+| dest_ip       | string  | 203.0.113.45                         |
+| dest_port     | integer | 443                                  |
+| bytes_out     | integer | 184320                               |
+
+All eight fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+`app`, `sni`, `session_count`, `role`, `src_site_name`,
+`dest_country` also flow through as feature properties for
+the popup.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pathIdField": "id",
+  "timeField": "seq",
+  "pathColor": "#2ca02c",
+  "pathArrows": true
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/paths/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/paths/>._
+
+# === END: https://fenre.github.io/better_map/recipes/splunk-stream/paths/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/splunk-stream/supercluster/ ===
 
@@ -12748,7 +13200,7 @@ Each entry below distils the corresponding YAML scaffold so an LLM can answer in
 
 # Appendix B — Per-source recipe matrix
 
-> Source of truth: `docs/_machine/recipes/index.yaml` (72 recipe(s), emission order)
+> Source of truth: `docs/_machine/recipes/index.yaml` (75 recipe(s), emission order)
 
 Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answer 'which recipe matches this data source?' without fetching every recipe page. Recipes carry one of three statuses: `verified` (smoke-tested against a live Splunk tenant with proof in the YAML metadata), `unverified` (the recipe follows the contract but has not yet been smoke-tested), or `deferred` (the recipe is known to be incomplete pending upstream work). The expected-field contract for each recipe lives in §3 of the recipe page (kept verbatim in this file under the matching `# === BEGIN: …/recipes/<source>/<layer>/ ===` block); follow the Page link below to jump to it.
 
@@ -12802,6 +13254,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `kvstore-latlon--h3` | KV Store (lat/lon collection) → H3 hexbin | unverified | — | — | [docs/recipes/kvstore-latlon/h3.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/h3/) |
 | `kvstore-latlon--heat` | KV Store (lat/lon collection) → Heatmap | unverified | — | — | [docs/recipes/kvstore-latlon/heat.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/heat/) |
 | `kvstore-latlon--markers` | KV Store (lat/lon collection) → Markers | unverified | — | — | [docs/recipes/kvstore-latlon/markers.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/) |
+| `kvstore-latlon--paths` | KV Store (lat/lon collection) → Paths | unverified | — | — | [docs/recipes/kvstore-latlon/paths.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/paths/) |
 | `kvstore-latlon--supercluster` | KV Store (lat/lon collection) → Supercluster | unverified | — | — | [docs/recipes/kvstore-latlon/supercluster.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/supercluster/) |
 | `meraki--extrusion-3d` | Cisco Meraki (devices) → 3D extrusion | unverified | `Splunk_TA_cisco_meraki` | — | [docs/recipes/meraki/extrusion-3d.md](https://fenre.github.io/better_map/recipes/meraki/extrusion-3d/) |
 | `meraki--h3` | Cisco Meraki (devices) → H3 hexbin | unverified | `Splunk_TA_cisco_meraki` | — | [docs/recipes/meraki/h3.md](https://fenre.github.io/better_map/recipes/meraki/h3/) |
@@ -12820,7 +13273,9 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `splunk-stream--h3` | Splunk Stream (wire data) → H3 hexbin | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/h3.md](https://fenre.github.io/better_map/recipes/splunk-stream/h3/) |
 | `splunk-stream--heat` | Splunk Stream (wire data) → Heatmap | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/heat.md](https://fenre.github.io/better_map/recipes/splunk-stream/heat/) |
 | `splunk-stream--markers` | Splunk Stream (wire data) → Markers | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/markers.md](https://fenre.github.io/better_map/recipes/splunk-stream/markers/) |
+| `splunk-stream--paths` | Splunk Stream (wire data) → Paths | unverified | `Splunk_TA_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/paths.md](https://fenre.github.io/better_map/recipes/splunk-stream/paths/) |
 | `splunk-stream--supercluster` | Splunk Stream (wire data) → Supercluster | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/supercluster.md](https://fenre.github.io/better_map/recipes/splunk-stream/supercluster/) |
+| `thousandeyes--choropleth` | Cisco ThousandEyes (agent fleet) → Choropleth | unverified | `ta_cisco_thousandeyes` | — | [docs/recipes/thousandeyes/choropleth.md](https://fenre.github.io/better_map/recipes/thousandeyes/choropleth/) |
 | `thousandeyes--h3` | Cisco ThousandEyes (agent fleet) → H3 hexbin | unverified | `ta_cisco_thousandeyes` | — | [docs/recipes/thousandeyes/h3.md](https://fenre.github.io/better_map/recipes/thousandeyes/h3/) |
 | `thousandeyes--heat` | Cisco ThousandEyes (agent fleet) → Heatmap | unverified | `ta_cisco_thousandeyes` | — | [docs/recipes/thousandeyes/heat.md](https://fenre.github.io/better_map/recipes/thousandeyes/heat/) |
 | `thousandeyes--markers` | Cisco ThousandEyes (agent fleet) → Markers | unverified | `ta_cisco_thousandeyes` | — | [docs/recipes/thousandeyes/markers.md](https://fenre.github.io/better_map/recipes/thousandeyes/markers/) |

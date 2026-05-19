@@ -1,5 +1,117 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-21): E5 Phase 2 wave 28 recipes
+> SHIPPED (3 more recipes — recipe count 72 → 75, layer-type
+> coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
+> unchanged, choropleth usage 2 → 3 — leaves singleton-trap
+> status, paths usage 11 → 13).** Wave 28 continues the
+> **diversification regime** opened by waves 21-27, now in its
+> **8th consecutive wave** with a focus on **completing the
+> paths layer coverage** across the kvstore-latlon and
+> splunk-stream source rows AND **promoting choropleth out of
+> the 2-source singleton-trap** (3 sources now). Together waves
+> 21-28 have now filled **24 of the original ~24 diversification
+> cells** (3 per wave for 8 waves) — the diversification regime
+> initially scoped to fill ~24 cells has now MET its target
+> in full; the kvstore-latlon source row is COMPLETE (5/5 layer
+> cells), the splunk-stream source row is COMPLETE (5/5 layer
+> cells), and the thousandeyes source row reaches 6/9 layer
+> cells (most-diverse single source after cim-network-traffic).
+> - **`thousandeyes/choropleth`** (NEW layer shape for source
+>   AND NEW source for choropleth layer — 2 → 3 source coverage,
+>   leaves singleton-trap). 6th cell on the thousandeyes source
+>   row, joining markers/h3/heat/supercluster/paths — making
+>   thousandeyes the **2nd-most-diversified source** behind
+>   cim-network-traffic. SPL uses `iplocation` on `agent_ip`
+>   to derive state attribution (same pattern as cim-network-
+>   traffic/choropleth and meraki/extrusion-3d), filters to
+>   US (`Country="United States"`), and aggregates with
+>   `stats count BY Region` for per-state agent counts. Right
+>   shape for **executive DEM-coverage panels** where the
+>   reviewer asks "across the 50 US states, which ones have
+>   ≥1 enterprise agent and which are blind?". §6 gotchas cover
+>   the `agent_ip` egress-IP attribution trap (multi-branch
+>   enterprises routing through one HQ uplink appear as one
+>   state), the `agent_lat`/`agent_lon` alternative attribution
+>   path (more accurate for physical-location use cases via
+>   `geom + geo_us_states`), the US-only preset hard boundary
+>   (non-US agents filtered, custom world-countries.pmtiles
+>   needed for global aggregation), and choropleth saturation
+>   on dense fleets (use extrusion-3d or log-transform). No
+>   OT-safety dependency. ~1.6k tokens.
+> - **`splunk-stream/paths`** (NEW layer shape for source —
+>   COMPLETES the splunk-stream source row at 5/5 layer
+>   cells). 5th cell on the splunk-stream row. SPL binds to
+>   `stream:tls` (session-aware feed), aggregates per (src_ip,
+>   dest_ip, dest_port) tuple, joins source IPs against an
+>   operator-maintained `office_sites.csv` lookup (configured
+>   with `match_type = CIDR(src_subnet)` per the
+>   splunk-lookups skill) to attribute internal RFC-1918 source
+>   IPs to office coordinates, then `iplocation`s the destination
+>   IP and emits 2-vertex polylines per flow. Right shape for
+>   **security-investigation panels** ("which OFFICES are
+>   talking to which INTERNET DESTINATIONS") and DLP /
+>   lateral-movement detection. The static green color is
+>   distinct from the other paths recipes (cyan, blue, red,
+>   purple, dark-blue), reserving green for the "infrastructure
+>   flow / business-as-usual" semantic. §6 gotchas cover the
+>   `office_sites.csv` lookup setup requirement (no lookup =
+>   empty panel), the SPAN-before-NAT topology requirement (or
+>   all flows show the same source), TLS vs raw TCP sourcetype
+>   alternatives, and `session_count >= 3` noise-floor tuning.
+>   No OT-safety dependency. ~1.7k tokens.
+> - **`kvstore-latlon/paths`** (NEW layer shape for source —
+>   COMPLETES the kvstore-latlon source row at 5/5 layer
+>   cells). 5th cell on the kvstore-latlon row. SPL introduces
+>   a SECOND KV-Store collection — `site_connections` — that
+>   describes site-to-site edges (WAN circuits, replication
+>   links, DR-failover partnerships), then joins both endpoints
+>   against the existing `site_locations` collection for
+>   coordinates and emits 2-vertex polylines per edge. The
+>   recipe documents the full `collections.conf` /
+>   `transforms.conf` two-collection graph-modelling pattern
+>   (nodes + edges) — the standard graph shape for KV Store.
+>   Right shape for **infrastructure-topology panels** where
+>   the operator needs to see the GRAPH of how sites are
+>   interconnected; pair with the markers companion for a
+>   "sites + edges" topology view. The static cyan reads as
+>   "infrastructure topology" distinct from the other paths
+>   recipes. `pathArrows: false` because site-to-site
+>   connectivity is typically bidirectional. §6 gotchas cover
+>   the operator-built second-collection requirement, the
+>   two-`lookup`-not-one constraint (one `lookup` per join
+>   key), orphaned-edge silent drops, self-loop degenerate
+>   rendering, bidirectional duplicate handling, dynamic
+>   utilisation overlay paths (`tstats` join), and multi-vertex
+>   path extension. No OT-safety dependency. ~1.7k tokens.
+>
+> **Wave 28 token-budget profile:** llms-full.txt now
+> 167,327 estimated tokens (+5,032 from wave 27's 162,295);
+> WARN headroom 7,673 of 175,000 (down from 12,705); per-
+> recipe cost ~1.68k tokens. **The diversification target is
+> now MET — 24 of 24 originally-scoped cells filled.** Wave 29
+> MUST start with a token-trim before any more recipes (current
+> headroom funds only ~4-5 more recipes; a 3-recipe wave 29
+> without trim would push to ~172k, leaving only 3k WARN
+> headroom and triggering the next-trim deadline). Trim target
+> for wave 29: investigate `docs/_machine/integrations/*.yaml`
+> embedding in llms-full.txt — projected ~6-8k reclaim if those
+> can be summarised to one-line descriptors instead of full
+> YAML. After trim, wave 29 plan: pivot from per-source-row
+> diversification to **pattern-completing pairs** —
+> `geo-us-states/polygons` (long-tail polygon shape, currently
+> singleton — would join with csv-lookup-geo/polygons) and a
+> 2-source choropleth wave (likely `meraki/choropleth` +
+> `netflow-sflow-ipfix/choropleth`) to push choropleth from
+> 3 → 5 sources and consolidate it as a mainstream layer.
+>
+> Subsystem status carried forward unchanged from wave 27:
+> the §0 narrative on subsystem health, the §1 build status,
+> the §2 verification status, and the §3 production-rollout
+> status are all stable; only the recipe-coverage roll-up
+> shifts with this wave. The diversification regime opened
+> by wave 21 has now MET its target through wave 28.
+
 > **Status (v1.7-prep, 2026-05-20): E5 Phase 2 wave 27 recipes
 > SHIPPED (3 more recipes — recipe count 69 → 72, layer-type
 > coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
