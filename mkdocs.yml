@@ -232,6 +232,7 @@ nav:
       - 'CIM Performance (CPU / memory / facilities) — H3 hexbin': recipes/cim-performance/h3.md
       - 'CIM Performance (CPU / memory / facilities) — heatmap': recipes/cim-performance/heat.md
       - 'CIM Performance (CPU / memory / facilities) — markers': recipes/cim-performance/markers.md
+      - 'CIM Performance (CPU / memory / facilities) — paths': recipes/cim-performance/paths.md
       - 'CSV lookup (geo points) — H3 hexbin': recipes/csv-lookup-geo/h3.md
       - 'CSV lookup (geo points) — heatmap': recipes/csv-lookup-geo/heat.md
       - 'CSV lookup (geo points) — markers': recipes/csv-lookup-geo/markers.md
@@ -249,6 +250,7 @@ nav:
       - 'ES Risk-Based Alerting (risk index) — H3 hexbin': recipes/es-risk/h3.md
       - 'ES Risk-Based Alerting (risk index) — heatmap': recipes/es-risk/heat.md
       - 'ES Risk-Based Alerting (risk index) — markers': recipes/es-risk/markers.md
+      - 'ES Risk-Based Alerting (risk index) — supercluster': recipes/es-risk/supercluster.md
       - 'ITSI service health (KPI base searches) — H3 hexbin': recipes/itsi-kpi-base/h3.md
       - 'ITSI service health (KPI base searches) — heatmap': recipes/itsi-kpi-base/heat.md
       - 'ITSI service health (KPI base searches) — markers': recipes/itsi-kpi-base/markers.md
@@ -265,6 +267,7 @@ nav:
       - 'NetFlow / sFlow / IPFIX — heatmap': recipes/netflow-sflow-ipfix/heat.md
       - 'NetFlow / sFlow / IPFIX — markers': recipes/netflow-sflow-ipfix/markers.md
       - 'NetFlow / sFlow / IPFIX — paths': recipes/netflow-sflow-ipfix/paths.md
+      - 'NetFlow / sFlow / IPFIX — supercluster': recipes/netflow-sflow-ipfix/supercluster.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — H3 hexbin': recipes/ot-datastreamer/h3.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — heatmap': recipes/ot-datastreamer/heat.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — markers': recipes/ot-datastreamer/markers.md

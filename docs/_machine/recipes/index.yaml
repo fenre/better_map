@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 60
+recipe_count: 63
 recipes:
 - id: cim-alerts--h3
   source:
@@ -948,6 +948,71 @@ recipes:
   - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
     path: docs/reference/bm-ct-1.md
   path: docs/recipes/cim-performance/markers.md
+- id: cim-performance--paths
+  source:
+    id: cim-performance
+    display_name: CIM Performance (CPU / memory / facilities)
+    pattern: splunk-cim
+  layer:
+    id: paths
+    display_name: Paths
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_SA_CIM
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: us-west-2a__470745
+    drives_formatter_option: pathIdField
+  - name: seq
+    type: integer
+    example: '0'
+    drives_formatter_option: timeField
+  - name: lat
+    type: number
+    example: '37.7749'
+  - name: lon
+    type: number
+    example: '-122.4194'
+  - name: dest
+    type: string
+    example: web-prod-01
+  - name: datacenter
+    type: string
+    example: us-west-2a
+  - name: cpu_load_percent
+    type: number
+    example: '89.2'
+  - name: hops_in_incident
+    type: integer
+    example: '5'
+  required_formatter_options:
+  - pathIdField
+  - timeField
+  - pathColor
+  - pathArrows
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (per-host drilldown)
+    path: docs/recipes/cim-performance/markers.md
+  - description: Companion recipe — same source, H3 hexbin layer
+    path: docs/recipes/cim-performance/h3.md
+  - description: Companion recipe — same source, heatmap layer
+    path: docs/recipes/cim-performance/heat.md
+  - description: Pattern reference — paths layer with streamstats cascade-ordering
+    path: docs/recipes/cim-alerts/paths.md
+  - description: splunk-cim skill — Performance data model schema, dataset tags
+    path: ~/.cursor/skills/splunk-cim/SKILL.md
+  - description: splunk-datamodels-conf skill — CIM acceleration and tstats summariesonly tradeoffs
+    path: ~/.cursor/skills/splunk-datamodels-conf/SKILL.md
+  - description: Layer reference — paths
+    path: docs/reference/layers.md
+  - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
+    path: docs/reference/bm-ct-1.md
+  path: docs/recipes/cim-performance/paths.md
 - id: csv-lookup-geo--h3
   source:
     id: csv-lookup-geo
@@ -1638,6 +1703,67 @@ recipes:
   - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
     path: docs/reference/bm-ct-1.md
   path: docs/recipes/es-risk/markers.md
+- id: es-risk--supercluster
+  source:
+    id: es-risk
+    display_name: ES Risk-Based Alerting (risk index)
+    pattern: splunk-premium-es
+  layer:
+    id: supercluster
+    display_name: Supercluster
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: SplunkEnterpriseSecuritySuite
+    optional: false
+  - id: Splunk_SA_CIM
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: alice@example.com
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '47.6062'
+  - name: lon
+    type: number
+    example: '-122.3321'
+  - name: risk_object
+    type: string
+    example: alice@example.com
+  - name: risk_object_type
+    type: string
+    example: user
+  - name: total_risk
+    type: integer
+    example: '82'
+  - name: risk_event_count
+    type: integer
+    example: '5'
+  required_formatter_options:
+  - pointRenderer
+  - idField
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (high-risk drilldown)
+    path: docs/recipes/es-risk/markers.md
+  - description: Companion recipe — same source, H3 hexbin
+    path: docs/recipes/es-risk/h3.md
+  - description: Companion recipe — same source, heatmap
+    path: docs/recipes/es-risk/heat.md
+  - description: Pattern reference — supercluster on CIM Authentication
+    path: docs/recipes/cim-authentication/supercluster.md
+  - description: splunk-rba skill — Risk-Based Alerting framework (risk index schema, rules, RIRs)
+    path: ~/.cursor/skills/splunk-rba/SKILL.md
+  - description: splunk-enterprise-security skill — Asset & Identity framework, identities.csv schema
+    path: ~/.cursor/skills/splunk-enterprise-security/SKILL.md
+  - description: Layer reference — supercluster
+    path: docs/reference/layers.md
+  - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
+    path: docs/reference/bm-ct-1.md
+  path: docs/recipes/es-risk/supercluster.md
 - id: geo-us-states--choropleth
   source:
     id: geo-us-states
@@ -2571,6 +2697,68 @@ recipes:
   - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
     path: docs/reference/bm-ct-1.md
   path: docs/recipes/netflow-sflow-ipfix/paths.md
+- id: netflow-sflow-ipfix--supercluster
+  source:
+    id: netflow-sflow-ipfix
+    display_name: NetFlow / sFlow / IPFIX (flow records)
+    pattern: splunk-vendor-ta
+  layer:
+    id: supercluster
+    display_name: Supercluster
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_TA_netflow
+    optional: false
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: 198.51.100.7
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '37.7749'
+  - name: lon
+    type: number
+    example: '-122.4194'
+  - name: dest_ip
+    type: string
+    example: 198.51.100.7
+  - name: dest_country
+    type: string
+    example: US
+  - name: bytes
+    type: number
+    example: '92160000'
+  - name: flow_count
+    type: integer
+    example: '428'
+  - name: distinct_src
+    type: integer
+    example: '37'
+  required_formatter_options:
+  - pointRenderer
+  - idField
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (per-destination drilldown)
+    path: docs/recipes/netflow-sflow-ipfix/markers.md
+  - description: Companion recipe — same source, heatmap layer
+    path: docs/recipes/netflow-sflow-ipfix/heat.md
+  - description: Companion recipe — same source, paths layer (top-talker flows)
+    path: docs/recipes/netflow-sflow-ipfix/paths.md
+  - description: Pattern reference — supercluster on Splunk Stream wire-data destinations
+    path: docs/recipes/splunk-stream/supercluster.md
+  - description: Splunk Network Explorer skill — NetFlow / sFlow / IPFIX collection patterns
+    path: ~/.cursor/skills/splunk-network-explorer/SKILL.md
+  - description: Layer reference — supercluster
+    path: docs/reference/layers.md
+  - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
+    path: docs/reference/bm-ct-1.md
+  path: docs/recipes/netflow-sflow-ipfix/supercluster.md
 - id: ot-datastreamer--h3
   source:
     id: ot-datastreamer

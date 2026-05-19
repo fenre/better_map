@@ -4,7 +4,7 @@
 
 This file is the body-inclusive sibling of `llms.txt` and concatenates every page on the Better Map documentation site into a single, LLM-friendly text dump. The short companion index is at <https://fenre.github.io/better_map/llms.txt>. Pages appear in `mkdocs.yml` `nav:` declaration order. Each page block carries a stable `# === ... ===` separator plus the source-of-truth path on disk and the published URL so the same content can be grepped by either dimension.
 
-At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 60 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 63 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
 
 All page URLs resolve to publicly accessible Material-themed HTML on GitHub Pages. The project ships under the MIT licence; the canonical repo is <https://github.com/fenre/better_map>.
 
@@ -38,6 +38,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / CIM Performance (CPU / memory / facilities) — H3 hexbin (`docs/recipes/cim-performance/h3.md`)
 - Recipes / CIM Performance (CPU / memory / facilities) — heatmap (`docs/recipes/cim-performance/heat.md`)
 - Recipes / CIM Performance (CPU / memory / facilities) — markers (`docs/recipes/cim-performance/markers.md`)
+- Recipes / CIM Performance (CPU / memory / facilities) — paths (`docs/recipes/cim-performance/paths.md`)
 - Recipes / CSV lookup (geo points) — H3 hexbin (`docs/recipes/csv-lookup-geo/h3.md`)
 - Recipes / CSV lookup (geo points) — heatmap (`docs/recipes/csv-lookup-geo/heat.md`)
 - Recipes / CSV lookup (geo points) — markers (`docs/recipes/csv-lookup-geo/markers.md`)
@@ -55,6 +56,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / ES Risk-Based Alerting (risk index) — H3 hexbin (`docs/recipes/es-risk/h3.md`)
 - Recipes / ES Risk-Based Alerting (risk index) — heatmap (`docs/recipes/es-risk/heat.md`)
 - Recipes / ES Risk-Based Alerting (risk index) — markers (`docs/recipes/es-risk/markers.md`)
+- Recipes / ES Risk-Based Alerting (risk index) — supercluster (`docs/recipes/es-risk/supercluster.md`)
 - Recipes / ITSI service health (KPI base searches) — H3 hexbin (`docs/recipes/itsi-kpi-base/h3.md`)
 - Recipes / ITSI service health (KPI base searches) — heatmap (`docs/recipes/itsi-kpi-base/heat.md`)
 - Recipes / ITSI service health (KPI base searches) — markers (`docs/recipes/itsi-kpi-base/markers.md`)
@@ -71,6 +73,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / NetFlow / sFlow / IPFIX — heatmap (`docs/recipes/netflow-sflow-ipfix/heat.md`)
 - Recipes / NetFlow / sFlow / IPFIX — markers (`docs/recipes/netflow-sflow-ipfix/markers.md`)
 - Recipes / NetFlow / sFlow / IPFIX — paths (`docs/recipes/netflow-sflow-ipfix/paths.md`)
+- Recipes / NetFlow / sFlow / IPFIX — supercluster (`docs/recipes/netflow-sflow-ipfix/supercluster.md`)
 - Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — H3 hexbin (`docs/recipes/ot-datastreamer/h3.md`)
 - Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — heatmap (`docs/recipes/ot-datastreamer/heat.md`)
 - Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — markers (`docs/recipes/ot-datastreamer/markers.md`)
@@ -1186,22 +1189,22 @@ generated from
 so it cannot drift from the recipe files.
 
 <!-- recipes-matrix trimmed for llms-full.txt token budget (see Wave 16 ROADMAP block); full matrix at <https://fenre.github.io/better_map/recipes/> and source-of-truth YAML at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>; per-recipe details (status, apps, expected-field contract, formatter options) are kept verbatim under the matching `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file -->
-**Total: 60 recipes · 15 source dir(s) · 9 layer type(s).**
+**Total: 63 recipes · 15 source dir(s) · 9 layer type(s).**
 
 Source dirs and the layer ids that already ship for each (any `(source, layer)` not listed below is an open cell in the E5 matrix and is a candidate for the next recipe wave):
 
 - `cim-alerts`: h3, heat, markers, paths
 - `cim-authentication`: h3, heat, markers, supercluster
 - `cim-network-traffic`: choropleth, h3, heat, markers, paths, supercluster
-- `cim-performance`: h3, heat, markers
+- `cim-performance`: h3, heat, markers, paths
 - `csv-lookup-geo`: h3, heat, markers, polygons, supercluster, vector-tile-join
 - `cyber-vision`: h3, heat, markers, paths
-- `es-risk`: h3, heat, markers
+- `es-risk`: h3, heat, markers, supercluster
 - `geo-us-states`: choropleth, extrusion-3d
 - `itsi-kpi-base`: h3, heat, markers, supercluster
 - `kvstore-latlon`: h3, heat, markers, supercluster
 - `meraki`: h3, heat, markers, supercluster
-- `netflow-sflow-ipfix`: h3, heat, markers, paths
+- `netflow-sflow-ipfix`: h3, heat, markers, paths, supercluster
 - `ot-datastreamer`: h3, heat, markers, paths
 - `splunk-stream`: h3, heat, markers, supercluster
 - `thousandeyes`: h3, heat, markers, paths
@@ -3270,6 +3273,109 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-performance/markers/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/cim-performance/paths/ ===
+
+# Recipes / CIM Performance (CPU / memory / facilities) — paths
+
+> Source: `docs/recipes/cim-performance/paths.md`  
+> URL: <https://fenre.github.io/better_map/recipes/cim-performance/paths/>
+
+# CIM Performance — paths
+
+Render **incident-cascade polylines** across hosts in the same
+datacenter / availability zone that breached the same performance
+threshold within a 1-hour window, with vertices ordered
+chronologically by `_time`. The canonical "blast-radius
+reconstruction" panel for SRE / ITOps incident-response — when
+a regional incident propagates through the infrastructure
+(`storage-01` runs out of disk → `db-01` queues → `web-01-04`
+saturate CPU), the paths panel shows the geographic and temporal
+order in which hosts failed.
+
+Sister recipe to [cim-performance/markers](../cim-performance/markers.md)
+(per-host snapshot view), [cim-performance/h3](../cim-performance/h3.md)
+(per-cell density roll-up), and
+[cim-performance/heat](../cim-performance/heat.md) (smoothed
+hot-spot detection). The four shapes together give an SRE team
+investigative-, density-, hot-spot-, AND incident-cascade views
+on one CIM Performance data feed.
+
+## 1. Source description
+
+Same CIM Performance data model source as the
+[markers](../cim-performance/markers.md) companion — see that
+recipe §1 for the full discussion of the six performance
+datasets (CPU, Memory, Storage, Network, Facilities, Uptime),
+the `dest` entity identifier convention, the `Splunk_SA_CIM`
+app dependency, and the asset-lookup contract for resolving
+`dest` → lat/lon.
+
+This recipe is the **incident-cascade view**: instead of showing
+the current snapshot per host (markers companion does that), it
+groups hosts in the same datacenter that breached CPU > 80 %
+within a 1-hour window, orders them chronologically by `_time`
+of first breach, and renders one polyline per (datacenter,
+hour-bucket) incident. The polyline's vertex order shows which
+host failed FIRST, which followed, and so on — the geometric
+equivalent of a cascade reconstruction.
+
+**Typical sourcetype / index:** the Performance data model
+draws from the same broad sourcetype set documented in the
+markers companion §1.
+
+## 2. SPL recipe
+
+```spl
+| tstats summariesonly=true latest(Performance.cpu_load_percent) AS cpu_load_percent FROM datamodel=Performance.CPU WHERE earliest=-1h latest=now BY Performance.dest, _time span=5m
+| rename Performance.dest AS dest
+| where cpu_load_percent > 80
+| lookup asset_lookup_by_str dest OUTPUT lat AS lat, long AS lon, datacenter
+| where isnotnull(lat) AND isnotnull(lon) AND isnotnull(datacenter)
+| eval hour_bucket=floor(_time / 3600)
+| eval incident_id=datacenter . "__" . tostring(hour_bucket)
+| sort 0 incident_id, _time
+| streamstats current=true count AS seq BY incident_id
+| eventstats count AS hops_in_incident BY incident_id
+| where hops_in_incident >= 2
+| rename incident_id AS id
+| fields id, seq, lat, lon, dest, datacenter, cpu_load_percent, hops_in_incident
+| sort id, + seq
+| head 2000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/paths/>._
+
+## 3. Expected fields
+
+| field             | type    | example             |
+|-------------------|---------|---------------------|
+| id                | string  | us-west-2a__470745  |
+| seq               | integer | 0                   |
+| lat               | number  | 37.7749             |
+| lon               | number  | -122.4194           |
+| dest              | string  | web-prod-01         |
+| datacenter        | string  | us-west-2a          |
+| cpu_load_percent  | number  | 89.2                |
+| hops_in_incident  | integer | 5                   |
+
+All eight appear in `expected_fields` in the frontmatter and
+are cross-checked by `scripts/check-recipe-schema.py`.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pathIdField": "id",
+  "timeField": "seq",
+  "pathColor": "#ff7f0e",
+  "pathArrows": true
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/paths/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/paths/>._
+
+# === END: https://fenre.github.io/better_map/recipes/cim-performance/paths/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/csv-lookup-geo/h3/ ===
 
@@ -5443,6 +5549,106 @@ _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are o
 
 # === END: https://fenre.github.io/better_map/recipes/es-risk/markers/ ===
 
+# === BEGIN: https://fenre.github.io/better_map/recipes/es-risk/supercluster/ ===
+
+# Recipes / ES Risk-Based Alerting (risk index) — supercluster
+
+> Source: `docs/recipes/es-risk/supercluster.md`  
+> URL: <https://fenre.github.io/better_map/recipes/es-risk/supercluster/>
+
+# ES Risk-Based Alerting — supercluster
+
+Render every entity that has accumulated ANY risk (not just high-
+risk like the markers companion) over the last 24 h as a
+**zoom-adaptive supercluster** on a world map, one row per
+`risk_object`, with cluster pills at regional zoom that
+progressively split into per-entity markers as the user zooms.
+The canonical "global risk portfolio overview" panel for SecOps
+leadership — when an enterprise has thousands of entities with
+any non-zero risk and needs a single-pane "where is my risk
+geographically concentrated" view without overwhelming the
+renderer.
+
+Sister recipe to [es-risk/markers](../es-risk/markers.md) (the
+high-risk drilldown view at `total_risk >= 50`),
+[es-risk/h3](../es-risk/h3.md) (per-cell roll-up), and
+[es-risk/heat](../es-risk/heat.md) (smoothed concentration). The
+four shapes together give a SOC team investigative-, density-,
+hot-spot-, AND scale-tolerant cluster views on one ES RBA feed.
+
+## 1. Source description
+
+Same ES Risk-Based Alerting (RBA) source as the
+[markers](../es-risk/markers.md) companion — see that recipe
+§1 for the full discussion of the `risk` index schema, the
+`risk_object` / `risk_score` / `annotations.mitre_attack{}`
+fields, the `action.risk = 1` adaptive-response action that
+populates the index, and the ES Asset & Identity (A&I)
+framework used for geo-resolution.
+
+This recipe is the **portfolio-scale overview**: same
+aggregation as the markers companion but with the
+`total_risk >= 50` filter LOWERED to `total_risk >= 10`
+(captures any entity with at least one moderate-confidence
+detection), rendered through supercluster instead of markers.
+Where the markers companion answers "WHO is on fire right
+now" (50+ point threshold), this recipe answers "WHERE is risk
+GEOGRAPHICALLY DISTRIBUTED across my entire user/asset
+population" (much wider net).
+
+**Typical sourcetype / index:** `index=risk` via the ES `risk`
+macro. Same A&I lookup contract (`identity_lookup_expanded` +
+`asset_lookup_by_str`) as the markers companion.
+
+## 2. SPL recipe
+
+```spl
+`risk` earliest=-24h latest=now
+| stats sum(risk_score) AS total_risk,
+    count AS risk_event_count
+  BY risk_object, risk_object_type
+| where total_risk >= 10
+| lookup identity_lookup_expanded identity AS risk_object OUTPUT lat AS identity_lat, long AS identity_lon
+| lookup asset_lookup_by_str src AS risk_object OUTPUT lat AS asset_lat, long AS asset_lon
+| eval lat=coalesce(identity_lat, asset_lat)
+| eval lon=coalesce(identity_lon, asset_lon)
+| where isnotnull(lat) AND isnotnull(lon)
+| rename risk_object AS id
+| fields id, lat, lon, risk_object, risk_object_type, total_risk, risk_event_count
+| sort - total_risk
+| head 5000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/supercluster/>._
+
+## 3. Expected fields
+
+| field            | type    | example              |
+|------------------|---------|----------------------|
+| id               | string  | alice@example.com    |
+| lat              | number  | 47.6062              |
+| lon              | number  | -122.3321            |
+| risk_object      | string  | alice@example.com    |
+| risk_object_type | string  | user                 |
+| total_risk       | integer | 82                   |
+| risk_event_count | integer | 5                    |
+
+All seven appear in `expected_fields` in the frontmatter and
+are cross-checked by `scripts/check-recipe-schema.py`.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pointRenderer": "cluster",
+  "idField": "id"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/supercluster/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/supercluster/>._
+
+# === END: https://fenre.github.io/better_map/recipes/es-risk/supercluster/ ===
+
 # === BEGIN: https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/ ===
 
 # Recipes / ITSI service health (KPI base searches) — H3 hexbin
@@ -7258,6 +7464,110 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/paths/>._
 
 # === END: https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/paths/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/supercluster/ ===
+
+# Recipes / NetFlow / sFlow / IPFIX — supercluster
+
+> Source: `docs/recipes/netflow-sflow-ipfix/supercluster.md`  
+> URL: <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/supercluster/>
+
+# NetFlow / sFlow / IPFIX — supercluster
+
+Render every NetFlow / sFlow / IPFIX destination IP as a
+**zoom-adaptive supercluster** on a world map, one row per
+`dest_ip`, with cluster pills at regional zoom that progressively
+split into per-destination markers as the user zooms. The
+canonical "global NetOps destination footprint" panel — when a
+NetOps team needs a single-pane "where is my flow traffic going
+RIGHT NOW" view that gracefully collapses 10k+ destinations into
+navigable cluster pills instead of overwhelming the renderer
+with a marker dump.
+
+Sister recipe to
+[netflow-sflow-ipfix/markers](../netflow-sflow-ipfix/markers.md)
+(per-destination drilldown),
+[netflow-sflow-ipfix/heat](../netflow-sflow-ipfix/heat.md)
+(smoothed-density), and
+[netflow-sflow-ipfix/paths](../netflow-sflow-ipfix/paths.md)
+(top-talker flows). The four shapes together give a NetOps team
+target-, density-, attribution-, AND scale-tolerant cluster
+views on one NetFlow data feed.
+
+## 1. Source description
+
+Same NetFlow / sFlow / IPFIX flow-record stream as the
+[markers](../netflow-sflow-ipfix/markers.md) and
+[paths](../netflow-sflow-ipfix/paths.md) companions — vendor-
+agnostic at the flow-record layer because all three protocols
+encode the same `(src_ip, dst_ip, sport, dport, protocol,
+bytes, packets)` tuple. See the markers recipe §1 for the full
+sourcetype matrix and collection-method discussion.
+
+This recipe is the **scale-tolerant overview**: instead of
+emitting one row per `(dest_ip)` and rendering as individual
+markers (which the markers companion does — and which can
+overwhelm panels at very-high-cardinality NetFlow tenants), it
+extends the cardinality cap to 10000 and forces
+`pointRenderer: "cluster"` so the supercluster algorithm
+progressively aggregates destinations as the user zooms out.
+At world zoom a 10k-destination payload renders as ~20 cluster
+pills (one per major region); at street zoom each pill expands
+to individual destination markers.
+
+**Typical sourcetype / index:** `sourcetype="cisco:netflow"` /
+`index=netflow`. Replace with vendor-specific sourcetypes as
+documented in
+[netflow-sflow-ipfix/markers](../netflow-sflow-ipfix/markers.md)
+§1.
+
+## 2. SPL recipe
+
+```spl
+index=netflow sourcetype="cisco:netflow" earliest=-1h latest=now
+| stats sum(bytes) AS bytes,
+    dc(src_ip) AS distinct_src,
+    count AS flow_count
+  BY dest_ip
+| where bytes >= 1048576
+| iplocation dest_ip
+| where isnotnull(lat) AND isnotnull(lon)
+| eval id=dest_ip
+| fields id, lat, lon, dest_ip, dest_country, bytes, flow_count, distinct_src
+| sort - bytes
+| head 10000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/supercluster/>._
+
+## 3. Expected fields
+
+| field         | type    | example         |
+|---------------|---------|-----------------|
+| id            | string  | 198.51.100.7    |
+| lat           | number  | 37.7749         |
+| lon           | number  | -122.4194       |
+| dest_ip       | string  | 198.51.100.7    |
+| dest_country  | string  | US              |
+| bytes         | number  | 92160000        |
+| flow_count    | integer | 428             |
+| distinct_src  | integer | 37              |
+
+All eight appear in `expected_fields` in the frontmatter and
+are cross-checked by `scripts/check-recipe-schema.py`.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pointRenderer": "cluster",
+  "idField": "id"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/supercluster/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/supercluster/>._
+
+# === END: https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/supercluster/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/ot-datastreamer/h3/ ===
 
@@ -11296,7 +11606,7 @@ Each entry below distils the corresponding YAML scaffold so an LLM can answer in
 
 # Appendix B — Per-source recipe matrix
 
-> Source of truth: `docs/_machine/recipes/index.yaml` (60 recipe(s), emission order)
+> Source of truth: `docs/_machine/recipes/index.yaml` (63 recipe(s), emission order)
 
 Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answer 'which recipe matches this data source?' without fetching every recipe page. Recipes carry one of three statuses: `verified` (smoke-tested against a live Splunk tenant with proof in the YAML metadata), `unverified` (the recipe follows the contract but has not yet been smoke-tested), or `deferred` (the recipe is known to be incomplete pending upstream work). The expected-field contract for each recipe lives in §3 of the recipe page (kept verbatim in this file under the matching `# === BEGIN: …/recipes/<source>/<layer>/ ===` block); follow the Page link below to jump to it.
 
@@ -11319,6 +11629,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `cim-performance--h3` | CIM Performance (CPU / memory / facilities) → H3 hexbin | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/h3.md](https://fenre.github.io/better_map/recipes/cim-performance/h3/) |
 | `cim-performance--heat` | CIM Performance (CPU / memory / facilities) → Heatmap | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/heat.md](https://fenre.github.io/better_map/recipes/cim-performance/heat/) |
 | `cim-performance--markers` | CIM Performance (CPU / memory / facilities) → Markers | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/markers.md](https://fenre.github.io/better_map/recipes/cim-performance/markers/) |
+| `cim-performance--paths` | CIM Performance (CPU / memory / facilities) → Paths | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/paths.md](https://fenre.github.io/better_map/recipes/cim-performance/paths/) |
 | `csv-lookup-geo--h3` | CSV lookup (geo points) → H3 hexbin | unverified | — | — | [docs/recipes/csv-lookup-geo/h3.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/h3/) |
 | `csv-lookup-geo--heat` | CSV lookup (geo polygons) → Heatmap | unverified | — | — | [docs/recipes/csv-lookup-geo/heat.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/heat/) |
 | `csv-lookup-geo--markers` | CSV lookup (geo polygons) → Markers | unverified | — | — | [docs/recipes/csv-lookup-geo/markers.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/markers/) |
@@ -11332,6 +11643,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `es-risk--h3` | ES Risk-Based Alerting (risk index) → H3 hexbin | unverified | `SplunkEnterpriseSecuritySuite`, `Splunk_SA_CIM` | — | [docs/recipes/es-risk/h3.md](https://fenre.github.io/better_map/recipes/es-risk/h3/) |
 | `es-risk--heat` | ES Risk-Based Alerting (risk index) → Heatmap | unverified | `SplunkEnterpriseSecuritySuite`, `Splunk_SA_CIM` | — | [docs/recipes/es-risk/heat.md](https://fenre.github.io/better_map/recipes/es-risk/heat/) |
 | `es-risk--markers` | ES Risk-Based Alerting (risk index) → Markers | unverified | `SplunkEnterpriseSecuritySuite`, `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/es-risk/markers.md](https://fenre.github.io/better_map/recipes/es-risk/markers/) |
+| `es-risk--supercluster` | ES Risk-Based Alerting (risk index) → Supercluster | unverified | `SplunkEnterpriseSecuritySuite`, `Splunk_SA_CIM` | — | [docs/recipes/es-risk/supercluster.md](https://fenre.github.io/better_map/recipes/es-risk/supercluster/) |
 | `geo-us-states--choropleth` | US states (built-in geo lookup) → Choropleth | unverified | — | — | [docs/recipes/geo-us-states/choropleth.md](https://fenre.github.io/better_map/recipes/geo-us-states/choropleth/) |
 | `geo-us-states--extrusion-3d` | US states (built-in geo lookup) → 3D extrusion | unverified | — | — | [docs/recipes/geo-us-states/extrusion-3d.md](https://fenre.github.io/better_map/recipes/geo-us-states/extrusion-3d/) |
 | `itsi-kpi-base--h3` | ITSI service health (KPI base searches) → H3 hexbin | unverified | `SA-ITOA` | — | [docs/recipes/itsi-kpi-base/h3.md](https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/) |
@@ -11350,6 +11662,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `netflow-sflow-ipfix--heat` | NetFlow / sFlow / IPFIX (flow records) → Heatmap | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/heat.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/heat/) |
 | `netflow-sflow-ipfix--markers` | NetFlow / sFlow / IPFIX (flow records) → Markers | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/markers.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/markers/) |
 | `netflow-sflow-ipfix--paths` | NetFlow / sFlow / IPFIX (flow records) → Paths | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/paths.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/paths/) |
+| `netflow-sflow-ipfix--supercluster` | NetFlow / sFlow / IPFIX (flow records) → Supercluster | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/supercluster.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/supercluster/) |
 | `ot-datastreamer--h3` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → H3 hexbin | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/h3.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/h3/) |
 | `ot-datastreamer--heat` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Heatmap | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/heat.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/heat/) |
 | `ot-datastreamer--markers` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Markers | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/markers.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/markers/) |
