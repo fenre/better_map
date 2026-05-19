@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 42
+recipe_count: 44
 recipes:
 - id: cim-alerts--h3
   source:
@@ -653,6 +653,60 @@ recipes:
   - description: Formatter schema — hexbinAggregate, hexbinResolution, hexbinOpacity
     path: docs/_machine/formatter-schema.json
   path: docs/recipes/cim-performance/h3.md
+- id: cim-performance--heat
+  source:
+    id: cim-performance
+    display_name: CIM Performance (CPU / memory / facilities)
+    pattern: splunk-cim
+  layer:
+    id: heat
+    display_name: Heatmap
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_SA_CIM
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: web-prod-01
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '37.7749'
+  - name: lon
+    type: number
+    example: '-122.4194'
+  - name: cpu_load_percent
+    type: number
+    example: '82.4'
+  - name: mem_used_percent
+    type: number
+    example: '67.1'
+  - name: weight
+    type: number
+    example: '0.82'
+    drives_formatter_option: heatmapOpacity
+  required_formatter_options:
+  - pointRenderer
+  - heatmapOpacity
+  - heatmapRadius
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, different layer (markers)
+    path: docs/recipes/cim-performance/markers.md
+  - description: Companion recipe — same source, different layer (h3)
+    path: docs/recipes/cim-performance/h3.md
+  - description: splunk-cim skill — Performance data model schema, dataset tags, dest/cpu/memory contracts
+    path: ~/.cursor/skills/splunk-cim/SKILL.md
+  - description: splunk-datamodels-conf skill — CIM acceleration and tstats summariesonly tradeoffs
+    path: ~/.cursor/skills/splunk-datamodels-conf/SKILL.md
+  - description: Layer reference — heat
+    path: docs/reference/layers.md
+  - description: Formatter schema — heatmapOpacity, heatmapRadius
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/cim-performance/heat.md
 - id: cim-performance--markers
   source:
     id: cim-performance
@@ -1954,6 +2008,65 @@ recipes:
   - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
     path: docs/reference/bm-ct-1.md
   path: docs/recipes/ot-datastreamer/markers.md
+- id: splunk-stream--h3
+  source:
+    id: splunk-stream
+    display_name: Splunk Stream (wire data)
+    pattern: splunk-stream
+  layer:
+    id: h3
+    display_name: H3 hexbin
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_TA_stream
+    optional: false
+  - id: splunk_app_stream
+    optional: true
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: 203.0.113.45
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '37.7749'
+  - name: lon
+    type: number
+    example: '-122.4194'
+  - name: dest_country
+    type: string
+    example: US
+  - name: bytes_out
+    type: integer
+    example: '892160000'
+  - name: value
+    type: number
+    example: '892160000'
+    drives_formatter_option: hexbinAggregate
+  required_formatter_options:
+  - pointRenderer
+  - hexbinAggregate
+  - hexbinResolution
+  - hexbinOpacity
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, different layer (markers)
+    path: docs/recipes/splunk-stream/markers.md
+  - description: Companion recipe — same source, different layer (heat)
+    path: docs/recipes/splunk-stream/heat.md
+  - description: Splunk Stream skill — wire-data capture and protocol analytics
+    path: ~/.cursor/skills/splunk-stream/SKILL.md
+  - description: Splunk Stream setup skill — TA_stream + splunkapp_stream
+    path: ~/.cursor/skills/splunk-stream-setup/SKILL.md
+  - description: Layer reference — h3
+    path: docs/reference/layers.md
+  - description: Formatter schema — hexbinAggregate, hexbinResolution, hexbinOpacity
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/splunk-stream/h3.md
 - id: splunk-stream--heat
   source:
     id: splunk-stream

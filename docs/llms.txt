@@ -58,6 +58,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [CIM Network Traffic → Paths (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/paths/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Network Traffic → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/supercluster/): apps required: Splunk_SA_CIM.
 - [CIM Performance (CPU / memory / facilities) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/cim-performance/h3/): apps required: Splunk_SA_CIM.
+- [CIM Performance (CPU / memory / facilities) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/cim-performance/heat/): apps required: Splunk_SA_CIM.
 - [CIM Performance (CPU / memory / facilities) → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-performance/markers/): apps required: Splunk_SA_CIM.
 - [CSV lookup (geo points) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/h3/): apps required: none.
 - [CSV lookup (geo polygons) → Markers (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/markers/): apps required: none.
@@ -84,6 +85,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [NetFlow / sFlow / IPFIX (flow records) → Markers (unverified)](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/markers/): apps required: Splunk_TA_netflow, builtin:iplocation.
 - [OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/ot-datastreamer/heat/): apps required: Splunk_TA_oti.
 - [OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Markers (unverified)](https://fenre.github.io/better_map/recipes/ot-datastreamer/markers/): apps required: Splunk_TA_oti.
+- [Splunk Stream (wire data) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/splunk-stream/h3/): apps required: Splunk_TA_stream, splunk_app_stream, builtin:iplocation.
 - [Splunk Stream (wire data) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/splunk-stream/heat/): apps required: Splunk_TA_stream, splunk_app_stream, builtin:iplocation.
 - [Splunk Stream (wire data) → Markers (unverified)](https://fenre.github.io/better_map/recipes/splunk-stream/markers/): apps required: Splunk_TA_stream, splunk_app_stream, builtin:iplocation.
 - [Cisco ThousandEyes (agent fleet) → Markers (unverified)](https://fenre.github.io/better_map/recipes/thousandeyes/markers/): apps required: ta_cisco_thousandeyes.
