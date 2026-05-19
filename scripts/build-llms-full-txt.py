@@ -183,6 +183,47 @@ TOTAL_FAIL_TOKENS = 200_000
 # (not stubs), revisit whether to move the trim point back to §6.
 _RECIPE_TRIM_AT = re.compile(r"^## 5\.\s+Screenshot\s*$", re.MULTILINE)
 
+# Recipe walkthrough trim contract — see strip_recipe_walkthroughs() and
+# the E5 Phase 2 wave 19 ROADMAP block. Each recipe page §2 SPL recipe
+# carries a ```spl ... ``` block (the contract) followed by a
+# "Why this exact shape, line by line:" bulleted walkthrough (the
+# pedagogy). §4 Recommended formatter config has the same pattern: a
+# ```json ... ``` block (the contract) followed by a "Why this specific
+# config:" bulleted walkthrough. Across 48 recipes the §2 walkthroughs
+# total ~131k chars (~33k tokens) and the §4 walkthroughs total ~79k
+# chars (~20k tokens) — together ~53k tokens, by far the largest single
+# class of duplicated boilerplate left in llms-full.txt after waves 4a,
+# 6, 12, 13, 15, 16, 17, 18. The walkthroughs are HIGH-VALUE
+# explanatory content for the rendered MkDocs site (kept verbatim
+# there), but for an LLM consuming llms-full.txt the SPL block plus the
+# JSON block plus §1's source-description plus §3's expected-fields
+# table already give the agent everything needed to (a) confirm the
+# recipe is the right one for its task, (b) copy-paste the SPL and
+# config into a Splunk panel, and (c) inspect the field contract. The
+# per-stage rationale (why-each-pipe, why-each-option) is recoverable
+# via the URL pointer this trim inserts in place of each walkthrough
+# block. Wave 19 was the first wave where the WARN headroom dropped to
+# ~105 tokens after a single recipe (`itsi-kpi-base/heat`) — that
+# tightness forced this larger structural trim. After wave 19 every
+# future recipe wave gains ~3k of effective headroom (the walkthroughs
+# are no longer paid into the corpus), so the wave cadence relaxes
+# from "one recipe per wave with mandatory token-trim between" back to
+# "two-to-three recipes per wave."
+_RECIPE_SPL_SECTION = re.compile(
+    r"(?P<heading>^## 2\.\s+SPL recipe\s*$\n+)"
+    r"(?P<fence>```spl\s*\n.*?```)"
+    r"(?P<tail>.*?)"
+    r"(?=^## 3\.)",
+    re.MULTILINE | re.DOTALL,
+)
+_RECIPE_JSON_SECTION = re.compile(
+    r"(?P<heading>^## 4\.\s+Recommended formatter config\s*$\n+)"
+    r"(?P<fence>```json\s*\n.*?```)"
+    r"(?P<tail>.*?)"
+    r"(?=^## 5\.)",
+    re.MULTILINE | re.DOTALL,
+)
+
 # Roadmap status-block trim contract — see strip_roadmap_status_blocks()
 # and the E5 Phase 2 wave 8 + wave 13 ROADMAP blocks. ROADMAP.md is the
 # project's rolling change log; under EVERY subsystem (D-, E-, G-, R-,
@@ -588,6 +629,59 @@ def strip_recipe_advisory(body: str, page_url: str) -> str:
         f"token-budget; read them in the full recipe at <{page_url}>._\n"
     )
     return trimmed + pointer
+
+
+def strip_recipe_walkthroughs(body: str, page_url: str) -> tuple[str, int]:
+    """Drop §2 SPL and §4 formatter-config walkthroughs; keep fences.
+
+    Returns (cleaned body, number of walkthrough sections trimmed).
+
+    For each `## 2. SPL recipe` section the helper keeps the heading and
+    the immediately-following ```spl ... ``` fence (the contract), then
+    drops every line of prose between the closing fence and the next
+    `## 3.` heading and inserts a one-line pointer. The same trim
+    applies to each `## 4. Recommended formatter config` section
+    (keeping the ```json ... ``` fence, dropping the prose until `## 5.`).
+
+    Recipes whose §2 / §4 do not match the expected ` ```spl ` /
+    ` ```json ` fence prefix are passed through unchanged for that
+    section (defensive — every current recipe matches, but a future
+    recipe authored with a different fence label, e.g. ` ```text ` for
+    a metric-store walkthrough, would silently retain its walkthrough
+    rather than corrupt the output).
+
+    The walkthroughs remain verbatim in the rendered MkDocs site and in
+    the per-page source under `docs/recipes/<source>/<layer>.md`; this
+    trim only affects llms-full.txt. See the wave-19 ROADMAP status
+    block for the budget arithmetic and the rationale.
+    """
+    trimmed = 0
+
+    def _replace_spl(m: re.Match[str]) -> str:
+        nonlocal trimmed
+        trimmed += 1
+        pointer = (
+            "\n"
+            "_Per-stage rationale (the \"Why this exact shape, line by "
+            "line\" walkthrough) is omitted from llms-full.txt for "
+            f"token-budget; read it in the full recipe at <{page_url}>._\n\n"
+        )
+        return m.group("heading") + m.group("fence") + pointer
+
+    def _replace_json(m: re.Match[str]) -> str:
+        nonlocal trimmed
+        trimmed += 1
+        pointer = (
+            "\n"
+            "_Per-option rationale (the \"Why this specific config\" "
+            "walkthrough) is omitted from llms-full.txt for "
+            f"token-budget; read it in the full recipe at <{page_url}>._\n\n"
+        )
+        return m.group("heading") + m.group("fence") + pointer
+
+    body = _RECIPE_SPL_SECTION.sub(_replace_spl, body)
+    body = _RECIPE_JSON_SECTION.sub(_replace_json, body)
+    return body, trimmed
 
 
 def is_roadmap_page(relpath: str) -> bool:
@@ -1108,6 +1202,7 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
             )
         cleaned = strip_chrome(expanded).rstrip() + "\n"
         if is_recipe_page(relpath):
+            cleaned, _walks = strip_recipe_walkthroughs(cleaned, url)
             cleaned = strip_recipe_advisory(cleaned, url)
         buf.write(cleaned)
         per_page_chars[relpath] = len(cleaned)

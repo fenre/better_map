@@ -2613,6 +2613,97 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 > `llms-full.txt` at the next regeneration via the wave-13
 > generalised ROADMAP status-block regex._
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 19 token-trim
+> SHIPPED (~47.2k tokens reclaimed by dropping per-recipe §2 SPL
+> walkthroughs and §4 formatter-config walkthroughs from
+> `llms-full.txt` while keeping the SPL and JSON code fences).**
+> Wave 18 landed at ~174,895 tokens / ~105 WARN headroom — the
+> tightest budget after a single-recipe wave to date. Profiling
+> the corpus by section showed the highest-ROI lever was NOT
+> another single-target trim (formatter Appendix A, recipes-
+> index matrix, ROADMAP work-items, ROADMAP status blockquotes,
+> CHANGELOG older versions were all already shipped). The
+> §2 "Why this exact shape, line by line" walkthrough below each
+> SPL fence totalled ~131k chars across 48 recipes; the §4
+> "Why this specific config" walkthrough below each JSON fence
+> totalled ~79k chars; together ~210k chars / ~52.5k tokens of
+> high-quality pedagogy that an LLM consuming `llms-full.txt`
+> doesn't need verbatim because (a) the SPL fence and JSON
+> fence carry the actual contract; (b) §1 Source description
+> covers the WHEN-TO-USE; (c) §3 Expected fields covers the
+> field contract; (d) any agent that needs the per-stage
+> rationale follows the URL pointer this trim inserts in place
+> of each walkthrough.
+> - **New helper.** `strip_recipe_walkthroughs(body, page_url)`
+>   in `scripts/build-llms-full-txt.py` runs before
+>   `strip_recipe_advisory` for every recipe page. It matches
+>   `## 2. SPL recipe` → ```` ```spl … ``` ```` and replaces the
+>   immediately-following prose-up-to-`## 3.` with a one-line
+>   pointer. Same shape for `## 4. Recommended formatter config`
+>   → ```` ```json … ``` ```` → up-to-`## 5.`. Defensive:
+>   recipes whose SPL fence uses a different language tag (e.g.
+>   ```` ```text ```` for a metric-store walkthrough) are
+>   passed through unchanged for that section.
+> - **Trim contract.** What's KEPT: §1 Source description (the
+>   WHEN-TO-USE), §2 heading + SPL fence verbatim, §3 Expected
+>   fields table + 2-3 sentence narrative, §4 heading + JSON
+>   fence verbatim. What's DROPPED: §2 walkthrough bullets,
+>   §2 closing "Note every `|` starts its own physical line"
+>   footer, §4 walkthrough bullets. Already dropped by the
+>   wave-4a/6 trim: §5 Screenshot, §6 Gotchas, Verification
+>   status. All dropped content stays in the rendered MkDocs
+>   site, the per-page source file `docs/recipes/<source>/<layer>.md`,
+>   `docs/_machine/recipes/index.yaml`, and is one URL pointer
+>   away for any agent that needs it.
+> - **Token budget.** Wave 19 lands at **~127,643 estimated
+>   tokens** / **~47,357 tokens of WARN headroom** (175,000 -
+>   127,643). The largest single-wave reclaim in the project's
+>   history — bigger than the wave-10 CHANGELOG trim (~15.6k),
+>   the wave-13 ROADMAP status-block trim (~14.7k), the wave-17
+>   ROADMAP work-items trim (~7.7k), or the wave-15/16 formatter
+>   /recipes-index trims (~3.7k / ~2.7k). Sufficient to fund
+>   ~14-15 more recipes at the current ~3k cost-per-recipe
+>   median before the next token-trim is required. The cadence
+>   relaxes from "one recipe per wave with mandatory token-trim
+>   between" back to "two-to-three recipes per wave" through
+>   wave 30+.
+> - **Why this trim wasn't shipped earlier.** Each prior wave
+>   chose the simpler / lower-risk target (boilerplate-with-
+>   stub-content, write-once-historical-prose, duplicated-
+>   matrix). The walkthroughs are author-time-expensive prose
+>   that explains the rationale behind every SPL stage and every
+>   config option — high-value content that this trim explicitly
+>   chooses to push behind a URL pointer to free up budget for
+>   shipping more recipes. The trade-off: an LLM working from
+>   `llms-full.txt` alone (no URL fetching) loses the per-stage
+>   adaptation guidance and falls back on (a) reading the SPL
+>   directly and inferring intent from the pipe structure
+>   (always available; SPL is intentionally self-documenting
+>   given proper field-name discipline) and (b) the §1 source-
+>   description + §3 expected-fields contract for the boundaries.
+>   An LLM with URL-fetch tooling (Cursor, Codex, etc.) loses
+>   nothing — the pointer URL lands on the rendered MkDocs page
+>   with the walkthrough intact.
+> - **Future trim levers (in projected-ROI order, none required
+>   for wave 20-30).** (a) §1 Source-description compaction —
+>   each §1 is currently ~2k chars and contains a "vs companion"
+>   layer-choice paragraph that could be split into a dedicated
+>   §1b kept verbatim while the rest of §1 is compacted (~5-10k
+>   reclaim across 48 recipes). (b) §3 Expected-fields prose
+>   trim — the table itself stays but the 2-3 sentence narrative
+>   below it duplicates the frontmatter `expected_fields` slot
+>   metadata (~3-5k reclaim). (c) Roadmap section §3 "Detailed
+>   work-items" further compaction — wave-17 trim already
+>   compressed bodies to Problem+Accept+Status+Done+pointer;
+>   further compaction (drop bullet structure entirely, keep
+>   just titles + Status one-line) would reclaim ~8-10k. None
+>   of these are needed until wave 30+ at the current ~3k
+>   /recipe cost.
+>
+> _This `> **Status …` blockquote will self-strip from
+> `llms-full.txt` at the next regeneration via the wave-13
+> generalised ROADMAP status-block regex._
+
 > **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 17 recipes
 > SHIPPED (2 more recipes — recipe count 45 → 47, layer-type
 > coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
