@@ -1,5 +1,27 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-22): E5 Phase 2 wave 29 token-trim
+> SHIPPED (strip four backward-looking H3 subsections — §1c
+> "Specific honest gaps in v1.6", "What we DID verify in v1.6",
+> "What v1.6 did NOT verify", §9a "ROADMAP.md change log" — from
+> the in-memory ROADMAP body before it lands in `llms-full.txt`).**
+> The four subsections cumulatively carried ~4.2k tokens of v1.6
+> self-audit / single-release verification table / doc-edit history
+> whose live items are already tracked in current Theme work-items
+> (G1 / G2 / G3 / G8 + R11 in the risk register) or recoverable via
+> `git log -- ROADMAP.md`. None of the content drives code-authoring
+> decisions today. Reclaim measured at **4,220 tokens** (167,327 →
+> 163,107), bringing WARN headroom to **11,893 tokens** — comfortable
+> for ~3 recipes per wave through wave 32 before the next trim is
+> needed. New self-stripping regex `_ROADMAP_HISTORICAL_SUBSECTION`
+> + `strip_roadmap_historical_subsections()` wired into the same
+> `if is_roadmap_page(relpath)` block as the existing status-block
+> and work-item-body trims; on-disk `ROADMAP.md` unchanged, MkDocs
+> site still renders every subsection verbatim. All gates green
+> (recipes/schema/coverage/reference-pages/llms-full drift +
+> `mkdocs build --strict`). Subsequent wave 29 recipes will fold
+> in below this block.
+
 > **Status (v1.7-prep, 2026-05-21): E5 Phase 2 wave 28 recipes
 > SHIPPED (3 more recipes — recipe count 72 → 75, layer-type
 > coverage 9 / 10 unchanged, source-pattern coverage 8 / 8

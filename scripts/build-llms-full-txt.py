@@ -90,7 +90,14 @@ the roadmap page), of which the Problem + Accept bullets are the WHAT
 and DONE-criterion an LLM authoring code in this repo needs while
 Design / Prereqs / Risk are HISTORICAL design-decision context
 recoverable from the live theme URL pointer the trim appends to
-every trimmed item):
+every trimmed item — and in wave 29 by stripping four backward-looking
+H3 subsections from ``ROADMAP.md`` (``1c. Specific honest gaps in
+v1.6``, ``What we DID verify in v1.6``, ``What v1.6 did NOT verify``,
+``9a. ROADMAP.md change log``), see
+``strip_roadmap_historical_subsections`` below — together ~4.2k tokens
+of v1.6 self-audit / single-release verification table / doc-edit
+history whose live items are already tracked in current Theme
+work-items (G1/G2/G3/G8 + R11) or recoverable via ``git log``):
 
   * Per-page warning at **50,000 estimated tokens** — one page should
     not dominate the corpus.
@@ -307,6 +314,45 @@ _ROADMAP_THEME_HEADING = re.compile(
 )
 _ROADMAP_WORKITEM_HEADING = re.compile(
     r"^#### [A-Z]\d+[a-z]?\.[^\n]*$", re.MULTILINE
+)
+
+# Roadmap historical-subsection trim contract — see
+# strip_roadmap_historical_subsections() and the E5 Phase 2 wave 29
+# ROADMAP block. ROADMAP.md carries four H3 subsections whose content
+# is purely backward-looking — the v1.6 self-audit gap list, the v1.6
+# REST-verification table, the v1.6 "things we couldn't verify"
+# bullets, and the ROADMAP.md edit history:
+#
+#   ### 1c. Specific honest gaps in v1.6 ...
+#   ### What we DID verify in v1.6 ...
+#   ### What v1.6 did NOT verify ...
+#   ### 9a. ROADMAP.md change log
+#
+# By wave 29 these four subsections cumulatively cost ~4.2k tokens in
+# llms-full.txt. None of the content drives code-authoring decisions
+# TODAY — the gap list's live items are tracked in current Theme
+# work-items (G1/G2/G3/G8 + R11), the v1.6 verification rows have been
+# superseded by per-release G2 CI gates, and the edit history is only
+# useful when auditing past doc revisions (recoverable via git log).
+# Stripping them costs nothing to an agent authoring the next recipe
+# wave or hardening a current Theme work-item.
+#
+# Match anchor is a non-capturing alternation across the four exact
+# H3 leading tokens, terminating at the next H3 or H2 heading or the
+# section-end `---` horizontal rule (whichever comes first). The
+# on-disk ROADMAP.md is unchanged — the trim runs only in the
+# in-memory body before it lands in llms-full.txt. The MkDocs site
+# continues to render every subsection for human readers via the
+# unaltered ``{% include-markdown "ROADMAP.md" %}`` include.
+_ROADMAP_HISTORICAL_SUBSECTION = re.compile(
+    r"^### (?:"
+    r"1c\.\s+Specific honest gaps in v1\.6"
+    r"|What we DID verify in v1\.6"
+    r"|What v1\.6 did NOT verify"
+    r"|9a\.\s+ROADMAP\.md change log"
+    r")[^\n]*\n"
+    r"(?:(?!^### |^## |^---$).*\n)*",
+    re.MULTILINE,
 )
 # Match a top-level bullet starting with `* **Label:**`; continuation
 # lines (e.g. wrapped prose, nested sub-bullets) are gathered until
@@ -952,6 +998,41 @@ def strip_roadmap_status_blocks(body: str) -> tuple[str, int]:
     return cleaned, blocks_removed
 
 
+def strip_roadmap_historical_subsections(body: str) -> tuple[str, int]:
+    """Strip backward-looking v1.6 audit / change-log H3 subsections.
+
+    See the module-level ``_ROADMAP_HISTORICAL_SUBSECTION`` contract
+    for the full rationale. Returns ``(cleaned_body, subsections_removed)``.
+
+    The four subsections targeted are:
+
+    * ``### 1c. Specific honest gaps in v1.6`` — historical gap list
+      whose live entries are already tracked in current Theme
+      work-items (G1/G2/G3/G8 + R11 in the risk register).
+    * ``### What we DID verify in v1.6`` — single-release install
+      verification table, superseded by per-release G2 CI gates.
+    * ``### What v1.6 did NOT verify`` — four bullets describing
+      v1.6 REST-only verification limits, no longer current.
+    * ``### 9a. ROADMAP.md change log`` — doc-edit history,
+      recoverable via ``git log -- ROADMAP.md`` when needed.
+
+    The trim is idempotent: re-running it on an already-trimmed
+    body is a no-op (the four subsections are simply gone). The
+    on-disk ROADMAP.md is unchanged — the trim runs only against
+    the in-memory body before it lands in llms-full.txt. The MkDocs
+    site continues to render every subsection for human readers.
+    """
+    removed = 0
+
+    def _drop(_match: re.Match[str]) -> str:
+        nonlocal removed
+        removed += 1
+        return ""
+
+    cleaned = _ROADMAP_HISTORICAL_SUBSECTION.sub(_drop, body)
+    return cleaned, removed
+
+
 def strip_roadmap_workitem_bodies(
     body: str, page_url: str
 ) -> tuple[str, int]:
@@ -1189,6 +1270,7 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
         expanded = resolve_includes(raw, source_file)
         if is_roadmap_page(relpath):
             expanded, _blocks = strip_roadmap_status_blocks(expanded)
+            expanded, _hist = strip_roadmap_historical_subsections(expanded)
             expanded, _items = strip_roadmap_workitem_bodies(expanded, url)
         if is_changelog_page(relpath):
             expanded, _versions = strip_changelog_old_versions(
