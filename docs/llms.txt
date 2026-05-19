@@ -53,6 +53,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [CIM Authentication → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/h3/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Authentication → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/heat/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Authentication → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/markers/): apps required: Splunk_SA_CIM, builtin:iplocation.
+- [CIM Authentication → Paths (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/paths/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Authentication → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/supercluster/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Network Traffic (data model) → Choropleth (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/): apps required: Splunk_SA_CIM.
 - [CIM Network Traffic → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/h3/): apps required: Splunk_SA_CIM, builtin:iplocation.
@@ -64,6 +65,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [CIM Performance (CPU / memory / facilities) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/cim-performance/heat/): apps required: Splunk_SA_CIM.
 - [CIM Performance (CPU / memory / facilities) → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-performance/markers/): apps required: Splunk_SA_CIM.
 - [CIM Performance (CPU / memory / facilities) → Paths (unverified)](https://fenre.github.io/better_map/recipes/cim-performance/paths/): apps required: Splunk_SA_CIM.
+- [CIM Performance (CPU / memory / facilities) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/cim-performance/supercluster/): apps required: Splunk_SA_CIM.
 - [CSV lookup (geo points) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/h3/): apps required: none.
 - [CSV lookup (geo polygons) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/heat/): apps required: none.
 - [CSV lookup (geo polygons) → Markers (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/markers/): apps required: none.
@@ -109,6 +111,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [Cisco ThousandEyes (agent fleet) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/thousandeyes/heat/): apps required: ta_cisco_thousandeyes.
 - [Cisco ThousandEyes (agent fleet) → Markers (unverified)](https://fenre.github.io/better_map/recipes/thousandeyes/markers/): apps required: ta_cisco_thousandeyes.
 - [Cisco ThousandEyes (path visualization) → Paths (unverified)](https://fenre.github.io/better_map/recipes/thousandeyes/paths/): apps required: ta_cisco_thousandeyes.
+- [Cisco ThousandEyes (agent fleet) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/thousandeyes/supercluster/): apps required: ta_cisco_thousandeyes.
 
 ## Runbooks
 
