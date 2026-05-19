@@ -24,6 +24,7 @@
  */
 
 import { UNKNOWN } from './errorScopes.js';
+import { pushBanner } from './errorStates.js';
 
 // Test-only state. Mutable slot fields so __resetSafeRunState can
 // swap atomically without re-exporting bindings.
@@ -117,6 +118,17 @@ function _handleFailure(opts, err) {
     if (now - last >= 1000) {
         _state.lastReportedAt[key] = now;
         _safeReport(envelope);
+    }
+    // Banner routing: only for degrade/fatal, only with panelRoot, never
+    // during destroy (dataset.bmDestroying flag).
+    const destroying = opts.panelRoot
+        && opts.panelRoot.dataset
+        && opts.panelRoot.dataset.bmDestroying === '1';
+    if (opts.panelRoot && !destroying
+        && (envelope.recovery === 'degrade' || envelope.recovery === 'fatal')) {
+        try {
+            pushBanner(opts.panelRoot, envelope);
+        } catch (_) { /* banner routing failure is never fatal */ }
     }
     if (opts.panelRoot && typeof CustomEvent !== 'undefined') {
         try {
