@@ -50,6 +50,8 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [CIM Alerts → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/cim-alerts/heat/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Alerts → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-alerts/markers/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Alerts → Paths (unverified)](https://fenre.github.io/better_map/recipes/cim-alerts/paths/): apps required: Splunk_SA_CIM, builtin:iplocation.
+- [CIM Alerts → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/cim-alerts/supercluster/): apps required: Splunk_SA_CIM, builtin:iplocation.
+- [CIM Authentication → 3D extrusion (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/extrusion-3d/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Authentication → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/h3/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Authentication → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/heat/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Authentication → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/markers/): apps required: Splunk_SA_CIM, builtin:iplocation.
@@ -95,6 +97,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [KV Store (lat/lon collection) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/heat/): apps required: none.
 - [KV Store (lat/lon collection) → Markers (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/): apps required: none.
 - [KV Store (lat/lon collection) → Paths (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/paths/): apps required: none.
+- [KV Store (geo polygons collection) → Polygons (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/polygons/): apps required: none.
 - [KV Store (lat/lon collection) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/supercluster/): apps required: none.
 - [Cisco Meraki (devices) → 3D extrusion (unverified)](https://fenre.github.io/better_map/recipes/meraki/extrusion-3d/): apps required: Splunk_TA_cisco_meraki.
 - [Cisco Meraki (devices) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/meraki/h3/): apps required: Splunk_TA_cisco_meraki.

@@ -4,7 +4,7 @@
 
 This file is the body-inclusive sibling of `llms.txt` and concatenates every page on the Better Map documentation site into a single, LLM-friendly text dump. The short companion index is at <https://fenre.github.io/better_map/llms.txt>. Pages appear in `mkdocs.yml` `nav:` declaration order. Each page block carries a stable `# === ... ===` separator plus the source-of-truth path on disk and the published URL so the same content can be grepped by either dimension.
 
-At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 75 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 78 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
 
 All page URLs resolve to publicly accessible Material-themed HTML on GitHub Pages. The project ships under the MIT licence; the canonical repo is <https://github.com/fenre/better_map>.
 
@@ -25,6 +25,8 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / CIM Alerts — heatmap (`docs/recipes/cim-alerts/heat.md`)
 - Recipes / CIM Alerts — markers (`docs/recipes/cim-alerts/markers.md`)
 - Recipes / CIM Alerts — paths (`docs/recipes/cim-alerts/paths.md`)
+- Recipes / CIM Alerts — supercluster (`docs/recipes/cim-alerts/supercluster.md`)
+- Recipes / CIM Authentication — 3D extrusion (`docs/recipes/cim-authentication/extrusion-3d.md`)
 - Recipes / CIM Authentication — H3 hexbin (`docs/recipes/cim-authentication/h3.md`)
 - Recipes / CIM Authentication — heatmap (`docs/recipes/cim-authentication/heat.md`)
 - Recipes / CIM Authentication — markers (`docs/recipes/cim-authentication/markers.md`)
@@ -75,6 +77,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / KV Store (lat/lon) — markers (`docs/recipes/kvstore-latlon/markers.md`)
 - Recipes / KV Store (lat/lon) — paths (`docs/recipes/kvstore-latlon/paths.md`)
 - Recipes / KV Store (lat/lon) — supercluster (`docs/recipes/kvstore-latlon/supercluster.md`)
+- Recipes / KV Store (geo polygons collection) — polygons (`docs/recipes/kvstore-latlon/polygons.md`)
 - Recipes / Meraki (Cisco vendor TA) — 3D extrusion (`docs/recipes/meraki/extrusion-3d.md`)
 - Recipes / Meraki (Cisco vendor TA) — H3 hexbin (`docs/recipes/meraki/h3.md`)
 - Recipes / Meraki (Cisco vendor TA) — heatmap (`docs/recipes/meraki/heat.md`)
@@ -1201,12 +1204,12 @@ generated from
 so it cannot drift from the recipe files.
 
 <!-- recipes-matrix trimmed for llms-full.txt token budget (see Wave 16 ROADMAP block); full matrix at <https://fenre.github.io/better_map/recipes/> and source-of-truth YAML at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>; per-recipe details (status, apps, expected-field contract, formatter options) are kept verbatim under the matching `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file -->
-**Total: 75 recipes · 15 source dir(s) · 9 layer type(s).**
+**Total: 78 recipes · 15 source dir(s) · 9 layer type(s).**
 
 Source dirs and the layer ids that already ship for each (any `(source, layer)` not listed below is an open cell in the E5 matrix and is a candidate for the next recipe wave):
 
-- `cim-alerts`: h3, heat, markers, paths
-- `cim-authentication`: h3, heat, markers, paths, supercluster
+- `cim-alerts`: h3, heat, markers, paths, supercluster
+- `cim-authentication`: extrusion-3d, h3, heat, markers, paths, supercluster
 - `cim-network-traffic`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster
 - `cim-performance`: h3, heat, markers, paths, supercluster
 - `csv-lookup-geo`: h3, heat, markers, paths, polygons, supercluster, vector-tile-join
@@ -1214,7 +1217,7 @@ Source dirs and the layer ids that already ship for each (any `(source, layer)` 
 - `es-risk`: h3, heat, markers, paths, supercluster
 - `geo-us-states`: choropleth, extrusion-3d
 - `itsi-kpi-base`: h3, heat, markers, paths, supercluster
-- `kvstore-latlon`: h3, heat, markers, paths, supercluster
+- `kvstore-latlon`: h3, heat, markers, paths, polygons, supercluster
 - `meraki`: extrusion-3d, h3, heat, markers, supercluster
 - `netflow-sflow-ipfix`: h3, heat, markers, paths, supercluster
 - `ot-datastreamer`: h3, heat, markers, paths
@@ -1831,6 +1834,278 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/paths/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-alerts/paths/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/cim-alerts/supercluster/ ===
+
+# Recipes / CIM Alerts — supercluster
+
+> Source: `docs/recipes/cim-alerts/supercluster.md`  
+> URL: <https://fenre.github.io/better_map/recipes/cim-alerts/supercluster/>
+
+# CIM Alerts — supercluster
+
+Render every host firing alerts as a **zoom-adaptive cluster** rather
+than per-host markers. Same `tag=alert` CIM Alerts data model and
+`iplocation`-geocoded `dest` field as the
+[cim-alerts/markers](./markers.md),
+[cim-alerts/h3](./h3.md),
+[cim-alerts/heat](./heat.md), and
+[cim-alerts/paths](./paths.md) companions — but instead of rendering
+one marker per affected host (which collapses to overlapping dots at
+world zoom on a busy ES install with thousands of noisy hosts), the
+renderer groups nearby hosts into a cluster bubble with a per-cluster
+count badge, and the bubble expands to individual hosts when the
+operator zooms in to a high-density region.
+
+The 13th source to demonstrate the supercluster layer (joining
+csv-lookup-geo, kvstore-latlon, meraki, cim-network-traffic,
+cim-authentication, splunk-stream, netflow-sflow-ipfix, es-risk,
+itsi-kpi-base, cim-performance, thousandeyes, cyber-vision), and the
+5th layer shape for cim-alerts (markers, h3, heat, paths, supercluster).
+
+The right shape for **global NOC / SOC overview panels** where the
+alert fleet spans hundreds-to-thousands of unique destination hosts
+across multiple data centres / cloud regions / branch offices, and
+the operator needs to see "where is the alert pressure concentrated
+right now" at a glance without per-host marker overlap drowning the
+view. Combined with the §4 popup configuration, drilldown into a
+cluster expands it on click to surface the constituent per-host
+alert load.
+
+## 1. Source description
+
+Same **CIM Alerts** data model as the markers / h3 / heat / paths
+companions — see
+[cim-alerts/markers §1](./markers.md#1-source-description) for the
+data model background and the `tag=alert` contract. The relevant
+distinction for THIS recipe: the panel renders per-host alert volume
+as zoom-adaptive cluster bubbles instead of flat markers, which
+removes the visual-noise floor created by hundreds of overlapping
+dots at world zoom.
+
+**Why supercluster for CIM Alerts.** A markers panel at world zoom
+on a typical ES tenant collapses every affected `dest` into the same
+visual region — Amsterdam-data-centre, AWS-eu-west-1, AWS-us-east-1
+each produce a single visual marker that's actually 30-200 overlapping
+markers from different hosts. The cluster layer renders a single
+labelled bubble per visual cluster with the constituent host count
+("48 alerts firing across 11 hosts in AWS us-east-1"), and zooming
+in expands the bubble into the constituent per-host markers — same
+data, zoom-adaptive rendering.
+
+The 5-minute "tactical NOC hand-off — where is alert pressure
+concentrated right now" answer reads off the cluster panel from
+across the SOC at a glance; the operator then zooms in on the
+hottest cluster to drill into per-host attribution.
+
+**Typical sourcetype / index:** anything tagged `alert` (check
+`| tstats values(sourcetype) WHERE \`cim_Alerts_indexes\` tag=alert`).
+Typical indexes: `notable` (ES correlation results),
+`itsi_tracked_alerts` (ITSI), `summary` (saved-search aggregation),
+and the SIEM-forwarder indexes (`pan_logs`, `crowdstrike`,
+`microsoft365`, etc.). See the
+[markers companion §1](./markers.md#1-source-description) for the
+broader catalogue.
+
+**No add-on required beyond Splunk_SA_CIM** for the data model. Fully
+air-gap compatible per ROADMAP §1a.
+
+## 2. SPL recipe
+
+```spl
+| tstats summariesonly=true count AS alert_count,
+    dc(Alerts.signature) AS distinct_signatures,
+    values(Alerts.severity) AS severities
+  FROM datamodel=Alerts WHERE earliest=-24h
+  BY Alerts.dest
+| rename "Alerts.dest" AS dest
+| iplocation dest
+| where isnotnull(lat) AND isnotnull(lon)
+| eval max_severity=case(
+    mvfind(severities, "^critical$") >= 0, "critical",
+    mvfind(severities, "^high$") >= 0, "high",
+    mvfind(severities, "^medium$") >= 0, "medium",
+    mvfind(severities, "^low$") >= 0, "low",
+    mvfind(severities, "^informational$") >= 0, "informational",
+    true(), "unknown")
+| rename dest AS id
+| fields id, lat, lon, dest, alert_count, max_severity,
+    distinct_signatures
+| sort - alert_count
+| head 5000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/supercluster/>._
+
+## 3. Expected fields
+
+| field               | type    | example                       |
+|---------------------|---------|-------------------------------|
+| id                  | string  | web-prod-04.example.com       |
+| lat                 | number  | 47.6062                       |
+| lon                 | number  | -122.3321                     |
+| dest                | string  | web-prod-04.example.com       |
+| alert_count         | integer | 47                            |
+| max_severity        | string  | critical                      |
+| distinct_signatures | integer | 8                             |
+
+Seven fields, all of which appear in `expected_fields` in the
+frontmatter and are cross-checked by `scripts/check-recipe-schema.py`.
+
+The supercluster layer requires `lat` / `lon` for the geographic
+grouping; `id` for cross-panel coordination; and carries `dest`,
+`alert_count`, `max_severity`, `distinct_signatures` through to the
+per-host popup when a cluster is expanded to individual markers.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pointRenderer": "cluster"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/supercluster/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-alerts/supercluster/>._
+
+# === END: https://fenre.github.io/better_map/recipes/cim-alerts/supercluster/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/cim-authentication/extrusion-3d/ ===
+
+# Recipes / CIM Authentication — 3D extrusion
+
+> Source: `docs/recipes/cim-authentication/extrusion-3d.md`  
+> URL: <https://fenre.github.io/better_map/recipes/cim-authentication/extrusion-3d/>
+
+# CIM Authentication — US states 3D extrusion
+
+The third-dimension companion to the
+[cim-authentication/markers](./markers.md),
+[cim-authentication/heat](./heat.md),
+[cim-authentication/h3](./h3.md),
+[cim-authentication/supercluster](./supercluster.md), and
+[cim-authentication/paths](./paths.md) companions — same
+`tag=authentication` data model, same `iplocation`-derived source-IP
+geocoding, but the panel renders per-state aggregation as **3D
+extruded prisms** rather than per-IP markers or smooth heat blobs.
+The 4th source to demonstrate the extrusion-3d layer (joining
+geo-us-states, cim-network-traffic, and meraki), promoting the layer
+**out of the 3-source singleton-trap region**.
+
+The right shape for **executive-briefing identity-attack panels**
+where the absolute volume delta between states matters (a choropleth's
+colour ramp saturates around the 4-5 hottest states; extrusion-3d's
+height encoding has unbounded headroom), **per-jurisdiction compliance
+views** (GDPR / state-level data-residency dashboards) where the
+visual cliff over CA, NY, or VA is itself the executive talking point,
+and **incident-response after a credential-stuffing campaign** where
+the geographic distribution of failed logins by US state needs to be
+visible at first glance.
+
+## 1. Source description
+
+Same **CIM Authentication** data model as the markers / heat / h3 /
+supercluster / paths companions — see
+[cim-authentication/markers §1](./markers.md#1-source-description)
+for the data model background. The relevant distinction for THIS
+recipe: the panel renders per-state aggregation as a **height-extruded
+polygon prism** for failed-authentication source IPs, not a flat
+choropleth or per-IP markers.
+
+**Why extrusion-3d for CIM Authentication.** A choropleth saturates:
+once California, Texas, and Virginia all exceed the 90th percentile of
+failed-login volume, the colour ramp can't distinguish them — they're
+all "dark viridis". Extrusion-3d preserves rank visibility because
+height-encoding has unbounded headroom — California at 12k failed
+logins is **10x taller** than Wyoming at 1.2k, and the visual gap is
+impossible to miss. Combined with the additive choropleth (height +
+colour encode the same `value` — see §4), the panel becomes
+double-encoded: height for absolute rank, colour for ordinal "where
+is the heat".
+
+The 5-minute "credential stuffing campaign hit us overnight, which
+US regions did it come from?" answer reads off the panel from across
+the SOC at a glance — exactly the affordance a tactical-operations
+shift hand-off needs.
+
+**Typical sourcetype / index:** any sourcetype tagged `authentication`
+in your CIM tag config — `WinEventLog:Security` (AD), `azure:eventhub`
+(Entra ID), `okta:log` (Okta), `aws:cloudtrail` (AWS IAM),
+`cisco:duo`, `cisco:ise:syslog`, `linux_secure` (PAM), `salesforce`,
+`workday`. See the
+[markers companion §1](./markers.md#1-source-description) for the
+broader catalogue.
+
+**No add-on required beyond Splunk_SA_CIM** for the data model, and
+the bundled `us-states.pmtiles` preset for the polygons. Fully
+air-gap compatible per ROADMAP §1a.
+
+## 2. SPL recipe
+
+```spl
+| tstats summariesonly=true count AS failure_count,
+    dc(Authentication.user) AS distinct_users
+  FROM datamodel=Authentication
+  WHERE Authentication.action="failure" earliest=-24h
+  BY Authentication.src
+| rename "Authentication.src" AS src
+| where match(src, "^\d+\.\d+\.\d+\.\d+$")
+| iplocation src
+| where Country="United States" AND isnotnull(Region)
+| stats sum(failure_count) AS value,
+    sum(distinct_users) AS distinct_users
+  BY Region
+| eval id=upper(case(
+    Region=="California","CA", Region=="New York","NY",
+    Region=="Texas","TX", Region=="Washington","WA",
+    Region=="Illinois","IL", Region=="Florida","FL",
+    Region=="Massachusetts","MA", Region=="Virginia","VA",
+    Region=="Colorado","CO", Region=="Oregon","OR",
+    Region=="Pennsylvania","PA", Region=="New Jersey","NJ",
+    Region=="Georgia","GA", Region=="North Carolina","NC",
+    Region=="Ohio","OH", Region=="Michigan","MI",
+    Region=="Arizona","AZ", Region=="Minnesota","MN",
+    Region=="Indiana","IN", Region=="Tennessee","TN",
+    Region=="District of Columbia","DC",
+    true(),substr(Region,1,2)))
+| rename Region AS state_name
+| fields id, state_name, value, distinct_users
+| sort - value
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/extrusion-3d/>._
+
+## 3. Expected fields
+
+| field          | type    | example    |
+|----------------|---------|------------|
+| id             | string  | CA         |
+| state_name     | string  | California |
+| value          | integer | 12847      |
+| distinct_users | integer | 1184       |
+
+Four fields, all of which appear in `expected_fields` in the
+frontmatter — `value` ALSO drives the `extrusionHeightField` formatter
+option (per the `drives_formatter_option` annotation), which is what
+produces the per-state vertical extrusion. The polygon geometry
+itself is bundled in the `us-states.pmtiles` preset — Better Map
+joins polygon to SPL row on `id`.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinPreset": "us-states",
+  "enable3DExtrusion": true,
+  "extrusionHeightField": "value",
+  "extrusionScale": 50.0,
+  "enableChoropleth": "true",
+  "palette": "viridis"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/extrusion-3d/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/extrusion-3d/>._
+
+# === END: https://fenre.github.io/better_map/recipes/cim-authentication/extrusion-3d/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/cim-authentication/h3/ ===
 
@@ -7874,6 +8149,121 @@ _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are o
 
 # === END: https://fenre.github.io/better_map/recipes/kvstore-latlon/supercluster/ ===
 
+# === BEGIN: https://fenre.github.io/better_map/recipes/kvstore-latlon/polygons/ ===
+
+# Recipes / KV Store (geo polygons collection) — polygons
+
+> Source: `docs/recipes/kvstore-latlon/polygons.md`  
+> URL: <https://fenre.github.io/better_map/recipes/kvstore-latlon/polygons/>
+
+# KV Store (geo polygons collection) — polygons
+
+Render named polygon boundaries from a customer-managed KV Store
+collection — asset zones, sales territories, fire-cell areas, branch
+service territories, restricted-access perimeters, geofences. The
+**second source** to demonstrate the polygons layer (alongside the
+existing [csv-lookup-geo/polygons](../csv-lookup-geo/polygons.md)
+companion), promoting the polygons layer **out of the singleton-trap
+region**.
+
+KV Store is the right home for polygons when the geometry set:
+
+- changes frequently (a GIS team can `outputlookup` updates without a
+  Splunk app redeploy)
+- requires row-level RBAC (e.g., territory polygons restricted to the
+  sales region's regional director)
+- needs to participate in a join with telemetry indexed elsewhere (KV
+  Store queries are first-class in SPL)
+- spans search heads in a SHC (KV replicates automatically)
+
+## 1. Source description
+
+A KV Store collection named `site_polygons` (rename to match your
+install) holds one row per polygon boundary, with columns:
+
+| column     | type   | purpose                                              |
+|------------|--------|------------------------------------------------------|
+| `zone_id`  | string | per-zone unique key (joined to telemetry, drilldown) |
+| `zone_name`| string | human-readable label                                 |
+| `zone_type`| string | category (e.g., `production`, `storage`, `office`)   |
+| `geojson`  | string | stringified GeoJSON `Polygon` or `MultiPolygon`      |
+| `owner_team`| string | RBAC / ownership annotation                          |
+
+The `geojson` column holds a single-line stringified GeoJSON geometry
+per [RFC 7946 §3.1.6](https://datatracker.ietf.org/doc/html/rfc7946#section-3.1.6).
+The collection is defined in `collections.conf` + `transforms.conf`
+per the three-file lookup contract (see the
+[splunk-lookups skill](https://github.com/fenre/better_map/blob/main/.cursor/rules/splunk-lookups.mdc)).
+
+**Typical sourcetype / index:** none — `| inputlookup` runs against
+the KV Store collection directly, no event ingestion is involved.
+
+**One-time setup** (skip if your collection already exists):
+
+```spl
+| makeresults
+| eval zone_id="ZONE-PLANT-A", zone_name="Plant A production floor",
+       zone_type="production", owner_team="manufacturing-ops",
+       geojson="{\"type\":\"Polygon\",\"coordinates\":[[[-95.37,29.76],[-95.36,29.76],[-95.36,29.77],[-95.37,29.77],[-95.37,29.76]]]}"
+| append [
+  | makeresults
+  | eval zone_id="ZONE-PLANT-B", zone_name="Plant B storage yard",
+         zone_type="storage", owner_team="manufacturing-ops",
+         geojson="{\"type\":\"Polygon\",\"coordinates\":[[[-95.39,29.76],[-95.38,29.76],[-95.38,29.77],[-95.39,29.77],[-95.39,29.76]]]}"]
+| fields - _time
+| outputlookup site_polygons
+```
+
+(The one-time setup is the only place `| makeresults` is allowed in
+this recipe — it is bootstrap data, not panel data. Per ROADMAP §1a
+and the Splunk SPL anti-pattern rules, `| makeresults` is BANNED
+inside dashboard `dataSources` queries.)
+
+In production you would NOT generate the GeoJSON inline — you would
+export polygon geometry from a GIS tool (QGIS, ArcGIS) to GeoJSON,
+then `outputlookup` the rows into the KV Store collection from a
+nightly saved-search.
+
+## 2. SPL recipe
+
+```spl
+| inputlookup site_polygons
+| rename zone_id AS id
+| fields id, zone_name, zone_type, geojson, owner_team
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/polygons/>._
+
+## 3. Expected fields
+
+| field      | type   | example                                                                  |
+|------------|--------|--------------------------------------------------------------------------|
+| id         | string | ZONE-PLANT-A                                                             |
+| zone_name  | string | Plant A production floor                                                 |
+| zone_type  | string | production                                                               |
+| geojson    | string | `{"type":"Polygon","coordinates":[[[-95.37,29.76],[…]]]}`                |
+| owner_team | string | manufacturing-ops                                                        |
+
+All five fields appear in `expected_fields` in the frontmatter and are
+cross-checked by `scripts/check-recipe-schema.py`.
+
+`zone_name`, `zone_type`, and `owner_team` flow through automatically
+as feature properties on the rendered GeoJSON — popups, tooltips, and
+drilldown actions can reference them by name.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "polygonFill": "#3b82f6",
+  "polygonOpacity": 0.35
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/polygons/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/polygons/>._
+
+# === END: https://fenre.github.io/better_map/recipes/kvstore-latlon/polygons/ ===
+
 # === BEGIN: https://fenre.github.io/better_map/recipes/meraki/extrusion-3d/ ===
 
 # Recipes / Meraki (Cisco vendor TA) — 3D extrusion
@@ -13143,7 +13533,7 @@ Each entry below distils the corresponding YAML scaffold so an LLM can answer in
 
 # Appendix B — Per-source recipe matrix
 
-> Source of truth: `docs/_machine/recipes/index.yaml` (75 recipe(s), emission order)
+> Source of truth: `docs/_machine/recipes/index.yaml` (78 recipe(s), emission order)
 
 Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answer 'which recipe matches this data source?' without fetching every recipe page. Recipes carry one of three statuses: `verified` (smoke-tested against a live Splunk tenant with proof in the YAML metadata), `unverified` (the recipe follows the contract but has not yet been smoke-tested), or `deferred` (the recipe is known to be incomplete pending upstream work). The expected-field contract for each recipe lives in §3 of the recipe page (kept verbatim in this file under the matching `# === BEGIN: …/recipes/<source>/<layer>/ ===` block); follow the Page link below to jump to it.
 
@@ -13153,6 +13543,8 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `cim-alerts--heat` | CIM Alerts → Heatmap | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-alerts/heat.md](https://fenre.github.io/better_map/recipes/cim-alerts/heat/) |
 | `cim-alerts--markers` | CIM Alerts → Markers | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-alerts/markers.md](https://fenre.github.io/better_map/recipes/cim-alerts/markers/) |
 | `cim-alerts--paths` | CIM Alerts → Paths | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-alerts/paths.md](https://fenre.github.io/better_map/recipes/cim-alerts/paths/) |
+| `cim-alerts--supercluster` | CIM Alerts → Supercluster | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-alerts/supercluster.md](https://fenre.github.io/better_map/recipes/cim-alerts/supercluster/) |
+| `cim-authentication--extrusion-3d` | CIM Authentication → 3D extrusion | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/extrusion-3d.md](https://fenre.github.io/better_map/recipes/cim-authentication/extrusion-3d/) |
 | `cim-authentication--h3` | CIM Authentication → H3 hexbin | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/h3.md](https://fenre.github.io/better_map/recipes/cim-authentication/h3/) |
 | `cim-authentication--heat` | CIM Authentication → Heatmap | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/heat.md](https://fenre.github.io/better_map/recipes/cim-authentication/heat/) |
 | `cim-authentication--markers` | CIM Authentication → Markers | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/markers.md](https://fenre.github.io/better_map/recipes/cim-authentication/markers/) |
@@ -13198,6 +13590,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `kvstore-latlon--heat` | KV Store (lat/lon collection) → Heatmap | unverified | — | — | [docs/recipes/kvstore-latlon/heat.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/heat/) |
 | `kvstore-latlon--markers` | KV Store (lat/lon collection) → Markers | unverified | — | — | [docs/recipes/kvstore-latlon/markers.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/) |
 | `kvstore-latlon--paths` | KV Store (lat/lon collection) → Paths | unverified | — | — | [docs/recipes/kvstore-latlon/paths.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/paths/) |
+| `kvstore-latlon--polygons` | KV Store (geo polygons collection) → Polygons | unverified | — | — | [docs/recipes/kvstore-latlon/polygons.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/polygons/) |
 | `kvstore-latlon--supercluster` | KV Store (lat/lon collection) → Supercluster | unverified | — | — | [docs/recipes/kvstore-latlon/supercluster.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/supercluster/) |
 | `meraki--extrusion-3d` | Cisco Meraki (devices) → 3D extrusion | unverified | `Splunk_TA_cisco_meraki` | — | [docs/recipes/meraki/extrusion-3d.md](https://fenre.github.io/better_map/recipes/meraki/extrusion-3d/) |
 | `meraki--h3` | Cisco Meraki (devices) → H3 hexbin | unverified | `Splunk_TA_cisco_meraki` | — | [docs/recipes/meraki/h3.md](https://fenre.github.io/better_map/recipes/meraki/h3/) |

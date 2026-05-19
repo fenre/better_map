@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 75
+recipe_count: 78
 recipes:
 - id: cim-alerts--h3
   source:
@@ -249,6 +249,127 @@ recipes:
   - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
     path: docs/reference/bm-ct-1.md
   path: docs/recipes/cim-alerts/paths.md
+- id: cim-alerts--supercluster
+  source:
+    id: cim-alerts
+    display_name: CIM Alerts
+    pattern: splunk-cim
+  layer:
+    id: supercluster
+    display_name: Supercluster
+  status: unverified
+  last_verified_iso8601: '2026-05-22'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_SA_CIM
+    optional: false
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: web-prod-04.example.com
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '47.6062'
+  - name: lon
+    type: number
+    example: '-122.3321'
+  - name: dest
+    type: string
+    example: web-prod-04.example.com
+  - name: alert_count
+    type: integer
+    example: '47'
+  - name: max_severity
+    type: string
+    example: critical
+  - name: distinct_signatures
+    type: integer
+    example: '8'
+  required_formatter_options:
+  - pointRenderer
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (per-host identity at all zooms)
+    path: docs/recipes/cim-alerts/markers.md
+  - description: Companion recipes — same source, h3/heat/paths layers (per-cell aggregation, density, attack-flow)
+    path: docs/recipes/cim-alerts/h3.md
+  - description: Pattern reference — supercluster on Cisco Meraki devices (per-AP fleet clustering)
+    path: docs/recipes/meraki/supercluster.md
+  - description: Pattern reference — supercluster on CIM Network Traffic (sibling CIM source-IP clustering)
+    path: docs/recipes/cim-network-traffic/supercluster.md
+  - description: Pattern reference — supercluster on CIM Authentication (sibling CIM clustering with severity)
+    path: docs/recipes/cim-authentication/supercluster.md
+  - description: Splunk CIM skill — Alerts data model field reference
+    path: ~/.cursor/skills/splunk-cim/SKILL.md
+  - description: Splunk ES skill — notable events + correlation searches generate CIM Alerts
+    path: ~/.cursor/skills/splunk-enterprise-security/SKILL.md
+  - description: Layer reference — supercluster
+    path: docs/reference/layers.md
+  - description: Clusters layer source — supercluster index, clusterMaxZoom=14, clusterRadius=48
+    path: better_map/appserver/static/visualizations/better_map/src/lib/layers/clusters.js
+  path: docs/recipes/cim-alerts/supercluster.md
+- id: cim-authentication--extrusion-3d
+  source:
+    id: cim-authentication
+    display_name: CIM Authentication
+    pattern: splunk-cim
+  layer:
+    id: extrusion-3d
+    display_name: 3D extrusion
+  status: unverified
+  last_verified_iso8601: '2026-05-22'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_SA_CIM
+    optional: false
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: CA
+    drives_formatter_option: idField
+  - name: state_name
+    type: string
+    example: California
+  - name: value
+    type: integer
+    example: '12847'
+    drives_formatter_option: extrusionHeightField
+  - name: distinct_users
+    type: integer
+    example: '1184'
+  required_formatter_options:
+  - featureJoinPreset
+  - enable3DExtrusion
+  - extrusionHeightField
+  - extrusionScale
+  - enableChoropleth
+  - palette
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (per-IP identity)
+    path: docs/recipes/cim-authentication/markers.md
+  - description: Companion recipe — same source, heat/h3/supercluster/paths layers
+    path: docs/recipes/cim-authentication/h3.md
+  - description: Pattern reference — extrusion-3d on the bundled us-states preset
+    path: docs/recipes/geo-us-states/extrusion-3d.md
+  - description: Pattern reference — extrusion-3d on CIM Network Traffic (sibling per-state aggregation)
+    path: docs/recipes/cim-network-traffic/extrusion-3d.md
+  - description: Pattern reference — extrusion-3d on Cisco Meraki devices
+    path: docs/recipes/meraki/extrusion-3d.md
+  - description: Splunk CIM skill — Authentication data model field reference
+    path: ~/.cursor/skills/splunk-cim/SKILL.md
+  - description: Layer reference — extrusion-3d
+    path: docs/reference/layers.md
+  - description: Formatter schema — enable3DExtrusion, extrusionHeightField, extrusionScale
+    path: docs/_machine/formatter-schema.json
+  - description: featureJoin layer (us-states PMTiles preset; promoteId=stusps)
+    path: better_map/appserver/static/visualizations/better_map/src/lib/layers/featureJoin.js
+  path: docs/recipes/cim-authentication/extrusion-3d.md
 - id: cim-authentication--h3
   source:
     id: cim-authentication
@@ -2717,6 +2838,53 @@ recipes:
   - description: Layer reference — paths
     path: docs/reference/layers.md
   path: docs/recipes/kvstore-latlon/paths.md
+- id: kvstore-latlon--polygons
+  source:
+    id: kvstore-latlon
+    display_name: KV Store (geo polygons collection)
+    pattern: splunk-lookup
+  layer:
+    id: polygons
+    display_name: Polygons
+  status: unverified
+  last_verified_iso8601: '2026-05-22'
+  verified_against: null
+  splunk_apps_required: []
+  expected_fields:
+  - name: id
+    type: string
+    example: ZONE-PLANT-A
+    drives_formatter_option: idField
+  - name: zone_name
+    type: string
+    example: Plant A production floor
+  - name: zone_type
+    type: string
+    example: production
+  - name: geojson
+    type: string
+    example: '{"type":"Polygon","coordinates":[[[-95.37,29.76],[-95.36,29.76],[-95.36,29.77],[-95.37,29.77],[-95.37,29.76]]]}'
+  - name: owner_team
+    type: string
+    example: manufacturing-ops
+  required_formatter_options:
+  - polygonFill
+  - polygonOpacity
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (per-site identity)
+    path: docs/recipes/kvstore-latlon/markers.md
+  - description: Companion recipe — same source, heat/h3/supercluster/paths layers
+    path: docs/recipes/kvstore-latlon/heat.md
+  - description: Pattern reference — polygons on CSV-lookup-anchored geometry (sibling singleton until now)
+    path: docs/recipes/csv-lookup-geo/polygons.md
+  - description: Splunk lookups skill — KV Store lookup configuration
+    path: ~/.cursor/skills/splunk-lookups/SKILL.md
+  - description: Layer reference — polygons
+    path: docs/reference/layers.md
+  - description: polygons layer source (geojson + wkt field auto-detect contract)
+    path: better_map/appserver/static/visualizations/better_map/src/lib/layers/polygons.js
+  path: docs/recipes/kvstore-latlon/polygons.md
 - id: kvstore-latlon--supercluster
   source:
     id: kvstore-latlon
