@@ -2809,6 +2809,124 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 > `llms-full.txt` at the next regeneration via the wave-13
 > generalised ROADMAP status-block regex._
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 24 recipes
+> SHIPPED (3 more recipes — recipe count 60 → 63, layer-type
+> coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
+> unchanged, paths usage 7 → 8, supercluster usage 8 → 10).**
+> Wave 24 continues the **diversification regime** opened by
+> waves 21-23, this time with a **SecOps / NetOps incident-
+> response theme**: every new recipe adds a previously-missing
+> layer shape to a security or network-operations source row,
+> and each one is a companion to an already-shipped layer
+> shape on the same source (rather than opening a new triplet).
+> Together waves 21-24 have now filled 12 of the original ~24
+> diversification cells (3 per wave for 4 waves).
+> - **`cim-performance/paths`** (NEW layer shape for source) —
+>   incident-cascade polylines that chain hosts in the same
+>   `datacenter` that breached the same CPU threshold within
+>   the same hour. 4th cell on the cim-performance row
+>   (joining markers, h3, heat). Uses `tstats` over
+>   `Performance.All_Performance` for CPU > 80%,
+>   `asset_lookup_by_str` for geo + `datacenter`, derives
+>   `incident_id = datacenter . "__" . hour_bucket` to group
+>   co-located co-breaching hosts, `streamstats count AS seq
+>   BY incident_id` for vertex ordering, and
+>   `eventstats dc(host) AS hops_in_incident BY incident_id` +
+>   `where hops_in_incident >= 2` to drop singletons. Right
+>   shape for **SRE blame-cascade reconstruction panels** —
+>   surfaces "noisy-neighbor" incidents (one host's CPU
+>   pressure correlating with peers in the same rack/AZ) in a
+>   way that markers + h3 cannot. §6 gotchas cover the
+>   `asset_lookup_by_str` Splunk Enterprise Security dependency
+>   (assets framework is ES-only; CIM-only deployments need an
+>   alternate enrichment lookup), the hour-bucket grouping
+>   tradeoff (true incidents often span 15-90 min not exactly
+>   an hour; tune `bucket _time span=1h` to environment), the
+>   datacenter-grouping assumption (assets without
+>   `datacenter` get filtered — fillnull for cloud-native
+>   shops), and the `head 2000` cap. No OT-safety dependency
+>   (CIM Performance is IT-host telemetry).
+> - **`es-risk/supercluster`** (NEW layer shape for source) —
+>   portfolio risk-object overview at executive zoom. 4th
+>   cell on the es-risk row (joining markers, h3, heat).
+>   Inherits the markers companion's `risk` index + 24-hour
+>   window + `identity_lookup_expanded` + `asset_lookup_by_str`
+>   geo enrichment, but **lowers** the risk threshold
+>   (`total_risk >= 10` vs the markers companion's higher
+>   threshold) to surface a broader portfolio view, and caps
+>   at `head 5000`. Forces `pointRenderer: "cluster"` for
+>   zoom-adaptive aggregation — at world zoom 5000 risk
+>   objects render as ~25 cluster pills (one per major
+>   region); progressively splits as the user zooms. Right
+>   shape for **CISO / SOC-manager portfolio risk-posture
+>   overview panels** where the markers companion's
+>   individual-marker rendering would overwhelm at 1000+
+>   risk objects. §6 gotchas cover the asymmetric A&I
+>   coverage (some risk objects geocode from
+>   `identity_lookup_expanded`, others from
+>   `asset_lookup_by_str`; `coalesce` pattern handles both),
+>   the lowered risk threshold (matched to portfolio-overview
+>   semantics; for action-grade alerting see markers
+>   companion), cluster-pill aggregate semantics (count not
+>   summed risk-score; use the h3 companion for per-region
+>   risk-score aggregation), and the `head 5000` defensive
+>   cap. No OT-safety dependency (ES risk index is IT-
+>   security identity / asset data).
+> - **`netflow-sflow-ipfix/supercluster`** (NEW layer shape
+>   for source) — global NetFlow destination footprint at
+>   executive zoom. 5th cell on the netflow row (joining
+>   markers, h3, heat, paths). Inherits the markers
+>   companion's NetFlow / sFlow / IPFIX schema + `iplocation
+>   dest_ip` enrichment, but **lowers** the bytes threshold
+>   (`bytes >= 1048576` / 1 MB vs the paths companion's 10
+>   MB) for wider coverage and caps at `head 10000`. Forces
+>   `pointRenderer: "cluster"` for zoom-adaptive aggregation
+>   — at world zoom 10k destinations render as ~20 cluster
+>   pills; progressively splits as the user zooms. Right
+>   shape for **NetOps single-pane global-destination
+>   overview panels** that need to handle 10k+ destinations
+>   without freezing the renderer. §6 gotchas cover the CDN
+>   destination geo-flicker (CDNs shift POPs hourly — same
+>   `dest_ip` may bounce between regions across the 1-hour
+>   window), the lowered 1 MB threshold (matched to
+>   overview-grade semantics; for action-grade investigation
+>   see the paths companion's 10 MB threshold), cluster-pill
+>   aggregate semantics (count not summed bytes; use the h3
+>   companion for per-region bytes aggregation), and the
+>   `head 10000` render cap (audit-grade coverage needs
+>   country / port-band partitioning). No OT-safety
+>   dependency (NetFlow is IT-layer flow data).
+> - **Token budget.** Wave 24 lands at **~148,914 estimated
+>   tokens** / **~26,086 tokens of WARN headroom** (175,000 -
+>   148,914). The 3 new recipes cost **~3.6k tokens combined**
+>   (~1.21k/recipe) — slightly under the wave-23 baseline of
+>   ~1.27k/recipe. At this cadence, headroom funds **~21 more
+>   recipes** before the next token-trim is required.
+> - **Layer / pattern coverage updates.** Recipe count 60 → 63
+>   (+3). Layer coverage 9/10 unchanged (extrusion-3d still
+>   the one cell occupied). **paths usage 7 → 8** (cim-
+>   performance adopts). **supercluster usage 8 → 10** (es-
+>   risk + netflow both adopt). Source-pattern coverage 8/8
+>   unchanged. Source-row triplet count: 14 unchanged (wave
+>   24 deliberately diversification). OT-safety-relevant
+>   recipe count: 5 unchanged (none of the wave-24 recipes
+>   are OT-safety-relevant). The diversification regime now
+>   has filled **12 of the original ~24 cells** opened by
+>   wave 21 (3 per wave for waves 21-24) — remaining cells
+>   skew toward `choropleth` (8 source rows missing it), the
+>   long-tail polygon shapes (`vector-tile-join`,
+>   `extrusion-3d`-on-non-geo sources), and `paths` /
+>   `supercluster` on the remaining source rows that don't
+>   already have them (cim-alerts already has paths;
+>   cim-authentication already has supercluster; the
+>   remaining gaps for these two shapes are concentrated on
+>   geo-lookup-pattern sources like csv-lookup-geo /
+>   kvstore-latlon / thousandeyes).
+>
+> _This `> **Status …` blockquote will self-strip from
+> `llms-full.txt` at the next regeneration via the wave-13
+> generalised ROADMAP status-block regex._
+
 > **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 23 recipes
 > SHIPPED (3 more recipes — recipe count 57 → 60, layer-type
 > coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
