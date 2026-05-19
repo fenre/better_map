@@ -107,6 +107,11 @@ function _handleFailure(opts, err) {
         _state.ringBuffer.shift();
     }
     _safeReport(envelope);
+    if (opts.panelRoot && typeof CustomEvent !== 'undefined') {
+        try {
+            opts.panelRoot.dispatchEvent(new CustomEvent('better_map:error', { detail: envelope }));
+        } catch (_) { /* dispatch failure is never fatal */ }
+    }
     _safeOnError(opts.onError, err);
     return { ok: false, error: envelope };
 }

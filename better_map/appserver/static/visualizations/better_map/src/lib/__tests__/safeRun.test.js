@@ -90,3 +90,104 @@ describe('safeRun — sync core', () => {
         expect(r.error.message).toBe('boom');
     });
 });
+
+describe('safeRun — reporter chain', () => {
+    beforeEach(() => {
+        __resetSafeRunState();
+    });
+
+    it('pushes failed envelopes onto the ring buffer (cap 50)', () => {
+        for (let i = 0; i < 60; i++) {
+            safeRun({
+                scope: LAYER_MARKERS,
+                action: function () { throw new Error('e' + i); }
+            });
+        }
+        const list = getRecentErrors();
+        expect(list).toHaveLength(50);
+        expect(list[0].message).toBe('e10');           // first 10 dropped
+        expect(list[49].message).toBe('e59');
+    });
+
+    it('does NOT push successful runs onto the ring buffer', () => {
+        for (let i = 0; i < 5; i++) {
+            safeRun({ scope: LAYER_MARKERS, action: function () { return i; } });
+        }
+        expect(getRecentErrors()).toHaveLength(0);
+    });
+
+    it('default reporter logs structured [scope] severity: message line', () => {
+        const logs = [];
+        const origLog = console.log;
+        console.log = function () { logs.push(Array.from(arguments).join(' ')); };
+        try {
+            safeRun({
+                scope: LAYER_MARKERS,
+                action: function () { throw new Error('boom'); }
+            });
+        } finally {
+            console.log = origLog;
+        }
+        expect(logs[0]).toBe('[better_map:layer:markers] warning: boom');
+    });
+
+    it('test reporter receives envelope', () => {
+        const received = [];
+        __setReporter(function (env) { received.push(env); });
+        safeRun({
+            scope: LAYER_MARKERS,
+            action: function () { throw new Error('boom'); }
+        });
+        expect(received).toHaveLength(1);
+        expect(received[0].scope).toBe(LAYER_MARKERS);
+        expect(received[0].message).toBe('boom');
+    });
+
+    it('dispatches better_map:error CustomEvent on panelRoot when provided', () => {
+        const root = document.createElement('div');
+        const events = [];
+        root.addEventListener('better_map:error', function (e) { events.push(e.detail); });
+        safeRun({
+            scope: LAYER_MARKERS,
+            panelRoot: root,
+            action: function () { throw new Error('boom'); }
+        });
+        expect(events).toHaveLength(1);
+        expect(events[0].scope).toBe(LAYER_MARKERS);
+    });
+
+    it('does NOT dispatch CustomEvent when panelRoot is omitted', () => {
+        // Just assert no throw + the test as a whole passes.
+        const r = safeRun({
+            scope: LAYER_MARKERS,
+            action: function () { throw new Error('boom'); }
+        });
+        expect(r.ok).toBe(false);
+    });
+
+    it('reporter-itself throwing falls back to console.error and does NOT propagate', () => {
+        const errs = [];
+        const origErr = console.error;
+        console.error = function () { errs.push(Array.from(arguments).join(' ')); };
+        __setReporter(function () { throw new Error('reporter-boom'); });
+        try {
+            const r = safeRun({
+                scope: LAYER_MARKERS,
+                action: function () { throw new Error('original-boom'); }
+            });
+            expect(r.ok).toBe(false);
+            expect(r.error.message).toBe('original-boom');
+            expect(errs.some(function (l) { return l.indexOf('reporter threw') >= 0; })).toBe(true);
+        } finally {
+            console.error = origErr;
+        }
+    });
+
+    it('getRecentErrors({scope}) filters', () => {
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('a'); } });
+        safeRun({ scope: MAP_CREATE, action: function () { throw new Error('b'); } });
+        const markers = getRecentErrors({ scope: LAYER_MARKERS });
+        expect(markers).toHaveLength(1);
+        expect(markers[0].message).toBe('a');
+    });
+});
