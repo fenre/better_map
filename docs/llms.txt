@@ -51,6 +51,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [CIM Alerts → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-alerts/markers/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Alerts → Paths (unverified)](https://fenre.github.io/better_map/recipes/cim-alerts/paths/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Alerts → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/cim-alerts/supercluster/): apps required: Splunk_SA_CIM, builtin:iplocation.
+- [CIM Authentication (data model) → Choropleth (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/choropleth/): apps required: Splunk_SA_CIM.
 - [CIM Authentication → 3D extrusion (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/extrusion-3d/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Authentication → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/h3/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Authentication → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/heat/): apps required: Splunk_SA_CIM, builtin:iplocation.
@@ -99,6 +100,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [KV Store (lat/lon collection) → Paths (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/paths/): apps required: none.
 - [KV Store (geo polygons collection) → Polygons (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/polygons/): apps required: none.
 - [KV Store (lat/lon collection) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/supercluster/): apps required: none.
+- [KV Store (geo polygons collection) → Vector-tile join (customer PMTiles) (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/vector-tile-join/): apps required: none.
 - [Cisco Meraki (devices) → 3D extrusion (unverified)](https://fenre.github.io/better_map/recipes/meraki/extrusion-3d/): apps required: Splunk_TA_cisco_meraki.
 - [Cisco Meraki (devices) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/meraki/h3/): apps required: Splunk_TA_cisco_meraki.
 - [Cisco Meraki (devices) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/meraki/heat/): apps required: Splunk_TA_cisco_meraki.
@@ -113,6 +115,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/ot-datastreamer/heat/): apps required: Splunk_TA_oti.
 - [OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Markers (unverified)](https://fenre.github.io/better_map/recipes/ot-datastreamer/markers/): apps required: Splunk_TA_oti.
 - [OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Paths (unverified)](https://fenre.github.io/better_map/recipes/ot-datastreamer/paths/): apps required: Splunk_TA_oti.
+- [OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/ot-datastreamer/supercluster/): apps required: Splunk_TA_oti.
 - [Splunk Stream (wire data) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/splunk-stream/h3/): apps required: Splunk_TA_stream, splunk_app_stream, builtin:iplocation.
 - [Splunk Stream (wire data) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/splunk-stream/heat/): apps required: Splunk_TA_stream, splunk_app_stream, builtin:iplocation.
 - [Splunk Stream (wire data) → Markers (unverified)](https://fenre.github.io/better_map/recipes/splunk-stream/markers/): apps required: Splunk_TA_stream, splunk_app_stream, builtin:iplocation.
