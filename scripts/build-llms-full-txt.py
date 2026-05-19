@@ -93,11 +93,16 @@ recoverable from the live theme URL pointer the trim appends to
 every trimmed item — and in wave 29 by stripping four backward-looking
 H3 subsections from ``ROADMAP.md`` (``1c. Specific honest gaps in
 v1.6``, ``What we DID verify in v1.6``, ``What v1.6 did NOT verify``,
-``9a. ROADMAP.md change log``), see
-``strip_roadmap_historical_subsections`` below — together ~4.2k tokens
+``9a. ROADMAP.md change log`` — wave 29) plus three further sections
+added at wave 30 (``### 1b. Competitive tier table`` plus the H2 pair
+``## 6. Open questions for the project owner`` and ``## 7. Defensible
+v2.0 claim — checklist`` with children §7a-7e), see
+``strip_roadmap_historical_subsections`` below — together ~8.6k tokens
 of v1.6 self-audit / single-release verification table / doc-edit
-history whose live items are already tracked in current Theme
-work-items (G1/G2/G3/G8 + R11) or recoverable via ``git log``):
+history / narrative-competitive positioning / open-question-escalation
+list / destination-state v2.0 sign-off checklist whose live items are
+already tracked in current Theme work-items (G1/G2/G3/G8 + R11) or
+recoverable via ``git log -- ROADMAP.md``):
 
   * Per-page warning at **50,000 estimated tokens** — one page should
     not dominate the corpus.
@@ -318,40 +323,68 @@ _ROADMAP_WORKITEM_HEADING = re.compile(
 
 # Roadmap historical-subsection trim contract — see
 # strip_roadmap_historical_subsections() and the E5 Phase 2 wave 29
-# ROADMAP block. ROADMAP.md carries four H3 subsections whose content
-# is purely backward-looking — the v1.6 self-audit gap list, the v1.6
-# REST-verification table, the v1.6 "things we couldn't verify"
-# bullets, and the ROADMAP.md edit history:
+# + wave 30 ROADMAP blocks. ROADMAP.md carries several H3 subsections
+# AND H2 sections whose content is purely backward-looking, narrative-
+# competitive, project-owner-question, or destination-state-checklist —
+# none of it drives code-authoring decisions in any wave that follows.
 #
-#   ### 1c. Specific honest gaps in v1.6 ...
-#   ### What we DID verify in v1.6 ...
-#   ### What v1.6 did NOT verify ...
-#   ### 9a. ROADMAP.md change log
+# H3 subsections stripped (wave 29 + wave 30 additions):
 #
-# By wave 29 these four subsections cumulatively cost ~4.2k tokens in
-# llms-full.txt. None of the content drives code-authoring decisions
-# TODAY — the gap list's live items are tracked in current Theme
-# work-items (G1/G2/G3/G8 + R11), the v1.6 verification rows have been
-# superseded by per-release G2 CI gates, and the edit history is only
-# useful when auditing past doc revisions (recoverable via git log).
-# Stripping them costs nothing to an agent authoring the next recipe
-# wave or hardening a current Theme work-item.
+#   ### 1b. Competitive tier table (wave 30 add) ...
+#   ### 1c. Specific honest gaps in v1.6 (wave 29) ...
+#   ### What we DID verify in v1.6 (wave 29) ...
+#   ### What v1.6 did NOT verify (wave 29) ...
+#   ### 9a. ROADMAP.md change log (wave 29) ...
 #
-# Match anchor is a non-capturing alternation across the four exact
-# H3 leading tokens, terminating at the next H3 or H2 heading or the
-# section-end `---` horizontal rule (whichever comes first). The
-# on-disk ROADMAP.md is unchanged — the trim runs only in the
-# in-memory body before it lands in llms-full.txt. The MkDocs site
-# continues to render every subsection for human readers via the
-# unaltered ``{% include-markdown "ROADMAP.md" %}`` include.
+# H2 sections stripped (wave 30 add):
+#
+#   ## 6. Open questions for the project owner ...
+#   ## 7. Defensible v2.0 claim — checklist (includes children 7a-7e)
+#
+# By wave 30 these cumulatively cost ~8.6k tokens in llms-full.txt:
+# the wave-29 four H3 trims reclaimed ~4.2k, the wave-30 additions
+# (§1b ~0.3k, §6 ~0.7k, §7 ~3.4k) reclaim another ~4.4k. None of
+# the content drives code-authoring decisions today:
+#
+# * §1b is a narrative-competitive positioning table (where v1.6 sits
+#   vs kepler.gl, deck.gl, ESRI ArcGIS, Mapbox Studio). Stable;
+#   irrelevant to writing the next recipe or hardening a CI gate.
+# * §6 is a list of OPEN QUESTIONS waiting for the project owner to
+#   answer (e.g., "should we adopt deck.gl interop?"). An agent
+#   cannot resolve these; they are escalation items, not work-items.
+# * §7 is the destination-state v2.0-shipping checklist — every
+#   capability / quality / perf / security / distribution box that
+#   must be true BEFORE we can call v2.0 "world-tier". Useful for
+#   release sign-off; not actionable when authoring a recipe wave.
+#
+# Match anchors are non-capturing alternations across the exact
+# leading tokens. H3 patterns terminate at the next H3 or H2 heading
+# or the section-end `---` horizontal rule (whichever comes first).
+# H2 patterns terminate at the next H2 heading or `---`. The on-disk
+# ROADMAP.md is unchanged — the trim runs only in the in-memory body
+# before it lands in llms-full.txt. The MkDocs site continues to
+# render every subsection for human readers via the unaltered
+# ``{% include-markdown "ROADMAP.md" %}`` include.
 _ROADMAP_HISTORICAL_SUBSECTION = re.compile(
     r"^### (?:"
-    r"1c\.\s+Specific honest gaps in v1\.6"
+    r"1b\.\s+Competitive tier table"
+    r"|1c\.\s+Specific honest gaps in v1\.6"
     r"|What we DID verify in v1\.6"
     r"|What v1\.6 did NOT verify"
     r"|9a\.\s+ROADMAP\.md change log"
     r")[^\n]*\n"
     r"(?:(?!^### |^## |^---$).*\n)*",
+    re.MULTILINE,
+)
+# H2-level destination-state and open-questions sections (wave 30).
+# Children H3 subsections (§7a-e) are captured by the boundary
+# stopping only at the next H2 or `---` separator.
+_ROADMAP_HISTORICAL_SECTION = re.compile(
+    r"^## (?:"
+    r"6\.\s+Open questions for the project owner"
+    r"|7\.\s+Defensible v2\.0 claim"
+    r")[^\n]*\n"
+    r"(?:(?!^## |^---$).*\n)*",
     re.MULTILINE,
 )
 # Match a top-level bullet starting with `* **Label:**`; continuation
@@ -999,13 +1032,19 @@ def strip_roadmap_status_blocks(body: str) -> tuple[str, int]:
 
 
 def strip_roadmap_historical_subsections(body: str) -> tuple[str, int]:
-    """Strip backward-looking v1.6 audit / change-log H3 subsections.
+    """Strip backward-looking / destination-state ROADMAP sections.
 
-    See the module-level ``_ROADMAP_HISTORICAL_SUBSECTION`` contract
-    for the full rationale. Returns ``(cleaned_body, subsections_removed)``.
+    See the module-level ``_ROADMAP_HISTORICAL_SUBSECTION`` (H3) and
+    ``_ROADMAP_HISTORICAL_SECTION`` (H2) contracts for the full
+    rationale. Returns ``(cleaned_body, sections_removed)`` summing
+    across both passes.
 
-    The four subsections targeted are:
+    H3 subsections (wave 29 + wave 30 expansion):
 
+    * ``### 1b. Competitive tier table`` — narrative-competitive
+      positioning of v1.6 vs kepler.gl, deck.gl, ESRI ArcGIS,
+      Mapbox Studio; stable and irrelevant to recipe authoring or
+      CI-gate hardening (wave 30 add).
     * ``### 1c. Specific honest gaps in v1.6`` — historical gap list
       whose live entries are already tracked in current Theme
       work-items (G1/G2/G3/G8 + R11 in the risk register).
@@ -1016,8 +1055,17 @@ def strip_roadmap_historical_subsections(body: str) -> tuple[str, int]:
     * ``### 9a. ROADMAP.md change log`` — doc-edit history,
       recoverable via ``git log -- ROADMAP.md`` when needed.
 
+    H2 sections (wave 30 add):
+
+    * ``## 6. Open questions for the project owner`` — escalation
+      items waiting for human owner resolution; an agent cannot
+      action them.
+    * ``## 7. Defensible v2.0 claim — checklist`` (including
+      children §7a-7e) — destination-state release-sign-off
+      criteria; useful at v2.0 cut, not when authoring a recipe.
+
     The trim is idempotent: re-running it on an already-trimmed
-    body is a no-op (the four subsections are simply gone). The
+    body is a no-op (the targeted sections are simply gone). The
     on-disk ROADMAP.md is unchanged — the trim runs only against
     the in-memory body before it lands in llms-full.txt. The MkDocs
     site continues to render every subsection for human readers.
@@ -1030,6 +1078,7 @@ def strip_roadmap_historical_subsections(body: str) -> tuple[str, int]:
         return ""
 
     cleaned = _ROADMAP_HISTORICAL_SUBSECTION.sub(_drop, body)
+    cleaned = _ROADMAP_HISTORICAL_SECTION.sub(_drop, cleaned)
     return cleaned, removed
 
 

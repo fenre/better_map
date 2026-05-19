@@ -12755,14 +12755,6 @@ These are **non-negotiable** constraints. Every work-item in §3 lives inside th
 
 > **TL;DR for any contributor reading this:** if you're about to write code that fetches from outside `splunkd:8089`, opens an external window, registers a Service Worker, requires Dashboard Studio v3 plugin keys, or builds a second AMD module, **stop**. Either the work-item is out of scope (§5) or you need to find a Splunk-resident path.
 
-### 1b. Competitive tier table
-
-| Tier | Examples | better_map v1.6 position |
-|---|---|---|
-| **Splunk Dashboard Studio map vizes** | Built-in Choropleth / Marker; Maps+ for Splunk; legacy ESRI / Leaflet ports | **Likely the most capable in this category.** No competitor in this niche pairs MapLibre vector tiles + 10 layer types + time scrubber + BM-CT-1 + Splunk-platform integrations. |
-| **Open-source geo-analytics** | kepler.gl, deck.gl, CesiumJS, Datashader+Bokeh, Leaflet+extensions | **Behind** on GPU compute, real glTF, terrain, globe, raster analytics, scale-tested layer perf. **Comparable** on layer breadth in the spec sheet, weaker in the implementation depth. Note: these competitors run as standalone web apps — they do NOT have to fit inside Splunk's runtime envelope (§1a), so feature-for-feature parity is not the right benchmark. |
-| **Commercial geo-analytics** | CARTO, Foursquare Studio (Unfolded), ESRI ArcGIS Online, Felt, Mapbox Studio | **Not in the same league** on collaboration, raster analytics, scale, ecosystem, support model. Different product category. Same caveat: those products own their runtime and their backend; better_map owns neither. |
-
 ### Bundle and dependency profile (measured 2026-05-16)
 
 | Metric | Value | Target for v2.0 |
@@ -13217,103 +13209,7 @@ Bounded scope is as important as bold scope. The following are intentionally out
 
 ---
 
-## 6. Open questions for the project owner
-
-These need an explicit decision before the relevant work-items are scoped. Each is tagged with the work-items it blocks; nothing here is rhetorical.
-
-| # | Question | Blocks | Default if no answer by milestone start |
-|---|---|---|---|
-| Q1 | **Licence.** Currently MIT per `package.json`. Confirm — or move to Apache-2.0 (explicit patent grant; matters for large-enterprise legal review). | G1, E1, E4 | Stay MIT; re-evaluate when E4 hits a customer who objects. |
-| Q2 | **Splunkbase commercial model.** Free MIT, paid commercial, or free-with-paid-support? | E1 | Free MIT for v1.7 listing; paid tier only if E4 pilot customers ask. |
-| Q3 | **AppInspect cloud vetting.** Required for Splunk Cloud customers; submission delay is the only cost. Submit at v1.7? | D1, E1 | Submit at v1.7; mark as blocking for E1. |
-| Q4 | **Telemetry collector ownership.** D4 ships an opt-in path that never POSTs to a Better Map endpoint. Who documents the customer-side HEC schema — this project or a sibling project? | D4 | This project, in `docs/operations/telemetry-schema.md`. |
-| Q5 | **Customer-pilot recruitment.** Who recruits the 3 pilots in E4 — Splunk customer-success, partner SEs, or the project owner directly? | E4 | Project owner direct; backed by partner SE referrals. |
-| Q6 | **Backend for collaboration (F5).** Is a hosted websocket fan-out realistic? If yes, who owns it? If no, drop F5 entirely. | F5 | Drop F5 unless a v1.8 customer pilot specifically asks. |
-| Q7 | **Localisation target.** v2.0 lands ≥ 3 locales **total** (English is always #1). Pick 2 more from {de, ja, no, fr, es, …}. | G4, E2 | English + de + ja; revisit when E4 pilot vertical is known. |
-| Q8 | **Splunk version floor.** Currently 10.2.0. Hold the line, or raise to 10.3 / 10.4 in v2.0? | All Theme A/B items that touch Dashboard Studio APIs | Hold 10.2.0 through v1.8; raise to whatever-is-current-LTS at v2.0 only if a new API materially helps. |
-| Q9 | **OT-safety self-test.** Per `ot-safety.mdc` Better Map must not write to Level-0/1/2 OT assets. Should we add an automated scanner (no SOAR action targets Level 0/1/2, no inputs.conf entries targeting OT zones) as a CI gate? | G2, C5 | Yes — add as a `validate-ot-safety.py` CI step under G2. |
-| Q10 | **Plugin namespace and registry.** G6 ships a `window.BetterMap.registerLayer` contract. Should plugins ALSO be listed in a central registry (npm tag, Splunkbase tag, project-owned manifest)? | G6 | Central project-owned manifest at `https://better-map.dev/plugins.json` once docs site lands. |
-
 ---
-
-## 7. Defensible v2.0 claim — checklist
-
-If, and only if, every box below is true, we can credibly call v2.0 "one of the best web map vizes in the world." The claim should not ship before the boxes do. Each box has either a measurable threshold or a verifiable artefact.
-
-### 7a. Capability
-
-- [ ] All 8 Splunk-platform integrations verified against live tenants (each with `_ref/<integration>/field-contract.{md,yaml}` checked in — both formats, kept in sync by G7 generator)
-- [ ] Spatial analytics on a worker pool; 100k-point DBSCAN < 5 s, no main-thread task > 16 ms (PerformanceObserver-asserted)
-- [ ] GPU wind/flow particles; 100k particles at 60 fps on a 2021 MacBook Air M1
-- [ ] Real glTF scenegraph; 500 instances at 60 fps; sprite fallback still works
-- [ ] MIL-STD-2525 sprite-atlas; 10k symbols < 200 ms first paint; heap delta over 100 updates ≤ 5 MB
-- [ ] Terrain + sky + (optional) globe projection toggleable without re-init
-- [ ] Raster analytics: at least NDVI + hillshade
-- [ ] Plugin / extension API frozen at `v1`; ≥ 1 third-party plugin lives in the wild; the plugin contract fits inside the runtime envelope (§1a)
-- [ ] Three locales shipped; locale switch in Splunk Web swaps strings without page reload
-- [ ] Customer-template theme CSS in repo; locked status palette enforced
-- [ ] Runtime envelope (§1a) verified: viz renders in BOTH Dashboard Studio v2 AND classic SimpleXML / SWF; feature-detection in place; degraded behaviour documented for Splunk Mobile
-
-### 7b. Quality
-
-- [ ] AppInspect cloud-cert green on Splunkbase (blocked on E1); **AppInspect runs in CI on every PR** ✅ (G2-2 / D1 SHIPPED: PR-gate cloud+future tags, release-gate adds `--fail-on-warnings`; 0/0/0/0 baseline as of v1.6.2; see [`docs/CI-GATES.md`](docs/CI-GATES.md) gate #19 — PR + release)
-- [~] Browser matrix green: Chrome / Firefox / Safari / Edge × macOS / Windows / Linux (12 cells, all green) — **Phase 1 + Phase 1.5 ✅** (`scripts/check-browser-compat.js` loads BOTH `formatter.html` AND the `visualization.js` AMD bundle in headless Chromium + Firefox + WebKit via Playwright on every PR; covers the three engine families that account for ~99 % of real browsers AND catches the "webpack target slipped to ES2020+" bundle-level regression class via an AMD `define()` shim with mocks for the two Splunk SDK externals); Phase 2 — cross-OS matrix + full-rendered `updateView` test + the 12 showcase dashboards rendered against a live Splunk container — deferred to the self-hosted-runner decision in §3 D5. Customer-facing matrix lives at `docs/COMPAT-MATRIX.md`
-- [~] WCAG 2.2 AA conformance verified — **Phase 1 ✅** (`scripts/check-accessibility.js` runs axe-core on `formatter.html` as a PR gate, 0 violations / 0 incomplete; legacy `highContrast` duplicate + orphan `mapLabelLanguage` removed); Phase 2 (showcase dashboards under D5) and Phase 3 (manual VoiceOver + NVDA, pre-E1) still pending
-- [ ] Telemetry path documented; zero data leaves by default; HEC schema published
-- [ ] No regression of the v1.5.2 BM-CT-1 contract (all controls expose `setEnabled / isEnabled / reset`)
-- [ ] **JS↔CSS contract lint (G8) green: every class created in `src/lib/**/*.js` has a rule in `visualization.css` or an allowlist entry; reverting to the v1.6.0 stylesheet reproducibly fails the lint** ✅ (G8 SHIPPED; PR-gate + release-gate parity confirmed by the G2 close-out audit — see [`docs/CI-GATES.md`](docs/CI-GATES.md) gate #3)
-- [ ] **Dashboard XML/JSON parse check green: every `default/data/ui/views/*.xml` parses, every embedded JSON definition parses** ✅ (Q-1, PR #2)
-- [ ] **Dashboard ↔ widget token contract green: every `$better_map.*$` token referenced by a dashboard has a matching string-literal producer in `src/lib/**/*.js`** ✅ (Q-1B, defends against SPATIAL-1 regression class)
-- [~] **Dashboard SPL dispatch test green: every Dashboard Studio `ds.search` query completes against a live splunkd with zero error/fatal messages — Phase 1 ✅** (D5 Phase 1 — Docker-Compose Splunk harness at `docker/`, maintainer-driven gate via `bash docker/scripts/bootstrap.sh && python3 scripts/dispatch-test.py`, 66 queries across 13 dashboards as of cut; full CI integration is Phase 2 — deferred to the self-hosted-runner decision in the §3 D5 risk note)
-- [ ] **Release manifest matches source tree (G3): `default/_better_map_manifest.json` checked in; `scripts/check-manifest.py` CI gate PR-blocking; operator runbook `scripts/find-orphans.sh` SSHes into a deployed install and reports orphans (grouped + size-summed) — verified against `rev` 2026-05-17 with 50,994 orphan files / 667 MiB surfaced (see §1c gap 18 + verification table)** ✅ (G3 Phase 1)
-- [ ] **Production-bundle console-noise check green: no unallowlisted `console.warn` / `.error` / `.debug` in the minified `visualization.js`** ✅ (Q-2; PR-gate + release-gate parity — see [`docs/CI-GATES.md`](docs/CI-GATES.md) gate #16)
-- [ ] **CI gate inventory documented and PR-gate ↔ release-gate parity audited and asserted** ✅ (G2 close-out audit, this PR): every check that runs on PR also runs on every `v*` tag push (or has a documented exemption in `docs/CI-GATES.md` "Known gaps"). Three previously-missing release-gate runtime checks (Vitest, D3 axe-core, D2 browser-compat Phase 1 + Phase 1.5) closed in the same audit. See [`docs/CI-GATES.md`](docs/CI-GATES.md) for the full ~30-gate matrix
-- [ ] Perf parity with kepler.gl on the 5 layer types they both support, measured by A4 harness
-- [ ] E2E flake rate < 2 % over rolling 30-PR window
-- [ ] v(N-1) → vN upgrade test green (zero orphan files left behind) (G3 Phase 2 — D5 harness)
-
-### 7c. Performance budgets
-
-- [ ] `visualization.js` raw on disk ≤ **3.0 MB** (v1.6 baseline: 2.23 MB)
-- [ ] `visualization.js` gzipped over the wire ≤ **800 KB** (v1.6 baseline: 576 KB)
-- [ ] Cold-start to first map paint ≤ **2.0 s** on a 2021 MacBook Air M1 over localhost
-- [ ] Steady-state JS heap on the largest showcase ≤ **150 MB** after 5 min of typical interaction
-- [ ] Direct runtime npm deps ≤ **18** (v1.6 baseline: 11)
-- [ ] Transitive deps in `node_modules` ≤ **350** (v1.6 baseline: 228)
-
-#### 7c-widget. Per-widget interactivity budgets (added in revision 4 after the BM-FIX episode)
-
-> Cold-start budgets above measure "viz loads in a panel." These per-widget budgets measure "user toggles a v1.6 widget on and uses it." They are asserted by the D5 harness with Playwright timing APIs.
-
-- [ ] **Floating overlay widgets** (geocoder, minimap, draw, measure, lasso, side-by-side, time-split, spatial-query, brush-ring): control-panel toggle-click → widget visible AND accepting pointer events ≤ **300 ms** on a 2021 MacBook Air M1
-- [ ] **Modal widgets** (command palette ⌘K): keyboard shortcut → modal painted, input focused, first character accepted ≤ **500 ms**
-- [ ] **Drag-driven widgets** (side-by-side compare handle, time-split divider): handle mousedown → first frame of follow-cursor render ≤ **1 frame (16 ms)** at 60 fps
-- [ ] **Scrubber playback**: play-button click → first scrubber-tick advance and map filter update ≤ **150 ms**; sustained 60 fps during 30 s playback at 100k features
-- [ ] **Per-widget steady-state memory**: enabling every v1.6 widget simultaneously adds ≤ **30 MB** to the JS heap delta vs all-widgets-off (asserted by `performance.memory.usedJSHeapSize` snapshot before/after)
-- [ ] **Reset budget (BM-CT-1)**: control-panel reset-button click → all enabled widgets disabled AND map state restored to initial ≤ **400 ms**, with zero retained DOM nodes referenced from the v1.6 widget classes (heap-snapshot diff)
-
-### 7d. Security & supply chain
-
-- [x] CycloneDX SBOM published with every release (G1 — `better_map-vX.Y.Z.sbom.json`, CycloneDX 1.6, 186 components on v1.7-prep)
-- [x] All releases signed via `cosign` (Sigstore); offline verification documented (G1 — keyless Fulcio + Rekor; verification in `docs/runbooks/supply-chain.md`)
-- [x] Zero `npm audit` findings at `high`+; waivers (if any) have ≤ 90-day expiry (G1 — `scripts/check-npm-audit.py`, waivers in `scripts/npm-audit-waivers.json`, 90-day cap enforced)
-- [x] Licence-allowlist clean: every direct + transitive dep on MIT / BSD / Apache-2.0 / CC0 / ISC (G1 — `scripts/check-license-allowlist.py` + `scripts/license-allowlist.json`; 186-component runtime tree passes)
-- [x] Dependabot enabled; weekly auto-PRs merging on CI green (G1 — `.github/dependabot.yml`, runtime + dev grouped, plus github-actions ecosystem)
-- [ ] OT-safety scanner green (no SOAR action targets Level-0/1/2; no inputs.conf to OT zones)
-
-### 7e. Distribution & community
-
-- [ ] Listed on Splunkbase; ≥ 25 reviews; ≥ 4.0 average
-- [ ] ≥ 3 named reference customers willing to be quoted; ≥ 1 in a regulated vertical
-- [~] Documentation site live; ≥ 1k monthly uniques (privacy-preserving analytics) — **Phase 1 ✅** (`mkdocs.yml` + 11 hand-authored pages under `docs/`, strict-mode CI gate `docs-build` in `ci.yml`, GitHub Pages auto-deploy on `main` via `.github/workflows/docs.yml`, published at `fenre.github.io/better_map/`, air-gap-clean per §1a: no Google Fonts, no third-party scripts); **Phase 2 in progress** — formatter reference page now carries an auto-generated 82-option enumeration (16 tables, all `(tab, heading)` buckets) regenerated from `docs/_machine/formatter-schema.json` by `scripts/build-reference-pages.py` and drift-gated in CI; still pending: auto-generated sections inside `docs/integrations/catalogue.md` and `docs/recipes/index.md`, custom domain, privacy-preserving analytics, ≥ 1k monthly uniques target
-- [~] **Per-source recipe matrix (E5) ≥ 75 verified ✓ cells published; CI gates that a new layer or new source cannot land without updating the matrix** — **Phase 1 ✅ + Phase 2 waves 1+2+3+4+5+6+7 ✅** (framework: `docs/_machine/recipes/recipe-schema.json` JSON Schema 2020-12, `scripts/check-recipe-schema.py` validator + drift gate, `scripts/build-recipe-index.py` index emitter, `docs/_machine/recipes/index.yaml` machine-readable index, CI gate in `ci.yml docs-build` job; twenty-four recipes shipped covering 8 / 8 source patterns (COMPLETE pattern coverage — every `source.pattern` enum value now has at least one recipe) and 9 / 10 layer types — CIM Alerts → markers, CIM Network Traffic → markers, CIM Network Traffic → paths, CIM Network Traffic → H3 hexbin, CIM Authentication → markers, CIM Authentication → heatmap, CIM Performance → markers, KV Store → markers, KV Store → heatmap, US states → choropleth, US states → 3D extrusion, Splunk Stream → markers, NetFlow / sFlow / IPFIX → H3 hexbin, CSV-lookup-geo → polygons, CSV-lookup-geo → supercluster, CSV-lookup-geo → H3 hexbin, CSV-lookup-geo → vector-tile join, Cisco Meraki → markers, Cisco Meraki → H3 hexbin, Cisco Cyber Vision → markers, Cisco ThousandEyes → paths, ES Risk-Based Alerting → markers, ITSI service health → markers, OT Datastreamer / Edge Hub → markers — all `status: unverified` pending live-Splunk REST access against a tenant carrying the appropriate sourcetype and licence); the remaining ~51 ✓ cells fill in as subsequent waves at 3-5 recipes per PR. Only 1 of 10 layer types remains undemonstrated: `indoor` (blocked on v1.8+ image-overlay layer kind)
-- [x] **`docs/llms.txt` published per the llms.txt convention; an LLM given just the URL can locate and apply a recipe end-to-end** — SHIPPED in v1.7-prep (G7 Phase 2). `docs/llms.txt` is regenerated by `scripts/build-llms-txt.py` from `mkdocs.yml` `nav:`, `docs/_machine/recipes/index.yaml`, `docs/_machine/integrations/*.yaml`, and `docs/_machine/formatter-schema.json`. MkDocs copies it verbatim to `site/llms.txt`; the published URL is <https://fenre.github.io/better_map/llms.txt>. Drift-gated in CI by `scripts/build-llms-txt.py --check`. The end-to-end "agent given the URL → finds a recipe → applies it" flow now works for the three E5 Phase 1 starter recipes
-- [~] **`docs/_machine/` complete: formatter JSON Schema, per-layer YAML, per-integration YAML, recipes index, `agents.md`, OpenAPI for any exposed REST endpoint — each CI-asserted against the implementation it documents** — Phases 1 + 2 partially shipped in v1.7-prep (G7 + E5 + E2): formatter-schema.json (82 options, drift + coverage gates + D3 axe-core a11y), 8 × integrations/*.yaml, agents.md, README.md, recipe-schema.json + recipes/index.yaml (E5 Phase 1 — drift-gated, three starter recipes), llms.txt + build-llms-txt.py (G7 Phase 2 — drift-gated), llms-full.txt + build-llms-full-txt.py (G7 Phase 2 follow-up — body-inclusive sibling, drift-gated + hard 200k-estimated-token budget), build-reference-pages.py (E2 Phase 2 — managed-region regenerator now driving THREE managed regions: the 82-option enumeration in `docs/reference/formatter.md`, the 8-row integrations matrix + endpoint detail in `docs/integrations/catalogue.md`, AND the recipes matrix in `docs/recipes/index.md`, all three drift-gated; all original E2 Phase 2 auto-gen targets shipped); still open: per-layer YAML (layers/*.yaml), OpenAPI (blocked on REST endpoints in v1.8+)
-- [ ] 6 video walkthroughs published with English + at least one other locale captions
-- [ ] Repo history: ≥ **50 commits** from ≥ **3 distinct contributors** (replaces the previous draft's "multi-year history" handwave with something actionable)
-- [ ] Public roadmap board (GitHub Projects) with at least the next minor's work-items tracked
-
-Until **every** box in 7a–7e is true, the version that ships is `1.x`. v2.0.0 is reserved.
 
 ---
 
