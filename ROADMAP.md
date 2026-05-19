@@ -2536,6 +2536,105 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   CHANGELOG iteration if a new release adds a
 >   large `## [VERSION]` section before then.
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 15 recipes
+> SHIPPED (2 more recipes — recipe count 42 → 44, layer-type
+> coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
+> unchanged, h3 layer usage 8 → 9, heat layer usage 10 → 11).**
+> Wave 15 completes TWO source-row triplets in a single PR, taking
+> total triplet count from 7 (wave 14) → 9 (now the entire CIM
+> SOC-stack AND the entire wire-data NetOps stack are full
+> triplets):
+> - **`cim-performance/heat`** — completes the cim-performance
+>   triplet (markers from wave 4b, h3 from wave 8, heat from wave
+>   15). The heat layer is the right shape for **CIO / CISO
+>   infrastructure briefings** and **multi-region availability
+>   slides** where the question is "where is fleet pressure
+>   DISTRIBUTED smoothly" — distinct from the markers layer
+>   (per-host investigation) and the h3 hexbin (per-region
+>   rankings with drilldown). Uses a `worst-of CPU or memory`
+>   pressure aggregation per host (the executive panel doesn't
+>   need to distinguish which resource is constrained), then
+>   the canonical `eventstats max + log10 eval normalise`
+>   heat-weight pattern shared across every heat recipe in the
+>   matrix. **8th completed triplet** — every CIM/SOC-stack
+>   source (cim-alerts, cim-authentication, cim-network-traffic,
+>   cim-performance) is now fully covered with markers + h3 +
+>   heat siblings coexisting via the BM-CT-1 layer contract.
+> - **`splunk-stream/h3`** — completes the splunk-stream triplet
+>   (markers from wave 6, heat from wave 8, h3 from wave 15).
+>   The H3 hexbin is the right shape for **NetOps capacity
+>   reviews** and **data-residency audits** where the operator
+>   needs to RANK geographic regions by total egress byte
+>   volume AND CLICK INTO a region for per-destination
+>   drilldown. Uses `eval value=bytes_out` with
+>   `hexbinAggregate: "sum"` so the per-cell colour reads as
+>   "total egress from this hex". **9th completed triplet** —
+>   combined with cim-network-traffic and netflow-sflow-ipfix,
+>   the **entire NetOps wire-data observability stack** now
+>   has full triplet coverage (markers + h3 + heat siblings
+>   deployable side-by-side via the layer contract).
+> Coverage matrix after wave 15:
+> - **Source-pattern coverage: 8 / 8 (COMPLETE)** unchanged.
+> - **Layer-type coverage: 9 / 10** unchanged (`indoor`
+>   remains blocked on v1.8+ image-overlay layer kind).
+> - **Cell fill: 44 / ~75 (~59 %)** — up from 42 / ~75.
+> - **H3 layer footprint: 9 recipes** (was 8) — added
+>   splunk-stream; full list: cim-alerts, cim-authentication,
+>   cim-network-traffic, cim-performance, csv-lookup-geo,
+>   cyber-vision, es-risk, meraki, splunk-stream.
+> - **Heat layer footprint: 11 recipes** (was 10) — added
+>   cim-performance; full list: cim-alerts, cim-authentication,
+>   cim-network-traffic, cim-performance, cyber-vision,
+>   es-risk, kvstore-latlon, meraki, netflow-sflow-ipfix,
+>   ot-datastreamer, splunk-stream.
+> - **Markers layer footprint:** 14 recipes — unchanged.
+> - **Triplet completion**: cim-alerts ✅ (wave 14),
+>   cim-authentication ✅ (wave 10), cim-network-traffic ✅
+>   (wave 12), **cim-performance ✅ (NEW)**, cyber-vision ✅
+>   (wave 14), es-risk ✅ (wave 13), meraki ✅ (wave 10),
+>   netflow-sflow-ipfix ✅ (wave 12), **splunk-stream ✅
+>   (NEW)**. **NINE completed triplets** out of the 14-source
+>   matrix — milestone: every CIM source-row and every wire-
+>   data NetOps source-row is now fully covered.
+> Token budget after wave 15 recipes:
+> - llms-full.txt: **~174,242 / 175,000** (only **758 tokens
+>   of WARN headroom remaining**). Wave 15 recipes added
+>   6,858 tokens for the 2 recipes (~3.4k each — slightly
+>   above the wave 14 ~3.1k cost level because BOTH recipes
+>   include the 3-way layer-comparison matrix (markers vs
+>   h3 vs heat) in their §1 source-description and §6
+>   Gotchas, which is high-information-density content for
+>   an LLM authoring follow-up recipes).
+> - **WAVE 16 REQUIRES A TOKEN-TRIM PR FIRST.** The
+>   remaining 758 tokens of headroom cannot accommodate even
+>   half of one recipe at the wave 15 cost level. Wave 16
+>   candidates (post-token-trim): `itsi-kpi-base/h3`
+>   (begins itsi triplet — currently markers-only at 1 / 3),
+>   `itsi-kpi-base/heat` (begins itsi triplet from the
+>   other side), `thousandeyes/h3` or `thousandeyes/heat`
+>   (begins thousandeyes triplet from markers + paths).
+> - **Wave 16 token-trim levers REMAINING** (in descending
+>   ROI order — see the wave 15 token-trim block for the
+>   full menu): (a) `docs/CI-GATES.md` summary (~4.2k
+>   tokens); (b) `docs/recipes/index.md` matrix per-row
+>   "Apps + Verified" cells could compact (~4.1k); (c)
+>   per-recipe §3 Expected-field tables could compress
+>   to a per-source field-set lookup (~3-4k across the
+>   44 recipes, but requires schema work to hoist the
+>   field sets to `docs/_machine/`). Pick (a) for wave 16
+>   prereq: ~4.2k reclaim funds 1 more wave-15-cost-level
+>   recipe with 3.4k of remaining headroom (consistent
+>   with the per-recipe-cost trajectory observed across
+>   waves 14 / 15).
+> Test plan: all 7 docs gates green locally — recipe schema
+> (44 valid, 0 verified), llms.txt sync, llms-full.txt sync
+> + budget (~174k / 175k, **758-token WARN headroom — under
+> budget, but the new floor for "what costs how many tokens"
+> means wave 16 must run a trim before any new recipes**),
+> reference pages sync (3 in sync incl. recipes matrix
+> auto-regen), formatter coverage (83 unique data-name(s),
+> schema in sync), `mkdocs build --strict` clean.
+
 > **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 15 token-trim
 > SHIPPED (recipe count unchanged at 42 — this is a token-budget
 > PR, not a recipe PR).** Wave 14 finished at ~171,119 of the
