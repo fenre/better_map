@@ -4,7 +4,7 @@
 
 This file is the body-inclusive sibling of `llms.txt` and concatenates every page on the Better Map documentation site into a single, LLM-friendly text dump. The short companion index is at <https://fenre.github.io/better_map/llms.txt>. Pages appear in `mkdocs.yml` `nav:` declaration order. Each page block carries a stable `# === ... ===` separator plus the source-of-truth path on disk and the published URL so the same content can be grepped by either dimension.
 
-At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 69 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 72 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
 
 All page URLs resolve to publicly accessible Material-themed HTML on GitHub Pages. The project ships under the MIT licence; the canonical repo is <https://github.com/fenre/better_map>.
 
@@ -53,6 +53,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / Cisco Cyber Vision (components + vulnerabilities) — heatmap (`docs/recipes/cyber-vision/heat.md`)
 - Recipes / Cisco Cyber Vision (components + vulnerabilities) — markers (`docs/recipes/cyber-vision/markers.md`)
 - Recipes / Cisco Cyber Vision (components + vulnerabilities) — paths (`docs/recipes/cyber-vision/paths.md`)
+- Recipes / Cisco Cyber Vision (components + vulnerabilities) — supercluster (`docs/recipes/cyber-vision/supercluster.md`)
 - Recipes / Cisco ThousandEyes (agent fleet) — H3 hexbin (`docs/recipes/thousandeyes/h3.md`)
 - Recipes / Cisco ThousandEyes (agent fleet) — heatmap (`docs/recipes/thousandeyes/heat.md`)
 - Recipes / Cisco ThousandEyes (agent fleet) — markers (`docs/recipes/thousandeyes/markers.md`)
@@ -66,11 +67,13 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / ITSI service health (KPI base searches) — H3 hexbin (`docs/recipes/itsi-kpi-base/h3.md`)
 - Recipes / ITSI service health (KPI base searches) — heatmap (`docs/recipes/itsi-kpi-base/heat.md`)
 - Recipes / ITSI service health (KPI base searches) — markers (`docs/recipes/itsi-kpi-base/markers.md`)
+- Recipes / ITSI service health (KPI base searches) — paths (`docs/recipes/itsi-kpi-base/paths.md`)
 - Recipes / ITSI service health (KPI base searches) — supercluster (`docs/recipes/itsi-kpi-base/supercluster.md`)
 - Recipes / KV Store (lat/lon) — H3 hexbin (`docs/recipes/kvstore-latlon/h3.md`)
 - Recipes / KV Store (lat/lon) — heatmap (`docs/recipes/kvstore-latlon/heat.md`)
 - Recipes / KV Store (lat/lon) — markers (`docs/recipes/kvstore-latlon/markers.md`)
 - Recipes / KV Store (lat/lon) — supercluster (`docs/recipes/kvstore-latlon/supercluster.md`)
+- Recipes / Meraki (Cisco vendor TA) — 3D extrusion (`docs/recipes/meraki/extrusion-3d.md`)
 - Recipes / Meraki (Cisco vendor TA) — H3 hexbin (`docs/recipes/meraki/h3.md`)
 - Recipes / Meraki (Cisco vendor TA) — heatmap (`docs/recipes/meraki/heat.md`)
 - Recipes / Meraki (Cisco vendor TA) — markers (`docs/recipes/meraki/markers.md`)
@@ -1195,7 +1198,7 @@ generated from
 so it cannot drift from the recipe files.
 
 <!-- recipes-matrix trimmed for llms-full.txt token budget (see Wave 16 ROADMAP block); full matrix at <https://fenre.github.io/better_map/recipes/> and source-of-truth YAML at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>; per-recipe details (status, apps, expected-field contract, formatter options) are kept verbatim under the matching `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file -->
-**Total: 69 recipes · 15 source dir(s) · 9 layer type(s).**
+**Total: 72 recipes · 15 source dir(s) · 9 layer type(s).**
 
 Source dirs and the layer ids that already ship for each (any `(source, layer)` not listed below is an open cell in the E5 matrix and is a candidate for the next recipe wave):
 
@@ -1204,18 +1207,18 @@ Source dirs and the layer ids that already ship for each (any `(source, layer)` 
 - `cim-network-traffic`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster
 - `cim-performance`: h3, heat, markers, paths, supercluster
 - `csv-lookup-geo`: h3, heat, markers, paths, polygons, supercluster, vector-tile-join
-- `cyber-vision`: h3, heat, markers, paths
+- `cyber-vision`: h3, heat, markers, paths, supercluster
 - `es-risk`: h3, heat, markers, paths, supercluster
 - `geo-us-states`: choropleth, extrusion-3d
-- `itsi-kpi-base`: h3, heat, markers, supercluster
+- `itsi-kpi-base`: h3, heat, markers, paths, supercluster
 - `kvstore-latlon`: h3, heat, markers, supercluster
-- `meraki`: h3, heat, markers, supercluster
+- `meraki`: extrusion-3d, h3, heat, markers, supercluster
 - `netflow-sflow-ipfix`: h3, heat, markers, paths, supercluster
 - `ot-datastreamer`: h3, heat, markers, paths
 - `splunk-stream`: h3, heat, markers, supercluster
 - `thousandeyes`: h3, heat, markers, paths, supercluster
 
-**OT-safety-relevant recipes (8):** `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `cyber-vision/paths`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`, `ot-datastreamer/paths`.
+**OT-safety-relevant recipes (9):** `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `cyber-vision/paths`, `cyber-vision/supercluster`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`, `ot-datastreamer/paths`.
 
 The remaining matrix cells from the E5 design — every layer × every
 source pattern — are tracked in
@@ -5165,6 +5168,135 @@ _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are o
 
 # === END: https://fenre.github.io/better_map/recipes/cyber-vision/paths/ ===
 
+# === BEGIN: https://fenre.github.io/better_map/recipes/cyber-vision/supercluster/ ===
+
+# Recipes / Cisco Cyber Vision (components + vulnerabilities) — supercluster
+
+> Source: `docs/recipes/cyber-vision/supercluster.md`  
+> URL: <https://fenre.github.io/better_map/recipes/cyber-vision/supercluster/>
+
+# Cisco Cyber Vision — supercluster
+
+Render every OT asset discovered by Cisco Cyber Vision as a
+**zoom-adaptive cluster** rather than per-asset markers. The
+right shape for **multi-site OT-NetOps panels** where Cyber
+Vision has discovered 500-5000+ assets across multiple
+plants / refineries / substations, and a per-marker panel
+collapses to a sea of overlapping dots at world zoom.
+
+Same `cisco:cybervision:components` source as the
+[cyber-vision/markers](./markers.md), [heat](./heat.md), and
+[h3](./h3.md) companions — but instead of per-asset markers
+(unreadable at world zoom on large multi-site fleets), the
+recipe renders zoom-adaptive cluster bubbles that resolve to
+individual assets only when the camera zooms in close to a
+single site. The **5th layer cell on the cyber-vision source
+row** — completing markers / heat / h3 / paths / supercluster
+for Cyber Vision.
+
+Strict adherence to
+[`/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc):
+Cyber Vision is the **reference passive-DPI design** per
+Rule 1; this recipe surfaces its discoveries without ever
+querying the OT zone.
+
+## 1. Source description
+
+Same **Cisco Cyber Vision** + **`TA-cisco-cybervision`** add-on
+source as all cyber-vision companions — see
+[cyber-vision/markers §1](./markers.md#1-source-description) for
+the platform overview, the four-sourcetype contract
+(`components`, `flows`, `events`, `vulnerabilities`), and the
+operator-maintained `cybervision_sites.csv` lookup contract.
+
+The relevant distinction for THIS recipe: it reads ONLY the
+`components` sourcetype (drops the vulnerabilities and events
+joins from the markers companion) and renders cluster bubbles
+instead of per-asset markers. The simpler SPL keeps the recipe
+fast on large multi-sensor fleets (5000+ assets) where the
+markers companion's join cardinality can saturate the search
+head.
+
+**Why supercluster for Cyber Vision.** A markers panel works for
+≤200-asset single-site deployments but collapses on multi-site
+refineries / utility-substation networks where Cyber Vision can
+discover 1000-5000+ assets across 10-50 plants. The H3 hexbin
+companion solves the visual-density problem but H3 cells are
+stable across zoom levels — operators cannot zoom into a single
+hex cell to see the individual assets. The heat companion shows
+density without per-asset identity. Supercluster solves the
+zoom-density tradeoff: at world zoom you see one "Houston
+Refinery: 247 assets" cluster bubble, at refinery zoom the
+bubble explodes into "Process Area A: 47 assets / Tank Farm B:
+12 assets" sub-clusters, and at floor-zoom the sub-clusters
+explode further into individual asset markers with full
+per-asset popup affordance.
+
+**Typical sourcetype / index:** `sourcetype="cisco:cybervision:components"`,
+`index=cybervision`. The TA is `TA-cisco-cybervision`. The
+site lookup is the same operator-maintained `cybervision_sites.csv`
+used by all companions — no additional lookup work needed if
+the markers / heat / h3 / paths companions are already deployed.
+
+## 2. SPL recipe
+
+```spl
+index=cybervision sourcetype="cisco:cybervision:components" earliest=-24h latest=now
+| dedup asset_id sortby - _time
+| rename asset_id AS id,
+         asset_name AS asset_name,
+         asset_vendor AS vendor,
+         asset_type AS type
+| lookup cybervision_sites.csv asset_id AS id
+    OUTPUT lat,
+           lon,
+           zone_purdue_level,
+           safety_related,
+           site_name
+| where isnotnull(lat) AND isnotnull(lon)
+| eval status=coalesce(status, "unknown")
+| eval safety_related=coalesce(safety_related, "N")
+| fields id, lat, lon, asset_name, vendor, type, zone_purdue_level, safety_related, site_name, status
+| sort id
+| head 5000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/supercluster/>._
+
+## 3. Expected fields
+
+| field             | type   | example          |
+|-------------------|--------|------------------|
+| id                | string | PLC-FLOOR3-A02   |
+| lat               | number | 29.7604          |
+| lon               | number | -95.3698         |
+| asset_name        | string | PLC-FLOOR3-A02   |
+| vendor            | string | Siemens          |
+| zone_purdue_level | string | L1               |
+| safety_related    | string | Y                |
+| site_name         | string | Houston Refinery |
+
+All eight fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+`asset_name`, `vendor`, `type`, `zone_purdue_level`,
+`safety_related`, `site_name`, `status` flow through to the
+per-asset popup (visible when the user fully zooms into a
+cluster and clicks a marker). The cluster bubble itself shows
+ONLY the per-cluster count badge.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pointRenderer": "cluster",
+  "idField": "id"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/supercluster/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/supercluster/>._
+
+# === END: https://fenre.github.io/better_map/recipes/cyber-vision/supercluster/ ===
+
 # === BEGIN: https://fenre.github.io/better_map/recipes/thousandeyes/h3/ ===
 
 # Recipes / Cisco ThousandEyes (agent fleet) — H3 hexbin
@@ -6754,6 +6886,137 @@ _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are o
 
 # === END: https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/ ===
 
+# === BEGIN: https://fenre.github.io/better_map/recipes/itsi-kpi-base/paths/ ===
+
+# Recipes / ITSI service health (KPI base searches) — paths
+
+> Source: `docs/recipes/itsi-kpi-base/paths.md`  
+> URL: <https://fenre.github.io/better_map/recipes/itsi-kpi-base/paths/>
+
+# ITSI service health — service-dependency paths
+
+Render the **service-dependency edges** of an ITSI service tree
+as polylines on a world map — for each parent service with
+geographically-distributed child services, draw a path from the
+parent's `info_lat`/`info_lon` to each child's. The canonical
+"where do my service dependencies live?" panel — when a SRE
+manager or platform-architecture lead needs an immediate-read
+view of the multi-region dependency graph (e.g., "EU Payments
+depends on US Auth-DB and APAC Risk-Engine; if any of those
+regions degrades, EU Payments degrades too"), this panel makes
+the cross-region cascade visually obvious.
+
+The sister panel to
+[itsi-kpi-base/markers](./markers.md) (which shows the SERVICES
+themselves as points) — here showing the CONNECTIONS between
+those services. The **5th layer cell on the itsi-kpi-base
+source row** — completing markers / heat / h3 / supercluster /
+paths for ITSI.
+
+## 1. Source description
+
+Same **ITSI `itsi_services` KV store + `itsi_summary` index**
+source as the markers / heat / h3 / supercluster companions —
+see [itsi-kpi-base/markers §1](./markers.md#1-source-description)
+for the `SHKPI-<service_id>` synthetic KPI convention, the
+`entity_key="N/A"` filter for service-level roll-ups, the
+`itsi_services` KV store schema, and the `info_lat` /
+`info_lon` operator-extension pattern.
+
+The relevant distinction for THIS recipe: it reads the
+`service_dependencies` multi-value field from the
+`itsi_services` KV store (each row's list of parent service
+keys it depends on), expands it via `mvexpand`, re-joins each
+dependency to its own KV store row for the dependent service's
+coordinates, and emits a 2-vertex row per (parent, child) pair
+suitable for the paths layer. No `join` is needed — the second
+lookup against `itsi_services` is a standard ITSI KV store
+re-key.
+
+**Why paths for ITSI service dependencies.** A markers panel
+shows the services. A heat or H3 panel shows their density.
+But neither shows the **dependency relationships** that drive
+cascade failures. When EU Payments degrades because US Auth-DB
+is down, the markers panel shows two red dots; the paths
+panel shows the red dot in Frankfurt CONNECTED by a polyline
+to the red dot in Virginia — making the cause-and-effect
+visible at a glance. This is the right shape for **change-
+management dashboards** (preview which services are downstream
+of a planned maintenance), **incident-response panels** (show
+all services downstream of a degraded one), and **capacity-
+planning views** (identify cross-region dependencies that
+should be replicated locally).
+
+**Typical KV store:** `itsi_services` (in `SA-ITOA`). Each row
+is one service; `service_dependencies` is a multi-value field
+of `_key` values pointing to parent services. ITSI's UI
+populates this field automatically when an operator builds a
+service tree at Configuration → Services.
+
+## 2. SPL recipe
+
+```spl
+| inputlookup itsi_services
+| where isnotnull(info_lat) AND isnotnull(info_lon) AND isnotnull(service_dependencies)
+| eval parent_id=_key,
+       parent_lat=info_lat,
+       parent_lon=info_lon,
+       parent_title=identifying_name
+| fields parent_id, parent_lat, parent_lon, parent_title, service_dependencies
+| mvexpand service_dependencies
+| where isnotnull(service_dependencies) AND service_dependencies!=""
+| lookup itsi_services _key AS service_dependencies
+    OUTPUT info_lat AS child_lat,
+           info_lon AS child_lon,
+           identifying_name AS child_title
+| where isnotnull(child_lat) AND isnotnull(child_lon)
+| eval id="DEP-" . parent_id . "-" . service_dependencies
+| eval vertex=mvrange(0, 2, 1)
+| mvexpand vertex
+| eval vertex_num=tonumber(vertex)
+| eval lat=case(vertex_num=0, parent_lat, vertex_num=1, child_lat),
+       lon=case(vertex_num=0, parent_lon, vertex_num=1, child_lon),
+       service_id=case(vertex_num=0, parent_id, vertex_num=1, service_dependencies),
+       service_title=case(vertex_num=0, parent_title, vertex_num=1, child_title),
+       role=case(vertex_num=0, "parent", vertex_num=1, "child"),
+       seq=vertex_num
+| fields id, seq, lat, lon, service_id, service_title, role
+| sort 0 id, + seq
+| head 5000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/paths/>._
+
+## 3. Expected fields
+
+| field         | type    | example                                    |
+|---------------|---------|--------------------------------------------|
+| id            | string  | DEP-svc_payments_eu-svc_authdb_us          |
+| seq           | integer | 0                                          |
+| lat           | number  | 53.5511                                    |
+| lon           | number  | 9.9937                                     |
+| service_id    | string  | svc_payments_eu                            |
+| service_title | string  | Payments (EU region)                       |
+| role          | string  | parent                                     |
+
+All seven fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pathIdField": "id",
+  "timeField": "seq",
+  "pathColor": "#9467bd",
+  "pathArrows": true
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/paths/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/paths/>._
+
+# === END: https://fenre.github.io/better_map/recipes/itsi-kpi-base/paths/ ===
+
 # === BEGIN: https://fenre.github.io/better_map/recipes/itsi-kpi-base/supercluster/ ===
 
 # Recipes / ITSI service health (KPI base searches) — supercluster
@@ -7291,6 +7554,150 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/kvstore-latlon/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/kvstore-latlon/supercluster/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/meraki/extrusion-3d/ ===
+
+# Recipes / Meraki (Cisco vendor TA) — 3D extrusion
+
+> Source: `docs/recipes/meraki/extrusion-3d.md`  
+> URL: <https://fenre.github.io/better_map/recipes/meraki/extrusion-3d/>
+
+# Cisco Meraki (devices) — US states 3D extrusion
+
+The third-dimension complement to the
+[meraki/h3](./h3.md) recipe: where the H3 hexbin renders fleet
+density as area-coloured hexagons, this recipe renders fleet
+density as **vertical extruded prisms over US-state polygons**.
+The right shape for **executive-briefing panels** where a CIO,
+sales engineer, or account-planning lead needs an immediate-
+read "where does this customer's Meraki footprint live?" view
+without interpreting a colour ramp — the height of the
+California prism IS the story.
+
+Same `meraki:devices` inventory feed as the
+[markers](./markers.md), [heat](./heat.md), [h3](./h3.md), and
+[supercluster](./supercluster.md) companions, but aggregated
+by US state via `iplocation` on the device's WAN IP and joined
+to the bundled `us-states.pmtiles` preset. This is the **2nd
+extrusion-3d cell on a non-geo-builtin source** (after the
+cim-network-traffic companion in wave 26), and the **8th layer
+cell on the meraki source row** — completing markers / heat /
+h3 / supercluster / extrusion-3d for Meraki.
+
+## 1. Source description
+
+Same **Cisco Meraki Add-on for Splunk** (`Splunk_TA_cisco_meraki`,
+Splunkbase ID 5580) source as the markers / heat / h3 /
+supercluster companions — see
+[meraki/markers §1](./markers.md#1-source-description) for the
+data model background. The relevant distinction for THIS recipe:
+instead of rendering one marker per device (or one heat cell, or
+one H3 hexagon), the recipe aggregates by US state and renders a
+3D extruded prism per state, height-encoded by the device count.
+
+**Why extrusion-3d for Meraki.** A choropleth answers "which
+states have devices?" but saturates: California with 247 devices
+and Texas with 89 both render as "dark" once they exceed the
+top decile, and the rank difference is invisible. Extrusion-3d
+preserves rank: California is 2.8x taller than Texas, impossible
+to miss. This is the right shape for **executive-briefing
+panels** (the geographic distribution IS the panel signal),
+**capacity-planning panels** (the visible cliff over CA tells
+the operator "we need a regional support team here"), and
+**deployment-density panels** (the height-encoded volume tells
+the partner "this customer skews 80% US-west").
+
+**Why `iplocation` instead of device `lat`/`lng`.** Meraki
+Dashboard stores per-device lat/lng but provides no built-in
+state attribution. The cleanest state aggregation uses
+`iplocation` on the device's WAN IP (`publicIp` on MX,
+`wan1Ip` on MR/MS/MV) which Splunk's bundled MaxMind database
+resolves to state. This matches the
+[cim-network-traffic/extrusion-3d](../cim-network-traffic/extrusion-3d.md)
+companion's pattern for visual + SPL consistency across the
+recipe matrix. For coordinate-level extrusion (NOT
+state-aggregated — one prism per device), the H3 companion
+with `pointRenderer: "h3"` at high resolution is a closer match.
+
+**Typical sourcetype / index:** `sourcetype="meraki:devices"`,
+`index=meraki` (both are the TA defaults; see the markers
+companion for the broader catalogue).
+
+## 2. SPL recipe
+
+```spl
+index=meraki sourcetype="meraki:devices" earliest=-1h latest=now
+| dedup serial sortby - _time
+| eval public_ip=coalesce(publicIp, wan1Ip)
+| where isnotnull(public_ip)
+| iplocation public_ip
+| where Country="United States" AND isnotnull(Region)
+| eval is_alerting=if(status=="alerting", 1, 0)
+| stats count AS device_count,
+    sum(is_alerting) AS alerting_count
+  BY Region
+| eval id=upper(case(
+    Region=="California","CA",
+    Region=="New York","NY",
+    Region=="Texas","TX",
+    Region=="Washington","WA",
+    Region=="Illinois","IL",
+    Region=="Florida","FL",
+    Region=="Massachusetts","MA",
+    Region=="Virginia","VA",
+    Region=="Colorado","CO",
+    Region=="Oregon","OR",
+    Region=="Pennsylvania","PA",
+    Region=="New Jersey","NJ",
+    Region=="Georgia","GA",
+    Region=="North Carolina","NC",
+    Region=="Ohio","OH",
+    Region=="Michigan","MI",
+    Region=="Arizona","AZ",
+    Region=="Minnesota","MN",
+    Region=="Indiana","IN",
+    Region=="Tennessee","TN",
+    Region=="District of Columbia","DC",
+    true(),substr(Region,1,2)))
+| eval value=device_count
+| rename Region AS state_name
+| fields id, state_name, value, device_count, alerting_count
+| sort - value
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/extrusion-3d/>._
+
+## 3. Expected fields
+
+| field          | type    | example     |
+|----------------|---------|-------------|
+| id             | string  | CA          |
+| state_name     | string  | California  |
+| value          | integer | 247         |
+| device_count   | integer | 247         |
+| alerting_count | integer | 11          |
+
+All five fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+`value` drives `extrusionHeightField`; `state_name`,
+`device_count`, `alerting_count` flow through to the popup.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinPreset": "us-states",
+  "enable3DExtrusion": true,
+  "extrusionHeightField": "value",
+  "extrusionScale": 8000.0,
+  "enableChoropleth": "true",
+  "palette": "viridis"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/extrusion-3d/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/extrusion-3d/>._
+
+# === END: https://fenre.github.io/better_map/recipes/meraki/extrusion-3d/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/meraki/h3/ ===
 
@@ -12341,7 +12748,7 @@ Each entry below distils the corresponding YAML scaffold so an LLM can answer in
 
 # Appendix B — Per-source recipe matrix
 
-> Source of truth: `docs/_machine/recipes/index.yaml` (69 recipe(s), emission order)
+> Source of truth: `docs/_machine/recipes/index.yaml` (72 recipe(s), emission order)
 
 Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answer 'which recipe matches this data source?' without fetching every recipe page. Recipes carry one of three statuses: `verified` (smoke-tested against a live Splunk tenant with proof in the YAML metadata), `unverified` (the recipe follows the contract but has not yet been smoke-tested), or `deferred` (the recipe is known to be incomplete pending upstream work). The expected-field contract for each recipe lives in §3 of the recipe page (kept verbatim in this file under the matching `# === BEGIN: …/recipes/<source>/<layer>/ ===` block); follow the Page link below to jump to it.
 
@@ -12379,6 +12786,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `cyber-vision--heat` | Cisco Cyber Vision (components + vulnerabilities) → Heatmap | unverified | `TA-cisco-cybervision` | — | [docs/recipes/cyber-vision/heat.md](https://fenre.github.io/better_map/recipes/cyber-vision/heat/) |
 | `cyber-vision--markers` | Cisco Cyber Vision (components + vulnerabilities) → Markers | unverified | `TA-cisco-cybervision` | — | [docs/recipes/cyber-vision/markers.md](https://fenre.github.io/better_map/recipes/cyber-vision/markers/) |
 | `cyber-vision--paths` | Cisco Cyber Vision (components + vulnerabilities) → Paths | unverified | `TA-cisco-cybervision` | — | [docs/recipes/cyber-vision/paths.md](https://fenre.github.io/better_map/recipes/cyber-vision/paths/) |
+| `cyber-vision--supercluster` | Cisco Cyber Vision (components + vulnerabilities) → Supercluster | unverified | `TA-cisco-cybervision` | — | [docs/recipes/cyber-vision/supercluster.md](https://fenre.github.io/better_map/recipes/cyber-vision/supercluster/) |
 | `es-risk--h3` | ES Risk-Based Alerting (risk index) → H3 hexbin | unverified | `SplunkEnterpriseSecuritySuite`, `Splunk_SA_CIM` | — | [docs/recipes/es-risk/h3.md](https://fenre.github.io/better_map/recipes/es-risk/h3/) |
 | `es-risk--heat` | ES Risk-Based Alerting (risk index) → Heatmap | unverified | `SplunkEnterpriseSecuritySuite`, `Splunk_SA_CIM` | — | [docs/recipes/es-risk/heat.md](https://fenre.github.io/better_map/recipes/es-risk/heat/) |
 | `es-risk--markers` | ES Risk-Based Alerting (risk index) → Markers | unverified | `SplunkEnterpriseSecuritySuite`, `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/es-risk/markers.md](https://fenre.github.io/better_map/recipes/es-risk/markers/) |
@@ -12389,11 +12797,13 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `itsi-kpi-base--h3` | ITSI service health (KPI base searches) → H3 hexbin | unverified | `SA-ITOA` | — | [docs/recipes/itsi-kpi-base/h3.md](https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/) |
 | `itsi-kpi-base--heat` | ITSI service health (KPI base searches) → Heatmap | unverified | `SA-ITOA` | — | [docs/recipes/itsi-kpi-base/heat.md](https://fenre.github.io/better_map/recipes/itsi-kpi-base/heat/) |
 | `itsi-kpi-base--markers` | ITSI service health (KPI base searches) → Markers | unverified | `SA-ITOA` | — | [docs/recipes/itsi-kpi-base/markers.md](https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/) |
+| `itsi-kpi-base--paths` | ITSI service health (KPI base searches) → Paths | unverified | `SA-ITOA` | — | [docs/recipes/itsi-kpi-base/paths.md](https://fenre.github.io/better_map/recipes/itsi-kpi-base/paths/) |
 | `itsi-kpi-base--supercluster` | ITSI service health (KPI base searches) → Supercluster | unverified | `SA-ITOA` | — | [docs/recipes/itsi-kpi-base/supercluster.md](https://fenre.github.io/better_map/recipes/itsi-kpi-base/supercluster/) |
 | `kvstore-latlon--h3` | KV Store (lat/lon collection) → H3 hexbin | unverified | — | — | [docs/recipes/kvstore-latlon/h3.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/h3/) |
 | `kvstore-latlon--heat` | KV Store (lat/lon collection) → Heatmap | unverified | — | — | [docs/recipes/kvstore-latlon/heat.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/heat/) |
 | `kvstore-latlon--markers` | KV Store (lat/lon collection) → Markers | unverified | — | — | [docs/recipes/kvstore-latlon/markers.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/) |
 | `kvstore-latlon--supercluster` | KV Store (lat/lon collection) → Supercluster | unverified | — | — | [docs/recipes/kvstore-latlon/supercluster.md](https://fenre.github.io/better_map/recipes/kvstore-latlon/supercluster/) |
+| `meraki--extrusion-3d` | Cisco Meraki (devices) → 3D extrusion | unverified | `Splunk_TA_cisco_meraki` | — | [docs/recipes/meraki/extrusion-3d.md](https://fenre.github.io/better_map/recipes/meraki/extrusion-3d/) |
 | `meraki--h3` | Cisco Meraki (devices) → H3 hexbin | unverified | `Splunk_TA_cisco_meraki` | — | [docs/recipes/meraki/h3.md](https://fenre.github.io/better_map/recipes/meraki/h3/) |
 | `meraki--heat` | Cisco Meraki (devices) → Heatmap | unverified | `Splunk_TA_cisco_meraki` | — | [docs/recipes/meraki/heat.md](https://fenre.github.io/better_map/recipes/meraki/heat/) |
 | `meraki--markers` | Cisco Meraki (devices) → Markers | unverified | `Splunk_TA_cisco_meraki` | — | [docs/recipes/meraki/markers.md](https://fenre.github.io/better_map/recipes/meraki/markers/) |

@@ -78,6 +78,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [Cisco Cyber Vision (components + vulnerabilities) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/heat/): apps required: TA-cisco-cybervision.
 - [Cisco Cyber Vision (components + vulnerabilities) → Markers (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/markers/): apps required: TA-cisco-cybervision.
 - [Cisco Cyber Vision (components + vulnerabilities) → Paths (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/paths/): apps required: TA-cisco-cybervision.
+- [Cisco Cyber Vision (components + vulnerabilities) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/supercluster/): apps required: TA-cisco-cybervision.
 - [ES Risk-Based Alerting (risk index) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/es-risk/h3/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM.
 - [ES Risk-Based Alerting (risk index) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/es-risk/heat/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM.
 - [ES Risk-Based Alerting (risk index) → Markers (unverified)](https://fenre.github.io/better_map/recipes/es-risk/markers/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM, builtin:iplocation.
@@ -88,11 +89,13 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [ITSI service health (KPI base searches) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/): apps required: SA-ITOA.
 - [ITSI service health (KPI base searches) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/itsi-kpi-base/heat/): apps required: SA-ITOA.
 - [ITSI service health (KPI base searches) → Markers (unverified)](https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/): apps required: SA-ITOA.
+- [ITSI service health (KPI base searches) → Paths (unverified)](https://fenre.github.io/better_map/recipes/itsi-kpi-base/paths/): apps required: SA-ITOA.
 - [ITSI service health (KPI base searches) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/itsi-kpi-base/supercluster/): apps required: SA-ITOA.
 - [KV Store (lat/lon collection) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/h3/): apps required: none.
 - [KV Store (lat/lon collection) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/heat/): apps required: none.
 - [KV Store (lat/lon collection) → Markers (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/markers/): apps required: none.
 - [KV Store (lat/lon collection) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/kvstore-latlon/supercluster/): apps required: none.
+- [Cisco Meraki (devices) → 3D extrusion (unverified)](https://fenre.github.io/better_map/recipes/meraki/extrusion-3d/): apps required: Splunk_TA_cisco_meraki.
 - [Cisco Meraki (devices) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/meraki/h3/): apps required: Splunk_TA_cisco_meraki.
 - [Cisco Meraki (devices) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/meraki/heat/): apps required: Splunk_TA_cisco_meraki.
 - [Cisco Meraki (devices) → Markers (unverified)](https://fenre.github.io/better_map/recipes/meraki/markers/): apps required: Splunk_TA_cisco_meraki.
