@@ -1,5 +1,128 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-20): E5 Phase 2 wave 26 recipes
+> SHIPPED (3 more recipes — recipe count 66 → 69, layer-type
+> coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
+> unchanged, extrusion-3d usage 1 → 2, paths usage 9 → 11).**
+> Wave 26 continues the **diversification regime** opened by
+> waves 21-25, now in its **6th consecutive wave** with a focus
+> on **maximum-leverage layer-shape expansion**: extrusion-3d
+> doubles its source coverage (1 → 2) for the first time since
+> wave 5 introduced it as a singleton, and paths gains two more
+> adoptions (csv-lookup-geo first polyline cell, es-risk kill-
+> chain reconstruction). Together waves 21-26 have now filled
+> **18 of the original ~24 diversification cells** (3 per wave
+> for 6 waves), with remaining cells skewing toward `choropleth`
+> (still 7 source rows missing) and the long-tail polygon shapes
+> (`vector-tile-join`, `polygons` — both still singletons).
+> - **`cim-network-traffic/extrusion-3d`** (NEW layer shape for
+>   source AND NEW source for extrusion-3d layer — doubling its
+>   1 → 2 source coverage) — 3D extruded country/region traffic-
+>   volume bars. 7th cell on the cim-network-traffic row (most-
+>   covered source row in the matrix, tied with thousandeyes /
+>   netflow-sflow-ipfix). SPL is **deliberately identical** to
+>   the cim-network-traffic/choropleth companion (wave 21) — only
+>   formatter options differ, demonstrating the "one CIM source,
+>   two polygon-derived layers, two views" pattern. Forces
+>   `enable3DExtrusion: true` + `extrusionHeightField: "value"`
+>   + `extrusionScale: 12.0` (tuned for CIM event-count data in
+>   the 1k-1M range vs the geo-us-states companion's 200.0
+>   tuned for `_internal` example data). Right shape for
+>   **executive-briefing panels where absolute traffic delta
+>   between states matters** (choropleth's colour ramp saturates;
+>   extrusion's height-encoding has unbounded headroom). §6
+>   gotchas cover dataset-dependent `extrusionScale` tuning,
+>   pitch / camera-tilt UX (extrusion is invisible at top-down
+>   camera position), the additive choropleth + extrusion
+>   double-encoding, MAUP amplification (extrusion is WORSE
+>   than choropleth — California's visual cliff is even more
+>   dominant), and `iplocation` accuracy caveats (hosting-
+>   provider IPs amplify CA/WA/VA disproportionately). No OT-
+>   safety dependency (CIM network traffic is IT-network data).
+> - **`csv-lookup-geo/paths`** (NEW layer shape for source) —
+>   supply-chain / customer-journey polylines between geo-located
+>   CSV assets. 6th cell on the csv-lookup-geo row (now-tied
+>   most-covered source row at 7 cells). Uses a TWO-CSV
+>   pattern: `sites.csv` (the geo-located endpoints from the
+>   markers companion's existing schema) + a NEW `routes.csv`
+>   (the sequencing — `route_id`, `route_name`, `site_id`,
+>   `seq` triplets). `| lookup sites site_id` enriches each
+>   route stop with `lat`/`lon`/`site_name`; `| sort 0 id, +
+>   seq` enforces row order for the paths renderer. Right shape
+>   for **supply-chain / logistics dashboards** (shipment
+>   routes between distribution centres), **customer-journey
+>   maps** (sequence of in-store visits per loyalty-card
+>   holder), **field-service van routes** (ordered stops per
+>   technician per day), and **inspection rounds** (sequenced
+>   asset visits per inspector). §6 gotchas cover the
+>   `max_matches = 0` requirement on `routes.csv` (vs `1` on
+>   `sites.csv` — the lookup is one-to-many), monotonic `seq`
+>   ordering requirement, single-stop route silent rendering
+>   (no polyline emitted), straight-line vs road-network
+>   geometry (no outbound routing engine — air-gap compatible
+>   per ROADMAP §1a), dateline-crossing paths rendering the
+>   "wrong way around", and CSV reload latency for hot-edit
+>   workflows. No OT-safety dependency (CSV asset/route data
+>   is IT inventory).
+> - **`es-risk/paths`** (NEW layer shape for source) — kill-
+>   chain reconstruction polylines for ES Risk-Based Alerting.
+>   5th cell on the es-risk row (joining markers, h3, heat,
+>   supercluster). Preserves per-event detail (unlike the
+>   aggregate companions) and chains them chronologically per
+>   `risk_object`, with `streamstats current=true count AS seq
+>   BY risk_object` providing vertex ordering. **Critical**:
+>   `eventstats dc(round(lat,2) . "_" . round(lon,2)) AS
+>   distinct_locations BY risk_object` + `where
+>   distinct_locations >= 2` filters to ONLY paths spanning ≥ 2
+>   distinct geographic locations (~10 km grid) — the genuine
+>   **lateral / geographic movement** signal that aggregate
+>   panels cannot show. Right shape for **SOC post-incident
+>   investigation panels** where the question is "HOW did this
+>   entity get on fire?" — exposing the geographic trajectory
+>   of an attack's kill chain across MITRE techniques and time.
+>   §6 gotchas cover the deliberate single-location entity
+>   filtering (most common case is single-location; the markers
+>   companion is right for those), A&I lat/lon-extension
+>   requirement (inherited from markers companion), `round(lat,2)`
+>   ~10 km grid tuning trade-off (metro-scale lateral
+>   movement needs `round(lat,3)`), `_time` ordering vs actual
+>   chronological order (batched correlation searches introduce
+>   skew), high-cardinality `source_search` producing tangled
+>   blob paths, dateline-crossing kill chains, and PII / GDPR
+>   posture (the kill-chain pattern itself can be re-identifying
+>   even if `risk_object` is hashed). No OT-safety dependency
+>   (pure IT identity-and-system risk).
+> - **Token budget.** Wave 26 lands at **~157,531 estimated
+>   tokens** / **~17,469 tokens of WARN headroom** (175,000 -
+>   157,531). The 3 new recipes cost **~4.7k tokens combined**
+>   (~1.56k/recipe) — slightly above the wave-25 baseline of
+>   ~1.30k/recipe (driven by es-risk/paths' detailed §6 gotchas
+>   section on the impossible-travel pattern + cim-network-
+>   traffic/extrusion-3d carrying choropleth-companion context).
+>   At this cadence, headroom funds **~11 more recipes** before
+>   the next token-trim is required.
+> - **Layer / pattern coverage updates.** Recipe count 66 → 69
+>   (+3). Layer coverage 9/10 unchanged (extrusion-3d row now
+>   has 2 cells instead of 1, but the source-row count of
+>   layers used at all is unchanged). Source-pattern coverage
+>   8/8 unchanged. **extrusion-3d usage 1 → 2** (cim-network-
+>   traffic adopts — first time since wave 5 that extrusion-3d
+>   leaves singleton status). **paths usage 9 → 11** (csv-
+>   lookup-geo + es-risk both adopt). Source-row triplet count:
+>   14 unchanged (wave 26 deliberately diversification). OT-
+>   safety-relevant recipe count: 5 unchanged (none of the wave-
+>   26 recipes are OT-safety-relevant). The diversification
+>   regime now has filled **18 of the original ~24 cells**
+>   opened by wave 21 (3 per wave for waves 21-26) — remaining
+>   cells skew toward `choropleth` (7 source rows missing it),
+>   `polygons` (still singleton on csv-lookup-geo), `vector-
+>   tile-join` (still singleton on csv-lookup-geo), and the
+>   long-tail `extrusion-3d`-on-non-geo sources.
+>
+> _This `> **Status …` blockquote will self-strip from
+> `llms-full.txt` at the next regeneration via the wave-13
+> generalised ROADMAP status-block regex._
+
 > **Status (v1.7-prep, 2026-05-19): E5 Phase 2 wave 25 recipes
 > SHIPPED (3 more recipes — recipe count 63 → 66, layer-type
 > coverage 9 / 10 unchanged, source-pattern coverage 8 / 8

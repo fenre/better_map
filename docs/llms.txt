@@ -56,6 +56,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [CIM Authentication → Paths (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/paths/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Authentication → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/cim-authentication/supercluster/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Network Traffic (data model) → Choropleth (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/): apps required: Splunk_SA_CIM.
+- [CIM Network Traffic (data model) → 3D extrusion (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/extrusion-3d/): apps required: Splunk_SA_CIM.
 - [CIM Network Traffic → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/h3/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Network Traffic → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/heat/): apps required: Splunk_SA_CIM, builtin:iplocation.
 - [CIM Network Traffic → Markers (unverified)](https://fenre.github.io/better_map/recipes/cim-network-traffic/markers/): apps required: Splunk_SA_CIM, builtin:iplocation.
@@ -69,6 +70,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [CSV lookup (geo points) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/h3/): apps required: none.
 - [CSV lookup (geo polygons) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/heat/): apps required: none.
 - [CSV lookup (geo polygons) → Markers (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/markers/): apps required: none.
+- [CSV lookup (geo polygons) → Paths (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/paths/): apps required: none.
 - [CSV lookup (geo polygons) → Polygons (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/polygons/): apps required: none.
 - [CSV lookup (geo polygons) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/supercluster/): apps required: none.
 - [CSV lookup (region metrics) → Vector-tile join (customer PMTiles) (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/vector-tile-join/): apps required: none.
@@ -79,6 +81,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [ES Risk-Based Alerting (risk index) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/es-risk/h3/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM.
 - [ES Risk-Based Alerting (risk index) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/es-risk/heat/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM.
 - [ES Risk-Based Alerting (risk index) → Markers (unverified)](https://fenre.github.io/better_map/recipes/es-risk/markers/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM, builtin:iplocation.
+- [ES Risk-Based Alerting (risk index) → Paths (unverified)](https://fenre.github.io/better_map/recipes/es-risk/paths/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM, builtin:iplocation.
 - [ES Risk-Based Alerting (risk index) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/es-risk/supercluster/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM.
 - [US states (built-in geo lookup) → Choropleth (unverified)](https://fenre.github.io/better_map/recipes/geo-us-states/choropleth/): apps required: none.
 - [US states (built-in geo lookup) → 3D extrusion (unverified)](https://fenre.github.io/better_map/recipes/geo-us-states/extrusion-3d/): apps required: none.

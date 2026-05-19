@@ -4,7 +4,7 @@
 
 This file is the body-inclusive sibling of `llms.txt` and concatenates every page on the Better Map documentation site into a single, LLM-friendly text dump. The short companion index is at <https://fenre.github.io/better_map/llms.txt>. Pages appear in `mkdocs.yml` `nav:` declaration order. Each page block carries a stable `# === ... ===` separator plus the source-of-truth path on disk and the published URL so the same content can be grepped by either dimension.
 
-At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 66 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 69 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
 
 All page URLs resolve to publicly accessible Material-themed HTML on GitHub Pages. The project ships under the MIT licence; the canonical repo is <https://github.com/fenre/better_map>.
 
@@ -31,6 +31,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / CIM Authentication — paths (`docs/recipes/cim-authentication/paths.md`)
 - Recipes / CIM Authentication — supercluster (`docs/recipes/cim-authentication/supercluster.md`)
 - Recipes / CIM Network Traffic — choropleth (`docs/recipes/cim-network-traffic/choropleth.md`)
+- Recipes / CIM Network Traffic — 3D extrusion (`docs/recipes/cim-network-traffic/extrusion-3d.md`)
 - Recipes / CIM Network Traffic — H3 hexbin (`docs/recipes/cim-network-traffic/h3.md`)
 - Recipes / CIM Network Traffic — heatmap (`docs/recipes/cim-network-traffic/heat.md`)
 - Recipes / CIM Network Traffic — markers (`docs/recipes/cim-network-traffic/markers.md`)
@@ -44,6 +45,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / CSV lookup (geo points) — H3 hexbin (`docs/recipes/csv-lookup-geo/h3.md`)
 - Recipes / CSV lookup (geo points) — heatmap (`docs/recipes/csv-lookup-geo/heat.md`)
 - Recipes / CSV lookup (geo points) — markers (`docs/recipes/csv-lookup-geo/markers.md`)
+- Recipes / CSV lookup (geo points) — paths (`docs/recipes/csv-lookup-geo/paths.md`)
 - Recipes / CSV lookup (geo points) — supercluster (`docs/recipes/csv-lookup-geo/supercluster.md`)
 - Recipes / CSV lookup (geo polygons) — polygons (`docs/recipes/csv-lookup-geo/polygons.md`)
 - Recipes / CSV lookup (region metrics) — vector-tile join (`docs/recipes/csv-lookup-geo/vector-tile-join.md`)
@@ -59,6 +61,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / ES Risk-Based Alerting (risk index) — H3 hexbin (`docs/recipes/es-risk/h3.md`)
 - Recipes / ES Risk-Based Alerting (risk index) — heatmap (`docs/recipes/es-risk/heat.md`)
 - Recipes / ES Risk-Based Alerting (risk index) — markers (`docs/recipes/es-risk/markers.md`)
+- Recipes / ES Risk-Based Alerting (risk index) — paths (`docs/recipes/es-risk/paths.md`)
 - Recipes / ES Risk-Based Alerting (risk index) — supercluster (`docs/recipes/es-risk/supercluster.md`)
 - Recipes / ITSI service health (KPI base searches) — H3 hexbin (`docs/recipes/itsi-kpi-base/h3.md`)
 - Recipes / ITSI service health (KPI base searches) — heatmap (`docs/recipes/itsi-kpi-base/heat.md`)
@@ -1192,17 +1195,17 @@ generated from
 so it cannot drift from the recipe files.
 
 <!-- recipes-matrix trimmed for llms-full.txt token budget (see Wave 16 ROADMAP block); full matrix at <https://fenre.github.io/better_map/recipes/> and source-of-truth YAML at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>; per-recipe details (status, apps, expected-field contract, formatter options) are kept verbatim under the matching `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file -->
-**Total: 66 recipes · 15 source dir(s) · 9 layer type(s).**
+**Total: 69 recipes · 15 source dir(s) · 9 layer type(s).**
 
 Source dirs and the layer ids that already ship for each (any `(source, layer)` not listed below is an open cell in the E5 matrix and is a candidate for the next recipe wave):
 
 - `cim-alerts`: h3, heat, markers, paths
 - `cim-authentication`: h3, heat, markers, paths, supercluster
-- `cim-network-traffic`: choropleth, h3, heat, markers, paths, supercluster
+- `cim-network-traffic`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster
 - `cim-performance`: h3, heat, markers, paths, supercluster
-- `csv-lookup-geo`: h3, heat, markers, polygons, supercluster, vector-tile-join
+- `csv-lookup-geo`: h3, heat, markers, paths, polygons, supercluster, vector-tile-join
 - `cyber-vision`: h3, heat, markers, paths
-- `es-risk`: h3, heat, markers, supercluster
+- `es-risk`: h3, heat, markers, paths, supercluster
 - `geo-us-states`: choropleth, extrusion-3d
 - `itsi-kpi-base`: h3, heat, markers, supercluster
 - `kvstore-latlon`: h3, heat, markers, supercluster
@@ -2496,6 +2499,144 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/cim-network-traffic/extrusion-3d/ ===
+
+# Recipes / CIM Network Traffic — 3D extrusion
+
+> Source: `docs/recipes/cim-network-traffic/extrusion-3d.md`  
+> URL: <https://fenre.github.io/better_map/recipes/cim-network-traffic/extrusion-3d/>
+
+# CIM Network Traffic — US states 3D extrusion
+
+The third-dimension companion to the
+[cim-network-traffic/choropleth](./choropleth.md) recipe — same
+`tag=network,communicate` data model, same per-state aggregation,
+same `us-states` PMTiles preset, but per-state shading is replaced
+by **per-state vertical extrusion**. Tall states generate more
+traffic; short states generate less. The right shape for
+**executive-briefing panels where the absolute traffic delta
+between states matters** (choropleth's colour ramp saturates at
+the top — extrusion's height-encoding has unbounded headroom),
+**capacity-planning panels where height pre-attentively
+communicates "this region needs a regional PoP"** without forcing
+the reader to interpret a colour legend, and **per-jurisdiction
+compliance views** where the visual cliff over CA or NY is
+itself the executive talking point.
+
+The CIM Network Traffic source row now has **7 layer cells**
+(markers, heat, h3, supercluster, paths, choropleth, plus
+extrusion-3d now) — the second-most-covered source row in the
+recipe matrix. Extrusion-3d is the FIRST EXTRUDED-POLYGON layer
+cell on a non-geo-builtin source — making this the canonical
+demo for "you can render any CIM-tagged data as a 3D extruded
+choropleth, not just the `geo-us-states` source".
+
+## 1. Source description
+
+Same **CIM Network Traffic** data model as the markers / heat /
+h3 / supercluster / paths / choropleth companions — see
+[cim-network-traffic/markers §1](./markers.md#1-source-description)
+for the data model background. The relevant distinction for
+THIS recipe: the panel renders per-state aggregation as a
+**height-extruded polygon prism**, not a flat colour-shaded
+polygon. Same SPL as the choropleth companion (verbatim) — the
+only differences live in the formatter config (§4).
+
+**Why extrusion-3d for CIM Network Traffic.** A choropleth
+saturates: once California, Texas, and New York all exceed the
+90th percentile of event volume, the colour ramp can't
+distinguish them — they're all "dark viridis". Extrusion-3d
+preserves rank visibility because height-encoding has unbounded
+headroom — California at 847k events is **20x taller** than
+Wyoming at 42k events, and the visual gap is impossible to miss.
+Combined with the additive choropleth (height + colour encode
+the same `value` — see §4), the panel becomes double-encoded:
+height for absolute rank, colour for ordinal "where is the heat".
+
+**Typical sourcetype / index:** any sourcetype tagged
+`network,communicate` in your CIM tag config — `cisco:asa`,
+`pan:traffic`, `aws:cloudwatchlogs:vpcflow`, `cisco:meraki:flow`,
+`netflow` (after netflow-sflow-ipfix add-on), etc. See the
+[choropleth companion](./choropleth.md#1-source-description) for
+the broader catalogue.
+
+**No add-on required beyond Splunk_SA_CIM** for the data model,
+and the bundled `us-states.pmtiles` preset for the polygons.
+Fully air-gap compatible per ROADMAP §1a.
+
+## 2. SPL recipe
+
+```spl
+tag=network tag=communicate earliest=-24h latest=now
+| iplocation src
+| where Country="United States" AND isnotnull(Region)
+| stats count AS event_count BY Region
+| eval id=upper(case(
+    Region=="California","CA",
+    Region=="New York","NY",
+    Region=="Texas","TX",
+    Region=="Washington","WA",
+    Region=="Illinois","IL",
+    Region=="Florida","FL",
+    Region=="Massachusetts","MA",
+    Region=="Virginia","VA",
+    Region=="Colorado","CO",
+    Region=="Oregon","OR",
+    Region=="Pennsylvania","PA",
+    Region=="New Jersey","NJ",
+    Region=="Georgia","GA",
+    Region=="North Carolina","NC",
+    Region=="Ohio","OH",
+    Region=="Michigan","MI",
+    Region=="Arizona","AZ",
+    Region=="Minnesota","MN",
+    Region=="Indiana","IN",
+    Region=="Tennessee","TN",
+    Region=="District of Columbia","DC",
+    true(),substr(Region,1,2)))
+| eval value=event_count
+| rename Region AS state_name
+| fields id, state_name, value, event_count
+| sort - value
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/extrusion-3d/>._
+
+## 3. Expected fields
+
+| field       | type    | example   |
+|-------------|---------|-----------|
+| id          | string  | CA        |
+| state_name  | string  | California|
+| value       | integer | 847291    |
+| event_count | integer | 847291    |
+
+All four fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+`value` drives the `extrusionHeightField` formatter option (per
+the `drives_formatter_option` annotation), which is what produces
+the per-state vertical extrusion. `event_count` is the popup-
+display field carrying the same numeric value semantically
+separate from the extrusion-driver — the popup shows "847,291
+events" while the prism height comes from `value`.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinPreset": "us-states",
+  "enable3DExtrusion": true,
+  "extrusionHeightField": "value",
+  "extrusionScale": 12.0,
+  "enableChoropleth": "true",
+  "palette": "viridis"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/extrusion-3d/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/extrusion-3d/>._
+
+# === END: https://fenre.github.io/better_map/recipes/cim-network-traffic/extrusion-3d/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/cim-network-traffic/h3/ ===
 
@@ -3987,6 +4128,140 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/csv-lookup-geo/markers/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/csv-lookup-geo/paths/ ===
+
+# Recipes / CSV lookup (geo points) — paths
+
+> Source: `docs/recipes/csv-lookup-geo/paths.md`  
+> URL: <https://fenre.github.io/better_map/recipes/csv-lookup-geo/paths/>
+
+# CSV lookup (geo points) — paths
+
+The supply-chain / customer-journey companion to the
+[csv-lookup-geo/markers](./markers.md),
+[supercluster](./supercluster.md),
+[polygons](./polygons.md), and
+[vector-tile-join](./vector-tile-join.md) recipes — same
+`csv-lookup-geo` source pattern, but with a **second CSV (or
+second column-pair on the same CSV)** providing the
+**sequenced route data**: a `route_id` + `seq` pair that orders
+points into a polyline. The right shape for **supply-chain /
+logistics dashboards** (shipment routes between distribution
+centres), **customer-journey maps** (sequence of in-store visits
+per loyalty-card holder), **field-service van routes** (ordered
+stops per technician per day), or **inspection rounds**
+(sequenced asset visits per inspector).
+
+The `csv-lookup-geo` source row now has **6 layer cells**
+(markers, h3, heat, supercluster, polygons, vector-tile-join,
+plus paths now) — the **most-covered source row in the recipe
+matrix** (tied with cim-network-traffic at 7). Paths is the
+FIRST POLYLINE layer cell on a CSV-lookup source — closing the
+gap between "I have CSV asset data with lat/lon" and "I want to
+visualise sequence between those assets."
+
+## 1. Source description
+
+Same **CSV lookup** mechanism as the
+[markers companion](./markers.md#1-source-description) — a CSV
+file under `<app>/lookups/<name>.csv` exposed via a
+`transforms.conf` stanza, queried with `| inputlookup <name>`.
+This recipe binds to two related lookups: `sites.csv` (the
+geo-located endpoints — same schema as the markers companion's
+`sites.csv`) and `routes.csv` (the sequencing — a
+`route_id`, `route_name`, `site_id`, `seq` table that orders
+sites into ordered chains).
+
+**Why paths for CSV-lookup data.** A markers panel shows the
+sites; a supercluster panel shows the site-density at zoom-out.
+Neither shows the **connections** between sites — the actual
+business question of "which DC ships to which retail outlet
+via what intermediate hop?" The paths layer chains the sites
+into polylines, with each polyline coloured by `route_id` and
+each segment direction shown via arrows. The result maps
+cleanly onto operational concepts: a supply-chain analyst sees
+the actual physical route shape, not just the endpoint
+inventory.
+
+**Typical sourcetype / index:** none — `| inputlookup` reads
+both CSVs directly, joined by `site_id`. Same operational
+posture as the other csv-lookup-geo recipes: every dispatch is
+a fresh CSV read; no acceleration, no summary index, git-
+friendly, version-controlled, AppInspect-clean.
+
+**One-time setup** (in addition to the markers companion's
+`sites.csv` setup):
+
+1. Place a second CSV at `<app>/lookups/routes.csv` with header
+   row `route_id,route_name,site_id,seq`. Example rows:
+   ```csv
+   route_id,route_name,site_id,seq
+   ROUTE-LAX-ATL,LAX to ATL via DFW,DC-LAX-01,1
+   ROUTE-LAX-ATL,LAX to ATL via DFW,DC-DFW-02,2
+   ROUTE-LAX-ATL,LAX to ATL via DFW,DC-ATL-01,3
+   ROUTE-SEA-MIA,SEA to MIA via DEN,DC-SEA-01,1
+   ROUTE-SEA-MIA,SEA to MIA via DEN,DC-DEN-03,2
+   ROUTE-SEA-MIA,SEA to MIA via DEN,DC-MIA-04,3
+   ```
+2. Add to `<app>/default/transforms.conf`:
+   ```ini
+   [routes]
+   filename = routes.csv
+   max_matches = 0
+
+   [sites]
+   filename = sites.csv
+   max_matches = 1
+   ```
+3. Reload (`| extract reload=t` from search head).
+
+## 2. SPL recipe
+
+```spl
+| inputlookup routes.csv
+| lookup sites site_id AS site_id OUTPUT lat, lon, site_name
+| where isnotnull(lat) AND isnotnull(lon)
+| rename route_id AS id
+| sort 0 id, + seq
+| fields id, seq, lat, lon, site_id, site_name, route_name
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/paths/>._
+
+## 3. Expected fields
+
+| field      | type    | example              |
+|------------|---------|----------------------|
+| id         | string  | ROUTE-LAX-ATL        |
+| seq        | integer | 2                    |
+| lat        | number  | 33.7490              |
+| lon        | number  | -84.3880             |
+| site_id    | string  | DC-ATL-01            |
+| site_name  | string  | Atlanta DC #1        |
+| route_name | string  | LAX to ATL via DFW   |
+
+All seven fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+`id` drives `pathIdField` (groups vertices into paths); `seq`
+drives `timeField` (orders vertices within each path);
+`lat`/`lon` provide geometry; `site_id`/`site_name`/`route_name`
+flow through as feature properties for per-vertex popups.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pathIdField": "id",
+  "timeField": "seq",
+  "pathColor": "#1f77b4",
+  "pathArrows": true
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/paths/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/paths/>._
+
+# === END: https://fenre.github.io/better_map/recipes/csv-lookup-geo/paths/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/csv-lookup-geo/supercluster/ ===
 
@@ -5876,6 +6151,138 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/es-risk/markers/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/es-risk/paths/ ===
+
+# Recipes / ES Risk-Based Alerting (risk index) — paths
+
+> Source: `docs/recipes/es-risk/paths.md`  
+> URL: <https://fenre.github.io/better_map/recipes/es-risk/paths/>
+
+# ES Risk-Based Alerting — paths
+
+The kill-chain-reconstruction companion to the
+[es-risk/markers](./markers.md),
+[h3](./h3.md), [heat](./heat.md), and
+[supercluster](./supercluster.md) recipes — same
+`` `risk` `` index source, same ES Asset & Identity (A&I)
+enrichment, but the data shape changes from "aggregate per
+entity" to "**chronologically-ordered chain of contributing
+risk modifiers per entity**". The right shape for **SOC
+post-incident investigation panels** where the question is not
+"who is on fire?" (the markers panel answers that) but
+"**HOW did this entity get on fire?** Which detections fired in
+what order across which geographic locations?" — the
+geographic trajectory of an attack's kill chain.
+
+The es-risk source row now has **5 layer cells** (markers,
+h3, heat, supercluster, plus paths now) — completing the
+fifth cell on a security-source row alongside cim-
+authentication and cim-performance. Paths is a NEW layer
+shape for the es-risk source: where the markers panel shows
+**where** entities are accumulating risk, this panel shows
+**how** the risk accumulated geographically across time.
+
+## 1. Source description
+
+Same **Risk-Based Alerting (RBA)** data model as the
+[markers companion](./markers.md#1-source-description) — see
+that recipe for the full RBA framework background. The
+relevant distinction for THIS recipe: instead of aggregating
+all risk events per `risk_object` into a single point, the
+panel **preserves the per-event detail** and chains them
+chronologically into a polyline that traces the
+geographic-temporal footprint of contributing detections.
+
+**Why paths for RBA data.** The markers recipe is the
+"who is on fire" answer; the h3 / heat recipes are the
+"where is risk concentrated" answers. None of them carry
+**temporal sequence** — they collapse the entity's risk
+history into a single number (`total_risk`). The paths
+recipe restores the sequence: each detection that fired on
+the entity becomes a vertex, vertices are connected in
+chronological order, and the polyline shape becomes the
+kill-chain story. If `alice@example.com` triggered T1078
+(Valid Accounts) from Seattle at 9am, then T1059.001
+(PowerShell) from Seattle at 9:15am, then T1547.001
+(Boot/Logon Autostart) from a Frankfurt VPN at 10:30am,
+the polyline goes Seattle → Seattle → Frankfurt with arrows
+showing the kill-chain progression — visually exposing the
+**lateral / geographic movement** of the attack in a way
+that no aggregate panel can.
+
+**Typical sourcetype / index:** same `` index=risk `` (via the
+`` `risk` `` macro) as the markers companion. Same ES + CIM +
+A&I requirements. Same caveat about A&I lookups needing
+lat/lon columns (see §6 Gotchas). The paths recipe additionally
+requires events to span **multiple geographic locations per
+entity** to produce visually-interesting paths — for a
+small-footprint tenant (everything from one office),
+the paths panel degenerates to a "tight cluster" point view;
+the [markers companion](./markers.md) is the right tool when
+geographic spread is minimal.
+
+## 2. SPL recipe
+
+```spl
+`risk` earliest=-24h latest=now
+| sort 0 risk_object, + _time
+| streamstats current=true count AS seq BY risk_object
+| eventstats sum(risk_score) AS total_risk_so_far, dc(source_search) AS contributing_searches_so_far BY risk_object
+| where total_risk_so_far >= 50
+| lookup identity_lookup_expanded identity AS risk_object OUTPUT lat AS identity_lat, long AS identity_lon
+| lookup asset_lookup_by_str src AS risk_object OUTPUT lat AS asset_lat, long AS asset_lon
+| eval lat=coalesce(identity_lat, asset_lat)
+| eval lon=coalesce(identity_lon, asset_lon)
+| where isnotnull(lat) AND isnotnull(lon)
+| eventstats dc(round(lat,2) . "_" . round(lon,2)) AS distinct_locations BY risk_object
+| where distinct_locations >= 2
+| eval technique=mvindex(annotations.mitre_attack{}, 0)
+| rename risk_object AS id
+| fields id, seq, lat, lon, risk_object, risk_score, source_search, technique, _time
+| sort 0 id, + seq
+| head 5000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/paths/>._
+
+## 3. Expected fields
+
+| field         | type    | example                       |
+|---------------|---------|-------------------------------|
+| id            | string  | alice@example.com             |
+| seq           | integer | 3                             |
+| lat           | number  | 47.6062                       |
+| lon           | number  | -122.3321                     |
+| risk_object   | string  | alice@example.com             |
+| risk_score    | integer | 30                            |
+| source_search | string  | Suspicious PowerShell Process |
+| technique     | string  | T1059.001                     |
+
+All eight fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+`id` drives `pathIdField` (groups vertices into paths per
+`risk_object`); `seq` drives `timeField` (orders vertices
+chronologically within each path); `lat`/`lon` provide
+geometry; `risk_object`, `risk_score`, `source_search`,
+`technique` flow through as feature properties for per-vertex
+popups (click a vertex → see "alice@example.com — step 3 —
+T1059.001 — Suspicious PowerShell Process — 30 risk").
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pathIdField": "id",
+  "timeField": "seq",
+  "pathColor": "#d62728",
+  "pathArrows": true
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/paths/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/paths/>._
+
+# === END: https://fenre.github.io/better_map/recipes/es-risk/paths/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/es-risk/supercluster/ ===
 
@@ -11934,7 +12341,7 @@ Each entry below distils the corresponding YAML scaffold so an LLM can answer in
 
 # Appendix B — Per-source recipe matrix
 
-> Source of truth: `docs/_machine/recipes/index.yaml` (66 recipe(s), emission order)
+> Source of truth: `docs/_machine/recipes/index.yaml` (69 recipe(s), emission order)
 
 Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answer 'which recipe matches this data source?' without fetching every recipe page. Recipes carry one of three statuses: `verified` (smoke-tested against a live Splunk tenant with proof in the YAML metadata), `unverified` (the recipe follows the contract but has not yet been smoke-tested), or `deferred` (the recipe is known to be incomplete pending upstream work). The expected-field contract for each recipe lives in §3 of the recipe page (kept verbatim in this file under the matching `# === BEGIN: …/recipes/<source>/<layer>/ ===` block); follow the Page link below to jump to it.
 
@@ -11950,6 +12357,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `cim-authentication--paths` | CIM Authentication → Paths | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/paths.md](https://fenre.github.io/better_map/recipes/cim-authentication/paths/) |
 | `cim-authentication--supercluster` | CIM Authentication → Supercluster | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/supercluster.md](https://fenre.github.io/better_map/recipes/cim-authentication/supercluster/) |
 | `cim-network-traffic--choropleth` | CIM Network Traffic (data model) → Choropleth | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-network-traffic/choropleth.md](https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/) |
+| `cim-network-traffic--extrusion-3d` | CIM Network Traffic (data model) → 3D extrusion | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-network-traffic/extrusion-3d.md](https://fenre.github.io/better_map/recipes/cim-network-traffic/extrusion-3d/) |
 | `cim-network-traffic--h3` | CIM Network Traffic → H3 hexbin | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-network-traffic/h3.md](https://fenre.github.io/better_map/recipes/cim-network-traffic/h3/) |
 | `cim-network-traffic--heat` | CIM Network Traffic → Heatmap | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-network-traffic/heat.md](https://fenre.github.io/better_map/recipes/cim-network-traffic/heat/) |
 | `cim-network-traffic--markers` | CIM Network Traffic → Markers | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-network-traffic/markers.md](https://fenre.github.io/better_map/recipes/cim-network-traffic/markers/) |
@@ -11963,6 +12371,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `csv-lookup-geo--h3` | CSV lookup (geo points) → H3 hexbin | unverified | — | — | [docs/recipes/csv-lookup-geo/h3.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/h3/) |
 | `csv-lookup-geo--heat` | CSV lookup (geo polygons) → Heatmap | unverified | — | — | [docs/recipes/csv-lookup-geo/heat.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/heat/) |
 | `csv-lookup-geo--markers` | CSV lookup (geo polygons) → Markers | unverified | — | — | [docs/recipes/csv-lookup-geo/markers.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/markers/) |
+| `csv-lookup-geo--paths` | CSV lookup (geo polygons) → Paths | unverified | — | — | [docs/recipes/csv-lookup-geo/paths.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/paths/) |
 | `csv-lookup-geo--polygons` | CSV lookup (geo polygons) → Polygons | unverified | — | — | [docs/recipes/csv-lookup-geo/polygons.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/polygons/) |
 | `csv-lookup-geo--supercluster` | CSV lookup (geo polygons) → Supercluster | unverified | — | — | [docs/recipes/csv-lookup-geo/supercluster.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/supercluster/) |
 | `csv-lookup-geo--vector-tile-join` | CSV lookup (region metrics) → Vector-tile join (customer PMTiles) | unverified | — | — | [docs/recipes/csv-lookup-geo/vector-tile-join.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/vector-tile-join/) |
@@ -11973,6 +12382,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `es-risk--h3` | ES Risk-Based Alerting (risk index) → H3 hexbin | unverified | `SplunkEnterpriseSecuritySuite`, `Splunk_SA_CIM` | — | [docs/recipes/es-risk/h3.md](https://fenre.github.io/better_map/recipes/es-risk/h3/) |
 | `es-risk--heat` | ES Risk-Based Alerting (risk index) → Heatmap | unverified | `SplunkEnterpriseSecuritySuite`, `Splunk_SA_CIM` | — | [docs/recipes/es-risk/heat.md](https://fenre.github.io/better_map/recipes/es-risk/heat/) |
 | `es-risk--markers` | ES Risk-Based Alerting (risk index) → Markers | unverified | `SplunkEnterpriseSecuritySuite`, `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/es-risk/markers.md](https://fenre.github.io/better_map/recipes/es-risk/markers/) |
+| `es-risk--paths` | ES Risk-Based Alerting (risk index) → Paths | unverified | `SplunkEnterpriseSecuritySuite`, `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/es-risk/paths.md](https://fenre.github.io/better_map/recipes/es-risk/paths/) |
 | `es-risk--supercluster` | ES Risk-Based Alerting (risk index) → Supercluster | unverified | `SplunkEnterpriseSecuritySuite`, `Splunk_SA_CIM` | — | [docs/recipes/es-risk/supercluster.md](https://fenre.github.io/better_map/recipes/es-risk/supercluster/) |
 | `geo-us-states--choropleth` | US states (built-in geo lookup) → Choropleth | unverified | — | — | [docs/recipes/geo-us-states/choropleth.md](https://fenre.github.io/better_map/recipes/geo-us-states/choropleth/) |
 | `geo-us-states--extrusion-3d` | US states (built-in geo lookup) → 3D extrusion | unverified | — | — | [docs/recipes/geo-us-states/extrusion-3d.md](https://fenre.github.io/better_map/recipes/geo-us-states/extrusion-3d/) |
