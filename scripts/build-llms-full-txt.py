@@ -70,7 +70,17 @@ formatter-enumeration -->`` and ``<!-- END AUTOGEN: ... -->`` markers
 to a URL pointer — the 82-option enumeration carries ~3.9k tokens of
 table content that is already canonically expressed in
 ``docs/_machine/formatter-schema.json`` and rendered for humans on
-the MkDocs site, see ``strip_formatter_appendix_a`` below):
+the MkDocs site, see ``strip_formatter_appendix_a`` below — and in
+wave 16 by trimming the auto-generated per-recipe matrix in
+``docs/recipes/index.md`` between the ``<!-- BEGIN AUTOGEN: recipes-
+matrix -->`` and ``<!-- END AUTOGEN: ... -->`` markers to a compact
+source × layer presence pivot + OT-safety summary + URL pointer —
+the 44-row matrix carries ~4.5k tokens of table content where >70%
+of every row (status string, app-list, expected-field count, formatter-
+option list, OT-safety flag, last-verified date) is canonically
+expressed in ``docs/_machine/recipes/index.yaml`` and duplicated in
+the per-recipe page bodies kept verbatim in this same file, see
+``strip_recipes_index_matrix`` below):
 
   * Per-page warning at **50,000 estimated tokens** — one page should
     not dominate the corpus.
@@ -257,6 +267,54 @@ _FORMATTER_AUTOGEN_BLOCK = re.compile(
     r"<!--\s*BEGIN AUTOGEN:\s*formatter-enumeration\s*-->"
     r".*?"
     r"<!--\s*END AUTOGEN:\s*formatter-enumeration\s*-->",
+    re.DOTALL,
+)
+
+# Recipes-index matrix trim contract — see strip_recipes_index_matrix()
+# and the E5 Phase 2 wave 16 ROADMAP block. ``docs/recipes/index.md``
+# is the human landing page for the recipes section; the page body
+# has two parts:
+#   * A narrative intro + "Status (vX-prep, YYYY-MM-DD): E5 Phase N
+#     SHIPPED" blockquote (small, high-signal, hand-authored, MUST
+#     stay in llms-full.txt) and a trailing "The recipe contract"
+#     section that documents the six-section + frontmatter contract
+#     every recipe MUST satisfy (also high-signal, also MUST stay).
+#   * An auto-generated 44-row matrix table between
+#     ``<!-- BEGIN AUTOGEN: recipes-matrix -->`` and
+#     ``<!-- END AUTOGEN: recipes-matrix -->``. By wave 15 the matrix
+#     carries one row per shipped recipe with 9 columns (status,
+#     source pattern, layer, apps required, expected-field count,
+#     formatter-option list, OT-safety, last verified) ≈ ~4.5k tokens.
+#     >70% of every row is canonically expressed in
+#     ``docs/_machine/recipes/index.yaml`` (the source of truth that
+#     drives the table in the first place); the per-recipe field
+#     contract is duplicated in §3 of each recipe page (kept verbatim
+#     in this same file under the matching `# === BEGIN:
+#     .../recipes/<source>/<layer>/ ===` block); the per-recipe
+#     formatter option list is duplicated in §4 of each recipe page;
+#     and the matrix headline ("44 recipes · 8 source patterns ·
+#     9 layer types") is replayed in Appendix B of this same file
+#     ~10 lines below the matrix. An LLM authoring a recipe needs
+#     the narrative + the six-section contract + a compact
+#     "which (source, layer) cells already ship?" lookup, NOT the
+#     per-recipe row dump.
+# The trim replaces the entire AUTOGEN-bounded region with (a) the
+# headline totals line, (b) a compact source × layer presence pivot
+# (rows = source dir, cols = layer id, cell = Y if a recipe ships,
+# · otherwise), (c) an OT-safety-relevant recipe list, (d) the URL
+# pointer to the unabridged matrix on GitHub Pages. The pivot is
+# regenerated from ``docs/_machine/recipes/index.yaml`` at build
+# time so it stays in lockstep with the live recipe set.
+# Net saving: ~4k tokens.
+#
+# The on-disk docs/recipes/index.md is unchanged — the trim runs
+# only against the in-memory body before it lands in llms-full.txt.
+# The MkDocs site continues to render the full 44-row matrix for
+# human readers (via the unaltered AUTOGEN-bounded region).
+_RECIPES_INDEX_AUTOGEN_BLOCK = re.compile(
+    r"<!--\s*BEGIN AUTOGEN:\s*recipes-matrix\s*-->"
+    r".*?"
+    r"<!--\s*END AUTOGEN:\s*recipes-matrix\s*-->",
     re.DOTALL,
 )
 
@@ -534,6 +592,133 @@ def is_formatter_page(relpath: str) -> bool:
     return relpath == "reference/formatter.md"
 
 
+def is_recipes_index_page(relpath: str) -> bool:
+    """True when `docs/<relpath>` is the recipes-section matrix index page.
+
+    Only the top-level ``docs/recipes/index.md`` qualifies. Per-recipe
+    pages under ``docs/recipes/<source>/<layer>.md`` are handled by
+    ``is_recipe_page`` + ``strip_recipe_advisory`` and are NOT trimmed
+    by this helper.
+    """
+    return relpath == "recipes/index.md"
+
+
+def strip_recipes_index_matrix(
+    body: str, page_url: str, recipes: list[dict[str, Any]]
+) -> tuple[str, bool]:
+    """Replace the AUTOGEN recipes-matrix block with a compact pivot.
+
+    Returns ``(cleaned body, trimmed)`` where ``trimmed`` is ``True``
+    when the AUTOGEN region was found and replaced, ``False`` when the
+    page did not contain the markers (a no-op — defensive against
+    future edits that move or rename the markers).
+
+    The pivot is built from the in-memory ``recipes`` list (the same
+    list ``collect_recipes`` returned at render time, derived from
+    ``docs/_machine/recipes/index.yaml`` which is the source of truth
+    that also drives the on-disk matrix). This keeps the trimmed
+    payload in lockstep with the live recipe set without a second
+    YAML read.
+
+    The replacement carries:
+
+      * Headline totals (recipe count, source-dir count, layer-id
+        count) — the same information the live matrix opens with.
+      * A compact ``source: layers`` presence list — one bullet per
+        source dir that ships at least one recipe, with a comma-
+        separated list of the layer ids that ship for that source.
+        Adds an at-a-glance "which (source, layer) cells already
+        ship?" lookup an LLM authoring a new recipe needs, with no
+        empty-cell padding overhead.
+      * An OT-safety-relevant recipe list — the canonical inventory
+        of recipes flagged ``ot_safety_relevant: true`` in their
+        frontmatter, the only piece of per-recipe metadata that does
+        NOT survive in the per-recipe body trim (the rest — status,
+        apps required, expected-field contract, formatter options —
+        is in §3 + §4 of each recipe page, kept verbatim in this
+        same file).
+      * The URL pointer to the unabridged matrix on GitHub Pages and
+        to the source-of-truth YAML on GitHub, in the HTML comment
+        header so it does not consume rendered-prose budget.
+
+    If the recipes list is empty (a fresh repo before any recipe
+    ships), the trim still runs — the pivot table degenerates to a
+    one-line "no recipes shipped yet" pointer.
+    """
+    # Index recipes by (source_dir, layer_id). The source_dir is
+    # derived from the on-disk path (`docs/recipes/<source>/<layer>.md`)
+    # rather than the YAML `source.id` because some recipes share a
+    # source.id but live in different source directories (e.g. all
+    # `splunk-cim` recipes share `source.id = splunk-cim` but live
+    # under different `cim-*` directories like cim-alerts, cim-
+    # authentication, cim-network-traffic, cim-performance). The
+    # pivot wants directory-level grouping so the agent can answer
+    # "which layers ship for cim-alerts?" not "which layers ship
+    # for splunk-cim?".
+    presence: dict[str, list[str]] = {}
+    ot_safety_ids: list[str] = []
+    for entry in recipes:
+        path = entry.get("path") or ""
+        if not path.startswith("docs/recipes/"):
+            continue
+        rel = path[len("docs/recipes/") :]
+        if "/" not in rel:
+            continue
+        source_dir, layer_file = rel.split("/", 1)
+        if not layer_file.endswith(".md"):
+            continue
+        layer_id = layer_file[: -len(".md")]
+        presence.setdefault(source_dir, []).append(layer_id)
+        if entry.get("ot_safety_relevant") is True:
+            ot_safety_ids.append(f"{source_dir}/{layer_id}")
+
+    sources = sorted(presence.keys())
+    all_layers = sorted({l for layers in presence.values() for l in layers})
+
+    lines: list[str] = []
+    lines.append(
+        "<!-- recipes-matrix trimmed for llms-full.txt token budget "
+        f"(see Wave 16 ROADMAP block); full matrix at <{page_url}> "
+        "and source-of-truth YAML at "
+        "<https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>; "
+        "per-recipe details (status, apps, expected-field contract, "
+        "formatter options) are kept verbatim under the matching "
+        "`# === BEGIN: .../recipes/<source>/<layer>/ ===` block in "
+        "this same file -->\n"
+    )
+    lines.append(
+        f"**Total: {len(recipes)} recipes · {len(sources)} source "
+        f"dir(s) · {len(all_layers)} layer type(s).**\n\n"
+    )
+    if not recipes:
+        lines.append(
+            "_(No recipes shipped yet — see E5 in the roadmap for the "
+            "matrix design.)_\n\n"
+        )
+    else:
+        lines.append(
+            "Source dirs and the layer ids that already ship for each "
+            "(any `(source, layer)` not listed below is an open cell "
+            "in the E5 matrix and is a candidate for the next recipe "
+            "wave):\n\n"
+        )
+        for src in sources:
+            layer_list = ", ".join(sorted(presence[src]))
+            lines.append(f"- `{src}`: {layer_list}\n")
+        lines.append("\n")
+
+    if ot_safety_ids:
+        ot_csv = ", ".join(f"`{rid}`" for rid in sorted(ot_safety_ids))
+        lines.append(
+            f"**OT-safety-relevant recipes ({len(ot_safety_ids)}):** "
+            f"{ot_csv}.\n"
+        )
+
+    pointer = "".join(lines)
+    cleaned, count = _RECIPES_INDEX_AUTOGEN_BLOCK.subn(pointer, body)
+    return cleaned, count > 0
+
+
 def strip_formatter_appendix_a(body: str, page_url: str) -> tuple[str, bool]:
     """Replace the AUTOGEN formatter-enumeration block with a URL pointer.
 
@@ -757,6 +942,10 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
             )
         if is_formatter_page(relpath):
             expanded, _trimmed = strip_formatter_appendix_a(expanded, url)
+        if is_recipes_index_page(relpath):
+            expanded, _trimmed = strip_recipes_index_matrix(
+                expanded, url, recipes
+            )
         cleaned = strip_chrome(expanded).rstrip() + "\n"
         if is_recipe_page(relpath):
             cleaned = strip_recipe_advisory(cleaned, url)

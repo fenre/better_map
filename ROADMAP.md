@@ -2536,6 +2536,45 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   CHANGELOG iteration if a new release adds a
 >   large `## [VERSION]` section before then.
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 16 token-trim
+> SHIPPED (~2.7k tokens reclaimed by trimming the auto-generated
+> per-recipe matrix in `docs/recipes/index.md`).** Wave 15 recipes
+> landed `llms-full.txt` at ~174.2k tokens / ~758 tokens of WARN
+> headroom — too tight to fund even one wave-16 recipe at the new
+> comprehensive 3-way-comparison cost (~3.4k). Wave 16 reclaims
+> the budget by trimming the on-build payload of
+> `docs/recipes/index.md` between the
+> `<!-- BEGIN AUTOGEN: recipes-matrix -->` and `<!-- END AUTOGEN:
+> ... -->` markers from the 44-row per-recipe table (~4.5k tokens
+> in `llms-full.txt`) to a compact `source-dir: layer-id-list`
+> presence list (~1.8k tokens), keeping the headline totals
+> (`44 recipes · 15 source dir(s) · 9 layer type(s)`) and the
+> OT-safety-relevant recipe list. Net reclaim: ~2.7k tokens. The
+> on-disk `docs/recipes/index.md` is unchanged (MkDocs site
+> continues to render the full 44-row matrix for human readers);
+> the per-recipe details (status, app dependencies, expected-field
+> contract, formatter-option list) are recoverable from §3 + §4
+> of each recipe page body, which is kept verbatim in
+> `llms-full.txt` under the matching
+> `# === BEGIN: …/recipes/<source>/<layer>/ ===` block, and from
+> the source-of-truth at
+> `docs/_machine/recipes/index.yaml`. Implementation lives in
+> `scripts/build-llms-full-txt.py::strip_recipes_index_matrix`
+> alongside the wave-13 ROADMAP status-block strip, wave-10
+> CHANGELOG older-version strip, wave-12 Appendix B compaction,
+> and wave-15 formatter-Appendix-A trim. After this trim:
+> `llms-full.txt` lands at **~171.5k tokens** / **~3.5k WARN
+> headroom** — enough to fund one wave-16 recipe at the new
+> ~3.4k cost level + the wave-16 recipes status block. Wave
+> 17 will need another trim before recipes; candidates include
+> recipe-page §1 Source-description compaction (~1.8k × 44 = ~10k
+> if applied carefully) or a second CHANGELOG iteration if a new
+> release adds large `## [VERSION]` sections.
+>
+> _This `> **Status …` blockquote will self-strip from
+> `llms-full.txt` at the next regeneration via the wave-13
+> generalised ROADMAP status-block regex._
+
 > **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 15 recipes
 > SHIPPED (2 more recipes — recipe count 42 → 44, layer-type
 > coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
