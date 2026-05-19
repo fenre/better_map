@@ -63,7 +63,14 @@ the narrow E5 + G7 shapes to ANY subsystem (D-, E-, G-, R-, REL-,
 T- — see the wave 13 ROADMAP block for the audit data: 16 status
 blockquotes were unstripped under the wave 8 narrow regex, ~30k
 tokens of write-once historical notes whose live state is duplicated
-in the headline table and per-subsystem section bodies):
+in the headline table and per-subsystem section bodies — and in
+wave 15 by trimming the auto-generated formatter-options enumeration
+in ``docs/reference/formatter.md`` between the ``<!-- BEGIN AUTOGEN:
+formatter-enumeration -->`` and ``<!-- END AUTOGEN: ... -->`` markers
+to a URL pointer — the 82-option enumeration carries ~3.9k tokens of
+table content that is already canonically expressed in
+``docs/_machine/formatter-schema.json`` and rendered for humans on
+the MkDocs site, see ``strip_formatter_appendix_a`` below):
 
   * Per-page warning at **50,000 estimated tokens** — one page should
     not dominate the corpus.
@@ -220,6 +227,38 @@ _CHANGELOG_VERSION_HEADING = re.compile(
     re.MULTILINE,
 )
 _CHANGELOG_KEEP_VERSIONS = 3
+
+# Formatter Appendix A trim contract — see strip_formatter_appendix_a() and
+# the E5 Phase 2 wave 15 ROADMAP block. docs/reference/formatter.md is the
+# canonical human-readable enumeration of every dashboard / panel formatter
+# option exposed by the better-map visualization. The page body has two
+# parts:
+#   * Narrative intro + worked examples + § "Worked example: 4-layer dashboard"
+#     etc. — small, high-signal, hand-authored, MUST stay in llms-full.txt.
+#   * Auto-generated tables between `<!-- BEGIN AUTOGEN: formatter-enumeration -->`
+#     and `<!-- END AUTOGEN: formatter-enumeration -->`. By wave 14 the
+#     enumeration covers ~82 options across ~10 logical groups, ~181 lines
+#     / ~16 KB / ~3,948 tokens. The same content is canonically expressed
+#     in `docs/_machine/formatter-schema.json` (which is what generates
+#     the tables in the first place) and is rendered for humans on the
+#     MkDocs site at https://fenre.github.io/better_map/reference/formatter/.
+#     An LLM that needs the FULL option set can fetch the schema; an LLM
+#     authoring a recipe needs the narrative + the worked examples + the
+#     URL pointer, NOT the per-option table dump (the per-option enum is
+#     also already encoded one-by-one in the per-recipe §4 Recommended
+#     formatter config blocks, which are NOT trimmed).
+# The trim replaces the entire AUTOGEN-bounded region with a one-paragraph
+# pointer block. Net saving: ~3.8k tokens.
+#
+# The on-disk docs/reference/formatter.md is unchanged — the trim runs
+# only against the in-memory body before it lands in llms-full.txt. The
+# MkDocs site continues to render the full enumeration for human readers.
+_FORMATTER_AUTOGEN_BLOCK = re.compile(
+    r"<!--\s*BEGIN AUTOGEN:\s*formatter-enumeration\s*-->"
+    r".*?"
+    r"<!--\s*END AUTOGEN:\s*formatter-enumeration\s*-->",
+    re.DOTALL,
+)
 
 
 # ----------------------------------------------------- mkdocs.yml parse
@@ -483,6 +522,54 @@ def strip_changelog_old_versions(
     return body[:trim_start].rstrip() + "\n" + pointer, trimmed_count
 
 
+def is_formatter_page(relpath: str) -> bool:
+    """True when `docs/<relpath>` is the formatter-reference page.
+
+    Only the top-level `docs/reference/formatter.md` qualifies. The
+    page mixes hand-authored narrative + worked examples with an
+    auto-generated enumeration of every formatter option; the trim
+    targets only the auto-generated region (see
+    ``strip_formatter_appendix_a`` for the contract).
+    """
+    return relpath == "reference/formatter.md"
+
+
+def strip_formatter_appendix_a(body: str, page_url: str) -> tuple[str, bool]:
+    """Replace the AUTOGEN formatter-enumeration block with a URL pointer.
+
+    Returns ``(cleaned body, trimmed)`` where ``trimmed`` is ``True`` when
+    the AUTOGEN region was found and replaced, ``False`` when the page
+    did not contain the markers (a no-op — defensive against future
+    edits that move or rename the markers).
+
+    The enumeration between ``<!-- BEGIN AUTOGEN: formatter-enumeration -->``
+    and ``<!-- END AUTOGEN: ... -->`` carries ~82 options × ~5 cells per
+    option ≈ ~3.9k tokens in wave 14. The same content is canonically
+    expressed in ``docs/_machine/formatter-schema.json`` and rendered for
+    humans on the MkDocs site, so an LLM that needs the full enumeration
+    can fetch either; an LLM authoring a recipe needs the narrative +
+    the URL pointer + the per-recipe §4 formatter-config blocks (which
+    are NOT trimmed).
+    """
+    pointer = (
+        "<!-- formatter-enumeration trimmed for llms-full.txt token "
+        "budget; see Wave 15 ROADMAP block -->\n\n"
+        "_The full per-option enumeration (82 options across the tile "
+        "provider, layer ordering, basemap, heatmap, H3 cell-fill, "
+        "supercluster, 3D extrusion, marker, path, and polygon groups) "
+        "is canonically expressed in "
+        "[`docs/_machine/formatter-schema.json`]"
+        "(https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json) "
+        f"and rendered for humans at <{page_url}>. Per-recipe §4 "
+        "formatter-config blocks (see Appendix B — recipes index) carry "
+        "the option subset actually used by each recipe; the per-recipe "
+        "blocks are NOT trimmed and remain the authoritative reference "
+        "for any LLM authoring a recipe._\n"
+    )
+    cleaned, count = _FORMATTER_AUTOGEN_BLOCK.subn(pointer, body)
+    return cleaned, count > 0
+
+
 def strip_roadmap_status_blocks(body: str) -> tuple[str, int]:
     """Strip historical write-once SHIPPED status blockquotes from ROADMAP.
 
@@ -668,6 +755,8 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
             expanded, _versions = strip_changelog_old_versions(
                 expanded, url
             )
+        if is_formatter_page(relpath):
+            expanded, _trimmed = strip_formatter_appendix_a(expanded, url)
         cleaned = strip_chrome(expanded).rstrip() + "\n"
         if is_recipe_page(relpath):
             cleaned = strip_recipe_advisory(cleaned, url)
