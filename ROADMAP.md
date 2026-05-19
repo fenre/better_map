@@ -2536,6 +2536,85 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   CHANGELOG iteration if a new release adds a
 >   large `## [VERSION]` section before then.
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 16 recipes
+> SHIPPED (1 more recipe — recipe count 44 → 45, layer-type
+> coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
+> unchanged, h3 layer usage 9 → 10).** Wave 16 completes the
+> **10th source-row triplet** (every triplet so far: cim-alerts,
+> cim-authentication, cim-network-traffic, cim-performance,
+> cyber-vision, es-risk, meraki, netflow-sflow-ipfix, splunk-stream
+> from waves 4b–15, plus **ot-datastreamer** now completing
+> markers / heat / h3):
+> - **`ot-datastreamer/h3`** — completes the ot-datastreamer
+>   triplet (markers from wave 4b, heat from wave 8, h3 from
+>   wave 16). The h3 layer is the right shape for **OT regional
+>   capacity briefings** (continental volume comparison with
+>   hard hexagonal partition borders), **board-level deployment-
+>   scope maps** (one hex per country-scale jurisdiction at
+>   resolution 3), and **data-residency audits** (flag any
+>   hex outside the contracted region with non-zero `value`).
+>   Distinct from the heat companion (smooth Gaussian per-site
+>   pressure, no hard borders) and the markers companion
+>   (per-appliance pins with `last_seen_minutes_ago` liveness
+>   colouring). Preserves the wave-8 / wave-4b OT-safety
+>   contract: `safety_related` lookup column is mirrored
+>   read-only from the customer SRS (Rule 5), `max(safety_related)
+>   AS site_has_safety_hub` aggregation surfaces per-hex the
+>   "any safety hub in this region?" flag (Rule 6), and the
+>   §6 Gotchas explicitly note the regional-aggregation gotcha
+>   (a hex showing `site_has_safety_hub=1` means at least ONE
+>   site in the hex carries SIS-relevant telemetry, NOT that
+>   every site in the hex does) plus the silent-safety-hub
+>   alert-pairing requirement. **10th completed triplet** — the
+>   ENTIRE OT-vendor-bridge stack (markers + heat + h3) now
+>   ships, alongside every CIM/SOC-stack source-row already at
+>   triplet completion from waves 11–15.
+> - **Layer-type coverage 9 / 10 unchanged.** The h3 layer
+>   was already on the matrix from waves 8+ (cim-performance,
+>   cim-alerts, cim-authentication, cim-network-traffic,
+>   cyber-vision, es-risk, meraki, netflow-sflow-ipfix,
+>   splunk-stream); wave 16 just extends h3 to the
+>   ot-datastreamer source row (h3 usage 9 → 10).
+> - **Source-pattern coverage 8 / 8 unchanged.** All eight
+>   source patterns (splunk-cim, splunk-vendor-ta,
+>   splunk-lookup, splunk-builtin, splunk-edge-hub,
+>   splunk-premium-es, splunk-premium-itsi, splunk-stream)
+>   were already represented from wave 6's 21-recipe milestone;
+>   wave 16 stays on `splunk-edge-hub`.
+> - **Wave 17 outlook — TOKEN BUDGET TIGHT.** With wave 16
+>   landing at **~174.4k estimated tokens**, headroom to the
+>   175k WARN is **~631 tokens** — not enough for even one
+>   more recipe. Wave 17 MUST start with another token-trim
+>   PR. Candidate trim levers (in projected-ROI order):
+>   (a) recipe-page §1 Source-description compaction (currently
+>   ~150-300 tokens × 45 recipes = ~10-13k if a uniform
+>   reformat to ~80 tokens per §1 is applied — biggest single
+>   reclaim available); (b) per-recipe §6 Gotchas already
+>   trimmed via wave-4a; (c) a second CHANGELOG iteration if
+>   a new release adds large `## [VERSION]` sections; (d) the
+>   D-/G-/R-tier per-section roadmap bodies (the source-of-
+>   truth narrative for each subsystem, currently ~50-100k
+>   tokens combined — but these are HIGH-signal content that
+>   an LLM authoring on this codebase actively uses, so
+>   trimming should be a last resort).
+> - **Triplet completion now 10 / 15 source dirs.** Remaining
+>   source rows: `csv-lookup-geo` (has markers, h3,
+>   polygons, supercluster, vector-tile-join; missing heat —
+>   the only triplet-completing single recipe still
+>   one-cell-away), `geo-us-states` (has choropleth,
+>   extrusion-3d; missing markers/h3/heat — geo-shape recipe
+>   row, intentionally NOT a markers-style triplet target),
+>   `itsi-kpi-base` (has markers only; missing h3/heat),
+>   `kvstore-latlon` (has heat, markers, supercluster;
+>   missing h3 — one-cell-away triplet candidate),
+>   `thousandeyes` (has markers, paths; missing h3/heat —
+>   two-cell-away). Best wave 17 single-recipe triplet
+>   completers: `csv-lookup-geo/heat` and `kvstore-latlon/h3`.
+>
+> _This `> **Status …` blockquote will self-strip from
+> `llms-full.txt` at the next regeneration via the wave-13
+> generalised ROADMAP status-block regex._
+
 > **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 16 token-trim
 > SHIPPED (~2.7k tokens reclaimed by trimming the auto-generated
 > per-recipe matrix in `docs/recipes/index.md`).** Wave 15 recipes

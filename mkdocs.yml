@@ -252,6 +252,7 @@ nav:
       - 'NetFlow / sFlow / IPFIX — H3 hexbin': recipes/netflow-sflow-ipfix/h3.md
       - 'NetFlow / sFlow / IPFIX — heatmap': recipes/netflow-sflow-ipfix/heat.md
       - 'NetFlow / sFlow / IPFIX — markers': recipes/netflow-sflow-ipfix/markers.md
+      - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — H3 hexbin': recipes/ot-datastreamer/h3.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — heatmap': recipes/ot-datastreamer/heat.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — markers': recipes/ot-datastreamer/markers.md
       - 'Splunk Stream (wire data) — H3 hexbin': recipes/splunk-stream/h3.md
