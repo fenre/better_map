@@ -1,5 +1,34 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-22): E5 Phase 2 wave 29 recipes SHIPPED
+> (3 more recipes — recipe count 75 → 78, layer-type coverage 9 / 10
+> unchanged, source-pattern coverage 8 / 8 unchanged, polygons usage
+> 1 → 2 promoted **out of singleton-trap region**, extrusion-3d usage
+> 3 → 4, supercluster usage 12 → 13).** Wave 29 continues the
+> **diversification regime** opened by waves 21-28, now in its **9th
+> consecutive wave** with a focus on **promoting the polygons layer
+> out of the 1-source singleton trap** (new `kvstore-latlon/polygons`
+> recipe demonstrates polygons backed by a KV Store collection of
+> stringified GeoJSON, a natural editability fit for asset zones /
+> sales territories / fire-cell areas), **completing the 4th
+> extrusion-3d source row** (new `cim-authentication/extrusion-3d`
+> uses per-US-state aggregation of failed-login source IPs to render
+> credential-attack pressure as 3D extruded prisms for executive
+> identity-attack briefings), and **filling the 5th cim-alerts layer
+> shape** (new `cim-alerts/supercluster` adds zoom-adaptive clustering
+> to the existing cim-alerts markers / h3 / heat / paths coverage,
+> giving global NOC operators a single bubble per region at world
+> zoom that expands to per-host markers on drilldown). Estimated
+> token cost is ~4,761 tokens (163,107 → 167,868); leaves WARN
+> headroom at ~7,132 tokens — wave 30 will need a token-trim before
+> the next 3-recipe batch. Layer-shape coverage after wave 29:
+> markers 15, h3 14, heat 14, supercluster 13, paths 11, choropleth
+> 3, extrusion-3d 4, polygons 2, vector-tile-join 1. The polygons
+> layer is now OUT of the singleton-trap region; vector-tile-join
+> remains the last layer-type singleton. All gates green
+> (recipes/schema/coverage/reference-pages/llms-full drift +
+> `mkdocs build --strict`).
+
 > **Status (v1.7-prep, 2026-05-22): E5 Phase 2 wave 29 token-trim
 > SHIPPED (strip four backward-looking H3 subsections — §1c
 > "Specific honest gaps in v1.6", "What we DID verify in v1.6",
