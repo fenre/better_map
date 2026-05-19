@@ -2536,6 +2536,83 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   CHANGELOG iteration if a new release adds a
 >   large `## [VERSION]` section before then.
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 18 recipes
+> SHIPPED (1 more recipe — recipe count 47 → 48, layer-type
+> coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
+> unchanged, heat usage 8 → 9).** Wave 18 ships the SECOND
+> recipe for the most-isolated source row in the matrix:
+> - **`itsi-kpi-base/heat`** — second recipe for the
+>   `itsi-kpi-base` row (previously only markers). The
+>   per-site density complement to the markers companion:
+>   same `itsi_summary` ⋈ `itsi_services` join, same
+>   `SHKPI-`-prefixed service-health filter, same 15-min
+>   window, same `info_lat`/`info_lon` geo-attribute
+>   prerequisite — BUT instead of one marker per service
+>   the panel aggregates BY (`lat`, `lon`) site and renders
+>   per-site UNHEALTHY-SERVICE-COUNT as a smooth Gaussian
+>   heat surface. Demonstrates the `eval is_unhealthy =
+>   if(alert_level >= 3, 1, 0)` per-service binary
+>   threshold + `stats sum(is_unhealthy) AS
+>   unhealthy_services, count AS total_services BY lat,
+>   lon` per-site aggregation + `eventstats max
+>   /eval weight = unhealthy_services / max_unhealthy`
+>   normalisation pattern (matches
+>   kvstore-latlon/heat + es-risk/heat). Right for
+>   **executive / leadership health briefings**
+>   ("which datacenter is on fire?"), **multi-datacenter
+>   capacity planning** ("every EU datacenter is in the
+>   orange zone"), and **incident-response correlation
+>   panels** (cloud-region outage blast-radius at a
+>   glance). The §6 Gotchas cover the same `info_lat`
+>   /`info_lon` prereq as markers, the `alert_level >= 3`
+>   threshold-as-panel-definition contract (adjustable to
+>   `>= 2` / `>= 4` / `>= 5`), the per-site label
+>   alternative (`info_datacenter_code` if your install
+>   has one), the percentage-variant rewrite
+>   (`weight = unhealthy_services / total_services` for
+>   blast-radius-vs-fleet-size questions), the heat-vs-
+>   markers-vs-(future-h3) decision matrix, the per-panel
+>   `eventstats max` cardinality risk (panel-local
+>   normalisation, swap for a fixed scalar if cross-panel
+>   comparison is needed), the SHKPI delivery-lag absorb
+>   contract, the `itsi_services` lookup-name override
+>   (Splunk Cloud multi-tenant prefix), the no-time-
+>   parameterisation rule, the GDPR-safer-than-markers
+>   note (per-service identity discarded by aggregation),
+>   and the OT-safety carve-out (Rule 6 — visually mixing
+>   IT and OT service-health pressure is dangerous because
+>   per-site aggregation obscures the safety distinction).
+> - **`itsi-kpi-base` row coverage 1 → 2 recipes.** Still
+>   missing h3 (the future "regional service-pressure
+>   ranking" panel — boundary-aware totals across cloud
+>   regions). Layer-type coverage 9/10 unchanged. Source-
+>   pattern coverage 8/8 unchanged (`splunk-premium-itsi`
+>   already represented by markers).
+> - **Token budget TIGHT.** Wave 18 lands `llms-full.txt`
+>   at **~174,895 estimated tokens** / **~105 WARN
+>   headroom** — under WARN but with effectively NO
+>   headroom for further recipes. Wave 19 MUST start
+>   with a token-trim PR (no exception) before any recipe
+>   authoring. Candidate trim levers documented in the
+>   wave-17 trim status block above (recipe-page §1
+>   source-description compaction, recipe-page §6 Gotchas
+>   sub-trim for OT-safety boundary deduplication, or a
+>   second CHANGELOG iteration if a new release lands a
+>   large `## [VERSION]` section).
+> - **Triplet completion now 12/15 unchanged** (wave 18
+>   added 1 row to an already-single-recipe row, lifting
+>   it to 2/3 toward triplet). Remaining one-cell-away
+>   triplet completers: `itsi-kpi-base/h3` (best wave 20+
+>   single-recipe target, completes 13th triplet) and
+>   `thousandeyes/h3` OR `thousandeyes/heat` (either
+>   completes 14th triplet on its own). `geo-us-states`
+>   stays out of triplet count (geo-shape source row,
+>   intentionally NOT a markers-style target).
+>
+> _This `> **Status …` blockquote will self-strip from
+> `llms-full.txt` at the next regeneration via the wave-13
+> generalised ROADMAP status-block regex._
+
 > **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 17 recipes
 > SHIPPED (2 more recipes — recipe count 45 → 47, layer-type
 > coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
