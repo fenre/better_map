@@ -191,3 +191,44 @@ describe('safeRun — reporter chain', () => {
         expect(markers[0].message).toBe('a');
     });
 });
+
+describe('safeRun — async actions', () => {
+    beforeEach(() => { __resetSafeRunState(); });
+
+    it('resolves to {ok:true, result} when action returns a resolved Promise', async () => {
+        const r = await safeRun({
+            scope: LAYER_MARKERS,
+            action: function () { return Promise.resolve(7); }
+        });
+        expect(r).toEqual({ ok: true, result: 7 });
+    });
+
+    it('resolves to {ok:false, error} when action rejects', async () => {
+        const r = await safeRun({
+            scope: LAYER_MARKERS,
+            action: function () { return Promise.reject(new Error('async-boom')); }
+        });
+        expect(r.ok).toBe(false);
+        expect(r.error.message).toBe('async-boom');
+    });
+
+    it('reports async failures through the same reporter chain', async () => {
+        const received = [];
+        __setReporter(function (e) { received.push(e); });
+        await safeRun({
+            scope: LAYER_MARKERS,
+            action: function () { return Promise.reject('async-string'); }
+        });
+        expect(received).toHaveLength(1);
+        expect(received[0].message).toBe('async-string');
+    });
+
+    it('handles non-thenable object return values as sync results', () => {
+        const r = safeRun({
+            scope: LAYER_MARKERS,
+            action: function () { return { not: 'a-promise' }; }
+        });
+        expect(r.ok).toBe(true);
+        expect(r.result).toEqual({ not: 'a-promise' });
+    });
+});
