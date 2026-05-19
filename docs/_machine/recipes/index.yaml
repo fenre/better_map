@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 57
+recipe_count: 60
 recipes:
 - id: cim-alerts--h3
   source:
@@ -1882,6 +1882,60 @@ recipes:
   - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
     path: docs/reference/bm-ct-1.md
   path: docs/recipes/itsi-kpi-base/markers.md
+- id: itsi-kpi-base--supercluster
+  source:
+    id: itsi-kpi-base
+    display_name: ITSI service health (KPI base searches)
+    pattern: splunk-premium-itsi
+  layer:
+    id: supercluster
+    display_name: Supercluster
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: SA-ITOA
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: svc_payments_eu
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '53.5511'
+  - name: lon
+    type: number
+    example: '9.9937'
+  - name: service_title
+    type: string
+    example: Payments (EU region)
+  - name: health_score
+    type: integer
+    example: '78'
+  - name: alert_level
+    type: integer
+    example: '3'
+  required_formatter_options:
+  - pointRenderer
+  - idField
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (drilldown)
+    path: docs/recipes/itsi-kpi-base/markers.md
+  - description: Companion recipe — same source, H3 hexbin (per-cell roll-up)
+    path: docs/recipes/itsi-kpi-base/h3.md
+  - description: Companion recipe — same source, heatmap (smoothed density)
+    path: docs/recipes/itsi-kpi-base/heat.md
+  - description: Pattern reference — supercluster on Splunk Stream
+    path: docs/recipes/splunk-stream/supercluster.md
+  - description: splunk-itsi skill — itsi_summary schema, SHKPI- service health, entity attributes
+    path: ~/.cursor/skills/splunk-itsi/SKILL.md
+  - description: Layer reference — supercluster
+    path: docs/reference/layers.md
+  - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
+    path: docs/reference/bm-ct-1.md
+  path: docs/recipes/itsi-kpi-base/supercluster.md
 - id: kvstore-latlon--h3
   source:
     id: kvstore-latlon
@@ -2444,6 +2498,79 @@ recipes:
   - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
     path: docs/reference/bm-ct-1.md
   path: docs/recipes/netflow-sflow-ipfix/markers.md
+- id: netflow-sflow-ipfix--paths
+  source:
+    id: netflow-sflow-ipfix
+    display_name: NetFlow / sFlow / IPFIX (flow records)
+    pattern: splunk-vendor-ta
+  layer:
+    id: paths
+    display_name: Paths
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_TA_netflow
+    optional: false
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: 203.0.113.45-198.51.100.7
+    drives_formatter_option: pathIdField
+  - name: seq
+    type: integer
+    example: '0'
+    drives_formatter_option: timeField
+  - name: lat
+    type: number
+    example: '37.7749'
+  - name: lon
+    type: number
+    example: '-122.4194'
+  - name: src_ip
+    type: string
+    example: 203.0.113.45
+  - name: dest_ip
+    type: string
+    example: 198.51.100.7
+  - name: bytes
+    type: number
+    example: '184320000'
+  - name: top_protocol
+    type: string
+    example: tcp/443
+  - name: src_country
+    type: string
+    example: US
+  - name: dest_country
+    type: string
+    example: NL
+  required_formatter_options:
+  - pathIdField
+  - timeField
+  - pathColor
+  - pathArrows
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (per-destination drilldown)
+    path: docs/recipes/netflow-sflow-ipfix/markers.md
+  - description: Companion recipe — same source, H3 hexbin layer (per-cell roll-up)
+    path: docs/recipes/netflow-sflow-ipfix/h3.md
+  - description: Companion recipe — same source, heatmap layer (smoothed concentration)
+    path: docs/recipes/netflow-sflow-ipfix/heat.md
+  - description: Pattern reference — paths layer with iplocation src/dest endpoint pairs
+    path: docs/recipes/cim-network-traffic/paths.md
+  - description: Pattern reference — paths layer with append-branch endpoint vertex pattern
+    path: docs/recipes/cyber-vision/paths.md
+  - description: Splunk Network Explorer skill — NetFlow / sFlow / IPFIX collection patterns
+    path: ~/.cursor/skills/splunk-network-explorer/SKILL.md
+  - description: Layer reference — paths
+    path: docs/reference/layers.md
+  - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
+    path: docs/reference/bm-ct-1.md
+  path: docs/recipes/netflow-sflow-ipfix/paths.md
 - id: ot-datastreamer--h3
   source:
     id: ot-datastreamer
@@ -2853,6 +2980,72 @@ recipes:
   - description: dataFitness.js alias auto-detect (lat/lon/id auto-picked)
     path: better_map/appserver/static/visualizations/better_map/src/lib/dataFitness.js
   path: docs/recipes/splunk-stream/markers.md
+- id: splunk-stream--supercluster
+  source:
+    id: splunk-stream
+    display_name: Splunk Stream (wire data)
+    pattern: splunk-stream
+  layer:
+    id: supercluster
+    display_name: Supercluster
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_TA_stream
+    optional: false
+  - id: splunk_app_stream
+    optional: true
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: 203.0.113.45
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '37.7749'
+  - name: lon
+    type: number
+    example: '-122.4194'
+  - name: dest_ip
+    type: string
+    example: 203.0.113.45
+  - name: dest_country
+    type: string
+    example: US
+  - name: session_count
+    type: integer
+    example: '428'
+  - name: bytes_out
+    type: integer
+    example: '184320000'
+  - name: distinct_src
+    type: integer
+    example: '47'
+  required_formatter_options:
+  - pointRenderer
+  - idField
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (per-destination drilldown)
+    path: docs/recipes/splunk-stream/markers.md
+  - description: Companion recipe — same source, H3 hexbin layer
+    path: docs/recipes/splunk-stream/h3.md
+  - description: Companion recipe — same source, heatmap layer
+    path: docs/recipes/splunk-stream/heat.md
+  - description: Pattern reference — supercluster layer with same iplocation pipeline (Meraki)
+    path: docs/recipes/meraki/supercluster.md
+  - description: Pattern reference — supercluster on CIM Authentication
+    path: docs/recipes/cim-authentication/supercluster.md
+  - description: Splunk Stream skill — wire-data capture and protocol analytics
+    path: ~/.cursor/skills/splunk-stream/SKILL.md
+  - description: Layer reference — supercluster
+    path: docs/reference/layers.md
+  - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
+    path: docs/reference/bm-ct-1.md
+  path: docs/recipes/splunk-stream/supercluster.md
 - id: thousandeyes--h3
   source:
     id: thousandeyes
