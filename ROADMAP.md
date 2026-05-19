@@ -2536,6 +2536,84 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 >   CHANGELOG iteration if a new release adds a
 >   large `## [VERSION]` section before then.
 
+> **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 17 token-trim
+> SHIPPED (~7.7k tokens reclaimed by compacting each Theme A-G
+> work-item body in `ROADMAP.md` to its heading + Problem + Accept
+> + Status + Done bullets, dropping Design / Prereqs / Risk and
+> any trailing free-prose body — see
+> `strip_roadmap_workitem_bodies` in `scripts/build-llms-full-txt.py`).**
+> Wave 16 recipes landed at 174,369 / 175,000 estimated tokens
+> (~631 WARN headroom — too tight for any more recipes), so wave
+> 17 opened with a token-trim PR before any recipe authoring (the
+> wave-16-recipes status block already declared this contract).
+> Wave 17 trim choice:
+> - **Profiling result.** The ROADMAP page was the largest single
+>   contributor to the corpus at ~28.5k tokens (16% of the full
+>   175k budget — bigger than any single recipe by 8×). Of that,
+>   Themes A-G alone are ~14.1k tokens (49% of the roadmap), and
+>   the 40 work-items under those themes carry ~92% of the per-
+>   theme weight in structured 5-bullet
+>   Problem / Design / Prereqs / Risk / Accept format.
+> - **Why heading + Problem + Accept is the right keep-set.**
+>   An LLM authoring code in this repo TODAY needs (a) the work-
+>   item ID + title (for cross-references like "see A1 for the
+>   Web-Worker design") and (b) the WHAT (Problem) and the DONE-
+>   criterion (Accept) to align new code with the project's
+>   intent. The HOW (Design), the WHEN (Prereqs), and the WHAT-IF
+>   (Risk) are HISTORICAL design context useful for auditing past
+>   decisions but rarely needed for the day-to-day tactical work
+>   (authoring recipes, gates, integrations). Status and Done
+>   bullets are kept because they encode "this item already
+>   shipped, here's what landed" — actionable for the agent.
+> - **Other levers considered and rejected.** §1 source-description
+>   compaction across 45 recipes was projected at ~10-14k reclaim
+>   but the "vs" layer-choice comparison embedded in §1 is HIGH-
+>   signal for LLMs authoring NEW recipes — rejected. §4 prose-strip
+>   (keep YAML, drop rationale) was projected at ~18k reclaim but
+>   the per-config-key rationale (e.g. "heatmapRadius=28 because
+>   cloud regions have higher density than on-prem datacenters")
+>   is the most concrete trade-off-space training data in the
+>   corpus — rejected. §2 SPL-recipe prose strip was projected at
+>   ~50k reclaim but the line-by-line "Why this exact SPL shape"
+>   prose IS the main pedagogical signal of every recipe —
+>   rejected. The work-item-body trim is the highest ROI lever
+>   that minimises signal-loss for the LLM authoring-code use
+>   case.
+> - **Net token impact.** `llms-full.txt` 174,369 → 166,663
+>   estimated tokens (~7.7k reclaimed, 4.4% of the corpus).
+>   Roadmap page weight 114,067 → 83,242 chars (~28.5k → ~20.8k
+>   tokens). Per-work-item rendered weight ~340 → ~150 tokens
+>   (heading + 2-3 bullets + 1-line pointer). The raw savings of
+>   ~18.6k tokens are reduced by the MkDocs Material chrome strip
+>   pass which consolidates the blank-line-rich trim output
+>   (`re.sub(r"\\n{3,}", "\\n\\n", out)` in `strip_chrome`).
+> - **Idempotency.** The trim is structurally idempotent — re-
+>   running it on an already-trimmed body is a no-op because the
+>   non-keep bullets are already gone and the remaining bullets
+>   all match the keep-list. Verified on the wave-17 prototype.
+> - **The on-disk ROADMAP.md is unchanged** — the trim runs only
+>   in the in-memory body before it lands in `llms-full.txt`. The
+>   MkDocs site continues to render every Design / Prereqs / Risk
+>   bullet for human readers via the unaltered
+>   `include-markdown` directive in `docs/roadmap.md` (the literal
+>   directive syntax is not reproduced here to avoid the
+>   `resolve_includes` recursion-guard re-expansion documented
+>   in the wave-8 G7 follow-up #3 status block).
+>   This preserves the source-of-truth nature
+>   of the document for the project owner and for any human
+>   reviewer auditing past design decisions.
+> - **Headroom after trim.** 175,000 - 166,663 = ~8,337 tokens of
+>   WARN headroom. At ~2,800 tokens per recipe (median across the
+>   last 5 waves) this unlocks ~2-3 more recipes per future wave
+>   before the next token-trim is required. The next-best trim
+>   levers (if Wave 18-19 push us back against WARN) are
+>   documented above and remain available, though all of them
+>   carry higher signal-loss risk than this work-item-body trim.
+>
+> _This `> **Status …` blockquote will self-strip from
+> `llms-full.txt` at the next regeneration via the wave-13
+> generalised ROADMAP status-block regex._
+
 > **Status (v1.7-prep, 2026-05-18): E5 Phase 2 wave 16 recipes
 > SHIPPED (1 more recipe — recipe count 44 → 45, layer-type
 > coverage 9 / 10 unchanged, source-pattern coverage 8 / 8

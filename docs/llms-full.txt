@@ -12474,64 +12474,60 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 #### A1. Move spatial analytics to a Web Worker pool — `M`
 
 * **Problem:** DBSCAN / KDE / Getis-Ord Gi* / LISA / NND run on the main thread; UI freezes past ~5–10k points.
-* **Design:** Create `src/lib/analytics/workerHost.js` that spawns a pool of N workers (N = `navigator.hardwareConcurrency / 2`). Each worker bundles `simple-statistics` and `density-clustering` via a separate webpack entry point. Use a Comlink-style RPC bridge (or vanilla `postMessage` with a request-id table). The existing pure-compute modules in `src/lib/analytics/*.js` already have no DOM dependencies, so they port cleanly. Stream cells back so the UI can show progress.
-* **Prereqs:** Verify Splunk's CSP allows `Worker` from same-origin (it does on Enterprise 9.x+; needs verification on Splunk Cloud).
-* **Risk:** Splunk Cloud's CSP may block worker creation outright (the `Content-Security-Policy` header is centrally managed and not customer-overrideable). Mitigation: feature-detect, fall back to a `requestIdleCallback`-paced single-threaded path with chunking, ship both code paths.
 * **Accept:** 100k-point DBSCAN run completes < 5 s without any main-thread task longer than 16 ms (measured via `PerformanceObserver({type:'longtask'})`). 1M-point KDE completes < 30 s with progressive rendering at ≥ 30 fps perceived during compute. Memory growth < 50 MB over the lifetime of the analysis.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### A2. Sprite-atlas the MIL-STD-2525 and scenegraph icon paths — `M`
 
 * **Problem:** Every milsymbol render bakes a fresh canvas → memory churn, GC pauses, slow at 1k+ symbols. Same problem for scenegraph icons (drone/truck/ship/aircraft).
-* **Design:** Build-time generator (`scripts/build-sprite-atlas.js`) emits a single 2048×2048 PNG + JSON index of the top ~256 most-common 2525C SIDC codes and the 4 scenegraph icons. Use MapLibre's native `addImage(name, image)` once per symbol-key, then `icon-image` data-driven expressions point at atlas entries. Less-common 2525 codes fall back to runtime canvas bake (current path) and are cached in an LRU.
-* **Prereqs:** A1 not required.
-* **Risk:** The "top 256 SIDC codes" assumption is from public ATT&CK + sample wargaming data; a defence customer may want codes outside that set. Mitigation: ship the LRU runtime-bake fallback; let customers ship their own atlas via a formatter URL.
 * **Accept:** 10k milsymbol render < 200 ms after first paint. JS heap delta over 100 `setData` updates ≤ 5 MB (measured via `performance.memory.usedJSHeapSize` sampled every 10 updates). Atlas PNG ≤ 4 MB on disk; ≤ 1.2 MB after lossless `oxipng` compression.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### A3. Wind / flow-field on the GPU — `L`
 
 * **Problem:** Current particle system advects on the JS main thread; throughput ~10k particles before frame drops.
-* **Design:** Port to a MapLibre custom layer with a fragment-shader particle system. Reference implementations: Mapbox `mapbox-gl-particles`, `WeatherLayers GL`. Two RGBA8 textures: position (xy = lon/lat normalised, zw = age/seed); on each frame ping-pong advect via sampling a vector-field texture (u/v packed in RG). 100k particles trivially.
-* **Prereqs:** None; existing `src/lib/layers/wind.js` becomes the reference orchestrator.
-* **Risk:** WebGL2 + render-to-texture pipeline is not uniformly available on Splunk Mobile or on locked-down corporate Windows builds with old Intel drivers. Mitigation: feature-detect `gl.getParameter(gl.MAX_TEXTURE_SIZE)` ≥ 4096 and `WEBGL_color_buffer_float`; fall back to the v1.6 CPU path if missing.
 * **Accept:** 100k particles at 60 fps on a 2021 MacBook Air M1 in a 1440×900 panel; 50k particles at ≥ 30 fps on a 2020-era ThinkPad with integrated Intel UHD; CPU fallback handles 5k at 30 fps. Particle texture size ≤ 16 MB GPU memory.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### A4. Layer perf harness — `M`
 
 * **Problem:** No way to detect a perf regression. Claims like "60fps at 100k features" are currently hand-wavy.
-* **Design:** Headless-Chrome harness in `scripts/perf-harness/` that loads a static HTML page with the viz bundle, feeds synthetic GeoJSON of [1k, 10k, 100k, 1M] features per layer type, measures via the Performance API (FPS, JS-heap, paint timing, longest task), and writes results to `reports/perf-<gitsha>.json`. CI gate: regressions > 20% on any cell fail the build.
-* **Prereqs:** A1, A2, A3 to have meaningful targets to measure.
 * **Accept:** A perf report file with one row per (layer × point-count × browser) cell. CI green-lights on no regressions.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### A5. Supercluster + H3 worker offload — `S`
 
 * **Problem:** Current supercluster + h3-js calls block the main thread on initial render at large datasets.
-* **Design:** Use the A1 worker host. Supercluster ships an `index.worker.js` build out of the box; h3-js is pure JS and trivially portable. Cluster tiles return as typed arrays for cheap transfer.
-* **Prereqs:** A1.
 * **Accept:** 1M-point initial cluster render < 2s without main-thread block longer than 16ms.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 ### Theme B — 3D fidelity
 
 #### B1. Real glTF scenegraph via deck.gl interop — `L`
 
 * **Problem:** v1.6 scenegraph layer is sprite-faked. The "3D-style icons" name is honest but the capability gap is real.
-* **Design:** Add `@deck.gl/core` + `@deck.gl/mesh-layers` + `@loaders.gl/gltf` as deps. Use `MapboxOverlay` to host deck.gl layers inside the existing MapLibre instance — no second canvas, no separate camera. `ScenegraphLayer` consumes URL to `.glb`. Provide 4 default models bundled in `appserver/static/visualizations/better_map/models/{drone,truck,ship,aircraft}.glb` (sourced from CC0 / open licences). Fallback to v1.6 sprite path when WebGL2 unavailable. Bundle size impact ~600 KB gzipped; gate behind formatter option `v2RealScenegraph` so existing dashboards pay zero cost.
-* **Prereqs:** None.
-* **Risk:** deck.gl + MapLibre interop has historically been brittle around camera-sync (deck.gl assumes Mapbox internals that MapLibre forks may not preserve). Mitigation: pin a deck.gl version verified against the project's MapLibre version; add a smoke test to the perf harness (A4).
 * **Accept:** 500 glTF instances (≤ 50 KB per model) at 60 fps; switching back to sprite mode at runtime without a full viz re-init; gzipped bundle stays ≤ 800 KB after the dependency lands.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### B2. Terrain source + sky layer — `M`
 
 * **Problem:** Flat 2D maps only. MapLibre supports terrain since v3.
-* **Design:** Add a formatter toggle `v2Terrain` and an opts struct for the DEM source URL (Mapbox-RGB tile spec is the default; allow PMTiles DEMs for air-gapped). `map.setTerrain({source: 'terrain', exaggeration: 1})` + sky layer with `sun-elevation` driven by current time (animated when scrubber plays).
-* **Prereqs:** None.
 * **Accept:** Toggle works without re-init; existing 2D dashboards continue rendering identically when off.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### B3. Globe projection — `M`
 
 * **Problem:** Mercator only; can't honestly show planetary-scale datasets.
-* **Design:** MapLibre 4.x supports globe projection via `map.setProjection('globe')`. Most layers Just Work; the H3 / hex-bin layers need re-projection to lng/lat polygons (they already do this; double-check geometry near the dateline). Add formatter `v2Globe` toggle.
-* **Prereqs:** None; ships standalone.
 * **Accept:** 6 of 10 layer types render correctly in globe mode (markers, paths, polygons, heat, H3, supercluster). Document the 4 that don't (extrusion, indoor floor-plan, trips replay, vector-tile join) and the workaround.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 ### Theme C — Splunk integration depth
 
@@ -12540,100 +12536,95 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 #### C1. ITSI service-map module → verified — `M`
 
 * **Problem:** `src/lib/splunk/itsi.js` calls `/servicesNS/-/SA-ITOA/itoa_interface/service` based on docs, not a live response. Service graph node/edge schema, health-score field, geo-coordinate handling all unverified.
-* **Design:** Build against a real ITSI tenant. Capture three sample JSON responses (services list, single-service detail, dependency graph) and check into `_ref/itsi/`. Write a field-contract markdown listing every field the module reads and where it comes from. Replace the inline force-directed layout with an HTML-canvas overlay so node positions survive pan/zoom (current SVG approach degrades on large graphs).
-* **Prereqs:** Access to an ITSI lab.
-* **Risk:** ITSI lab availability is a calendar-time blocker, not just effort. ITSI's REST schema also drifted between 4.13 and 4.18; we should test against both. Mitigation: time-box discovery to one week; if no lab access lands, ship the module behind an "experimental" flag with current best-guess code and a clear caveat in the docs.
 * **Accept:** Showcase `better_map_itsi_service_map.xml` loads real services from the tenant; nodes carry the correct health-score colour; pan/zoom retains layout; field contract checked in at `_ref/itsi/field-contract.md` covering ≥ 12 fields; tested against ITSI 4.13 and 4.18 (the two current LTS-ish lines).
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### C2. SOAR playbook trigger → verified — `S`
 
 * **Problem:** `phantom_forward` URL is a config string; never POSTed in anger. SOAR entity schema unverified.
-* **Design:** Stand up a SOAR sandbox (or use Splunk's free community edition). POST a real "geographic incident" container with 3 entities and confirm a stub playbook fires. Document the exact `entities[].attribute` keys SOAR expects. Add a "dry-run" mode to the formatter so dashboard authors can preview the payload without firing.
-* **Prereqs:** SOAR access.
 * **Accept:** End-to-end demo of right-click-select → POST → SOAR container appears in the SOAR UI.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### C3. ES notable drilldown → verified — `S`
 
 * **Problem:** URL builder generates `/app/SplunkEnterpriseSecuritySuite/incident_review?...` but the `q` parameter syntax for filtering by `event_id` was assumed. Mark-closed REST POST to `/services/notable_update` not tested.
-* **Design:** Test against a real ES tenant. Capture working URL examples. Verify the mark-closed call returns 200 and the notable status actually changes.
-* **Prereqs:** ES access.
 * **Accept:** Click a marker → ES Incident Review opens filtered to that notable. Mark-closed action confirms via REST.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### C4. RBA risk heatmap → verified — `S`
 
 * **Problem:** SPL helper macro emits a hex-grid aggregation against `index=risk`, but the field names (`risk_score`, `risk_object`, `risk_object_type`) were assumed.
-* **Design:** Run the SPL against a real `index=risk` populated by an ES instance. Confirm field names and the `bin lat`/`bin lon` spans. Add an alternative aggregation by `risk_object` for analyst workflows.
-* **Prereqs:** ES + populated risk index.
 * **Accept:** Showcase dashboard returns non-empty hex grid against real risk events.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### C5. OT Purdue overlay → verified — `S`
 
 * **Problem:** Lookup name `ot_asset_register` is a default; the schema `host,asset_id,purdue_level` is a guess.
-* **Design:** Collaborate with a real OT customer (Equinor, Statkraft, etc.) on the actual asset-register lookup format. Support the OT Datastreamer field naming convention if applicable.
-* **Prereqs:** OT customer engagement.
 * **Accept:** Showcase loads a real customer's asset register and colours by their actual Purdue field.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### C6. A&I geo-resolution → verified — `S`
 
 * **Problem:** Lookup against ES `assets.csv` / `identities.csv` assumes specific field names (`host`, `ip`, `lat`, `lon`).
-* **Design:** Verify against ES default schema; handle the case where lat/lon are absent (need an IP-to-geo step then). Add fallback to `iplocation` SPL command.
-* **Prereqs:** ES.
 * **Accept:** Events lacking lat/lon get resolved correctly; `_geoResolvedBy` set to the source field.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### C7. MITRE ATT&CK overlay → verified — `S`
 
 * **Problem:** Built-in technique lookup is from 2023; ATT&CK refreshes twice a year.
-* **Design:** Pull the latest STIX bundle from `https://github.com/mitre/cti` at build time, regenerate the bundled lookup, document the refresh cadence. Verify the tactic colour palette is colour-blind safe.
-* **Prereqs:** None.
 * **Accept:** Lookup covers current Enterprise ATT&CK matrix; tactic colours pass colour-blind simulation.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### C8. AI Assistant chat → verified — `M`
 
 * **Problem:** Feature-flagged off. Hits `Splunk_AI_Assistant_Cloud` `spl_generator` endpoint; never tested.
-* **Design:** Test against a Splunk_AI_Assistant_Cloud-enabled tenant. Verify streaming response handling. Decide on multi-provider strategy: do we ever want direct OpenAI / Anthropic / Bedrock calls outside Splunk's AI Assistant? (Probably no — that's the user's *security* boundary.) Document the limit: AI Assistant is the only LLM path; no client-side keys ever.
-* **Prereqs:** Splunk_AI_Assistant_Cloud entitlement.
 * **Accept:** Chat panel returns useful SPL for natural-language geo queries; falls back gracefully when the assistant is not installed.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 ### Theme D — Quality bar
 
 #### D1. AppInspect re-certification — `S`
 
 * **Problem:** Last precert against v1.0.x. AppInspect catches dozens of issues (.DS_Store, missing default.meta entries, restmap.conf misconfig, insecure HTTP) that have been re-introduced repeatedly in v1.1 → v1.6.
-* **Design:** Install `splunk-appinspect` via pip. Run with `--mode precert --included-tags=cloud,future` against `dist/better_map-1.6.0.tar.gz`. Fix every failure. Add as a CI step.
-* **Prereqs:** None.
 * **Accept:** Zero failures, zero manual-check items.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### D2. Browser compatibility matrix — `S`
 
 * **Problem:** Tested on Chrome by hand. Unverified on Firefox, Safari, Edge, Splunk Mobile.
-* **Design:** Use Playwright to load the 12 showcase dashboards in [Chrome, Firefox, Safari (via WebKit), Edge] × [macOS, Windows, Linux]. Screenshot each. Diff against a baseline. Document the perf delta.
-* **Prereqs:** D1.
 * **Accept:** Matrix table in `docs/COMPAT-MATRIX.md` listing pass/fail per cell with screenshots.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### D3. Accessibility audit — `S`
 
 * **Problem:** `prefers-reduced-motion` is respected, but full WCAG 2.2 AA conformance untested. Keyboard navigation, screen-reader labels, focus management for popups, colour contrast on all themes.
-* **Design:** Run axe-core via Playwright on each showcase. Manual screen-reader pass with VoiceOver and NVDA. Fix everything that comes up.
-* **Prereqs:** D2 harness.
 * **Accept:** Zero axe violations at WCAG AA level. Screen-reader users can navigate the popups, the time scrubber, and the control panel.
-* **Phase 1 (shipped, see status block above):** PR-gate on `formatter.html` only (the one HTML surface that doesn't need a Splunk renderer). Catches the largest class of regressions an author can introduce — a duplicate `id`, a missing `<label for="...">`, an unlabeled `<select>`, a colour contrast regression — at the moment the PR opens.
-* **Phase 2 (deferred to D5):** same axe-core engine wrapped in Playwright against the 12 showcase dashboards inside a real Splunk Enterprise container. Blocked on the Docker-compose harness D5 is building.
-* **Phase 3 (manual, pre-E1):** VoiceOver (macOS) + NVDA (Windows) sweep of the showcases, recorded as a checklist in `docs/runbooks/accessibility.md`.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### D4. Error telemetry — `M`
 
 * **Problem:** We have no idea how often `bm:draw-finished` fails, how often a custom-viz module crashes inside a customer's Splunk, how often basemap fetches 4xx.
-* **Design:** Add an opt-in `v2Telemetry` formatter toggle. When on, POST anonymised error envelopes (no SPL, no field values, just stack trace + bundle SHA + browser + dashboard SHA) to a customer-supplied collector URL — never to a Better Map hosted endpoint (the project doesn't own infra). Document the schema. Provide a sample HEC config that consumes the envelope into a Splunk index.
-* **Prereqs:** None.
 * **Accept:** Errors land in a Splunk index when the toggle is on; zero data leaves when off.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### D5. End-to-end test suite — `M`
 
 * **Problem:** No automated test ever exercises a real Splunk REST install + dashboard render. The 2026-05-16 lab deploy worked but was driven by hand; a missing CDATA closing tag, a typo in `visualizations.conf`, or an SPL parse error in a new showcase would not be caught until a human user opens the dashboard.
-* **Design:** Docker-compose with Splunk Enterprise (matrix: 10.2, 10.3) + the freshly built tarball + an HEC token. Playwright drives a real browser at `localhost:8000` and asserts each showcase renders, each layer toggles, each scrubber control works, and the BM-CT-1 reset button returns the viz to the documented initial state. The dispatch-test from the 2026-05-16 deploy (one SPL per dashboard, fatal/error scan) is the lightweight pre-flight; Playwright is the heavy in-browser check. Run on every PR via GitHub Actions.
-* **Prereqs:** D2 harness, G2 CI/CD.
-* **Risk:** Splunk Enterprise in docker is heavy (≥ 4 GB RAM per container); GitHub Actions free runners may OOM. Mitigation: budget a self-hosted runner or use Splunk's own cloud-CI minutes if the Splunk Engineering partnership materialises.
 * **Accept:** Green CI on PR within 15 min wall-clock; one dashboard-renders-and-resets assertion per showcase × 2 Splunk versions; Playwright traces uploaded as PR artifacts on failure. Reduce flake rate to < 2% over a rolling 30-PR window (measured automatically).
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### D6. Demo data pack & one-click showcase mode — `S`
 
@@ -12647,125 +12638,74 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 #### E1. Splunkbase listing — `M`
 
 * **Problem:** Not on Splunkbase. Discoverability ~0.
-* **Design:** Submit for AppInspect cloud vetting. Author the Splunkbase description, screenshots (one per showcase × 12 = portfolio), 2-minute video walkthrough. Decide licence and support model.
-* **Prereqs:** D1 (clean precert).
 * **Accept:** Listed on Splunkbase with at least 12 screenshots and a video.
-* **Open question for the project owner:** free MIT or paid commercial? Support tier?
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### E2. Documentation site — `M`
 
 * **Problem:** README is 735 lines, CHANGELOG is 1396. Hard to navigate. No search. No structured way to plug in the per-source recipes (E5) or the machine-readable schemas (G7).
-* **Design:** Stand up an MkDocs Material site at `https://better-map.dev` (or under a Splunk-owned subdomain) — **infrastructure only; content scope lives in E5 and G7.** Site skeleton sections:
-  - Getting started (install via Splunkbase, install offline, smoke-test panel)
-  - Runtime envelope (§1a of this roadmap, rendered as the first reference page)
-  - Layer reference (one page per layer type, auto-generated from `_machine/layers/*.yaml` — G7)
-  - Formatter reference (auto-generated from JSON Schemas — G7)
-  - BM-CT-1 contract (the enable/disable/reset contract, machine-asserted by D5)
-  - Splunk-integration cookbook (cross-links to per-source recipes — E5)
-  - Per-source recipes (the matrix — E5)
-  - Performance guide
-  - Air-gapped deployment (already drafted in `docs/AIR-GAPPED-PMTILES.md` — migrate)
-  - Contributing (links to the plugin authoring guide — G6)
-  - Choose the MkDocs i18n plugin from day one (feeds G4)
-  - Privacy-preserving analytics only (Plausible or GoatCounter — no Google Analytics, per §1a CSP posture and Splunk-customer norms)
-* **Prereqs:** None; ships in parallel with E5 and G7 which populate it.
 * **Accept:** Site live; every public API page generated from a machine-readable source under `docs/_machine/` so a human edit cannot drift from the implementation; navigable search works offline; loads correctly on Splunk Cloud's allow-listed CDN list (no third-party fonts, no Google CDN scripts).
-* **Phase 1 (shipped, see status block above):** infrastructure — MkDocs Material site, eleven hand-authored pages, strict-mode PR gate, GitHub Pages deploy on `main`, the air-gap binding (no Google Fonts, no third-party scripts).
-* **Phase 2 (partially shipped, see E2 Phase 2 status blocks above):** auto-generated Formatter reference (E2 Phase 2 ✅ via `scripts/build-reference-pages.py` — 82-option enumeration grouped by `(tab, heading)`, drift-gated in CI inside `docs/reference/formatter.md` between BEGIN/END AUTOGEN markers), auto-generated Integration catalogue matrix (E2 Phase 2 ✅ via the same script's second managed region — 8-row at-a-glance table + per-integration endpoint detail, rendered from `_machine/integrations/*.yaml` into `docs/integrations/catalogue.md` between BEGIN/END AUTOGEN markers; the hand-authored prose blocks below the markers are preserved), `llms.txt` emission (G7 Phase 2 ✅); still pending: auto-generated per-source recipe matrix section (same framework, one follow-up PR adding a third `ManagedRegion`), Layer reference auto-gen (blocked on `_machine/layers/*.yaml` — de-prioritised behind integrations), privacy-preserving analytics decision, custom domain.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### E3. Video walkthroughs — `S`
 
 * **Problem:** Maps are visual; the value isn't conveyable in text.
-* **Design:** 6 short videos (~3 min each): overview, time scrubber, spatial analytics, MITRE/ES/RBA combo, OT Purdue, custom integration cookbook. Hosted on YouTube + embedded in the docs site.
-* **Prereqs:** E2 site to embed in.
 * **Accept:** 6 videos live with English captions.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### E4. Customer pilot programme — `XL`
 
 * **Problem:** No customer-validated value claims. Without 3+ paying or referenceable customers, "global tier" is rhetoric.
-* **Design:** Recruit 3 pilots across distinct verticals (SOC at a financial-services customer, NOC at a telco, OT engineering at an energy customer). Bi-weekly office hours. Convert pilot feedback into a public reference deck.
-* **Prereqs:** D1, E1, E2.
 * **Accept:** 3 named reference customers willing to appear in marketing.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### E5. Per-source setup recipes (the matrix) — `M`
 
 * **Problem:** Better Map can consume data from ~10 categorically different Splunk source patterns (see table below). A new customer with NetFlow data who wants a heat layer should not have to derive the SPL from first principles. There is currently no recipe documentation; the burden of "what SPL do I write?" falls entirely on the user, who often does not know the field names of their own data, let alone the contract this viz wants.
-* **Design:** Build the recipe matrix as `docs/recipes/<source>/<layer>.md`, where each leaf file is a **complete, copy-paste-runnable** recipe. Every recipe has the same 6-section structure (enforced by a validator script — G2 CI step), so an LLM can ingest the corpus consistently:
-
-  | Section | Content |
-  |---|---|
-  | 1. Source description | What the data looks like, where it comes from, typical sourcetype/index |
-  | 2. SPL recipe | Complete query, parameterised by `$site$`, `$earliest$`, `$latest$`, etc.; verified against a real instance |
-  | 3. Expected fields | Table of `field_name : type : example_value` — this is the field contract for the panel |
-  | 4. Recommended formatter config | JSON snippet for Dashboard Studio (or `<option>` block for SWF) |
-  | 5. Screenshot | One PNG of the panel rendered against the SPL, captured by D5 harness |
-  | 6. Gotchas | Time-range, perm/index access, accelerated DM availability, CIM tag mapping, OT-Datastreamer field-alias drift, etc. |
-
-  **Initial source/layer coverage matrix (✓ = ship recipe in v1.7; ○ = best-effort if effort allows; — = layer doesn't make sense for this source):**
-
-  | Source pattern \\ Layer | markers | paths | polygons | choropleth | heat | H3 hex | supercluster | 3D extrusion | indoor | vector-tile join |
-  |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-  | CIM Network Traffic (`dest`, `src_ip`, `iplocation`) | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | — | — | ✓ |
-  | CIM Authentication (`user`, `src_ip`, `app`) | ✓ | — | — | ✓ | ✓ | ✓ | ✓ | — | — | — |
-  | CIM Performance (host metrics with lat/lon from CMDB lookup) | ✓ | — | ○ | ✓ | ✓ | ✓ | ✓ | ✓ | — | — |
-  | CIM Alerts / Notable Events (`severity`, asset coords) | ✓ | — | — | ✓ | ✓ | ✓ | ✓ | — | — | — |
-  | KV Store (lat/lon list) | ✓ | ✓ | ✓ | ○ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-  | Custom CSV lookup (geo-enriched) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-  | ITSI KPI base searches (services with location) | ✓ | — | — | ✓ | — | — | — | ✓ | — | — |
-  | ES `index=risk` (RBA risk events) | ✓ | — | — | ✓ | ✓ | ✓ | ✓ | — | — | — |
-  | OT Datastreamer / Edge Hub (Modbus/OPC-UA/BACnet) | ✓ | — | ○ | ○ | ○ | ○ | — | ✓ | ✓ | — |
-  | NetFlow / sFlow / IPFIX | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | — | — | ✓ |
-  | Splunk Stream (wire data) | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | — | — | — |
-  | Cyber Vision (OT passive DPI) | ✓ | — | — | — | — | — | — | ✓ | ✓ | — |
-  | ThousandEyes (network path tests) | ✓ | ✓ | — | — | — | — | — | — | — | — |
-  | Meraki (devices, cameras, sensors) | ✓ | — | ○ | ✓ | ✓ | ✓ | ✓ | — | ✓ | — |
-  | `| inputlookup geo_us_states.kmz` (built-in geo lookup) | — | — | ✓ | ✓ | — | — | — | — | — | ✓ |
-
-  Total v1.7 ✓ cells = **~75**; ○ cells = ~9 stretch. The matrix is the v1.7 scope; everything outside the matrix is documented as "follows the same pattern as the closest cell" or deferred to v1.8.
-
-* **Prereqs:** E2 (site infrastructure), G7 (machine-readable schema for the recipe page format), C1–C8 lab access for the Splunk-specific sources.
-* **Risk:** ~75 recipes × 0.5 day each = 37.5 dev-days if done from scratch — that's the entire v1.7 milestone budget. Mitigation: (a) most cells are 80%-similar variants of a canonical recipe per layer-type; (b) D5 harness can generate the screenshots and the SPL-vs-expected-fields validation in bulk; (c) treat the matrix as a v1.7 starting set, not a v1.7 completion gate (the gate is "every ✓ cell has a verified recipe; ○ cells are explicit best-effort").
 * **Accept:** Every ✓ cell in the matrix above has a recipe file under `docs/recipes/<source>/<layer>.md` with all 6 sections populated. CI validator (G2) blocks PRs that add a layer or source without updating the matrix. LLM-readable index lives at `docs/recipes/index.yaml` listing every recipe with its `expected_fields` and `verified_against` (Splunk version, lab tenant). At least one customer-success engineer who is NOT the author can copy-paste a recipe and have a working panel in ≤ 5 min.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 ### Theme F — Differentiated capabilities
 
 #### F1. Shared bookmarks + per-user view state — `M`
 
 * **Problem:** Camera state + filter state are lost on reload. Cannot URL-share a specific view.
-* **Design:** Encode camera (lat/lon/zoom/bearing/pitch), enabled layers, active filters, time-cursor into the URL hash. On load, restore. Optional KV-store backed "named bookmarks" for users who want to save and share by name. Hook into Splunk's existing user-pref store.
-* **Prereqs:** None.
-* **Risk:** Splunk Dashboard Studio's own URL hash is already loaded with form-input tokens; collision-management has to be careful. Mitigation: prefix all hash keys with `bm.` and document the reserved namespace.
 * **Accept:** Copy URL → open in second browser logged in as the same user → camera, enabled layers, active filters, and time-cursor all restored identically (verified by a Playwright test). Pasted URL still works after a v1.x → v1.y upgrade (forward-compatible hash schema, asserted by G3 migration test).
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### F2. Story mode (saved view sequences) — `L`
 
 * **Problem:** Incident review workflows benefit from "click through these 5 saved views in order". Felt has this. We don't.
-* **Design:** A "story" is an ordered list of bookmarks (F1) + per-step annotation markdown + per-step camera animation easing. Editor lives behind a formatter toggle. Player widget overlays the map with next/back arrows + annotation text.
-* **Prereqs:** F1.
 * **Accept:** Author can record a 5-step incident-replay story; viewer can step through with the keyboard.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### F3. Raster analytics (NDVI, slope, hillshade, viewshed) — `XL`
 
 * **Problem:** GIS table-stakes; we have nothing.
-* **Design:** Use `geotiff.js` + `cog-explorer` patterns to consume Cloud-Optimised GeoTIFF rasters via HTTP range requests. WebGL shaders compute NDVI / slope / hillshade in real time per visible tile. Viewshed is more involved (needs DEM + observer height + line-of-sight); ship it later. Honest scope: probably 2 of the 4 in v2.0, the rest in v2.x.
-* **Prereqs:** B2 (terrain DEM source already plumbed).
-* **Risk:** COG range-request fetches go around Splunk's proxy and may be blocked by customer firewalls; viewshed compute can run into GPU memory limits on integrated chipsets. Mitigation: document the network requirements clearly; gate viewshed behind an explicit "Advanced (requires WebGL2 + 256 MB GPU)" formatter warning.
 * **Accept:** NDVI overlay from a Sentinel-2 COG renders correctly at zoom 8–14; hillshade from the terrain DEM renders correctly; raster-analytics SPL contract documented in `_ref/raster/`. Slope and viewshed explicitly tracked in the v2.x backlog with no v2.0 commitment.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### F4. Vector-tile authoring — `XL`
 
 * **Problem:** v1.6 *consumes* vector tiles (PMTiles, MVT) but cannot *produce* them. Most customers want to materialise their `assets.csv` as a vector tileset for fast pan/zoom.
-* **Design:** Server-side tool (Python or Go) that consumes a Splunk lookup or SPL search and emits a PMTiles archive. Optionally run as a Splunk modular input for periodic refresh. Out of scope: in-browser authoring (use Tippecanoe).
-* **Prereqs:** None; ships as a sibling tool.
 * **Accept:** A documented `splunk-to-pmtiles` utility that turns 1M-row lookup into a PMTiles archive in under 5 minutes.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### F5. Collaboration (live cursors, comments) — `XL`
 
 * **Problem:** Felt-style real-time co-presence is genuinely valuable for incident war-rooms.
-* **Design:** Requires a backend (Splunk doesn't have a websocket fan-out service). Honestly, this may be out of scope unless we partner with Splunk Engineering. Recommend deferring past v2.0 unless a pilot customer specifically asks.
-* **Prereqs:** Backend infrastructure.
-* **Risk:** Highest in the roadmap — depends on infrastructure the project does not own. Drop entirely unless §6 Q7 resolves "yes, Splunk Engineering owns the websocket service."
 * **Accept:** Two browsers see each other's cursors and can comment in the same panel.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 ### Theme G — Operational rigor
 
@@ -12773,205 +12713,60 @@ Each item carries: a one-line problem statement, design notes (with concrete lib
 
 #### G1. Security audit + supply-chain hardening — `M`
 
-* **Status (2026-05-17):** ✅ **SHIPPED** (PR pending) — every G1 sub-deliverable
-  landed in `feat/g1-supply-chain-hardening`. The four PR-gate scans (npm audit,
-  OSV-Scanner, license-allowlist, AppInspect cloud+future) plus the release-only
-  CycloneDX SBOM and cosign keyless signing now form a unified supply-chain
-  contract documented in `docs/runbooks/supply-chain.md`. Local end-to-end test
-  on the v1.6.x lockfile produces a 186-component SBOM, all licences on the
-  allowlist, zero high+ audit findings, two dev-only moderate OSV findings
-  correctly excluded by severity gate. Splunk Cloud and enterprise legal can
-  now verify the supply chain offline.
-
 * **Problem:** 11 direct runtime deps, 228 transitive, no `npm audit` in CI,
   no published SBOM, no signed releases, no Dependabot, no SLSA provenance.
   Splunk Cloud customers — and any large-enterprise legal department — will
   reject this on first review.
 
-* **Design — Delivered:**
-  - **`scripts/check-npm-audit.py`** (PR + release gate): runs
-    `npm audit --omit=dev --json`, FAILs on any `high` or `critical` finding
-    not covered by an active waiver. Waivers live in
-    `scripts/npm-audit-waivers.json` with 90-day max expiry, real-justification
-    requirement, and auto-expiry on the gate.
-  - **`scripts/check-license-allowlist.py`** (PR + release gate): runs
-    `npm ls --omit=dev --json --all --long`, asserts every runtime dep's
-    SPDX licence is on the allowlist in `scripts/license-allowlist.json`
-    (MIT / BSD / Apache-2.0 / CC0 / ISC family + small explicit
-    additions). Handles dual-license picks (e.g. `(MPL-2.0 OR Apache-2.0)`
-    → `Apache-2.0`), upstream typo normalization, and per-package
-    overrides where the package omits the field but the LICENSE file is
-    permissive (jsonlint, arc).
-  - **OSV-Scanner v2.3.8** (PR + release gate): static binary, second-opinion
-    vulnerability scanner; output filtered through `scripts/check-osv-report.py`
-    against the same waiver file (one CVE, one decision).
-  - **CycloneDX 1.6 SBOM** (release artifact): `@cyclonedx/cyclonedx-npm@^4`
-    generates a CycloneDX 1.6 JSON SBOM of the full 186-component runtime
-    tree, published as `better_map-vX.Y.Z.sbom.json` on every GitHub Release.
-  - **Cosign keyless signing** (release artifact): GitHub Actions OIDC token
-    → Fulcio short-lived cert → Rekor transparency-log entry, all bundled
-    into a `.cosign.bundle` file. Signs the tarball, the `.spl` alias,
-    and the SBOM. Release workflow round-trips a `cosign verify-blob`
-    self-check before publishing — an unverifiable bundle FAILs the release.
-  - **Dependabot** (`.github/dependabot.yml`): weekly grouped PRs for npm
-    (separate runtime and dev groups for clarity) and GitHub Actions; auto-rebase;
-    14-day decline policy documented.
-  - **`.npmrc`** in the viz dir: `engines-strict=true`, `save-exact=true`,
-    `audit-level=high`, `fund=false`, `loglevel=error` — deterministic
-    installs across contributor machines and CI.
-  - **`docs/runbooks/supply-chain.md`** (operator runbook): how to verify
-    signatures, consume the SBOM, manage waivers, replace copyleft
-    transitive deps, triage Dependabot PRs, and assemble the Splunkbase
-    submission packet.
-
-* **Prereqs:** G2 CI/CD landed in v1.7-prep (the PR pipeline these gates plug into).
-* **Risk — Addressed:** No copyleft transitives in the v1.7-prep lockfile;
-  the dual-license disjunction for dompurify resolves to Apache-2.0. The
-  runbook documents the replacement procedure if a future Dependabot bump
-  pulls one in.
-
-* **Accept — Phase 1 (this PR):**
-  - [x] `npm audit --omit=dev` is a hard PR-gate + release-gate; zero un-waived
-    high+ findings in v1.7-prep.
-  - [x] License-allowlist gate passes against 186 components; allowlist
-    contract documented and locked behind code review.
-  - [x] OSV-Scanner runs in CI and release; report uploaded as a CI artifact.
-  - [x] CycloneDX SBOM (186 components, spec 1.6) generated and uploaded as
-    a release asset alongside `.sha256` + `.cosign.bundle`.
-  - [x] Cosign keyless signature over the three release artifacts; round-trip
-    self-verify in the release workflow.
-  - [x] Dependabot configured for npm (runtime + dev grouped) and GitHub Actions.
-  - [x] `.npmrc` enforces strict, reproducible installs.
-  - [x] Supply-chain runbook checked in.
-  - [x] ROADMAP §1c gap 12 closed; §7d security boxes checked.
-
-* **Accept — Phase 2 (deferred to v1.8 follow-up):**
-  - [ ] Splunk app install path (`scripts/install-app.sh`) calls
-    `cosign verify-blob` before extracting — defence-in-depth so a tampered
-    download can never reach `/opt/splunk/etc/apps/better_map/`.
-  - [ ] Weekly scheduled `scan-scheduled.yml` workflow re-runs OSV-Scanner
-    against `main` and posts findings to the GitHub Security tab.
-  - [ ] CODEOWNERS for `scripts/npm-audit-waivers.json` (waits for G2
-    multi-reviewer enforcement).
-  - [ ] SLSA provenance v1.0 attestation alongside the cosign signature
-    (Sigstore + slsa-github-generator integration).
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### G2. CI/CD infrastructure — `M`
 
 * **Problem:** No GitHub Actions, no branch protection, no required reviews, no automated changelog, no release automation. Every release is a single-author manual `npm run build && tar -czf ... && curl --data-urlencode name=URL` ritual. Will not scale past one contributor.
-* **Design:**
-  - **PR pipeline:** lint (ESLint + Prettier), typecheck (JSDoc-driven via `tsc --noEmit --checkJs`), unit tests (`vitest`), webpack production build, bundle-size check vs §7 budget, **G8 JS↔CSS contract lint**, **dashboard XML/JSON parse check** (every `default/data/ui/views/*.xml` parses as XML AND its `<![CDATA[...]]>` JSON definition parses as JSON — catches a typo'd CDATA closing tag or a missing brace before it reaches a browser), **dashboard ↔ widget token cross-check (Q-1B)** (every `$better_map.*$` token referenced by a Dashboard Studio JSON definition has a matching string-literal producer in `src/lib/**/*.js` — defends against the SPATIAL-1 regression class where a widget defaults to a non-namespaced token name and silently breaks the dashboard contract), **release manifest drift check (G3)** (`scripts/check-manifest.py` regenerates the manifest from the source tree via `scripts/build-manifest.py --stdout` and asserts byte-for-byte equality with the checked-in `better_map/default/_better_map_manifest.json` — defends against silent orphan-file accumulation across `update=true` REST installs), **production-bundle console-noise check** (regex-scan the minified `visualization.js` for unallowlisted `console.warn` / `console.error` / `console.debug` calls — `debugHud.js` and the explicit error-telemetry path are allowlisted; everything else fails CI), AppInspect pre-cert, dispatch-test against a docker-compose Splunk Enterprise (D5 wires this).
-  - **Branch protection on `main`:** PR required, 1 review (raise to 2 once §7 contributor-floor box is checked), all CI green, signed commits required.
-  - **Conventional commits:** enforce via commitlint; auto-generate `CHANGELOG.md` from commit messages via `conventional-changelog-cli`; remove the hand-curated 1396-line CHANGELOG (or freeze it as v1.x and start a fresh generated one for v2+).
-  - **Release automation:** tag-triggered workflow runs `npm run build`, packages the `.tar.gz`, computes SHA256, signs via cosign (G1), uploads to GitHub Releases with auto-generated release notes, and (optionally) pushes to Splunkbase via their REST API once vetted (E1).
-  - **Version bump policy:** SemVer is binding. Patch = bugfix only; minor = additive features (default off); major = breaking. The `app.conf` version, `package.json` version, and `HUD_VERSION` must match — assert in CI.
-* **Prereqs:** None — this lands first to unblock G1 and everything else.
-* **Risk:** Conventional-commits adoption requires retraining; first PRs may have lots of commitlint failures. Mitigate with a `husky` pre-commit hook that runs the linter locally.
 * **Accept:** Every PR runs the full pipeline in ≤ 10 min; failing builds block merge; release-tag workflow produces a signed, SBOM-bearing, AppInspect-clean `.tar.gz` with zero manual steps.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### G3. Upgrade hygiene — `S`
 
-* **Status (2026-05-17):** ✅ **Phase 1 SHIPPED** — manifest + CI gate + operator runbook (PR pending).
-  Phase 2 (in-app `bin/upgrade.py` auto-delete) is deferred to a v1.8 follow-up
-  (see Risk note below). Phase 1 alone closes the operator-visibility gap that
-  motivated G3; live test against `rev` already surfaced **50,994 orphan files
-  (667 MiB)** the operator can now act on (see §1c verification table).
-
 * **Problem:** The 2026-05-16 deploy left two orphan dashboards (`better_map_test_install`, `bm_react_test`) from prior v1.5 installs on disk; Splunk's `update=true` REST install extracts on top but doesn't delete files absent from the new tarball. Without a migration step we accumulate orphans every release. Same risk applies to renamed lookups, retired macros, or removed visualizations.conf stanzas.
 
-* **Design — Phase 1 (this PR):**
-  - Ship a manifest with every release: `default/_better_map_manifest.json` listing every shippable file with its SHA-256 + size. Generated by `scripts/build-manifest.py` from the source tree using the same exclude list as `release.yml`. Validated in CI by `scripts/check-manifest.py` (any drift between checked-in manifest and source tree is a PR-blocking FAIL with a unified diff).
-  - Ship an operator runbook `scripts/find-orphans.sh` that SSHes into a deployed Splunk instance, compares the file tree under `/opt/splunk/etc/apps/better_map/` against the canonical manifest, and produces a grouped + size-summed orphan report. Wholly-orphan directories (no manifest sibling) are collapsed to a single line — a v1.5 `node_modules/` tree of 47k files reports as one row, not 47k.
-  - End-to-end operator procedure documented at `docs/runbooks/upgrade-hygiene.md` covering detection, three removal strategies (per-file `--delete`, `rm -rf` whole directories, nuke + reinstall), and the recommended post-release acceptance step.
-
-* **Design — Phase 2 (deferred to v1.8):**
-  - In-app `bin/upgrade.py` modular bin script (run via `[restart_postscript]` in `app.conf`) reads the previous-version manifest from `local/_better_map_previous_manifest.json`, computes the set of removed files, and deletes them via REST. Auto-delete on install/upgrade.
-  - Add a v1.x → v1.y migration test to CI: install v(N-1), then install vN with `update=true`, then verify the post-install REST view list exactly matches the vN manifest. Caught by D5 harness once that exists.
-  - Document in the operations guide how to manually delete orphans via REST `DELETE` for customers who already have them.
-
-* **Prereqs:** None.
-
-* **Risk:** Modular-script execution under `[restart_postscript]` has historically been flaky on Splunk Cloud. Mitigation: Phase 1 sidesteps this entirely (operator-driven runbook, no in-app code); Phase 2 will fall back to a `setup.xml` action the admin runs once post-upgrade.
-
-* **Accept — Phase 1:**
-  - [x] `default/_better_map_manifest.json` checked in and shipped in the release tarball.
-  - [x] `scripts/check-manifest.py` PR-blocking on every change; verified by acceptance test (introduce drift → FAIL with unified diff → restore → PASS).
-  - [x] `scripts/find-orphans.sh` runs against `rev`, reports 50,994 orphan files / 667 MiB in a grouped summary; `docs/runbooks/upgrade-hygiene.md` walks the operator through three removal strategies.
-
-* **Accept — Phase 2 (deferred):** Installing v1.8 on top of v1.7 leaves zero files behind that aren't in the v1.8 manifest; D5 harness asserts this.
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### G4. i18n / localisation framework — `M`
 
 * **Problem:** All formatter labels, all dashboard XML labels, all docs, all popup text is hardcoded English. Per §6 Q8, v2.0 target is at least Japanese + German + Norwegian — but the codebase has no localisation seam.
-* **Design:**
-  - Externalise every UI string to a lookup table: `lookups/better_map_strings_<locale>.csv` keyed by `string_id`. Formatter HTML uses `{{strings.foo}}` placeholders that are substituted at render time.
-  - Splunk's built-in `splunkjs/mvc/i18n` module surfaces the user's locale from `current-user`. Use that for the runtime path.
-  - Docs: MkDocs Material supports i18n out of the box (E2 picks the right plugin from the start).
-  - Acceptance test: switch Splunk Web locale to `de_DE`, confirm formatter labels and popup chrome render in German.
-* **Prereqs:** E2 docs site (use the i18n-capable plugin from day one).
-* **Risk:** Splunk Mobile may not respect the runtime locale path. Document the limitation.
 * **Accept:** Three locales shipped (English + 2 from {de, ja, no} — pick by §6 Q7); switching the user locale in Splunk Web swaps the strings without a page reload; every untranslated key falls back to English with a console warning in dev builds only.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### G5. Theming tokens — `S`
 
 * **Problem:** Dark/light themes are hardcoded across `visualization.css`, `controlPanel.js`, `debugHud.js`, and `formatter.html`. Customers with brand standards (Equinor red, customer-X blue) cannot rebrand without forking.
-* **Design:**
-  - Move every colour, font-family, shadow, and radius to a CSS custom-property layer (`--bm-color-accent`, `--bm-color-bg-overlay`, `--bm-font-family-mono`, etc.).
-  - Ship two reference themes (`themes/default-dark.css`, `themes/default-light.css`) plus a `themes/customer-template.css` that documents every overrideable token.
-  - Formatter exposes a "Custom theme URL" text input; if set, the viz `link rel="stylesheet"` injects it at runtime. Honours Splunk's CSP via `same-origin` only (no cross-origin theme fetches).
-  - Hard rule: status colours (`--bm-color-critical/warning/ok`) are NEVER customer-overrideable — accessibility floor, same posture as the existing dashboard-design skill.
-* **Prereqs:** None.
-* **Risk:** Customer theme CSS may override colours we depend on for semantic clarity (e.g., choropleth ramps). Mitigation: document the contract; use `!important` only on the locked status palette.
 * **Accept:** A customer can ship a 50-line CSS file that rebrands the viz to their colour system without touching the bundle; the locked status palette is unaffected.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### G6. Plugin / extension API — `L`
 
 * **Problem:** kepler.gl and deck.gl both have third-party layer authoring; better_map does not. Community contribution path is "fork the repo." That's a moat the leaders have and we don't.
-* **Design:**
-  - Expose a public registration contract: `window.BetterMap.registerLayer({id, mount, update, unmount, setVisible, schema, formatterSection})`. The dispatcher in `src/lib/layers/index.js` already has this shape internally — make it public, document the contract, freeze it.
-  - **Runtime envelope (§1a) applies to every plugin** — plugins must register through the AMD path, ship inside their own Splunk app, fit under Splunk Cloud CSP, and feature-detect Dashboard Studio v2 vs SWF host. Plugins that need to break out of any of these are out of scope.
-  - Plugins ship as separate Splunk apps that depend on `better_map` and register at AMD-load time. Same model as Splunk's own viz registration.
-  - Provide a `create-better-map-layer` scaffolding tool (npm package) that emits a starter project with webpack config, test harness, and Splunk app metadata.
-  - Plugin discovery: a `?better_map_plugins=` query parameter and a formatter option list installed plugins; viz panel includes them in the layer-type dropdown.
-  - BM-CT-1 applies to every plugin: every plugin layer must expose `setEnabled / isEnabled / reset` or registration fails loudly.
-* **Prereqs:** G2 (a working CI to publish the npm scaffolding tool), G5 (theming tokens make plugin styling sane).
-* **Risk:** Public API contract = future compatibility burden. Mitigation: ship the contract as `v1` namespace from day one, treat additions as backwards-compatible, breakage requires major bump.
 * **Accept:** A reference plugin (`better-map-plugin-example`) lives in a sibling repo, installs cleanly into a Splunk instance alongside better_map, registers an "example" layer that appears in the Dashboard Studio dropdown, respects BM-CT-1, and renders without modifying core better_map code.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### G7. AI-ingestion-friendly documentation — `M`
 
 * **Problem:** Customers increasingly ask Cursor / Claude Code / GitHub Copilot / Splunk AI Assistant "set up better_map for my Meraki data." The model needs structured, machine-readable inputs to do that well. Today everything is prose in `README.md` and `CHANGELOG.md`; an LLM can read it but cannot reliably extract the formatter schema, the recipe matrix, or the field contracts. This blocks the dominant onboarding mode for v2.0 customers.
-* **Design:** Build a parallel machine-readable documentation layer that mirrors the human-readable layer (E2) one-to-one. Markdown remains the source of truth for narrative; YAML/JSON Schemas are the source of truth for contracts. The two are kept in sync by a generator script under `docs/_tools/`.
-
-  - **`/docs/llms.txt`** — per the emerging [llms.txt convention](https://llmstxt.org/) — a single-file index listing every page on the docs site with a one-line summary, page URL, and the size in tokens. An LLM agent can fetch this one file and decide which deeper pages to read. Generated from the MkDocs nav tree.
-  - **`/docs/llms-full.txt`** — same index but with the *full body* of every page concatenated, separated by stable delimiters. For agents that want everything in one fetch. Capped at 200k tokens; the generator warns above 150k.
-  - **`/docs/_machine/formatter-schema.json`** — a JSON Schema describing every formatter option: `id`, `type` (boolean / number / enum / colour / SPL-field-name / etc.), `default`, `enum-values`, `enables-feature`, `requires-feature`, `bm-ct-1-controls` (which `setEnabled / isEnabled / reset` triple it operates), `runtime-envelope-notes` (e.g., "requires WebGL2; falls back to CPU"). Generated from `formatter.html` at build time; CI fails if `formatter.html` introduces an option not declared in the schema.
-  - **`/docs/_machine/layers/<layer-id>.yaml`** — one file per layer type. Schema: `id`, `display_name`, `required_fields`, `optional_fields`, `output_fields_emitted`, `formatter_options_used` (refs into the formatter schema), `bm-ct-1_controls`, `runtime_envelope_dependencies` (WebGL2? worker? terrain source?), `compatible_sources` (refs into E5 recipe matrix), `examples` (refs into recipe files). Replaces and obsoletes any prose-only layer-type documentation.
-  - **`/docs/_machine/integrations/<integration-id>.yaml`** — one file per Theme C integration (ITSI, SOAR, RBA, A&I-geo, MITRE, ES notable, OT Purdue, AI Assistant). Schema: `splunk_app_required`, `splunk_version_min`, `endpoints_called` (REST paths with HTTP method), `auth_required`, `field_contract` (the contracted field set with types), `tested_against` (Splunk version, integration version, lab tenant date), `experimental: bool`, `references` (links into `_ref/<integration>/field-contract.md`). This is the answer Theme C builds toward.
-  - **`/docs/_machine/recipes/index.yaml`** — flat list of every E5 recipe. Schema: `source_pattern`, `layer_id`, `path`, `expected_fields` (list), `verified_against` (Splunk version + sourcetype + lab tenant), `last_verified_iso8601`, `spl_excerpt` (first 200 chars), `status: verified | stretch | broken`. Powers the recipe-matrix table in E5 and is what an agent reads first when asked "show me the recipe for X".
-  - **`/docs/_machine/agents.md`** — a short, structured guide for agents operating on the better_map repo itself: "to add a new layer, do X; to add a new formatter option, do Y; here are the BM-CT-1 invariants you MUST preserve; here are the lints that will fail you." Modelled on the emerging `AGENTS.md` convention and on the project's own `.cursor/rules/` patterns.
-  - **`/docs/_machine/openapi-better_map-rest.yaml`** — for the parts of better_map that expose Splunk REST endpoints (KV-store bookmarks F1, plugin manifest G6, recipe-test webhook D5), an OpenAPI 3.1 spec. Generated from the modular-input declarations; CI asserts every `/services/...` path used in code appears in the OpenAPI doc.
-  - **Cross-rendering:** the MkDocs build pipeline (E2) reads every `_machine/*.yaml` and renders human-friendly tables in the corresponding markdown page. The YAML is the source of truth; the markdown table is generated. Updating prose without updating the YAML is impossible.
-  - **License-aware metadata embedded in every machine-readable file:** `# SPDX-License-Identifier: <project licence>` at top of every YAML/JSON, plus a `meta:` block with `version`, `last_modified_iso8601`, `generator`, `source_of_truth_path`. An agent that copy-pastes a recipe knows the licence terms.
-* **Prereqs:** E2 (the docs site is what consumes these files), G2 (the CI gate that asserts the generator is run on every PR).
-* **Risk:** Machine-readable docs that lie are worse than no machine-readable docs. Mitigation: every `_machine/` file is asserted in D5 against the live Splunk behaviour (e.g., the formatter schema's listed options must round-trip through `display.visualizations.custom.better_map.better_map.<key>`; the integration field-contracts must match `_ref/<integration>/field-contract.md`). Drift fails the build.
 * **Accept:** `curl https://better-map.dev/llms.txt` returns a valid llms.txt index; an LLM given just that URL can answer "show me the recipe for plotting Meraki camera positions as markers" by following the index → recipe file. Every formatter option, layer type, integration, and recipe is represented in `_machine/`. CI gates: (a) every option in `formatter.html` ↔ formatter-schema.json; (b) every recipe md file ↔ recipes/index.yaml; (c) every integration with code in `src/lib/splunk/` ↔ integrations/*.yaml.
+
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 #### G8. JS↔CSS contract lint (prevent the BM-FIX class of bug) — `S`
 
 * **Problem:** The v1.6.0 release shipped 12 widget root classes and (after v1.6.1) 9 sub-element classes with **zero CSS rules**. The control-panel toggles for those widgets appeared to do nothing, because the widgets rendered behind the absolutely-positioned MapLibre canvas and never received pointer events. Patched in v1.6.1 + v1.6.2, but the *type* of bug is preventable: nothing in the build asserts that a class created by JS has at least one rule in `visualization.css`. Without this check, every new v1.7+ widget can ship the same defect.
-* **Design:** Build-time linter `scripts/lint-js-css-contract.js` runs as a G2 PR-pipeline step:
-  1. Scan `src/lib/**/*.js` for string literals matching `/['"]better_map-[a-z0-9_-]+['"]/g` plus `className =` / `classList.add(` arguments; collect every class name into a set `JS_CLASSES`.
-  2. Parse `appserver/static/visualizations/better_map/visualization.css` (via PostCSS) and collect every class selector into a set `CSS_CLASSES`.
-  3. Compute `MISSING = JS_CLASSES - CSS_CLASSES - ALLOWLIST`. The allowlist lives at `scripts/css-contract-allowlist.json` and lists classes that are intentionally inheritance-only or applied as toggle states (e.g., `better_map-control-panel__toggle--active`).
-  4. Fail the CI step on any non-empty `MISSING` with a clear diff and remediation hint ("add at least a `position: absolute` rule for `.better_map-foo` or add it to the allowlist with a one-line justification").
-  5. Also assert the reverse direction at WARN level: `CSS_CLASSES - JS_CLASSES - PSEUDO_CLASS_ALLOWLIST` flags dead CSS that may be orphaned from a removed widget (feeds G3 upgrade hygiene).
-  6. Same check runs against `formatter.html` and the markdown popup templates, since custom-viz formatter chrome also uses `better_map-*` classes.
-* **Prereqs:** G2 (need a working CI to host the new step).
-* **Risk:** False positives on dynamically-composed class names (`better_map-${variant}-${state}`). Mitigation: the scanner recognises template-literal interpolation and falls back to documenting the prefix in the allowlist with a wildcard.
 * **Accept:** CI step runs in < 5 s; zero false positives on the v1.6.2 baseline; introducing a new widget without a matching CSS rule fails the PR with a one-line error; the BM-FIX-01 / BM-FIX-02 regressions are reproducible by reverting `visualization.css` and confirmed to be caught by the lint.
 
----
+_Design / Prereqs / Risk / other bullets omitted from llms-full.txt for token-budget; read the full work-item in the matching Theme section at <https://fenre.github.io/better_map/roadmap/>._
 
 ## 4. Milestone sequencing
 

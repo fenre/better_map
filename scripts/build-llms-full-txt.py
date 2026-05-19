@@ -80,7 +80,17 @@ of every row (status string, app-list, expected-field count, formatter-
 option list, OT-safety flag, last-verified date) is canonically
 expressed in ``docs/_machine/recipes/index.yaml`` and duplicated in
 the per-recipe page bodies kept verbatim in this same file, see
-``strip_recipes_index_matrix`` below):
+``strip_recipes_index_matrix`` below — and in wave 17 by compacting
+each Theme A-G work-item body in ``ROADMAP.md`` to its heading +
+Problem + Accept + Status + Done bullets, dropping Design / Prereqs /
+Risk and any trailing free-prose body, see
+``strip_roadmap_workitem_bodies`` below — the 40 work-items under
+the 7 Theme sections together carry ~14.1k rendered tokens (49% of
+the roadmap page), of which the Problem + Accept bullets are the WHAT
+and DONE-criterion an LLM authoring code in this repo needs while
+Design / Prereqs / Risk are HISTORICAL design-decision context
+recoverable from the live theme URL pointer the trim appends to
+every trimmed item):
 
   * Per-page warning at **50,000 estimated tokens** — one page should
     not dominate the corpus.
@@ -210,6 +220,63 @@ _ROADMAP_STATUS_BLOCK = re.compile(
     r"[^\n]*\n"
     r"(?:>[^\n]*\n)*",
     re.MULTILINE,
+)
+
+# Roadmap Theme work-item body trim contract — see
+# strip_roadmap_workitem_bodies() and the E5 Phase 2 wave 17 ROADMAP
+# block. ROADMAP.md carries the project's strategic narrative as a
+# tree of ``### Theme [A-G] — <name>`` sections, each containing
+# multiple ``#### <ID>. <title> — <size>`` work-items (e.g.
+# ``#### A1. Move spatial analytics to a Web Worker pool — `M```).
+# Each work-item body uses a structured 5-bullet format authored
+# at item-creation time:
+#
+#   * **Problem:** <gap or need this addresses>
+#   * **Design:** <how to build it>
+#   * **Prereqs:** <what must land first>
+#   * **Risk:** <what could go wrong>
+#   * **Accept:** <success / done criterion>
+#
+# (Some items also carry **Status** or **Done** bullets when a
+# release ships partial credit.) By wave 16 the Themes A-G section
+# spans 40 work-items totalling ~14.1k tokens in the rendered
+# roadmap page — 49% of the page weight and the largest single
+# trim target in the corpus.
+#
+# An LLM authoring code in this repo TODAY needs (a) the work-item
+# inventory (IDs and titles, for cross-references like "see A1") and
+# (b) the WHAT and DONE-criterion (Problem + Accept) to align new
+# code with the project's intent. The HOW (Design), the WHEN (Prereqs),
+# and the WHAT-IF (Risk) are HISTORICAL design context useful for
+# auditing past decisions but rarely needed for authoring new
+# recipes / gates / integrations. Full bodies remain at the live
+# URL pointer appended at the end of the Themes section.
+#
+# The trim is structural: it keeps the ``#### Xn. Title`` heading,
+# the bullets whose label is in ``_KEEP_WORKITEM_BULLETS`` (case-
+# insensitive), and a single 1-line URL pointer per work-item; it
+# drops every other bullet body and any trailing free-form prose
+# within the item. Net saving: ~18.5k tokens. The on-disk ROADMAP.md
+# is unchanged — the trim runs only in the in-memory body before it
+# lands in llms-full.txt. The MkDocs site continues to render every
+# bullet for human readers via the unaltered
+# ``{% include-markdown "ROADMAP.md" %}`` include.
+_ROADMAP_THEME_HEADING = re.compile(
+    r"^### Theme [A-Z][^\n]*$", re.MULTILINE
+)
+_ROADMAP_WORKITEM_HEADING = re.compile(
+    r"^#### [A-Z]\d+[a-z]?\.[^\n]*$", re.MULTILINE
+)
+# Match a top-level bullet starting with `* **Label:**`; continuation
+# lines (e.g. wrapped prose, nested sub-bullets) are gathered until
+# the next top-level `* **` bullet or a blank line.
+_WORKITEM_BULLET = re.compile(
+    r"^\*\s+\*\*(?P<label>[^*:]+):\*\*[^\n]*"
+    r"(?:\n(?!\s*\*\s+\*\*)(?!\s*$).*)*",
+    re.MULTILINE,
+)
+_KEEP_WORKITEM_BULLETS: frozenset[str] = frozenset(
+    {"problem", "accept", "status", "done"}
 )
 
 # Changelog older-versions trim contract — see strip_changelog_old_versions()
@@ -791,6 +858,98 @@ def strip_roadmap_status_blocks(body: str) -> tuple[str, int]:
     return cleaned, blocks_removed
 
 
+def strip_roadmap_workitem_bodies(
+    body: str, page_url: str
+) -> tuple[str, int]:
+    """Compact each Theme work-item to heading + Problem + Accept + pointer.
+
+    See the module-level ``_ROADMAP_THEME_HEADING`` /
+    ``_ROADMAP_WORKITEM_HEADING`` / ``_WORKITEM_BULLET`` /
+    ``_KEEP_WORKITEM_BULLETS`` definitions for the full rationale.
+    Returns ``(cleaned_body, items_trimmed)``.
+
+    Algorithm:
+
+    1. Find each ``### Theme [A-Z] …`` section start in document
+       order. Anything outside the union of these sections is left
+       verbatim (so the v1.6 self-audit, the milestone tables, the
+       risk register, and the document-maintenance section all keep
+       their full bodies).
+    2. Within each theme section, find each ``#### Xn. Title``
+       work-item. Replace the work-item body with:
+         * the heading line (verbatim),
+         * each bullet whose label is in
+           ``_KEEP_WORKITEM_BULLETS`` (case-insensitive — typically
+           Problem, Accept, Status, Done), and
+         * a single one-line URL pointer to the live theme section.
+       Bullets matching Design / Prereqs / Risk / Considered /
+       Followups / etc. are dropped along with any trailing free
+       prose inside the item.
+    3. If a work-item has none of the keep-listed bullets (very
+       rare — the v1.7-prep convention requires Problem + Accept
+       on every new item), the item body is left untouched so the
+       trim NEVER produces a content-free item.
+
+    The trim is idempotent: re-running it on an already-trimmed
+    body is a no-op (the dropped bullets are already gone; the
+    remaining bullets all match the keep-list).
+    """
+    theme_matches = list(_ROADMAP_THEME_HEADING.finditer(body))
+    if not theme_matches:
+        return body, 0
+
+    theme_bounds: list[tuple[int, int]] = []
+    for i, m in enumerate(theme_matches):
+        end = theme_matches[i + 1].start() if i + 1 < len(theme_matches) else None
+        if end is None:
+            # The Themes section ends at the next ## heading or EOF.
+            tail = body[m.end():]
+            next_h2 = re.search(r"^## ", tail, re.MULTILINE)
+            end = m.end() + next_h2.start() if next_h2 else len(body)
+        theme_bounds.append((m.start(), end))
+
+    items_trimmed = 0
+    rebuilt: list[str] = []
+    cursor = 0
+    for theme_start, theme_end in theme_bounds:
+        rebuilt.append(body[cursor:theme_start])
+        theme_body = body[theme_start:theme_end]
+        item_matches = list(_ROADMAP_WORKITEM_HEADING.finditer(theme_body))
+        if not item_matches:
+            rebuilt.append(theme_body)
+            cursor = theme_end
+            continue
+        rebuilt.append(theme_body[:item_matches[0].start()])
+        for j, im in enumerate(item_matches):
+            heading = im.group()
+            item_start = im.end()
+            item_end = (
+                item_matches[j + 1].start()
+                if j + 1 < len(item_matches)
+                else len(theme_body)
+            )
+            item_body = theme_body[item_start:item_end]
+            kept: list[str] = []
+            for bm in _WORKITEM_BULLET.finditer(item_body):
+                label = bm.group("label").strip().lower()
+                if label in _KEEP_WORKITEM_BULLETS:
+                    kept.append(bm.group().rstrip())
+            if not kept:
+                rebuilt.append(heading + item_body)
+                continue
+            rebuilt.append(heading + "\n\n")
+            rebuilt.append("\n".join(kept) + "\n\n")
+            rebuilt.append(
+                "_Design / Prereqs / Risk / other bullets omitted from "
+                f"llms-full.txt for token-budget; read the full work-item "
+                f"in the matching Theme section at <{page_url}>._\n\n"
+            )
+            items_trimmed += 1
+        cursor = theme_end
+    rebuilt.append(body[cursor:])
+    return "".join(rebuilt), items_trimmed
+
+
 def strip_chrome(body: str) -> str:
     """Remove MkDocs Material chrome that carries no LLM signal.
 
@@ -936,6 +1095,7 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
         expanded = resolve_includes(raw, source_file)
         if is_roadmap_page(relpath):
             expanded, _blocks = strip_roadmap_status_blocks(expanded)
+            expanded, _items = strip_roadmap_workitem_bodies(expanded, url)
         if is_changelog_page(relpath):
             expanded, _versions = strip_changelog_old_versions(
                 expanded, url
