@@ -4,7 +4,7 @@
 
 This file is the body-inclusive sibling of `llms.txt` and concatenates every page on the Better Map documentation site into a single, LLM-friendly text dump. The short companion index is at <https://fenre.github.io/better_map/llms.txt>. Pages appear in `mkdocs.yml` `nav:` declaration order. Each page block carries a stable `# === ... ===` separator plus the source-of-truth path on disk and the published URL so the same content can be grepped by either dimension.
 
-At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 63 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 66 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
 
 All page URLs resolve to publicly accessible Material-themed HTML on GitHub Pages. The project ships under the MIT licence; the canonical repo is <https://github.com/fenre/better_map>.
 
@@ -28,6 +28,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / CIM Authentication — H3 hexbin (`docs/recipes/cim-authentication/h3.md`)
 - Recipes / CIM Authentication — heatmap (`docs/recipes/cim-authentication/heat.md`)
 - Recipes / CIM Authentication — markers (`docs/recipes/cim-authentication/markers.md`)
+- Recipes / CIM Authentication — paths (`docs/recipes/cim-authentication/paths.md`)
 - Recipes / CIM Authentication — supercluster (`docs/recipes/cim-authentication/supercluster.md`)
 - Recipes / CIM Network Traffic — choropleth (`docs/recipes/cim-network-traffic/choropleth.md`)
 - Recipes / CIM Network Traffic — H3 hexbin (`docs/recipes/cim-network-traffic/h3.md`)
@@ -39,6 +40,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / CIM Performance (CPU / memory / facilities) — heatmap (`docs/recipes/cim-performance/heat.md`)
 - Recipes / CIM Performance (CPU / memory / facilities) — markers (`docs/recipes/cim-performance/markers.md`)
 - Recipes / CIM Performance (CPU / memory / facilities) — paths (`docs/recipes/cim-performance/paths.md`)
+- Recipes / CIM Performance (CPU / memory / facilities) — supercluster (`docs/recipes/cim-performance/supercluster.md`)
 - Recipes / CSV lookup (geo points) — H3 hexbin (`docs/recipes/csv-lookup-geo/h3.md`)
 - Recipes / CSV lookup (geo points) — heatmap (`docs/recipes/csv-lookup-geo/heat.md`)
 - Recipes / CSV lookup (geo points) — markers (`docs/recipes/csv-lookup-geo/markers.md`)
@@ -52,6 +54,7 @@ All page URLs resolve to publicly accessible Material-themed HTML on GitHub Page
 - Recipes / Cisco ThousandEyes (agent fleet) — H3 hexbin (`docs/recipes/thousandeyes/h3.md`)
 - Recipes / Cisco ThousandEyes (agent fleet) — heatmap (`docs/recipes/thousandeyes/heat.md`)
 - Recipes / Cisco ThousandEyes (agent fleet) — markers (`docs/recipes/thousandeyes/markers.md`)
+- Recipes / Cisco ThousandEyes (agent fleet) — supercluster (`docs/recipes/thousandeyes/supercluster.md`)
 - Recipes / Cisco ThousandEyes (path visualization) — paths (`docs/recipes/thousandeyes/paths.md`)
 - Recipes / ES Risk-Based Alerting (risk index) — H3 hexbin (`docs/recipes/es-risk/h3.md`)
 - Recipes / ES Risk-Based Alerting (risk index) — heatmap (`docs/recipes/es-risk/heat.md`)
@@ -1189,14 +1192,14 @@ generated from
 so it cannot drift from the recipe files.
 
 <!-- recipes-matrix trimmed for llms-full.txt token budget (see Wave 16 ROADMAP block); full matrix at <https://fenre.github.io/better_map/recipes/> and source-of-truth YAML at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>; per-recipe details (status, apps, expected-field contract, formatter options) are kept verbatim under the matching `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file -->
-**Total: 63 recipes · 15 source dir(s) · 9 layer type(s).**
+**Total: 66 recipes · 15 source dir(s) · 9 layer type(s).**
 
 Source dirs and the layer ids that already ship for each (any `(source, layer)` not listed below is an open cell in the E5 matrix and is a candidate for the next recipe wave):
 
 - `cim-alerts`: h3, heat, markers, paths
-- `cim-authentication`: h3, heat, markers, supercluster
+- `cim-authentication`: h3, heat, markers, paths, supercluster
 - `cim-network-traffic`: choropleth, h3, heat, markers, paths, supercluster
-- `cim-performance`: h3, heat, markers, paths
+- `cim-performance`: h3, heat, markers, paths, supercluster
 - `csv-lookup-geo`: h3, heat, markers, polygons, supercluster, vector-tile-join
 - `cyber-vision`: h3, heat, markers, paths
 - `es-risk`: h3, heat, markers, supercluster
@@ -1207,7 +1210,7 @@ Source dirs and the layer ids that already ship for each (any `(source, layer)` 
 - `netflow-sflow-ipfix`: h3, heat, markers, paths, supercluster
 - `ot-datastreamer`: h3, heat, markers, paths
 - `splunk-stream`: h3, heat, markers, supercluster
-- `thousandeyes`: h3, heat, markers, paths
+- `thousandeyes`: h3, heat, markers, paths, supercluster
 
 **OT-safety-relevant recipes (8):** `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `cyber-vision/paths`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`, `ot-datastreamer/paths`.
 
@@ -2140,6 +2143,121 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-authentication/markers/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/cim-authentication/paths/ ===
+
+# Recipes / CIM Authentication — paths
+
+> Source: `docs/recipes/cim-authentication/paths.md`  
+> URL: <https://fenre.github.io/better_map/recipes/cim-authentication/paths/>
+
+# CIM Authentication — paths
+
+Render **account-takeover (ATO) trajectories** by geocoding successful
+authentication `src` IPs per user and stringing chronologically-
+successive logins into a polyline. The canonical "impossible travel"
+SOC panel — when a SOC analyst sees user `alice@example.com` logging
+in from Seattle at 09:00 and Singapore at 09:15, the paths panel
+draws that as a 14,000 km polyline across the Pacific in 15 minutes.
+The sister panel to
+[`cim-authentication/markers`](../cim-authentication/markers.md)
+(failed-auth source overview),
+[`cim-authentication/supercluster`](../cim-authentication/supercluster.md)
+(global footprint), [`cim-authentication/heat`](../cim-authentication/heat.md)
+(density smoothing), and [`cim-authentication/h3`](../cim-authentication/h3.md)
+(jurisdictional roll-up) — together the five shapes give an
+identity / SOC team source-, density-, jurisdiction-, footprint- AND
+trajectory-attribution views on one CIM data model.
+
+## 1. Source description
+
+Splunk's **Authentication** Common Information Model (CIM) data
+model normalizes login events from IdPs, VPN concentrators,
+operating systems, applications, and cloud control planes. See
+[`cim-authentication/markers`](../cim-authentication/markers.md) §1
+for the full list of contributing sourcetypes (AD, Entra ID, Okta,
+AWS CloudTrail, Cisco Duo / ISE / AnyConnect, Linux PAM, Workday,
+GitHub Enterprise, …).
+
+This recipe is the **ATO-trajectory view**: it focuses on the
+narrower MITRE ATT&CK T1078 (Valid Accounts) / T1110 (Brute Force)
+hypothesis — that a user account has been COMPROMISED and the
+attacker is logging in alongside (or instead of) the legitimate
+owner. The geometric signature is two or more successful logins
+for the same `user`, from different geos, within a window shorter
+than physical travel time would allow. Each polyline is one
+user's per-day auth trajectory; any line spanning >1000 km in <1
+hour is by definition impossible travel and warrants
+investigation.
+
+Unlike the [`cim-alerts/paths`](../cim-alerts/paths.md) sibling
+(which groups by attacker `src` to reconstruct kill-chains), this
+recipe groups by `user` — because for ATO detection, the entity
+of interest is the COMPROMISED IDENTITY, not the attacker
+infrastructure.
+
+**Typical sourcetype / index:** anything tagged `authentication`.
+Same detection-engine sources as
+[`cim-authentication/markers`](../cim-authentication/markers.md).
+The recipe queries the CIM-accelerated data model summary, so
+the source index does not appear in the SPL.
+
+## 2. SPL recipe
+
+```spl
+| tstats summariesonly=true count
+  FROM datamodel=Authentication WHERE earliest=-24h Authentication.action="success"
+  BY Authentication.user, Authentication.src, Authentication.action, _time span=5m
+| rename "Authentication.user" AS user, "Authentication.src" AS src, "Authentication.action" AS action
+| where match(src, "^\d+\.\d+\.\d+\.\d+$")
+| iplocation src
+| where isnotnull(lat) AND isnotnull(lon)
+| rename Country AS src_country
+| eval path_id=user . "__" . tostring(relative_time(now(), "-24h"))
+| sort 0 path_id, _time
+| streamstats current=true count AS seq BY path_id
+| eval seq=seq-1
+| eventstats count AS hops_in_path, dc(src_country) AS distinct_countries BY path_id
+| where hops_in_path >= 2 AND distinct_countries >= 2
+| rename path_id AS id
+| fields id, seq, lat, lon, user, src, src_country, action, _time
+| sort id, + seq
+| head 5000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/paths/>._
+
+## 3. Expected fields
+
+| field        | type    | example                          |
+|--------------|---------|----------------------------------|
+| id           | string  | alice@example.com__1747534800    |
+| seq          | integer | 0                                |
+| lat          | number  | 47.6062                          |
+| lon          | number  | -122.3321                        |
+| user         | string  | alice@example.com                |
+| src          | string  | 203.0.113.42                     |
+| src_country  | string  | US                               |
+| action       | string  | success                          |
+
+All eight fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`. `_time`
+also flows through as a feature property for the popup.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pathIdField": "id",
+  "timeField": "seq",
+  "pathColor": "#d62728",
+  "pathArrows": true
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/paths/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-authentication/paths/>._
+
+# === END: https://fenre.github.io/better_map/recipes/cim-authentication/paths/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/cim-authentication/supercluster/ ===
 
@@ -3376,6 +3494,117 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/paths/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-performance/paths/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/cim-performance/supercluster/ ===
+
+# Recipes / CIM Performance (CPU / memory / facilities) — supercluster
+
+> Source: `docs/recipes/cim-performance/supercluster.md`  
+> URL: <https://fenre.github.io/better_map/recipes/cim-performance/supercluster/>
+
+# CIM Performance — supercluster
+
+Render every monitored host that has breached any CPU
+threshold (CPU > 80%) over a 24h window as a **zoom-adaptive
+supercluster** on a world map, one row per host, with cluster
+pills at regional zoom that progressively split into per-host
+markers as the user zooms. The canonical **SRE / ITops portfolio
+hot-spot overview** panel — when a leader needs a single-pane
+"where is my infrastructure pressure RIGHT NOW across the
+portfolio" view that gracefully collapses 5000-10000+ hosts into
+navigable cluster pills, organized by datacenter / cloud region.
+
+## 1. Source description
+
+The **CIM Performance data model** normalises infrastructure
+telemetry across every monitored host; see the
+[cim-performance/markers](./markers.md) sibling recipe §1 for
+the full dataset / field schema and the
+[cim-performance/paths](./paths.md) sibling for the incident-
+cascade variant. The distinction for THIS recipe: while the
+markers companion is a **point-in-time current-state SRE
+overview** (15-minute window, immediate-action signal coloured
+by worst CPU), the supercluster recipe is a **24-hour portfolio-
+hot-spot view** built for executive / SRE-manager audiences who
+care about which datacenters / regions are running hot across
+the day, not which specific host crossed the threshold 60
+seconds ago.
+
+The key shape changes vs the markers companion:
+
+- **Window**: 24h instead of 15-minute (markers captures the
+  current breach; supercluster captures the daily portfolio
+  footprint).
+- **Aggregation**: `max(cpu_load_percent) AS max_cpu_load` per
+  host (vs `latest()` in markers) — the worst-of-the-day
+  signal, more relevant for portfolio overview than the current
+  instantaneous reading.
+- **Breach count**: `count` of 5-minute buckets above 80% per
+  host — surfaces "this host was hot for 47 of the 288 buckets"
+  vs "this host crossed the threshold once" in popups.
+- **No memory / storage join**: deliberately CPU-only for
+  portfolio clarity. For multi-signal portfolio panels, switch
+  to the [cim-performance/h3](./h3.md) companion which
+  aggregates all three signals per region.
+- **Cap raised to `head 10000`** for 1k+ host enterprises.
+
+**Typical sourcetype / index:** see
+[cim-performance/markers](./markers.md) §1 for the full list of
+contributing sourcetypes via CIM Performance. App context
+required: `Splunk_SA_CIM`. The asset lookup is the same
+operator-curated `asset_lookup_by_str` (ES A&I) or
+customer-equivalent hostname → lat/lon/datacenter map.
+
+## 2. SPL recipe
+
+```spl
+| tstats summariesonly=true max(All_Performance.cpu_load_percent) AS max_cpu_load,
+    count AS breach_count
+  FROM datamodel=Performance.All_Performance
+  WHERE earliest=-24h All_Performance.cpu_load_percent>80
+  BY All_Performance.dest, _time span=5m
+| stats max(max_cpu_load) AS max_cpu_load, count AS breach_count BY All_Performance.dest
+| rename "All_Performance.dest" AS dest
+| where breach_count >= 3
+| lookup asset_lookup_by_str dest AS dest OUTPUT lat AS asset_lat, lon AS asset_lon, datacenter
+| rename asset_lat AS lat, asset_lon AS lon
+| where isnotnull(lat) AND isnotnull(lon)
+| rename dest AS id
+| eval dest=id
+| fields id, lat, lon, dest, max_cpu_load, breach_count, datacenter
+| sort - breach_count
+| head 10000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/supercluster/>._
+
+## 3. Expected fields
+
+| field         | type    | example       |
+|---------------|---------|---------------|
+| id            | string  | web-prod-01   |
+| lat           | number  | 37.7749       |
+| lon           | number  | -122.4194     |
+| dest          | string  | web-prod-01   |
+| max_cpu_load  | number  | 82.4          |
+| breach_count  | integer | 47            |
+| datacenter    | string  | us-west-2     |
+
+Seven fields appear in `expected_fields` in the frontmatter and
+are cross-checked by `scripts/check-recipe-schema.py`.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pointRenderer": "cluster",
+  "idField": "id"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/supercluster/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/supercluster/>._
+
+# === END: https://fenre.github.io/better_map/recipes/cim-performance/supercluster/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/csv-lookup-geo/h3/ ===
 
@@ -5052,6 +5281,105 @@ _Per-option rationale (the "Why this specific config" walkthrough) is omitted fr
 _§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/markers/>._
 
 # === END: https://fenre.github.io/better_map/recipes/thousandeyes/markers/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/thousandeyes/supercluster/ ===
+
+# Recipes / Cisco ThousandEyes (agent fleet) — supercluster
+
+> Source: `docs/recipes/thousandeyes/supercluster.md`  
+> URL: <https://fenre.github.io/better_map/recipes/thousandeyes/supercluster/>
+
+# Cisco ThousandEyes (agent fleet) — supercluster
+
+Render every Cisco ThousandEyes measurement agent as a
+**zoom-adaptive supercluster** on a world map, one row per
+agent, with cluster pills at regional zoom that progressively
+split into per-agent markers as the user zooms. The canonical
+**executive global agent-fleet overview** panel — when a
+NetOps / DEM leader needs a single-pane "where is our
+measurement footprint anchored RIGHT NOW" view that gracefully
+collapses 500-5000+ agents into navigable cluster pills
+instead of overwhelming the renderer with a marker dump.
+
+## 1. Source description
+
+**Cisco ThousandEyes** is a digital-experience-monitoring
+platform; see the [thousandeyes/markers](./markers.md) sibling
+recipe §1 for the full agent / test model background. The
+distinction for THIS recipe: while the markers companion
+already uses `pointRenderer: "cluster"` by default (since
+typical fleets sit comfortably in the 50-2000 range), the
+supercluster recipe is **deliberately tuned for very-large
+global cloud-agent-heavy deployments** (2000-5000+ agents)
+where:
+
+- The per-agent test-count join (markers companion §2)
+  becomes dead weight — cluster pills at regional zoom do
+  not render per-row popup data, so the join cost buys
+  nothing.
+- The fleet-overview audience (CIO / NetOps leadership /
+  DEM strategy team) cares about coverage gaps and
+  regional density, not individual agent test-load.
+- The aggregate semantics (cluster count of agents per
+  region) are exactly the right summary at world / continent
+  zoom — drill in to specific regions for per-agent
+  detail via the markers companion.
+
+This recipe inherits the markers companion's `agents`
+sourcetype + `is_online="true"` filter + `agent_lat` /
+`agent_lon` enrichment, but drops the test-count join,
+raises the cap to `head 5000`, and forces
+`pointRenderer: "cluster"` unconditionally.
+
+**Typical sourcetype / index:**
+`index=thousandeyes_agents
+sourcetype="cisco:thousandeyes:agents"`. App required:
+`ta_cisco_thousandeyes` (Splunkbase id 7719).
+
+## 2. SPL recipe
+
+```spl
+index=thousandeyes_agents sourcetype="cisco:thousandeyes:agents" earliest=-24h latest=now
+| dedup agent_id sortby - _time
+| where is_online="true"
+| rename agent_id AS id, agent_lat AS lat, agent_lon AS lon
+| where isnotnull(lat) AND isnotnull(lon)
+| fields id, lat, lon, agent_name, agent_type, country, network, os, version
+| sort agent_name
+| head 5000
+```
+_Per-stage rationale (the "Why this exact shape, line by line" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/supercluster/>._
+
+## 3. Expected fields
+
+| field         | type    | example              |
+|---------------|---------|----------------------|
+| id            | string  | agent-12345          |
+| lat           | number  | 37.7749              |
+| lon           | number  | -122.4194            |
+| agent_name    | string  | SFO-AWS-us-west-1    |
+| agent_type    | string  | enterprise           |
+| country       | string  | United States        |
+
+Six fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+`network`, `os`, and `version` also flow through as feature
+properties for the popup (visible only at city zoom when
+the cluster splits into individual markers).
+
+## 4. Recommended formatter config
+
+```json
+{
+  "pointRenderer": "cluster",
+  "idField": "id"
+}
+```
+_Per-option rationale (the "Why this specific config" walkthrough) is omitted from llms-full.txt for token-budget; read it in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/supercluster/>._
+
+_§5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/supercluster/>._
+
+# === END: https://fenre.github.io/better_map/recipes/thousandeyes/supercluster/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/thousandeyes/paths/ ===
 
@@ -11606,7 +11934,7 @@ Each entry below distils the corresponding YAML scaffold so an LLM can answer in
 
 # Appendix B — Per-source recipe matrix
 
-> Source of truth: `docs/_machine/recipes/index.yaml` (63 recipe(s), emission order)
+> Source of truth: `docs/_machine/recipes/index.yaml` (66 recipe(s), emission order)
 
 Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answer 'which recipe matches this data source?' without fetching every recipe page. Recipes carry one of three statuses: `verified` (smoke-tested against a live Splunk tenant with proof in the YAML metadata), `unverified` (the recipe follows the contract but has not yet been smoke-tested), or `deferred` (the recipe is known to be incomplete pending upstream work). The expected-field contract for each recipe lives in §3 of the recipe page (kept verbatim in this file under the matching `# === BEGIN: …/recipes/<source>/<layer>/ ===` block); follow the Page link below to jump to it.
 
@@ -11619,6 +11947,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `cim-authentication--h3` | CIM Authentication → H3 hexbin | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/h3.md](https://fenre.github.io/better_map/recipes/cim-authentication/h3/) |
 | `cim-authentication--heat` | CIM Authentication → Heatmap | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/heat.md](https://fenre.github.io/better_map/recipes/cim-authentication/heat/) |
 | `cim-authentication--markers` | CIM Authentication → Markers | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/markers.md](https://fenre.github.io/better_map/recipes/cim-authentication/markers/) |
+| `cim-authentication--paths` | CIM Authentication → Paths | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/paths.md](https://fenre.github.io/better_map/recipes/cim-authentication/paths/) |
 | `cim-authentication--supercluster` | CIM Authentication → Supercluster | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-authentication/supercluster.md](https://fenre.github.io/better_map/recipes/cim-authentication/supercluster/) |
 | `cim-network-traffic--choropleth` | CIM Network Traffic (data model) → Choropleth | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-network-traffic/choropleth.md](https://fenre.github.io/better_map/recipes/cim-network-traffic/choropleth/) |
 | `cim-network-traffic--h3` | CIM Network Traffic → H3 hexbin | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-network-traffic/h3.md](https://fenre.github.io/better_map/recipes/cim-network-traffic/h3/) |
@@ -11630,6 +11959,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `cim-performance--heat` | CIM Performance (CPU / memory / facilities) → Heatmap | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/heat.md](https://fenre.github.io/better_map/recipes/cim-performance/heat/) |
 | `cim-performance--markers` | CIM Performance (CPU / memory / facilities) → Markers | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/markers.md](https://fenre.github.io/better_map/recipes/cim-performance/markers/) |
 | `cim-performance--paths` | CIM Performance (CPU / memory / facilities) → Paths | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/paths.md](https://fenre.github.io/better_map/recipes/cim-performance/paths/) |
+| `cim-performance--supercluster` | CIM Performance (CPU / memory / facilities) → Supercluster | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/supercluster.md](https://fenre.github.io/better_map/recipes/cim-performance/supercluster/) |
 | `csv-lookup-geo--h3` | CSV lookup (geo points) → H3 hexbin | unverified | — | — | [docs/recipes/csv-lookup-geo/h3.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/h3/) |
 | `csv-lookup-geo--heat` | CSV lookup (geo polygons) → Heatmap | unverified | — | — | [docs/recipes/csv-lookup-geo/heat.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/heat/) |
 | `csv-lookup-geo--markers` | CSV lookup (geo polygons) → Markers | unverified | — | — | [docs/recipes/csv-lookup-geo/markers.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/markers/) |
@@ -11675,6 +12005,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `thousandeyes--heat` | Cisco ThousandEyes (agent fleet) → Heatmap | unverified | `ta_cisco_thousandeyes` | — | [docs/recipes/thousandeyes/heat.md](https://fenre.github.io/better_map/recipes/thousandeyes/heat/) |
 | `thousandeyes--markers` | Cisco ThousandEyes (agent fleet) → Markers | unverified | `ta_cisco_thousandeyes` | — | [docs/recipes/thousandeyes/markers.md](https://fenre.github.io/better_map/recipes/thousandeyes/markers/) |
 | `thousandeyes--paths` | Cisco ThousandEyes (path visualization) → Paths | unverified | `ta_cisco_thousandeyes` | — | [docs/recipes/thousandeyes/paths.md](https://fenre.github.io/better_map/recipes/thousandeyes/paths/) |
+| `thousandeyes--supercluster` | Cisco ThousandEyes (agent fleet) → Supercluster | unverified | `ta_cisco_thousandeyes` | — | [docs/recipes/thousandeyes/supercluster.md](https://fenre.github.io/better_map/recipes/thousandeyes/supercluster/) |
 
 # === END: appendix:recipes ===
 

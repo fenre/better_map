@@ -1,5 +1,124 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-19): E5 Phase 2 wave 25 recipes
+> SHIPPED (3 more recipes — recipe count 63 → 66, layer-type
+> coverage 9 / 10 unchanged, source-pattern coverage 8 / 8
+> unchanged, paths usage 8 → 9, supercluster usage 10 → 12).**
+> Wave 25 continues the **diversification regime** opened by
+> waves 21-24, now spanning **three different operations personas**
+> (NetOps for ThousandEyes, SecOps for CIM Authentication, SRE for
+> CIM Performance). Each new recipe adds a previously-missing layer
+> shape to a source row, with each as a companion to an already-
+> shipped layer shape on the same source. Together waves 21-25
+> have now filled **15 of the original ~24 diversification cells**
+> (3 per wave for 5 waves), with the remaining 9 cells skewing
+> toward `choropleth` (8 source rows missing) and `vector-tile-join`
+> (universally untapped).
+> - **`thousandeyes/supercluster`** (NEW layer shape for source) —
+>   global agent-fleet zoom-adaptive overview for very large
+>   ThousandEyes deployments. 4th cell on the thousandeyes row
+>   (joining markers, h3, heat, paths). Inherits the markers
+>   companion's `thousandeyes_agents` schema + `is_online="true"`
+>   filter + 24-hour `dedup`, but **drops** the markers companion's
+>   test-count `join` (which is right for SOC ticket workflows but
+>   wrong for global zoom-out where the test-count enrichment is
+>   sub-pixel) and **raises** the head cap (1000 → 5000) to handle
+>   very large cloud-agent-heavy deployments. Forces
+>   `pointRenderer: "cluster"` for zoom-adaptive aggregation — at
+>   world zoom 5000 agents render as ~15 cluster pills; progressively
+>   splits as the user zooms into each region. Right shape for
+>   **NetOps single-pane fleet-overview panels** where the markers
+>   companion's individual-marker rendering would overwhelm at
+>   1000+ agents. §6 gotchas cover the deferred test-count join
+>   (rejoinable at click-time via a Dashboard Studio drilldown to a
+>   per-agent detail panel), cluster-pill aggregate semantics
+>   (count of agents not count of tests; use the heatmap companion
+>   for density-weighted-by-tests views), the asymmetric cloud-
+>   agent footprint vs enterprise-agent footprint (cloud agents
+>   cluster on POPs by provider, enterprise agents cluster on real-
+>   estate sites), and the `head 5000` defensive cap. No OT-safety
+>   dependency (ThousandEyes is IT-layer DEM).
+> - **`cim-authentication/paths`** (NEW layer shape for source) —
+>   account-takeover (ATO) trajectory reconstruction via "impossible
+>   travel" chained successful logins. 5th cell on the cim-
+>   authentication row (joining markers, h3, heat, supercluster).
+>   Uses `tstats` over `Authentication.Authentication` filtered to
+>   `action="success"`, IPv4 source addresses, and 5-minute time
+>   buckets. Derives `path_id = user . "__" . start_time` to group
+>   each user's successful logins from the past 24h into a single
+>   path. `streamstats current=true count AS seq BY path_id` provides
+>   chronological vertex ordering. **Critical**: `eventstats count AS
+>   hops_in_path, dc(src_country) AS distinct_countries BY path_id` +
+>   `where hops_in_path >= 2 AND distinct_countries >= 2` filters to
+>   ONLY paths exhibiting cross-country travel (genuine impossible-
+>   travel signal vs single-country normal-usage noise). Right shape
+>   for **SOC ATO investigation panels** that need to visually
+>   reconstruct the geographic trajectory of compromised credentials.
+>   §6 gotchas cover the 5-minute time-bucket trade-off (true
+>   continuous brute-force may span sub-5min; smaller spans explode
+>   path count), the `path_id` collision risk in long-window queries
+>   (anchored to query-window-start not user-session-start), the
+>   IPv4-only `match()` filter (IPv6 source addresses get dropped —
+>   tighten the regex for IPv6 environments), the `iplocation`
+>   geocoding limitations (MaxMind GeoLite2 has city-level
+>   accuracy; metro-area paths may show same-coord vertices),
+>   `tstats summariesonly=true` requirement for Authentication
+>   datamodel acceleration, and the `head 5000` cap. No OT-safety
+>   dependency (CIM Authentication is IT-IAM telemetry).
+> - **`cim-performance/supercluster`** (NEW layer shape for source) —
+>   SRE / ITops host-portfolio hot-spot overview for very large host
+>   fleets. 5th cell on the cim-performance row (joining markers,
+>   h3, heat, paths). Inherits the markers companion's `tstats` over
+>   `Performance.All_Performance` for CPU > 80% + 5-minute time
+>   buckets, but **aggregates** at the host (`All_Performance.dest`)
+>   level across the entire 24h window — computing `max(cpu_load)`
+>   AND `count AS breach_count`. **Critical**: filters
+>   `where breach_count >= 3` to drop transient blips and surface
+>   only sustained breachers (3+ five-minute windows = 15+ minutes of
+>   cumulative breach within 24h). Uses `asset_lookup_by_str` for geo
+>   + datacenter enrichment, raises the head cap to 10000 (vs the
+>   markers companion's 2000) for full-portfolio coverage, and
+>   forces `pointRenderer: "cluster"` for zoom-adaptive aggregation.
+>   Right shape for **SRE / ITops 24-hour host-portfolio post-incident
+>   review panels** where the markers companion's individual-marker
+>   rendering would overwhelm at 5000+ breaching hosts, and the h3
+>   companion's hex aggregation loses per-host identity. §6 gotchas
+>   cover the 24-hour aggregation trade-off (longer-term trends need
+>   the h3 companion's spatial aggregation; real-time ops need the
+>   markers companion's 1-hour window), the breach-count threshold
+>   (3 windows = 15 min of breach within 24h — tune to environment),
+>   the `asset_lookup_by_str` Splunk Enterprise Security dependency
+>   (CIM-only deployments need an alternate enrichment lookup), the
+>   `pointRenderer: "cluster"` semantics (count of breaching hosts,
+>   not summed breach_count; use the h3 companion for density-
+>   weighted views), and the `head 10000` cap. No OT-safety
+>   dependency (CIM Performance is IT-host telemetry).
+> - **Token budget.** Wave 25 lands at **~152,852 estimated
+>   tokens** / **~22,148 tokens of WARN headroom** (175,000 -
+>   152,852). The 3 new recipes cost **~3.9k tokens combined**
+>   (~1.30k/recipe) — slightly above the wave-24 baseline of
+>   ~1.21k/recipe (driven by cim-authentication/paths' detailed
+>   §6 gotchas section on the impossible-travel pattern). At this
+>   cadence, headroom funds **~17 more recipes** before the next
+>   token-trim is required.
+> - **Layer / pattern coverage updates.** Recipe count 63 → 66
+>   (+3). Layer coverage 9/10 unchanged (extrusion-3d still the
+>   one cell occupied). **paths usage 8 → 9** (cim-authentication
+>   adopts). **supercluster usage 10 → 12** (thousandeyes + cim-
+>   performance both adopt). Source-pattern coverage 8/8 unchanged.
+>   Source-row triplet count: 14 unchanged (wave 25 deliberately
+>   diversification). OT-safety-relevant recipe count: 5 unchanged
+>   (none of the wave-25 recipes are OT-safety-relevant). The
+>   diversification regime now has filled **15 of the original
+>   ~24 cells** opened by wave 21 (3 per wave for waves 21-25) —
+>   remaining cells skew toward `choropleth` (8 source rows
+>   missing it), `vector-tile-join` (universally untapped), and
+>   the long-tail `extrusion-3d`-on-non-geo sources.
+>
+> _This `> **Status …` blockquote will self-strip from
+> `llms-full.txt` at the next regeneration via the wave-13
+> generalised ROADMAP status-block regex._
+
 > **Status:** planning document only. No code, no version bump, no release
 > framing. The point of this doc is to make the gap between "best Splunk
 > Dashboard Studio map viz on the market" (where v1.6 plausibly is) and

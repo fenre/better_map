@@ -222,6 +222,7 @@ nav:
       - 'CIM Authentication — H3 hexbin': recipes/cim-authentication/h3.md
       - 'CIM Authentication — heatmap': recipes/cim-authentication/heat.md
       - 'CIM Authentication — markers': recipes/cim-authentication/markers.md
+      - 'CIM Authentication — paths': recipes/cim-authentication/paths.md
       - 'CIM Authentication — supercluster': recipes/cim-authentication/supercluster.md
       - 'CIM Network Traffic — choropleth': recipes/cim-network-traffic/choropleth.md
       - 'CIM Network Traffic — H3 hexbin': recipes/cim-network-traffic/h3.md
@@ -233,6 +234,7 @@ nav:
       - 'CIM Performance (CPU / memory / facilities) — heatmap': recipes/cim-performance/heat.md
       - 'CIM Performance (CPU / memory / facilities) — markers': recipes/cim-performance/markers.md
       - 'CIM Performance (CPU / memory / facilities) — paths': recipes/cim-performance/paths.md
+      - 'CIM Performance (CPU / memory / facilities) — supercluster': recipes/cim-performance/supercluster.md
       - 'CSV lookup (geo points) — H3 hexbin': recipes/csv-lookup-geo/h3.md
       - 'CSV lookup (geo points) — heatmap': recipes/csv-lookup-geo/heat.md
       - 'CSV lookup (geo points) — markers': recipes/csv-lookup-geo/markers.md
@@ -246,6 +248,7 @@ nav:
       - 'Cisco ThousandEyes (agent fleet) — H3 hexbin': recipes/thousandeyes/h3.md
       - 'Cisco ThousandEyes (agent fleet) — heatmap': recipes/thousandeyes/heat.md
       - 'Cisco ThousandEyes (agent fleet) — markers': recipes/thousandeyes/markers.md
+      - 'Cisco ThousandEyes (agent fleet) — supercluster': recipes/thousandeyes/supercluster.md
       - 'Cisco ThousandEyes (path visualization) — paths': recipes/thousandeyes/paths.md
       - 'ES Risk-Based Alerting (risk index) — H3 hexbin': recipes/es-risk/h3.md
       - 'ES Risk-Based Alerting (risk index) — heatmap': recipes/es-risk/heat.md

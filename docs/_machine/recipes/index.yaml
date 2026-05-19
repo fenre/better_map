@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 63
+recipe_count: 66
 recipes:
 - id: cim-alerts--h3
   source:
@@ -412,6 +412,77 @@ recipes:
   - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
     path: docs/reference/bm-ct-1.md
   path: docs/recipes/cim-authentication/markers.md
+- id: cim-authentication--paths
+  source:
+    id: cim-authentication
+    display_name: CIM Authentication
+    pattern: splunk-cim
+  layer:
+    id: paths
+    display_name: Paths
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_SA_CIM
+    optional: false
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: alice@example.com__1747534800
+    drives_formatter_option: pathIdField
+  - name: seq
+    type: integer
+    example: '0'
+    drives_formatter_option: timeField
+  - name: lat
+    type: number
+    example: '47.6062'
+  - name: lon
+    type: number
+    example: '-122.3321'
+  - name: user
+    type: string
+    example: alice@example.com
+  - name: src
+    type: string
+    example: 203.0.113.42
+  - name: src_country
+    type: string
+    example: US
+  - name: action
+    type: string
+    example: success
+  required_formatter_options:
+  - pathIdField
+  - timeField
+  - pathColor
+  - pathArrows
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (failed-auth source-IP overview)
+    path: docs/recipes/cim-authentication/markers.md
+  - description: Companion recipe — same source, supercluster layer (global auth footprint)
+    path: docs/recipes/cim-authentication/supercluster.md
+  - description: Companion recipe — same source, heatmap (auth-density smoothing)
+    path: docs/recipes/cim-authentication/heat.md
+  - description: Companion recipe — same source, H3 hexbin (jurisdictional roll-up)
+    path: docs/recipes/cim-authentication/h3.md
+  - description: Pattern reference — paths layer with iplocation-geocoded hops + streamstats sequencing
+    path: docs/recipes/cim-alerts/paths.md
+  - description: Splunk CIM skill — Authentication data model field reference
+    path: ~/.cursor/skills/splunk-cim/SKILL.md
+  - description: Splunk ES skill — risk-based alerting context for ATO / impossible-travel detection
+    path: ~/.cursor/skills/splunk-enterprise-security/SKILL.md
+  - description: MITRE ATT&CK skill — T1078 (Valid Accounts) + T1110 (Brute Force) mapping
+    path: ~/.cursor/skills/splunk-mitre-attack/SKILL.md
+  - description: Layer reference — paths
+    path: docs/reference/layers.md
+  - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
+    path: docs/reference/bm-ct-1.md
+  path: docs/recipes/cim-authentication/paths.md
 - id: cim-authentication--supercluster
   source:
     id: cim-authentication
@@ -1013,6 +1084,69 @@ recipes:
   - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
     path: docs/reference/bm-ct-1.md
   path: docs/recipes/cim-performance/paths.md
+- id: cim-performance--supercluster
+  source:
+    id: cim-performance
+    display_name: CIM Performance (CPU / memory / facilities)
+    pattern: splunk-cim
+  layer:
+    id: supercluster
+    display_name: Supercluster
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_SA_CIM
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: web-prod-01
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '37.7749'
+  - name: lon
+    type: number
+    example: '-122.4194'
+  - name: dest
+    type: string
+    example: web-prod-01
+  - name: max_cpu_load
+    type: number
+    example: '82.4'
+  - name: breach_count
+    type: integer
+    example: '47'
+  - name: datacenter
+    type: string
+    example: us-west-2
+  required_formatter_options:
+  - pointRenderer
+  - idField
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (per-host current-breach drilldown)
+    path: docs/recipes/cim-performance/markers.md
+  - description: Companion recipe — same source, paths layer (incident-cascade polylines)
+    path: docs/recipes/cim-performance/paths.md
+  - description: Companion recipe — same source, H3 hexbin (regional roll-up)
+    path: docs/recipes/cim-performance/h3.md
+  - description: Companion recipe — same source, heatmap (density smoothing)
+    path: docs/recipes/cim-performance/heat.md
+  - description: Pattern reference — supercluster on ES risk-object portfolio
+    path: docs/recipes/es-risk/supercluster.md
+  - description: Pattern reference — supercluster on ITSI service-health portfolio
+    path: docs/recipes/itsi-kpi-base/supercluster.md
+  - description: Splunk CIM skill — Performance data model schema
+    path: ~/.cursor/skills/splunk-cim/SKILL.md
+  - description: Splunk datamodels-conf skill — CIM acceleration + tstats summariesonly
+    path: ~/.cursor/skills/splunk-datamodels-conf/SKILL.md
+  - description: Layer reference — supercluster
+    path: docs/reference/layers.md
+  - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
+    path: docs/reference/bm-ct-1.md
+  path: docs/recipes/cim-performance/supercluster.md
 - id: csv-lookup-geo--h3
   source:
     id: csv-lookup-geo
@@ -3462,3 +3596,61 @@ recipes:
   - description: Layer reference — paths
     path: docs/reference/layers.md
   path: docs/recipes/thousandeyes/paths.md
+- id: thousandeyes--supercluster
+  source:
+    id: thousandeyes
+    display_name: Cisco ThousandEyes (agent fleet)
+    pattern: splunk-vendor-ta
+  layer:
+    id: supercluster
+    display_name: Supercluster
+  status: unverified
+  last_verified_iso8601: '2026-05-18'
+  verified_against: null
+  splunk_apps_required:
+  - id: ta_cisco_thousandeyes
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: agent-12345
+    drives_formatter_option: idField
+  - name: lat
+    type: number
+    example: '37.7749'
+  - name: lon
+    type: number
+    example: '-122.4194'
+  - name: agent_name
+    type: string
+    example: SFO-AWS-us-west-1
+  - name: agent_type
+    type: string
+    example: enterprise
+  - name: country
+    type: string
+    example: United States
+  required_formatter_options:
+  - pointRenderer
+  - idField
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (per-agent drilldown)
+    path: docs/recipes/thousandeyes/markers.md
+  - description: Companion recipe — same source, paths layer (hop-by-hop traceroute polylines)
+    path: docs/recipes/thousandeyes/paths.md
+  - description: Companion recipe — same source, H3 hexbin (regional roll-up)
+    path: docs/recipes/thousandeyes/h3.md
+  - description: Companion recipe — same source, heatmap (density smoothing)
+    path: docs/recipes/thousandeyes/heat.md
+  - description: Pattern reference — supercluster on per-device inventory
+    path: docs/recipes/meraki/supercluster.md
+  - description: Pattern reference — supercluster on ITSI service-health
+    path: docs/recipes/itsi-kpi-base/supercluster.md
+  - description: ThousandEyes setup skill — sourcetypes, indexes, OAuth flow
+    path: ~/.cursor/skills/cisco-thousandeyes-setup/SKILL.md
+  - description: Layer reference — supercluster
+    path: docs/reference/layers.md
+  - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
+    path: docs/reference/bm-ct-1.md
+  path: docs/recipes/thousandeyes/supercluster.md
