@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 87
+recipe_count: 90
 recipes:
 - id: cim-alerts--choropleth
   source:
@@ -1332,6 +1332,71 @@ recipes:
   - description: Formatter schema — enableChoropleth, featureJoinPreset, palette
     path: docs/_machine/formatter-schema.json
   path: docs/recipes/cim-performance/choropleth.md
+- id: cim-performance--extrusion-3d
+  source:
+    id: cim-performance
+    display_name: CIM Performance (CPU / memory / facilities)
+    pattern: splunk-cim
+  layer:
+    id: extrusion-3d
+    display_name: 3D extrusion
+  status: unverified
+  last_verified_iso8601: '2026-05-27'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_SA_CIM
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: CA
+    drives_formatter_option: idField
+  - name: state_name
+    type: string
+    example: California
+  - name: value
+    type: integer
+    example: '47'
+    drives_formatter_option: extrusionHeightField
+  - name: signal_host_count
+    type: integer
+    example: '47'
+  - name: total_host_count
+    type: integer
+    example: '212'
+  - name: signal_ratio
+    type: number
+    example: '0.22'
+  required_formatter_options:
+  - featureJoinPreset
+  - enable3DExtrusion
+  - extrusionHeightField
+  - extrusionScale
+  - enableChoropleth
+  - palette
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, choropleth layer (flat-fill sibling — same SPL, height-free encoding)
+    path: docs/recipes/cim-performance/choropleth.md
+  - description: Companion recipe — same source, markers / h3 / heat / supercluster / paths layers
+    path: docs/recipes/cim-performance/markers.md
+  - description: Pattern reference — extrusion-3d on CIM Network Traffic (sibling CIM source, event-count height encoding)
+    path: docs/recipes/cim-network-traffic/extrusion-3d.md
+  - description: Pattern reference — extrusion-3d on CIM Authentication (sibling CIM source, login-count height encoding)
+    path: docs/recipes/cim-authentication/extrusion-3d.md
+  - description: Pattern reference — extrusion-3d on CIM Alerts (sibling CIM source, severity-weighted height encoding)
+    path: docs/recipes/cim-alerts/extrusion-3d.md
+  - description: Pattern reference — extrusion-3d on the bundled us-states preset (canonical demo)
+    path: docs/recipes/geo-us-states/extrusion-3d.md
+  - description: splunk-cim skill — Performance data model schema, dataset tags, dest/cpu/memory contracts
+    path: ~/.cursor/skills/splunk-cim/SKILL.md
+  - description: splunk-datamodels-conf skill — CIM acceleration and tstats summariesonly tradeoffs
+    path: ~/.cursor/skills/splunk-datamodels-conf/SKILL.md
+  - description: Layer reference — extrusion-3d
+    path: docs/reference/layers.md
+  - description: Formatter schema — enable3DExtrusion, extrusionHeightField, extrusionScale
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/cim-performance/extrusion-3d.md
 - id: cim-performance--h3
   source:
     id: cim-performance
@@ -3547,6 +3612,67 @@ recipes:
   - description: Clusters layer source — supercluster index, clusterMaxZoom=14, clusterRadius=48 (hardcoded)
     path: better_map/appserver/static/visualizations/better_map/src/lib/layers/clusters.js
   path: docs/recipes/meraki/supercluster.md
+- id: meraki--vector-tile-join
+  source:
+    id: meraki
+    display_name: Cisco Meraki (devices)
+    pattern: splunk-vendor-ta
+  layer:
+    id: vector-tile-join
+    display_name: Vector-tile join (customer PMTiles)
+  status: unverified
+  last_verified_iso8601: '2026-05-27'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_TA_cisco_meraki
+    optional: false
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: USA
+    drives_formatter_option: idField
+  - name: country_name
+    type: string
+    example: United States
+  - name: value
+    type: integer
+    example: '847'
+  - name: device_count
+    type: integer
+    example: '847'
+  - name: network_count
+    type: integer
+    example: '62'
+  - name: online_count
+    type: integer
+    example: '812'
+  required_formatter_options:
+  - featureJoinUrl
+  - featureJoinPromoteId
+  - featureJoinSourceLayer
+  - enableChoropleth
+  - palette
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers / h3 / heat / supercluster layers
+    path: docs/recipes/meraki/markers.md
+  - description: Companion recipe — same source, extrusion-3d layer (height-encoded country aggregation)
+    path: docs/recipes/meraki/extrusion-3d.md
+  - description: Pattern reference — vector-tile-join on ThousandEyes (sibling vendor-TA + iplocation Country aggregation)
+    path: docs/recipes/thousandeyes/vector-tile-join.md
+  - description: Pattern reference — vector-tile-join on CIM Network Traffic (event-source iplocation sibling)
+    path: docs/recipes/cim-network-traffic/vector-tile-join.md
+  - description: Pattern reference — vector-tile-join with CSV lookup metric source (lookup-source sibling)
+    path: docs/recipes/csv-lookup-geo/vector-tile-join.md
+  - description: cisco-meraki-ta-setup skill — TA install, indexes, account config, input types
+    path: ~/.cursor/skills/cisco-meraki-ta-setup/SKILL.md
+  - description: Layer reference — feature join (custom PMTiles backdrop)
+    path: docs/reference/layers.md
+  - description: featureJoin layer source (promoteId + source-layer + URL contract)
+    path: better_map/appserver/static/visualizations/better_map/src/lib/layers/featureJoin.js
+  path: docs/recipes/meraki/vector-tile-join.md
 - id: netflow-sflow-ipfix--h3
   source:
     id: netflow-sflow-ipfix
@@ -4143,6 +4269,67 @@ recipes:
   - description: Clusters layer source — supercluster index, clusterMaxZoom=14, clusterRadius=48 (hardcoded)
     path: better_map/appserver/static/visualizations/better_map/src/lib/layers/clusters.js
   path: docs/recipes/ot-datastreamer/supercluster.md
+- id: ot-datastreamer--vector-tile-join
+  source:
+    id: ot-datastreamer
+    display_name: OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet)
+    pattern: splunk-edge-hub
+  layer:
+    id: vector-tile-join
+    display_name: Vector-tile join (customer PMTiles)
+  status: unverified
+  last_verified_iso8601: '2026-05-27'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_TA_oti
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: USA
+    drives_formatter_option: idField
+  - name: country_name
+    type: string
+    example: United States
+  - name: value
+    type: integer
+    example: '14'
+  - name: hub_count
+    type: integer
+    example: '14'
+  - name: site_count
+    type: integer
+    example: '8'
+  - name: active_hub_count
+    type: integer
+    example: '13'
+  required_formatter_options:
+  - featureJoinUrl
+  - featureJoinPromoteId
+  - featureJoinSourceLayer
+  - enableChoropleth
+  - palette
+  ot_safety_relevant: true
+  references:
+  - description: Companion recipe — same source, markers / h3 / heat / supercluster / paths layers
+    path: docs/recipes/ot-datastreamer/markers.md
+  - description: Pattern reference — vector-tile-join on Meraki (sibling vendor-TA + iplocation/lookup country aggregation)
+    path: docs/recipes/meraki/vector-tile-join.md
+  - description: Pattern reference — vector-tile-join with KV Store metric source (lookup-source sibling for the world-countries PMTiles join contract)
+    path: docs/recipes/kvstore-latlon/vector-tile-join.md
+  - description: Pattern reference — vector-tile-join with CSV lookup (lookup-source sibling)
+    path: docs/recipes/csv-lookup-geo/vector-tile-join.md
+  - description: splunk-edge-hub skill — Edge Hub indexes, sourcetypes, protocol-specific sources
+    path: ~/.cursor/skills/splunk-edge-hub/SKILL.md
+  - description: splunk-oti-datastreamer skill — OTI Datastreamer ingest pipeline, HEC tuning
+    path: ~/.cursor/skills/splunk-oti-datastreamer/SKILL.md
+  - description: 'Cursor rule — ot-safety.mdc (Rule 5: SIS asset list = read-only mirror of customer SRS)'
+    path: .cursor/rules/ot-safety.mdc
+  - description: Layer reference — feature join (custom PMTiles backdrop)
+    path: docs/reference/layers.md
+  - description: featureJoin layer source (promoteId + source-layer + URL contract)
+    path: better_map/appserver/static/visualizations/better_map/src/lib/layers/featureJoin.js
+  path: docs/recipes/ot-datastreamer/vector-tile-join.md
 - id: splunk-stream--extrusion-3d
   source:
     id: splunk-stream

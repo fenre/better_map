@@ -1,5 +1,60 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-28): E5 Phase 2 wave 33 recipes
+> SHIPPED — 3 new recipes (`meraki/vector-tile-join`,
+> `ot-datastreamer/vector-tile-join`,
+> `cim-performance/extrusion-3d`), bringing total recipe count
+> from 87 → 90.** All three are diversification entries that
+> expand layer-type coverage on already-shipping sources rather
+> than adding new sources to the matrix. `vector-tile-join`
+> advances **4 → 6 cells** in a single wave (the largest single-
+> wave VTJ column expansion since the layer launched): the new
+> `meraki/vector-tile-join` recipe is the canonical vendor-TA
+> world-countries fleet-distribution view (multi-org operator
+> deploys aggregated by `iplocation publicIp` country), and the
+> new `ot-datastreamer/vector-tile-join` recipe is the FIRST
+> OT-safety-flagged VTJ in the matrix — it consciously avoids
+> `iplocation` (which would misread NAT'd OT-zone uplinks) and
+> instead drives country attribution from the customer-owned
+> `edge_hub_inventory.csv` asset register lookup per
+> `.cursor/rules/ot-safety.mdc` Rule 5 (read-only mirror of the
+> SIS asset list). `extrusion-3d` advances **6 → 7 cells**
+> (`cim-performance/extrusion-3d` joins geo-us-states, three CIM
+> sources, meraki, and splunk-stream — the canonical "executive
+> 3D map of infrastructure-pressure distribution" panel for CIO
+> briefing decks, with the same per-state breaching-host SPL as
+> the `cim-performance/choropleth` sibling but height-encoded
+> via `enable3DExtrusion`+`extrusionHeightField`+`extrusionScale`
+> over the bundled `us-states` PMTiles preset). Source rows
+> bump: meraki 5 → 6, ot-datastreamer 5 → 6, cim-performance
+> 6 → 7. All three follow the wave-13 generalised recipe contract
+> (`schema_version: 1` + frontmatter + §1-§6 + `## Verification
+> status` trailer) and pass `check-recipe-schema.py` (90/90).
+> Token cost: ~6,110 tokens net (162,348 → 168,458, 6,542 WARN
+> headroom remaining) — gross per-recipe cost is ~2-3k tokens
+> apiece; the `strip_recipe_advisory()` trailing-pointer
+> consolidation continues to absorb ~80% of new-recipe footer
+> weight. **6,542 WARN headroom is BELOW the 7,000-token
+> threshold the autonomous cadence uses to decide "trim
+> first"** — wave 34 MUST open with a token-trim PR before any
+> new recipes ship. Remaining trim levers in priority order:
+> (1) per-recipe §6 Gotchas compaction (the lever flagged across
+> waves 31-32 but never executed because higher-ROI ROADMAP
+> trims were available; estimated 3-4k tokens reclaim across
+> the 90 recipes); (2) reference-pages auto-managed regions
+> re-compaction (last trimmed in wave 16, estimated 1-2k
+> reclaim); (3) `__tests__/__snapshots__/`-style snippet
+> compaction in `appendix-c-developer-tooling` (estimated
+> 1-2k reclaim). Each lever should ship as its own PR
+> following the established `chore(llms): wave N token-trim
+> — <short-slug>` convention. All gates green locally
+> (`build-llms-full-txt.py --check`, `build-llms-txt.py
+> --check`, `check-recipe-schema.py`,
+> `build-reference-pages.py --check`, `check-manifest.py`,
+> `check-formatter-schema.py`, `check-formatter-coverage.py`,
+> `mkdocs build --strict`). Subsequent wave 34 trim + wave 34
+> recipes will fold in below this block.
+
 > **Status (v1.7-prep, 2026-05-27): E5 Phase 2 wave 33 token-trim
 > SHIPPED — drop the entire `## 3. Detailed work-items` section from
 > ROADMAP.md in the llms-full.txt corpus pipeline; reclaimed 6,452
