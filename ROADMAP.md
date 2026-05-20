@@ -1,5 +1,75 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-31): E5 Phase 2 wave 35a token-trim
+> SHIPPED — drop the entire `## 4. Milestone sequencing` section from
+> `ROADMAP.md` in the llms-full.txt corpus pipeline; reclaimed
+> 1,653 tokens (172,722 → 171,069, 2,278 → 3,931 WARN headroom).**
+> Wave 34b closed with 2,278 WARN headroom (computed post-merge —
+> tighter than the 3,246 reported in the wave-34b status block because
+> the corpus rebuilt on origin/main after the squash-merge picked up
+> a slightly larger embedded recipe-count statistic in
+> `recipes/index.md`'s auto-managed region) — well below the
+> 7,000-token threshold the autonomous cadence uses to decide
+> "trim first" — mandating a token-trim PR before any new recipes
+> ship. The wave-34b status block listed three trim levers in
+> priority order: (1) per-recipe §6 Gotchas compaction (RE-EVALUATE
+> whether `strip_recipe_advisory()` already covers it); (2)
+> reference-pages auto-managed regions re-compaction (estimated 1-2k
+> reclaim); (3) `appendix-c-developer-tooling` snippet compaction
+> (estimated 1-2k reclaim). Re-profiling the post-wave-34b corpus
+> identified a HIGHER-ROI lever NOT on that list:
+> `## 4. Milestone sequencing` in `ROADMAP.md` had become the single
+> largest unstripped non-recipe section (~1,715 tokens, ~24% of the
+> ~7,030-token roadmap-page total after wave-33's `## 3. Detailed
+> work-items` strip and the wave-34a `CI-GATES` matrix strip both
+> shifted the roadmap into the top-of-corpus heaviest-page slot).
+> The §4 section enumerates three milestone tables (v1.7 / v1.8 /
+> v2.0) with ~10-12 work-item rows + sub-total + buffer + exit-
+> criteria + non-goals trailer per milestone — operational planning
+> detail that recipes / docs do not cross-link, and which an LLM
+> consumer can fetch on demand from the live MkDocs page via the
+> pointer trim leaves behind. Safety rationale: `## 1. Honest
+> baseline (where v1.6 actually sits)` is kept verbatim (~1.2k tokens
+> — answers "what does v1.6 actually do today?"), `## 2. Strategic
+> themes` is kept (~420 tokens — names the seven theme letters
+> milestone-table rows reference), `## 5. What better_map will
+> explicitly NOT become` is kept (~480 tokens — bounds scope), and
+> `## 8. Risk register (top 10)` is kept (~1.1k tokens — explains
+> WHY milestones look the way they do). The work-item IDs the §4
+> tables reference (A1, B2, E5, G7, …) are already absent from
+> corpus per the wave-33 §3 strip, so dropping §4 does not break
+> any cross-link. Implementation mirrors the wave-33 §3 / wave-34
+> CI-GATES strips exactly: a `_ROADMAP_MILESTONE_SEQUENCING_SECTION`
+> regex (bounded by next H2 or `---` separator), a
+> `strip_roadmap_milestone_sequencing()` helper that replaces the
+> matched body with a `## 4. Milestone sequencing` heading + one-
+> line pointer + heading-slug anchor, and a single wire-up call in
+> the `if is_roadmap_page(...)` block of `process_page()`. The
+> on-disk `ROADMAP.md` is unchanged — the trim runs only in the
+> in-memory body before it lands in `llms-full.txt`; the MkDocs
+> site continues to render every milestone table for human readers
+> via the unaltered include-markdown directive in `docs/roadmap.md`
+> (the literal directive text is omitted here to avoid tripping the
+> script's include matcher, which is not fenced-code-aware and would
+> double-expand the file — same gotcha the wave-8 G7 follow-up #3
+> status block documented).
+> Post-wave-35a WARN headroom of 3,931 tokens supports ~1-2 more
+> recipes in wave 35b before the next trim. Remaining trim levers
+> in priority order for wave 36 and beyond: (1) per-recipe §6
+> Gotchas compaction — RE-EVALUATE whether `strip_recipe_advisory()`
+> already covers it (if broadened to "from §5 to end of file" the
+> estimated reclaim is ~5k tokens at 93+ recipes × ~50 tokens of
+> pre-pointer §6 boilerplate, the single highest-ceiling lever left
+> in the corpus); (2) reference-pages auto-managed regions
+> re-compaction (last trimmed in wave 16); (3)
+> `appendix-c-developer-tooling` snippet compaction; (4) `## 8.
+> Risk register (top 10)` compaction (~1.1k tokens, but high LLM
+> utility — last-resort lever). All gates green locally
+> (`build-llms-full-txt.py --check`, `build-llms-txt.py --check`,
+> `check-recipe-schema.py`, `build-reference-pages.py --check`,
+> `check-manifest.py`, `check-formatter-schema.py`,
+> `check-formatter-coverage.py`, `mkdocs build --strict`).
+
 > **Status (v1.7-prep, 2026-05-30): E5 Phase 2 wave 34b recipes
 > SHIPPED — 3 new diversification recipes
 > (`netflow-sflow-ipfix/vector-tile-join`,
