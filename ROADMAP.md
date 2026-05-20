@@ -1,5 +1,88 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-31): E5 Phase 2 wave 37a token-trim
+> SHIPPED — drop the FOUR operational HOW-DO-I-RUN-IT H2 sections
+> (``## Verifying a downloaded release`` ≈ 775 tokens of sha256sum /
+> cosign verify-blob bash commands + brew install steps + Rekor
+> transparency log inspection workflow; ``## Managing CVE waivers``
+> ≈ 600 tokens of npm-audit-waivers.json schema + 90-day expiry
+> hard rule + specific-code-path reason requirement + worked-example
+> walkthrough; ``## Replacing a copyleft transitive dep`` ≈ 240
+> tokens of 4-step escalation procedure (upgrade parent → dual-
+> license pick → vendor fork → drop parent); ``## What to do when
+> Dependabot opens a PR`` ≈ 240 tokens of CI-status × action triage
+> matrix + 14-day stale-PR closure rule) from
+> ``docs/runbooks/supply-chain.md`` in the llms-full.txt corpus
+> pipeline, reclaiming 1,307 tokens (172,027 → 170,720, 2,973 →
+> 4,280 WARN headroom). The wave-36c status block flagged
+> ``runbooks/supply-chain/`` at 3,095 tokens as the next-priority
+> lever after the appendix:recipes compaction (wave 36a) and the
+> COMPAT-MATRIX operational-section trim (wave 36b); within the
+> supply-chain page, the four operational H2 sections (two
+> contiguous blocks in the page layout — Block A is the single H2
+> ``## Verifying a downloaded release`` between ``## What ships in
+> a release`` and ``## What the SBOM contains``; Block B is the
+> three-H2 contiguous run ``## Managing CVE waivers`` → ``##
+> Replacing a copyleft transitive dep`` → ``## What to do when
+> Dependabot opens a PR`` between ``## CI gates that run on every
+> PR`` and ``## Splunkbase submission``) carry the highest
+> concentration of LLM-irrelevant content: per-CVE bash
+> walkthroughs, npm-audit-waivers.json JSON schema rules, and
+> CI-status triage matrices that an LLM authoring code in this
+> repo rarely cross-references (the operational walk-through is
+> consumed by a human running a release or by a Splunkbase
+> reviewer auditing one). The KEPT inventory sections answer the
+> LLM-useful questions: ``## What ships in a release`` (kept,
+> ~250 tokens — the 9-artefact release manifest naming .tar.gz,
+> .spl, sha256 sidecars, cosign bundles, and SBOM); ``## What the
+> SBOM contains`` (kept, ~450 tokens — CycloneDX 1.6 schema +
+> 186-component scope + per-dep field inventory + 4 SBOM
+> consumption recipes); ``## CI gates that run on every PR``
+> (kept, ~120 tokens — the 4-row gate matrix with thresholds);
+> ``## Splunkbase submission — what we hand the reviewer`` (kept,
+> ~140 tokens — the 5-item evidence package); ``## Roadmap
+> follow-ups`` (kept, ~150 tokens — G1/G2/G3 forward tracking).
+> Safety rationale: the on-disk ``docs/runbooks/supply-chain.md``
+> is unchanged; the MkDocs site renders the full page (including
+> all four operational H2s) for human readers; the trim runs ONLY
+> in the in-memory writer pipeline of ``build-llms-full-txt.py``
+> via ``strip_supply_chain_operational()`` — the function follows
+> the same shape as ``strip_compat_matrix_operational`` from wave
+> 36b (H2-anchored regex with a defensive no-op fallback when the
+> section is missing, replacement with pointer lines carrying the
+> live anchors ``#verifying-a-downloaded-release``,
+> ``#managing-cve-waivers``, ``#replacing-a-copyleft-transitive-
+> dep``, ``#what-to-do-when-dependabot-opens-a-pr`` so each
+> pointer is click-through-valid) and adds cross-references to
+> ``scripts/check-npm-audit.py`` / ``scripts/check-license-
+> allowlist.py`` / ``scripts/check-osv-report.py`` source code AND
+> to the ``scripts/npm-audit-waivers.json`` canonical waiver
+> schema for the operational HOW-DO-I-RUN-IT detail that an
+> auditor or release manager actually needs. Actual reclaim is
+> 1,307 tokens (slightly under the 1,855-token projection because
+> the page's quick-link block at the top retains the 4 trimmed
+> H2's anchor names verbatim — those entries cost ~30 tokens that
+> the trim doesn't touch; and because the H3 subsection inside
+> ``## Verifying a downloaded release`` titled ``### 3. Inspect
+> the Rekor transparency log (optional, auditor flow)`` carries
+> some general-context tokens about Rekor that also survive in
+> the kept ``## What ships in a release`` section's mention of
+> the .cosign.bundle artefact). Post-wave-37a WARN headroom of
+> 4,280 tokens is BELOW the 7,000-token threshold (mandatorily
+> triggering trim-before-recipes when headroom drops below 7k) —
+> wave 37b MUST be another trim wave, next-priority lever per
+> the wave-36a inventory is ``runbooks/upgrade-hygiene/`` at
+> 2,626 tokens (operational runbook detail an LLM rarely cross-
+> references, same reasoning as supply-chain and COMPAT-MATRIX),
+> with ``integrations/catalogue/`` at 2,827 tokens as the
+> alternative if upgrade-hygiene doesn't have enough trimmable
+> H2 structure. All gates green locally
+> (``build-llms-full-txt.py --check``, ``build-llms-txt.py
+> --check``, ``check-recipe-schema.py`` [97/97 valid],
+> ``build-reference-pages.py --check``, ``check-manifest.py``,
+> ``check-formatter-schema.py``, ``check-formatter-coverage.py``,
+> ``mkdocs build --strict``).**
+
 > **Status (v1.7-prep, 2026-05-31): E5 Phase 2 wave 36c recipes
 > SHIPPED — 2 diversification recipes (95 → 97 total) targeting
 > two sparse layer columns (choropleth 8 → 9, vector-tile-join
