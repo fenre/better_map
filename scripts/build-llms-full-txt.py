@@ -244,7 +244,45 @@ operational drag; the operational HOW-DO-I-RUN-IT detail is
 recoverable from the live MkDocs page via the pointer the trim
 retains AND from the ``scripts/find-orphans.sh`` source itself
 (carrying the canonical CLI-flag documentation and SSH invocation
-logic); see ``strip_upgrade_hygiene_procedures`` below):
+logic); see ``strip_upgrade_hygiene_procedures`` below) — and in
+wave 37c by dropping the TWO non-contiguous operational
+HOW-DO-I-RUN-IT clusters (Block A — two contiguous H2s: ``## What
+`bootstrap.sh` does, step by step`` ≈ 480 tokens of 8-step
+bootstrap walkthrough (prerequisite validation → ``docker compose
+up`` → splunkd readiness poll → bearer-token mint → tarball
+build → app install via ``/staging`` bind-mount → splunkd restart
+→ ``secrets.env`` write), and ``## What `dispatch-test.py` does``
+≈ 350 tokens of 6-step dashboard-smoke-test walkthrough
+(``secrets.env`` load → pre-flight ``/services/server/info`` →
+XML walk over ``data/ui/views/*.xml`` → per-query dispatch + poll
+→ message classification → exit code); Block B — single H2 with
+5 H3s: ``## Common failure modes`` ≈ 400 tokens of five worked-
+example failure modes with diagnosis + remediation steps —
+``bootstrap.sh`` 10-min splunkd timeout = low Docker memory;
+``dispatch-test.py`` 60-s job timeout = SPL bug; pre-flight HTTP
+401 = expired token; install HTTP 400 = multipart-body
+regression per the ``splunk-remote-app-deploy`` skill; Splunk Web
+sees app but dispatch HTTP 404s = namespace mismatch) from
+``docs/development/local-splunk-harness.md`` (combined ~1,232
+tokens of operational HOW-DO-I-RUN-IT detail not relevant to an
+LLM consumer understanding "what does D5 ship?" or "how does the
+local Splunk harness fit the developer workflow?"; the kept
+sections — ``## Prerequisites`` (Docker / Node / repo-tree
+requirements), ``## Quick start`` (canonical 4-command bash
+invocation), ``## Talking to a remote Splunk instead of the
+local harness`` (``secrets.env`` field map for remote-tenant
+dispatch), ``## Why CI integration is deferred`` (design
+rationale: memory ceiling + version matrix for the maintainer-
+driven gate posture), ``## Cleaning up`` (teardown contract with
+``--keep-volumes`` flag + remote-tenant ``secrets.env``
+preservation) — give an LLM consumer a complete first-order
+answer to "what is the D5 local-splunk-harness contract?"
+without the operational drag; the operational HOW-DO-I-RUN-IT
+detail is recoverable from the live MkDocs page via the pointers
+the trim retains AND from the canonical script sources at
+``docker/scripts/bootstrap.sh``, ``docker/scripts/teardown.sh``,
+and ``scripts/dispatch-test.py``; see
+``strip_local_splunk_harness_operational`` below):
 
   * Per-page warning at **50,000 estimated tokens** — one page should
     not dominate the corpus.
@@ -778,6 +816,78 @@ _UPGRADE_HYGIENE_PROCEDURES = re.compile(
     re.MULTILINE,
 )
 
+# local-splunk-harness operational-section trim contract — see
+# strip_local_splunk_harness_operational() and the E5 Phase 2 wave 37c
+# ROADMAP block. ``docs/development/local-splunk-harness.md`` is the D5
+# developer-facing runbook page that documents the Dockerized local
+# Splunk harness (``docker/.env``, ``bootstrap.sh``, ``dispatch-test.py``,
+# ``teardown.sh``). The page interleaves LLM-relevant context sections
+# (``## Prerequisites``, ``## Quick start``, ``## Talking to a remote
+# Splunk instead of the local harness``, ``## Why CI integration is
+# deferred``, ``## Cleaning up``) with TWO operational
+# HOW-DO-I-RUN-IT clusters that an LLM consumer rarely cross-references
+# because the underlying scripts are the source of truth:
+#
+# Block A (two contiguous H2s, ~830 tokens): ``## What `bootstrap.sh`
+# does, step by step`` — 8-step walkthrough of the bootstrap workflow
+# (prerequisite validation → container start → splunkd readiness poll →
+# bearer-token mint → tarball build → app install → splunkd restart →
+# ``secrets.env`` write), and ``## What `dispatch-test.py` does`` —
+# 6-step walkthrough of the dashboard smoke-test workflow
+# (``secrets.env`` load → pre-flight ``/services/server/info`` → XML
+# walk → per-query dispatch + poll → message classification → exit
+# code). Both are derived from the canonical script sources at
+# ``docker/scripts/bootstrap.sh`` and ``scripts/dispatch-test.py``.
+#
+# Block B (single H2 with 5 H3 subsections, ~400 tokens): ``## Common
+# failure modes`` — five worked-example failure modes with diagnosis +
+# remediation steps (``bootstrap.sh`` 10-min splunkd timeout = low
+# Docker memory; ``dispatch-test.py`` 60-s job timeout = SPL bug;
+# pre-flight HTTP 401 = expired token; install HTTP 400 = multipart-
+# body regression; Splunk Web sees app but dispatch HTTP 404s =
+# namespace mismatch).
+#
+# Safety rationale: the on-disk ``docs/development/local-splunk-harness.md``
+# is unchanged; the MkDocs site renders the full page (including both
+# operational clusters) for human readers; the trim runs only in the
+# in-memory writer pipeline of ``build-llms-full-txt.py`` via
+# ``strip_local_splunk_harness_operational()`` (same shape as
+# ``strip_supply_chain_operational`` / ``strip_upgrade_hygiene_procedures``
+# — H2-anchored regex with defensive no-op fallback). The KEPT sections
+# answer the LLM-useful questions: ``## Prerequisites`` lists the
+# Docker / Node / repo-tree requirements; ``## Quick start`` carries
+# the canonical 4-command bash invocation; ``## Talking to a remote
+# Splunk instead of the local harness`` carries the ``secrets.env``
+# field map for remote-tenant dispatch; ``## Why CI integration is
+# deferred`` carries the design rationale (memory ceiling + version
+# matrix) for the maintainer-driven gate posture; ``## Cleaning up``
+# carries the teardown contract (``--keep-volumes`` flag, remote-
+# tenant ``secrets.env`` preservation). The operational HOW-DO-I-RUN-
+# IT detail (the step-by-step walkthroughs and the failure-mode
+# diagnostics) is recoverable from (a) the live MkDocs page via the
+# pointers the trim retains, and (b) the canonical script sources at
+# ``docker/scripts/bootstrap.sh``, ``docker/scripts/teardown.sh``, and
+# ``scripts/dispatch-test.py``.
+#
+# Two regex constants because the trimmed sections form TWO non-
+# contiguous blocks in the page layout (the ``## Talking to a remote
+# Splunk`` H2 sits between Block A and Block B and is KEPT). Block A
+# anchors to ``## Talking to a remote Splunk instead of the local
+# harness`` as its stop condition; Block B anchors to ``## Why CI
+# integration is deferred`` as its stop condition (same shape as the
+# wave-37a ``_SUPPLY_CHAIN_OPERATIONAL_VERIFY`` /
+# ``_SUPPLY_CHAIN_OPERATIONAL_WAIVERS`` split).
+_LOCAL_SPLUNK_HARNESS_WALKTHROUGHS = re.compile(
+    r"^## What `bootstrap\.sh` does[^\n]*\n"
+    r"(?:(?!^## Talking to a remote Splunk).*\n)*",
+    re.MULTILINE,
+)
+_LOCAL_SPLUNK_HARNESS_FAILURE_MODES = re.compile(
+    r"^## Common failure modes[^\n]*\n"
+    r"(?:(?!^## Why CI integration is deferred).*\n)*",
+    re.MULTILINE,
+)
+
 # CI-GATES §"Gate matrix" trim contract — see strip_ci_gates_matrix() and
 # the E5 Phase 2 wave 34 ROADMAP block. ``docs/CI-GATES.md``'s
 # ``## Gate matrix`` H2 section is the heaviest single section in any
@@ -1274,6 +1384,24 @@ def is_upgrade_hygiene_page(relpath: str) -> bool:
     See also context intact.
     """
     return relpath == "runbooks/upgrade-hygiene.md"
+
+
+def is_local_splunk_harness_page(relpath: str) -> bool:
+    """True when `docs/<relpath>` is the D5 local-splunk-harness page.
+
+    Only the top-level `docs/development/local-splunk-harness.md`
+    qualifies — this is the D5 Dockerized-Splunk-harness developer
+    runbook documented in ROADMAP §3 D5. The trim
+    (`strip_local_splunk_harness_operational`) drops the two non-
+    contiguous operational HOW-DO-I-RUN-IT clusters (Block A: the
+    `## What `bootstrap.sh` does, step by step` + `## What
+    `dispatch-test.py` does` walkthroughs; Block B: the
+    `## Common failure modes` cluster with 5 H3 subsections) from
+    the corpus while keeping the page's Prerequisites + Quick start
+    + Talking to a remote Splunk + Why CI integration is deferred +
+    Cleaning up context intact.
+    """
+    return relpath == "development/local-splunk-harness.md"
 
 
 def strip_changelog_old_versions(
@@ -1803,6 +1931,82 @@ def strip_upgrade_hygiene_procedures(
     return cleaned, count > 0
 
 
+def strip_local_splunk_harness_operational(
+    body: str, page_url: str
+) -> tuple[str, bool]:
+    """Drop the two operational-cluster sections from local-splunk-harness.md.
+
+    See the module-level ``_LOCAL_SPLUNK_HARNESS_WALKTHROUGHS`` and
+    ``_LOCAL_SPLUNK_HARNESS_FAILURE_MODES`` contracts for the full
+    rationale. Returns ``(cleaned_body, dropped)`` where ``dropped`` is
+    ``True`` when AT LEAST ONE of the two non-contiguous section
+    blocks was found and replaced with a pointer, ``False`` when the
+    page contains neither (defensive — the helper is a no-op on
+    already-trimmed local-splunk-harness bodies and on synthetic test
+    fixtures).
+
+    Block A (two contiguous H2s): ``## What `bootstrap.sh` does, step
+    by step`` → ``## What `dispatch-test.py` does`` is replaced with
+    a one-line pointer covering both walkthroughs and the canonical
+    script sources. Block B (single H2 with 5 H3s): ``## Common
+    failure modes`` is replaced with a one-line pointer covering all
+    five failure modes. The pointer headings match the MkDocs-
+    generated anchors (``#what-bootstrapsh-does-step-by-step``,
+    ``#common-failure-modes``) so each pointer is click-through-valid.
+    """
+    pointer_walkthroughs = (
+        "## What `bootstrap.sh` does, step by step\n\n"
+        "_§What `bootstrap.sh` does (8-step bootstrap walkthrough:"
+        " prerequisite validation → `docker compose up` → splunkd"
+        " readiness poll → bearer-token mint → tarball build → app"
+        " install via `/staging` bind-mount → splunkd restart →"
+        " `secrets.env` write) and §What `dispatch-test.py` does"
+        " (6-step dashboard smoke-test walkthrough: `secrets.env`"
+        " load → pre-flight `/services/server/info` → XML walk over"
+        " `data/ui/views/*.xml` → per-query dispatch + poll → message"
+        " classification → exit code) omitted from llms-full.txt for"
+        " token-budget headroom; read both walkthroughs at"
+        f" <{page_url}#what-bootstrapsh-does-step-by-step> and"
+        f" <{page_url}#what-dispatch-testpy-does>, or inspect the"
+        " canonical script sources at"
+        " <https://github.com/fenre/better_map/blob/main/docker/scripts/bootstrap.sh>"
+        " and"
+        " <https://github.com/fenre/better_map/blob/main/scripts/dispatch-test.py>"
+        " for the authoritative step definitions._\n\n"
+    )
+    pointer_failures = (
+        "## Common failure modes\n\n"
+        "_§Common failure modes (five worked-example diagnostics with"
+        " remediation steps: `bootstrap.sh` 10-min splunkd timeout ="
+        " low Docker memory; `dispatch-test.py` 60-s job timeout = SPL"
+        " bug; pre-flight HTTP 401 = expired token; install HTTP 400"
+        " = multipart-body regression per the"
+        " `splunk-remote-app-deploy` skill; Splunk Web sees app but"
+        " dispatch HTTP 404s = namespace mismatch) omitted from"
+        " llms-full.txt for token-budget headroom; read all five"
+        f" subsections at <{page_url}#common-failure-modes>, or"
+        " inspect the canonical diagnostic logic at"
+        " <https://github.com/fenre/better_map/blob/main/scripts/dispatch-test.py>"
+        " and the deployment skill at"
+        " `~/.cursor/skills/splunk-remote-app-deploy/SKILL.md` for"
+        " the multipart-body failure-mode origin._\n\n"
+    )
+
+    def _replace_walkthroughs(_match: re.Match[str]) -> str:
+        return pointer_walkthroughs
+
+    def _replace_failures(_match: re.Match[str]) -> str:
+        return pointer_failures
+
+    cleaned, count_walk = _LOCAL_SPLUNK_HARNESS_WALKTHROUGHS.subn(
+        _replace_walkthroughs, body
+    )
+    cleaned, count_fail = _LOCAL_SPLUNK_HARNESS_FAILURE_MODES.subn(
+        _replace_failures, cleaned
+    )
+    return cleaned, (count_walk + count_fail) > 0
+
+
 def strip_ci_gates_matrix(
     body: str, page_url: str
 ) -> tuple[str, bool]:
@@ -2104,6 +2308,10 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
         if is_upgrade_hygiene_page(relpath):
             expanded, _upgrade_hygiene = strip_upgrade_hygiene_procedures(
                 expanded, url
+            )
+        if is_local_splunk_harness_page(relpath):
+            expanded, _local_harness = (
+                strip_local_splunk_harness_operational(expanded, url)
             )
         if is_formatter_page(relpath):
             expanded, _trimmed = strip_formatter_appendix_a(expanded, url)
