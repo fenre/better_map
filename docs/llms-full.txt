@@ -4,7 +4,7 @@
 
 This file is the body-inclusive sibling of `llms.txt` and concatenates every page on the Better Map documentation site into a single, LLM-friendly text dump. The short companion index is at <https://fenre.github.io/better_map/llms.txt>. Pages appear in `mkdocs.yml` `nav:` declaration order. Each page block carries a stable `# === ... ===` separator plus the source-of-truth path on disk and the published URL so the same content can be grepped by either dimension.
 
-At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 87 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 90 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
 
 All page URLs resolve to publicly accessible Material-themed HTML on GitHub Pages. The project ships under the MIT licence; the canonical repo is <https://github.com/fenre/better_map>.
 
@@ -1101,27 +1101,27 @@ generated from
 so it cannot drift from the recipe files.
 
 <!-- recipes-matrix trimmed for llms-full.txt token budget (see Wave 16 ROADMAP block); full matrix at <https://fenre.github.io/better_map/recipes/> and source-of-truth YAML at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>; per-recipe details (status, apps, expected-field contract, formatter options) are kept verbatim under the matching `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file -->
-**Total: 87 recipes · 15 source dir(s) · 9 layer type(s).**
+**Total: 90 recipes · 15 source dir(s) · 9 layer type(s).**
 
 Source dirs and the layer ids that already ship for each (any `(source, layer)` not listed below is an open cell in the E5 matrix and is a candidate for the next recipe wave):
 
 - `cim-alerts`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster
 - `cim-authentication`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster
 - `cim-network-traffic`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster, vector-tile-join
-- `cim-performance`: choropleth, h3, heat, markers, paths, supercluster
+- `cim-performance`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster
 - `csv-lookup-geo`: h3, heat, markers, paths, polygons, supercluster, vector-tile-join
 - `cyber-vision`: h3, heat, markers, paths, supercluster
 - `es-risk`: h3, heat, markers, paths, supercluster
 - `geo-us-states`: choropleth, extrusion-3d
 - `itsi-kpi-base`: h3, heat, markers, paths, supercluster
 - `kvstore-latlon`: h3, heat, markers, paths, polygons, supercluster, vector-tile-join
-- `meraki`: extrusion-3d, h3, heat, markers, supercluster
+- `meraki`: extrusion-3d, h3, heat, markers, supercluster, vector-tile-join
 - `netflow-sflow-ipfix`: h3, heat, markers, paths, supercluster
-- `ot-datastreamer`: h3, heat, markers, paths, supercluster
+- `ot-datastreamer`: h3, heat, markers, paths, supercluster, vector-tile-join
 - `splunk-stream`: extrusion-3d, h3, heat, markers, paths, supercluster
 - `thousandeyes`: choropleth, h3, heat, markers, paths, supercluster, vector-tile-join
 
-**OT-safety-relevant recipes (10):** `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `cyber-vision/paths`, `cyber-vision/supercluster`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`, `ot-datastreamer/paths`, `ot-datastreamer/supercluster`.
+**OT-safety-relevant recipes (11):** `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `cyber-vision/paths`, `cyber-vision/supercluster`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`, `ot-datastreamer/paths`, `ot-datastreamer/supercluster`, `ot-datastreamer/vector-tile-join`.
 
 The remaining matrix cells from the E5 design — every layer × every
 source pattern — are tracked in
@@ -3899,6 +3899,189 @@ it internally from the PMTiles URL configured in §4.
 _Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-network-traffic/vector-tile-join/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-network-traffic/vector-tile-join/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/cim-performance/extrusion-3d/ ===
+
+# Recipes / CIM Performance (CPU / memory / facilities) — 3D extrusion
+
+> Source: `docs/recipes/cim-performance/extrusion-3d.md`  
+> URL: <https://fenre.github.io/better_map/recipes/cim-performance/extrusion-3d/>
+
+# CIM Performance — US states 3D extrusion
+
+The third-dimension companion to the
+[cim-performance/choropleth](./choropleth.md) recipe — same
+Performance data model, same per-state breaching-host aggregation,
+same `us-states` PMTiles preset, but per-state shading is
+**augmented by per-state vertical extrusion**. Tall states host
+more breaching infrastructure; short states host less. The right
+shape for **executive infrastructure-pressure briefings where
+absolute breach-count rank matters** (the choropleth's colour
+ramp saturates once 5+ states exceed the 80th percentile —
+extrusion's height has unbounded headroom), **capacity-planning
+reviews** where the visual cliff over a CA / VA / TX-host-dense
+state pre-attentively communicates "this region needs the next
+capacity investment", and **CIO regional-budget reviews** where
+the 3D prism over the most-pressured state is itself the executive
+talking point.
+
+The **7th extrusion-3d recipe in the matrix** — joining
+[geo-us-states](../geo-us-states/extrusion-3d.md),
+[cim-network-traffic](../cim-network-traffic/extrusion-3d.md),
+[cim-authentication](../cim-authentication/extrusion-3d.md),
+[cim-alerts](../cim-alerts/extrusion-3d.md),
+[meraki](../meraki/extrusion-3d.md), and
+[splunk-stream](../splunk-stream/extrusion-3d.md). This advances
+the extrusion-3d layer column from 6 cells to 7, and brings the
+cim-performance source row from 6 cells to 7 (markers, h3, heat,
+supercluster, paths, choropleth, plus extrusion-3d now). The
+recipe is the canonical "executive 3D map of infrastructure-
+pressure distribution" panel for CIO briefing decks.
+
+## 1. Source description
+
+Same **CIM Performance** data model as the
+[markers](./markers.md), [h3](./h3.md), [heat](./heat.md),
+[supercluster](./supercluster.md), [paths](./paths.md), and
+[choropleth](./choropleth.md) companions — see
+[cim-performance/markers §1](./markers.md#1-source-description)
+for the full data model background, the six datasets (CPU,
+Memory, Storage, Network, Facilities, Uptime), and the
+acceleration / `tstats summariesonly=true` contract.
+
+The relevant distinction for THIS recipe: the panel renders the
+same per-state breaching-host aggregation as the
+[choropleth companion](./choropleth.md) but encodes the rank as
+**polygon vertical extrusion** in addition to (or instead of)
+colour shading. Same SPL as the choropleth companion (verbatim) —
+the only differences live in the formatter config (§4).
+
+**Why extrusion-3d for CIM Performance.** A choropleth saturates:
+once California, Virginia, Texas, New York, and Washington all
+exceed the 80th percentile of breaching-host counts, the colour
+ramp can't distinguish them — they're all "dark magma". Extrusion
+preserves rank visibility because height has unbounded headroom —
+California with 47 breaching hosts is **5x taller** than a
+mid-tier state with 9 breaching hosts, and the visual gap is
+impossible to miss even when both states are at the saturated end
+of the colour ramp. Combined with the additive choropleth (height
++ colour encode the same `value` — see §4), the panel becomes
+double-encoded: height for absolute breach-count rank, colour
+for the ordinal "where is the operational pressure".
+
+The use cases this recipe unlocks beyond the choropleth companion:
+
+- **CIO infrastructure-budget reviews** — the 3D prism over the
+  most-pressured state is the focal point of the executive
+  conversation; the colour ramp adds the "is this pressure
+  growing" signal as a secondary visual cue.
+- **Multi-region capacity-planning views** — height pre-attentively
+  ranks the top 5 states even when their colour-ramp positions
+  saturate, supporting "we need a regional PoP in Virginia next"
+  discussions without forcing the reader to interpret a colour
+  legend.
+- **Per-jurisdiction infrastructure-health views** — the visual
+  cliff over CA / VA / TX serves as the executive talking point
+  for regional-cost-allocation reviews.
+
+**Typical sourcetype / index:** Same broad catalogue as the
+[choropleth companion §1](./choropleth.md#1-source-description)
+— `nix:cpu`, `Perfmon:CPU`, `cisco:dnac:device`,
+`cloudwatch:host`, `azure:monitor:metric`,
+`vmware:vsphere:host:performance`, etc. The TA app context
+required is `Splunk_SA_CIM`. The asset lookup is operator-
+maintained.
+
+## 2. SPL recipe
+
+Identical to the [choropleth companion §2](./choropleth.md#2-spl-recipe)
+— same triple-tstats over Performance.CPU / .Memory / .Storage,
+same per-host breach detection, same asset-lookup-derived lat/lng,
+same `geom geo_us_states` point-in-polygon, same per-state
+aggregation, same `value=signal_host_count` projection:
+
+```spl
+| tstats summariesonly=true latest(Performance.cpu_load_percent) AS cpu_load_percent FROM datamodel=Performance.CPU WHERE earliest=-15m latest=now BY Performance.dest
+| rename Performance.dest AS dest
+| append [
+    | tstats summariesonly=true latest(Performance.mem_used_percent) AS mem_used_percent FROM datamodel=Performance.Memory WHERE earliest=-15m latest=now BY Performance.dest
+    | rename Performance.dest AS dest
+  ]
+| append [
+    | tstats summariesonly=true latest(Performance.storage_used_percent) AS storage_used_percent FROM datamodel=Performance.Storage WHERE earliest=-15m latest=now BY Performance.dest
+    | rename Performance.dest AS dest
+  ]
+| stats latest(cpu_load_percent) AS cpu_load_percent, latest(mem_used_percent) AS mem_used_percent, latest(storage_used_percent) AS storage_used_percent BY dest
+| eval cpu_signal=if(cpu_load_percent>80, 1, 0)
+| eval mem_signal=if(mem_used_percent>80, 1, 0)
+| eval storage_signal=if(storage_used_percent>85, 1, 0)
+| eval signal_count=cpu_signal+mem_signal+storage_signal
+| eval is_signalling=if(signal_count >= 1, 1, 0)
+| lookup asset_lookup_by_str src AS dest OUTPUT lat AS lat, long AS lon
+| where isnotnull(lat) AND isnotnull(lon)
+| geom geo_us_states featureIdField="stusps" latitude=lat longitude=lon
+| where isnotnull(featureId)
+| stats sum(is_signalling) AS signal_host_count,
+    count AS total_host_count,
+    values(state_name) AS state_name
+  BY featureId
+| eval signal_ratio=round(signal_host_count / total_host_count, 2)
+| eval value=signal_host_count
+| rename featureId AS id
+| fields id, state_name, value, signal_host_count, total_host_count, signal_ratio
+| sort - value
+```
+
+See the
+[choropleth companion §2](./choropleth.md#2-spl-recipe) for the
+line-by-line walkthrough of every stage — the per-stage
+rationale is identical between the two recipes.
+
+For an **alternative height encoding**: swap
+`eval value=signal_host_count` to `eval value=ceil(signal_ratio
+* 100)` to get height = "% of fleet breaching" instead of height
+= "absolute breaching count". Visually, the RATIO variant
+prevents the larger-fleet states (CA, VA, TX) from always
+dominating — a small state where 80% of its fleet is breaching
+will tower over a large state with 20% breaching, even though
+the latter has more absolute breaching hosts. Same SPL change,
+same formatter config below.
+
+Every `|` starts its own physical line per the SPL pipe-per-line
+contract.
+
+## 3. Expected fields
+
+| field             | type    | example     |
+|-------------------|---------|-------------|
+| id                | string  | CA          |
+| state_name        | string  | California  |
+| value             | integer | 47          |
+| signal_host_count | integer | 47          |
+| total_host_count  | integer | 212         |
+| signal_ratio      | number  | 0.22        |
+
+Identical to the [choropleth companion §3](./choropleth.md#3-expected-fields)
+— same six fields, same role contract. `value` now drives BOTH
+the choropleth shading AND the extrusion height
+(`extrusionHeightField: "value"` in §4 below).
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinPreset": "us-states",
+  "enable3DExtrusion": "true",
+  "extrusionHeightField": "value",
+  "extrusionScale": 25000.0,
+  "enableChoropleth": "true",
+  "palette": "magma"
+}
+```
+
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/extrusion-3d/>._
+
+# === END: https://fenre.github.io/better_map/recipes/cim-performance/extrusion-3d/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/cim-performance/h3/ ===
 
@@ -9752,6 +9935,152 @@ _Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 wal
 
 # === END: https://fenre.github.io/better_map/recipes/meraki/supercluster/ ===
 
+# === BEGIN: https://fenre.github.io/better_map/recipes/meraki/vector-tile-join/ ===
+
+# Recipes / Meraki (Cisco vendor TA) — vector-tile join
+
+> Source: `docs/recipes/meraki/vector-tile-join.md`  
+> URL: <https://fenre.github.io/better_map/recipes/meraki/vector-tile-join/>
+
+# Cisco Meraki (devices) — vector-tile join (world-countries PMTiles)
+
+Aggregate the Meraki device fleet by **country** (via `iplocation
+publicIp`) and render as a **flat-fill choropleth** over a
+customer-hosted **world-countries PMTiles tileset**. The
+**global-coverage executive view** for any multinational Meraki
+operator: "in how many countries do we have Meraki sites, where
+are our coverage gaps, where is the device-density highest?".
+
+The **5th vector-tile-join recipe in the matrix** — joining
+[cim-network-traffic/vector-tile-join](../cim-network-traffic/vector-tile-join.md),
+[thousandeyes/vector-tile-join](../thousandeyes/vector-tile-join.md),
+[csv-lookup-geo/vector-tile-join](../csv-lookup-geo/vector-tile-join.md),
+and [kvstore-latlon/vector-tile-join](../kvstore-latlon/vector-tile-join.md).
+This advances the vector-tile-join layer column from 4 cells to 5,
+and brings the meraki source row from 5 cells to 6 (markers, h3,
+heat, supercluster, extrusion-3d, plus vector-tile-join now). The
+recipe is the canonical "global Meraki footprint" panel for
+sales-engineering RFPs and CIO regional-coverage reviews.
+
+## 1. Source description
+
+Same **Cisco Meraki Add-on for Splunk** (`Splunk_TA_cisco_meraki`,
+Splunkbase ID 5580) source as all meraki companions — see
+[meraki/markers §1](./markers.md#1-source-description) for the
+TA install, modular-input catalogue, and the `meraki:devices`
+sourcetype contract.
+
+The relevant distinction for THIS recipe: instead of one marker
+per device (markers companion) or one hex per regional density
+bucket (h3 companion), the panel aggregates **per country** via
+`iplocation publicIp` on each device's NAT egress IP. The
+country-aggregated row set then joins against a customer-hosted
+world-countries PMTiles tileset to render as a polygon
+choropleth.
+
+**Why `publicIp` rather than `lat`/`lng`.** Meraki devices DO
+publish their dashboard-configured `lat`/`lng` (the
+[markers companion](./markers.md) uses these for per-device
+positioning), but Splunk has no bundled lat/lng → country
+geometry lookup (`geo_us_states` is bundled for state-level US
+work, but there is no bundled `geo_countries`). The MaxMind
+GeoLite2 lookup that ships with Splunk Enterprise (the
+`iplocation` command) is the zero-add-on path to country
+attribution: every device's `publicIp` (the WAN egress IP of
+the Meraki MX or upstream router) resolves to a Country string
+("United States", "Germany", "Japan") in one SPL stage.
+
+Two practical consequences of choosing `publicIp` as the geocoding
+key:
+
+1. **All devices behind one MX share its public IP**, so a 50-AP
+   building with one MX gateway aggregates as "50 devices in
+   <country-of-MX-egress>". This is the desired semantic for a
+   "global Meraki footprint" panel — one site = one cluster of
+   devices in one country.
+2. **Roaming or cloud-NATed devices may show in the country of
+   the cloud egress**, not the country of the physical install.
+   For tenants where this matters (e.g., AWS Direct Connect
+   tunnels routing all Meraki traffic through us-east-1), see
+   §6 Gotchas for the asset-lookup substitution pattern that
+   reads physical country from a Dashboard-mirrored CSV
+   instead.
+
+**Why vector-tile-join (world-countries) for Meraki.** Meraki is
+a **global** SD-WAN / wireless / IoT platform — its native value
+is fleet-of-fleets cloud-managed deployment across continents.
+The [meraki/markers companion](./markers.md) answers "where is
+every single device?" at building zoom; this recipe answers
+"in how many countries do we have a Meraki footprint, and which
+countries dominate?" at world zoom. Typical use cases:
+
+- **Sales-engineering RFP visuals** — "Acme runs Meraki in 36
+  countries across EMEA / APAC / LATAM".
+- **CIO regional-coverage reviews** — "Where are our Meraki
+  blind spots? Latin America is shaded grey, suggesting we
+  haven't expanded our SD-WAN reach into the region yet".
+- **Compliance jurisdictional views** — "Which countries does
+  our Meraki fleet operate in, for GDPR / data-sovereignty
+  reporting?".
+
+**Typical sourcetype / index:** `sourcetype="meraki:devices"`,
+`index=meraki` (TA defaults — see the
+[markers companion §1](./markers.md#1-source-description) for
+the broader catalogue and the Meraki API-polling cadence).
+
+## 2. SPL recipe
+
+```spl
+index=meraki sourcetype="meraki:devices" earliest=-1h latest=now
+| dedup serial sortby - _time
+| where isnotnull(publicIp) AND publicIp != ""
+| iplocation publicIp
+| where isnotnull(Country) AND Country != ""
+| eval is_online=if(status="online", 1, 0)
+| stats count AS device_count,
+    dc(networkName) AS network_count,
+    sum(is_online) AS online_count
+  BY Country
+| lookup iso_country_codes country_name AS Country OUTPUT iso_a3 AS id
+| where isnotnull(id) AND id != ""
+| eval value=device_count
+| rename Country AS country_name
+| fields id, country_name, value, device_count, network_count, online_count
+| sort - value
+```
+
+## 3. Expected fields
+
+| field         | type    | example        |
+|---------------|---------|----------------|
+| id            | string  | USA            |
+| country_name  | string  | United States  |
+| value         | integer | 847            |
+| device_count  | integer | 847            |
+| network_count | integer | 62             |
+| online_count  | integer | 812            |
+
+All six fields appear in `expected_fields` in the frontmatter and
+are cross-checked by `scripts/check-recipe-schema.py`. `value`
+drives the choropleth shading; the other four flow through as
+feature properties on the joined polygon for popups.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinUrl": "https://cdn.example.com/tilesets/world-countries.pmtiles",
+  "featureJoinPromoteId": "iso_a3",
+  "featureJoinSourceLayer": "countries",
+  "enableChoropleth": "true",
+  "palette": "viridis"
+}
+```
+
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/meraki/vector-tile-join/>._
+
+# === END: https://fenre.github.io/better_map/recipes/meraki/vector-tile-join/ ===
+
 # === BEGIN: https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/h3/ ===
 
 # Recipes / NetFlow / sFlow / IPFIX — H3 hexbin
@@ -10897,6 +11226,185 @@ are NOT visible at the cluster level.
 _Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/ot-datastreamer/supercluster/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/ot-datastreamer/vector-tile-join/ ===
+
+# Recipes / OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — vector-tile join
+
+> Source: `docs/recipes/ot-datastreamer/vector-tile-join.md`  
+> URL: <https://fenre.github.io/better_map/recipes/ot-datastreamer/vector-tile-join/>
+
+# OT Datastreamer / Edge Hub — vector-tile join (world-countries PMTiles)
+
+Aggregate the Splunk Edge Hub fleet by **country** (via the
+customer-owned hub asset register) and render as a **flat-fill
+choropleth** over a customer-hosted **world-countries PMTiles
+tileset**. The **global-coverage executive view** for any
+multinational OT operator: "in how many countries do we have
+plants instrumented with Edge Hubs, where are our blind spots,
+which countries dominate our OT footprint?".
+
+The **6th vector-tile-join recipe in the matrix** — joining
+[meraki/vector-tile-join](../meraki/vector-tile-join.md),
+[thousandeyes/vector-tile-join](../thousandeyes/vector-tile-join.md),
+[cim-network-traffic/vector-tile-join](../cim-network-traffic/vector-tile-join.md),
+[csv-lookup-geo/vector-tile-join](../csv-lookup-geo/vector-tile-join.md),
+and [kvstore-latlon/vector-tile-join](../kvstore-latlon/vector-tile-join.md).
+This advances the vector-tile-join layer column from 5 cells to 6,
+and brings the ot-datastreamer source row from 5 cells to 6
+(markers, h3, heat, supercluster, paths, plus vector-tile-join
+now). The recipe is the canonical "global OT footprint" panel
+for plant-operations executive summaries and OT-zone
+compliance / jurisdictional reviews.
+
+> **OT-safety boundary.** This recipe operates entirely on
+> Edge-Hub-emitted metadata and the customer-owned hub asset
+> register. It performs ZERO active probes against PLCs, HMIs,
+> SIS logic-solvers, or any Level-0/1/2 asset (per
+> [`/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc)
+> Rules 1, 2, 4). The country geocoding comes from the
+> read-only asset register, not from network attribution of
+> control-zone traffic (Rule 5). The recipe is therefore safe
+> to deploy in any OT engagement that has a populated
+> `edge_hub_inventory.csv` lookup — no additional safety review
+> required beyond the existing Phase-1 sign-offs for the
+> Edge Hub deployment.
+
+## 1. Source description
+
+Same **Splunk Edge Hub** (`Splunk_TA_oti`) source as all
+ot-datastreamer companions — see
+[ot-datastreamer/markers §1](./markers.md#1-source-description)
+for the full deployment background, the Purdue-level boundary,
+the per-protocol indexes (`edge_hub_modbus`, `edge_hub_opcua`,
+`edge_hub_bacnet`, `edge_hub_mqtt`, `edge_hub_snmp`,
+`edge_hub_metadata`), and the passive-collection contract.
+
+The relevant distinction for THIS recipe: instead of one marker
+per hub (markers companion) or one hex per regional density
+bucket (h3 companion), the panel aggregates **per country** via
+the customer-owned `edge_hub_inventory.csv` asset register
+lookup. The country-aggregated row set then joins against a
+customer-hosted world-countries PMTiles tileset to render as a
+polygon choropleth.
+
+**Why the asset-register lookup, NOT `iplocation`.** The
+sibling [meraki/vector-tile-join](../meraki/vector-tile-join.md)
+and [thousandeyes/vector-tile-join](../thousandeyes/vector-tile-join.md)
+recipes use `iplocation` on the device's public IP for country
+attribution. For Edge Hubs, this is the WRONG path for three
+reasons:
+
+1. **Hubs typically egress through a single OT/IT DMZ NAT
+   gateway** per site (one MX or one customer-owned firewall
+   per plant). `iplocation hub_public_ip` would aggregate every
+   hub in the plant under the country of that single egress
+   gateway. For a multinational OT operator with one plant in
+   Mexico and one in Brazil whose NAT egress both terminate at
+   a US cloud VPN concentrator, `iplocation` reports "USA, USA"
+   — flatly wrong.
+
+2. **OT-safety Rule 5 mandates the SIS asset list is a
+   read-only mirror of the customer-owned asset register.** The
+   customer-maintained `edge_hub_inventory.csv` lookup IS that
+   mirror. Pulling country from any other source (MaxMind,
+   active probe, third-party geocoder) would bypass the
+   read-only-mirror contract and introduce a second source of
+   truth — which Rule 5 explicitly forbids.
+
+3. **Air-gap compatibility.** `iplocation` requires the bundled
+   MaxMind GeoLite2 lookup, which is present on standard Splunk
+   Enterprise but not on minimum-footprint air-gapped
+   deployments where the OT operator has stripped non-essential
+   add-ons. The asset-register-based lookup is air-gap-clean —
+   it ships inside the customer's own app package.
+
+**Typical sourcetype / index:** `sourcetype="edge_hub:metadata"`,
+`index=edge_hub_metadata` (the TA defaults — see the
+[markers companion §1](./markers.md#1-source-description) for
+the per-protocol index catalogue). The recipe reads ONLY the
+metadata index, which carries hub heartbeats / startup events.
+The per-protocol payload indexes (`edge_hub_modbus`,
+`edge_hub_opcua`, etc.) are NOT touched by this recipe — they
+carry the control-zone sensor data that Rule 1 mandates we
+treat as read-only-passive.
+
+**Asset register schema.** The recipe assumes an
+operator-maintained `edge_hub_inventory.csv` lookup with the
+following columns (the same shape used across the
+ot-datastreamer recipe family — see
+[markers companion §1](./markers.md#1-source-description)):
+
+| column          | example                  | required |
+|-----------------|--------------------------|----------|
+| hub_id          | `ACT-076-1823-0086`      | yes      |
+| hub_name        | `houston-plant-east-bldg-3` | yes  |
+| site_id         | `HOU-EAST`               | yes      |
+| site_name       | `Houston Plant — East`   | yes      |
+| country_iso3    | `USA`                    | yes      |
+| country_name    | `United States`          | yes      |
+| lat             | `29.7604`                | yes      |
+| lon             | `-95.3698`               | yes      |
+| zone_purdue_level | `L3`                   | yes      |
+
+The lookup is a **read-only mirror** of the customer's SIS
+asset register (per Rule 5). Updates flow customer → lookup,
+never the other way. Stale entries (decommissioned hubs)
+should be retained for historical-search purposes; the recipe
+filters out hubs that haven't emitted metadata in the last
+24 h to avoid surfacing ghost rows.
+
+## 2. SPL recipe
+
+```spl
+index=edge_hub_metadata sourcetype="edge_hub:metadata" earliest=-24h latest=now
+| dedup hub_id sortby - _time
+| eval last_seen_minutes_ago=round((now() - _time) / 60, 0)
+| eval is_active=if(last_seen_minutes_ago <= 60, 1, 0)
+| lookup edge_hub_inventory hub_id OUTPUT country_iso3, country_name, site_id
+| where isnotnull(country_iso3) AND country_iso3 != ""
+| stats count AS hub_count,
+    dc(site_id) AS site_count,
+    sum(is_active) AS active_hub_count,
+    values(country_name) AS country_name
+  BY country_iso3
+| eval value=hub_count
+| rename country_iso3 AS id
+| fields id, country_name, value, hub_count, site_count, active_hub_count
+| sort - value
+```
+
+## 3. Expected fields
+
+| field             | type    | example         |
+|-------------------|---------|-----------------|
+| id                | string  | USA             |
+| country_name      | string  | United States   |
+| value             | integer | 14              |
+| hub_count         | integer | 14              |
+| site_count        | integer | 8               |
+| active_hub_count  | integer | 13              |
+
+All six fields appear in `expected_fields` in the frontmatter and
+are cross-checked by `scripts/check-recipe-schema.py`. `value`
+drives the choropleth shading; the other four flow through as
+feature properties on the joined polygon for popups.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinUrl": "https://cdn.example.com/tilesets/world-countries.pmtiles",
+  "featureJoinPromoteId": "iso_a3",
+  "featureJoinSourceLayer": "countries",
+  "enableChoropleth": "true",
+  "palette": "viridis"
+}
+```
+
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/ot-datastreamer/vector-tile-join/>._
+
+# === END: https://fenre.github.io/better_map/recipes/ot-datastreamer/vector-tile-join/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/splunk-stream/extrusion-3d/ ===
 
@@ -14102,7 +14610,7 @@ The full per-integration matrix (status, app required, Splunk version min, endpo
 
 # Appendix B — Per-source recipe matrix
 
-> Source of truth: `docs/_machine/recipes/index.yaml` (87 recipe(s), emission order)
+> Source of truth: `docs/_machine/recipes/index.yaml` (90 recipe(s), emission order)
 
 Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answer 'which recipe matches this data source?' without fetching every recipe page. Recipes carry one of three statuses: `verified` (smoke-tested against a live Splunk tenant with proof in the YAML metadata), `unverified` (the recipe follows the contract but has not yet been smoke-tested), or `deferred` (the recipe is known to be incomplete pending upstream work). The expected-field contract for each recipe lives in §3 of the recipe page (kept verbatim in this file under the matching `# === BEGIN: …/recipes/<source>/<layer>/ ===` block); follow the Page link below to jump to it.
 
@@ -14131,6 +14639,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `cim-network-traffic--supercluster` | CIM Network Traffic → Supercluster | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-network-traffic/supercluster.md](https://fenre.github.io/better_map/recipes/cim-network-traffic/supercluster/) |
 | `cim-network-traffic--vector-tile-join` | CIM Network Traffic (data model) → Vector-tile join (customer PMTiles) | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-network-traffic/vector-tile-join.md](https://fenre.github.io/better_map/recipes/cim-network-traffic/vector-tile-join/) |
 | `cim-performance--choropleth` | CIM Performance (CPU / memory / facilities) → Choropleth | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/choropleth.md](https://fenre.github.io/better_map/recipes/cim-performance/choropleth/) |
+| `cim-performance--extrusion-3d` | CIM Performance (CPU / memory / facilities) → 3D extrusion | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/extrusion-3d.md](https://fenre.github.io/better_map/recipes/cim-performance/extrusion-3d/) |
 | `cim-performance--h3` | CIM Performance (CPU / memory / facilities) → H3 hexbin | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/h3.md](https://fenre.github.io/better_map/recipes/cim-performance/h3/) |
 | `cim-performance--heat` | CIM Performance (CPU / memory / facilities) → Heatmap | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/heat.md](https://fenre.github.io/better_map/recipes/cim-performance/heat/) |
 | `cim-performance--markers` | CIM Performance (CPU / memory / facilities) → Markers | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/markers.md](https://fenre.github.io/better_map/recipes/cim-performance/markers/) |
@@ -14172,6 +14681,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `meraki--heat` | Cisco Meraki (devices) → Heatmap | unverified | `Splunk_TA_cisco_meraki` | — | [docs/recipes/meraki/heat.md](https://fenre.github.io/better_map/recipes/meraki/heat/) |
 | `meraki--markers` | Cisco Meraki (devices) → Markers | unverified | `Splunk_TA_cisco_meraki` | — | [docs/recipes/meraki/markers.md](https://fenre.github.io/better_map/recipes/meraki/markers/) |
 | `meraki--supercluster` | Cisco Meraki (devices) → Supercluster | unverified | `Splunk_TA_cisco_meraki` | — | [docs/recipes/meraki/supercluster.md](https://fenre.github.io/better_map/recipes/meraki/supercluster/) |
+| `meraki--vector-tile-join` | Cisco Meraki (devices) → Vector-tile join (customer PMTiles) | unverified | `Splunk_TA_cisco_meraki`, `builtin:iplocation` | — | [docs/recipes/meraki/vector-tile-join.md](https://fenre.github.io/better_map/recipes/meraki/vector-tile-join/) |
 | `netflow-sflow-ipfix--h3` | NetFlow / sFlow / IPFIX (flow records) → H3 hexbin | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/h3.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/h3/) |
 | `netflow-sflow-ipfix--heat` | NetFlow / sFlow / IPFIX (flow records) → Heatmap | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/heat.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/heat/) |
 | `netflow-sflow-ipfix--markers` | NetFlow / sFlow / IPFIX (flow records) → Markers | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/markers.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/markers/) |
@@ -14182,6 +14692,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `ot-datastreamer--markers` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Markers | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/markers.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/markers/) |
 | `ot-datastreamer--paths` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Paths | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/paths.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/paths/) |
 | `ot-datastreamer--supercluster` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Supercluster | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/supercluster.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/supercluster/) |
+| `ot-datastreamer--vector-tile-join` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Vector-tile join (customer PMTiles) | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/vector-tile-join.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/vector-tile-join/) |
 | `splunk-stream--extrusion-3d` | Splunk Stream (wire data) → 3D extrusion | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/extrusion-3d.md](https://fenre.github.io/better_map/recipes/splunk-stream/extrusion-3d/) |
 | `splunk-stream--h3` | Splunk Stream (wire data) → H3 hexbin | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/h3.md](https://fenre.github.io/better_map/recipes/splunk-stream/h3/) |
 | `splunk-stream--heat` | Splunk Stream (wire data) → Heatmap | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/heat.md](https://fenre.github.io/better_map/recipes/splunk-stream/heat/) |

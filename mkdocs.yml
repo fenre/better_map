@@ -237,6 +237,7 @@ nav:
       - 'CIM Network Traffic — paths': recipes/cim-network-traffic/paths.md
       - 'CIM Network Traffic — supercluster': recipes/cim-network-traffic/supercluster.md
       - 'CIM Network Traffic — vector-tile join': recipes/cim-network-traffic/vector-tile-join.md
+      - 'CIM Performance (CPU / memory / facilities) — 3D extrusion': recipes/cim-performance/extrusion-3d.md
       - 'CIM Performance (CPU / memory / facilities) — H3 hexbin': recipes/cim-performance/h3.md
       - 'CIM Performance (CPU / memory / facilities) — choropleth': recipes/cim-performance/choropleth.md
       - 'CIM Performance (CPU / memory / facilities) — heatmap': recipes/cim-performance/heat.md
@@ -284,6 +285,7 @@ nav:
       - 'Meraki (Cisco vendor TA) — heatmap': recipes/meraki/heat.md
       - 'Meraki (Cisco vendor TA) — markers': recipes/meraki/markers.md
       - 'Meraki (Cisco vendor TA) — supercluster': recipes/meraki/supercluster.md
+      - 'Meraki (Cisco vendor TA) — vector-tile join': recipes/meraki/vector-tile-join.md
       - 'NetFlow / sFlow / IPFIX — H3 hexbin': recipes/netflow-sflow-ipfix/h3.md
       - 'NetFlow / sFlow / IPFIX — heatmap': recipes/netflow-sflow-ipfix/heat.md
       - 'NetFlow / sFlow / IPFIX — markers': recipes/netflow-sflow-ipfix/markers.md
@@ -294,6 +296,7 @@ nav:
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — markers': recipes/ot-datastreamer/markers.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — paths': recipes/ot-datastreamer/paths.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — supercluster': recipes/ot-datastreamer/supercluster.md
+      - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — vector-tile join': recipes/ot-datastreamer/vector-tile-join.md
       - 'Splunk Stream (wire data) — 3D extrusion': recipes/splunk-stream/extrusion-3d.md
       - 'Splunk Stream (wire data) — H3 hexbin': recipes/splunk-stream/h3.md
       - 'Splunk Stream (wire data) — heatmap': recipes/splunk-stream/heat.md
