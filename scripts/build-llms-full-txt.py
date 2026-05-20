@@ -121,7 +121,18 @@ the answer to "what ships in v1.7 / v1.8 / v2.0?" — the level of
 detail needed for cross-references inside recipes / docs — and no
 recipe or other corpus content cross-links work-item IDs (A1, A2,
 B1, …); the section is replaced with a one-line pointer to the live
-ROADMAP anchor, see ``strip_roadmap_detailed_workitems`` below):
+ROADMAP anchor, see ``strip_roadmap_detailed_workitems`` below —
+and in wave 34 by dropping the entire ``## Gate matrix`` section
+from ``CI-GATES.md`` (3 workflow subsections — ``ci.yml`` /
+``release.yml`` / ``docs.yml`` — cataloguing 50+ individual CI gate
+rows with name / what-it-blocks / when-it-runs / pass-condition
+columns; ~8.9k chars ≈ ~2.2k rendered tokens = ~70% of the
+CI-GATES page weight in the corpus); the TL;DR + posture + known
+gaps + see-also sections that precede the matrix are the LLM-useful
+parts of the gate inventory — "what's enforced, why, and what the
+posture is" — and the per-gate row catalogue is recoverable via the
+live page pointer the trim appends; see ``strip_ci_gates_matrix``
+below):
 
   * Per-page warning at **50,000 estimated tokens** — one page should
     not dominate the corpus.
@@ -441,6 +452,37 @@ _ROADMAP_HISTORICAL_SECTION = re.compile(
 _ROADMAP_DETAILED_WORKITEMS_SECTION = re.compile(
     r"^## 3\.\s+Detailed work-items[^\n]*\n"
     r"(?:(?!^## )(?!^---$).*\n)*",
+    re.MULTILINE,
+)
+
+# CI-GATES §"Gate matrix" trim contract — see strip_ci_gates_matrix() and
+# the E5 Phase 2 wave 34 ROADMAP block. ``docs/CI-GATES.md``'s
+# ``## Gate matrix`` H2 section is the heaviest single section in any
+# non-recipe page of the corpus — three ``### Workflow: ...`` subsections
+# (``ci.yml``, ``release.yml``, ``docs.yml``) cataloguing 50+ individual
+# CI gate rows in markdown tables (each row: gate #, name, source of
+# truth, what it catches, local-repro command). Post-wave-33 the section
+# carries ~2.2k rendered tokens (~52% of the CI-GATES page's weight)
+# and is the next single largest trim lever available.
+#
+# Safety rationale: the page's ``## TL;DR`` (kept verbatim, ~285 tokens)
+# already names every workflow and summarises the gating philosophy
+# (every PR runs ci.yml, every tag push runs release.yml, etc.). The
+# ``## Defense-in-depth posture`` section (kept verbatim, ~285 tokens)
+# explains the layered-redundancy design. An LLM consumer asking
+# "what CI gates does Better Map enforce?" gets a complete first-order
+# answer from those two surviving sections; the per-gate ROW DETAIL
+# (#NN, name, source command) is operational reference content that
+# can be fetched on demand from the live MkDocs page via the pointer.
+# The on-disk ``docs/CI-GATES.md`` is unchanged — the trim runs only
+# in the in-memory body before it lands in llms-full.txt.
+#
+# The regex matches the H2 heading line and everything up to (but not
+# including) the next H2 heading. ``Defense-in-depth posture`` is the
+# next H2 in the canonical source so the trim is bounded.
+_CI_GATES_MATRIX_SECTION = re.compile(
+    r"^## Gate matrix[^\n]*\n"
+    r"(?:(?!^## ).*\n)*",
     re.MULTILINE,
 )
 # Match a top-level bullet starting with `* **Label:**`; continuation
@@ -852,6 +894,19 @@ def is_changelog_page(relpath: str) -> bool:
     return relpath == "changelog.md"
 
 
+def is_ci_gates_page(relpath: str) -> bool:
+    """True when `docs/<relpath>` is the CI gate inventory page.
+
+    Only the top-level `docs/CI-GATES.md` qualifies — this is the G2
+    runbook page that documents every CI gate enforced by the
+    `ci.yml` / `release.yml` / `docs.yml` workflows. The trim
+    (`strip_ci_gates_matrix`) drops the heavy `## Gate matrix`
+    subsection from corpus while keeping the page's TL;DR + posture
+    + known-gaps + see-also context intact.
+    """
+    return relpath == "CI-GATES.md"
+
+
 def strip_changelog_old_versions(
     body: str, page_url: str, keep: int = _CHANGELOG_KEEP_VERSIONS
 ) -> tuple[str, int]:
@@ -1183,6 +1238,40 @@ def strip_roadmap_detailed_workitems(
     return cleaned, count > 0
 
 
+def strip_ci_gates_matrix(
+    body: str, page_url: str
+) -> tuple[str, bool]:
+    """Drop the entire ``## Gate matrix`` section from CI-GATES.md.
+
+    See the module-level ``_CI_GATES_MATRIX_SECTION`` contract for the
+    full rationale. Returns ``(cleaned_body, dropped)`` where
+    ``dropped`` is ``True`` when the section was found and replaced
+    with a pointer, ``False`` when the page does not contain the
+    section (defensive — the helper is a no-op on already-trimmed
+    CI-GATES bodies and on synthetic test fixtures).
+
+    The section is replaced with a one-line pointer back to the live
+    CI-GATES page so an LLM consumer following the corpus's per-page
+    structure still sees a breadcrumb to the full gate row catalogue.
+    Heading and anchor reference match the MkDocs-generated slug
+    (``#gate-matrix``) so the pointer is click-through-valid.
+    """
+    pointer = (
+        "## Gate matrix\n\n"
+        "_§Gate matrix (3 workflow subsections — `ci.yml`, "
+        "`release.yml`, `docs.yml` — cataloguing 50+ individual CI "
+        "gate rows) omitted from llms-full.txt for token-budget "
+        f"headroom; read the full per-gate matrix at "
+        f"<{page_url}#gate-matrix>._\n\n"
+    )
+
+    def _replace(_match: re.Match[str]) -> str:
+        return pointer
+
+    cleaned, count = _CI_GATES_MATRIX_SECTION.subn(_replace, body)
+    return cleaned, count > 0
+
+
 def strip_roadmap_workitem_bodies(
     body: str, page_url: str
 ) -> tuple[str, int]:
@@ -1436,6 +1525,8 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
             expanded, _versions = strip_changelog_old_versions(
                 expanded, url
             )
+        if is_ci_gates_page(relpath):
+            expanded, _matrix = strip_ci_gates_matrix(expanded, url)
         if is_formatter_page(relpath):
             expanded, _trimmed = strip_formatter_appendix_a(expanded, url)
         if is_recipes_index_page(relpath):

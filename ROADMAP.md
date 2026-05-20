@@ -1,5 +1,65 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-29): E5 Phase 2 wave 34a token-trim
+> SHIPPED — drop the entire `## Gate matrix` section from
+> `docs/CI-GATES.md` in the llms-full.txt corpus pipeline; reclaimed
+> 2,149 tokens (168,458 → 166,309, 6,542 → 8,691 WARN headroom).**
+> Wave 33b closed with 6,542 WARN headroom — below the 7,000-token
+> threshold the autonomous cadence uses to decide "trim first" —
+> mandating a token-trim PR before any new recipes ship. The wave-33
+> status block flagged three remaining trim levers in priority order:
+> per-recipe §6 Gotchas compaction (est. 3-4k reclaim),
+> reference-pages auto-managed region re-compaction (est. 1-2k), and
+> appendix-c-developer-tooling snippet compaction (est. 1-2k); wave
+> 34 profiled the as-shipped corpus and pivoted to a higher-confidence
+> lever after discovering that §6 Gotchas in recipe bodies were
+> ALREADY stripped by `strip_recipe_advisory()` (the consolidated
+> trailing pointer covers §5 screenshots, §6 gotchas, AND `##
+> Verification status` per the wave-32 footer-consolidation),
+> leaving CI-GATES.md's `## Gate matrix` section as the largest
+> single trimmable non-recipe block remaining (~8.9k chars ≈ 2.2k
+> tokens = ~52% of the CI-GATES page weight in the corpus, with the
+> three workflow subsections — `ci.yml`, `release.yml`, `docs.yml`
+> — cataloguing 50+ individual CI gate rows in markdown tables).
+> Safety rationale: the page's `## TL;DR` (kept verbatim, ~285
+> tokens) already names every workflow and summarises the gating
+> philosophy ("every PR runs ci.yml, every tag push runs
+> release.yml"), and `## Defense-in-depth posture` (kept verbatim,
+> ~285 tokens) explains the layered-redundancy design; an LLM
+> consumer asking "what CI gates does Better Map enforce?" gets a
+> complete first-order answer from those two surviving sections,
+> with the per-gate ROW DETAIL (#NN, name, source command,
+> local-repro) recoverable on demand via the live MkDocs pointer the
+> trim appends. Implementation: new `_CI_GATES_MATRIX_SECTION` regex
+> matches the H2 heading line through (but not including) the next
+> H2 (`## Defense-in-depth posture`); new `strip_ci_gates_matrix(
+> body, page_url)` helper replaces the matched block with a
+> one-line pointer ("§Gate matrix (3 workflow subsections …)
+> omitted from llms-full.txt for token-budget headroom; read the
+> full per-gate matrix at <…#gate-matrix>"); new `is_ci_gates_page()`
+> predicate wires the strip into the page pipeline alongside
+> `strip_changelog_old_versions` and `strip_roadmap_*` siblings —
+> the contract mirrors the wave-33a `strip_roadmap_detailed_
+> workitems` pattern exactly. The on-disk `docs/CI-GATES.md` is
+> UNCHANGED — the trim runs only in the in-memory body before it
+> lands in `llms-full.txt`, so the live MkDocs page (and the strict
+> build) still emit the full per-gate matrix. With 8,691 WARN
+> headroom restored, wave 34b can resume the standard recipe
+> cadence: profile per-layer-column and per-source-row cell counts
+> from `docs/_machine/recipes/index.yaml` (current sparse cells:
+> `vector-tile-join` 6/15 sources, `extrusion-3d` 7/15 sources,
+> `choropleth` 7/15 sources) and pick a 3-recipe diversification
+> slate. Remaining trim levers if wave 34b crosses the headroom
+> threshold again: (1) per-recipe §6 Gotchas compaction — RE-EVALUATE
+> whether `strip_recipe_advisory()` already covers it before
+> opening a new PR; (2) reference-pages auto-managed regions
+> re-compaction (last trimmed in wave 16); (3) `appendix-c-developer-
+> tooling` snippet compaction. All gates green locally
+> (`build-llms-full-txt.py --check`, `build-llms-txt.py --check`,
+> `check-recipe-schema.py`, `build-reference-pages.py --check`,
+> `check-manifest.py`, `check-formatter-schema.py`,
+> `check-formatter-coverage.py`, `mkdocs build --strict`).
+
 > **Status (v1.7-prep, 2026-05-28): E5 Phase 2 wave 33 recipes
 > SHIPPED — 3 new recipes (`meraki/vector-tile-join`,
 > `ot-datastreamer/vector-tile-join`,
