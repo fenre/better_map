@@ -526,6 +526,84 @@ export class MapBuilder {
     }
 
     /**
+     * v1.7 — Tier 1 #1: drive selected-feature emphasis from a token.
+     *
+     * Calls markers.applySelection() which updates the existing
+     * LAYER_SELECTED_HALO / LAYER_SELECTED_DOT filters in place AND
+     * flies the camera to the matching feature's coordinates when
+     * flyToOnChange is on.
+     *
+     * @param {object} pointsFC — the FeatureCollection just rendered
+     *     (so we can look up the matching feature's coordinates).
+     * @param {object} selOpts — { field, value, sizeMultiplier,
+     *     haloColor, haloWidth, flyToOnChange, flyToZoom }
+     */
+    applyMarkerSelection(pointsFC, selOpts) {
+        if (!this._map || this._destroyed) return;
+        const self = this;
+        this._afterStyle(function () {
+            if (!self._map || self._destroyed) return;
+            try {
+                markersLayer.applySelection(self._map, pointsFC, selOpts || {});
+            } catch (err) {
+                if (typeof console !== 'undefined' && console.warn) {
+                    console.warn('[better_map] applyMarkerSelection failed:', err);
+                }
+            }
+        });
+    }
+
+    /**
+     * v1.7 — Tier 1 #2: drive the camera from external tokens.
+     *
+     * Delegates to crossPanel.applyRemoteCamera() which compares the
+     * requested view against the current camera and bails when the
+     * delta is below a threshold — so calling this on every
+     * updateView pass with unchanged tokens is cheap.
+     *
+     * @param {object} cam — { lng, lat, zoom }
+     */
+    applyRemoteCamera(cam) {
+        if (!this._map || this._destroyed) return;
+        if (!cam || !isFinite(cam.lng) || !isFinite(cam.lat)) return;
+        const self = this;
+        this._afterStyle(function () {
+            if (!self._map || self._destroyed) return;
+            if (self._crossPanel && typeof self._crossPanel.applyRemoteCamera === 'function') {
+                try {
+                    self._crossPanel.applyRemoteCamera(cam);
+                } catch (err) {
+                    if (typeof console !== 'undefined' && console.warn) {
+                        console.warn('[better_map] applyRemoteCamera failed:', err);
+                    }
+                }
+                return;
+            }
+            // Fallback path: no cross-panel module attached (cross-panel
+            // is disabled). Drive the camera directly. Still throttle
+            // by comparing against current centre.
+            const cur = self._map.getCenter();
+            const dLng = Math.abs(cur.lng - cam.lng);
+            const dLat = Math.abs(cur.lat - cam.lat);
+            const curZoom = self._map.getZoom();
+            const dZoom = isFinite(cam.zoom) ? Math.abs(curZoom - cam.zoom) : 0;
+            // ~10m of skew at the equator is the threshold below which
+            // jumping the camera is a flicker, not a navigation.
+            if (dLng < 1e-4 && dLat < 1e-4 && dZoom < 0.05) return;
+            try {
+                self._map.jumpTo({
+                    center: [cam.lng, cam.lat],
+                    zoom: isFinite(cam.zoom) ? cam.zoom : curZoom
+                });
+            } catch (err) {
+                if (typeof console !== 'undefined' && console.warn) {
+                    console.warn('[better_map] direct camera jump failed:', err);
+                }
+            }
+        });
+    }
+
+    /**
      * Apply a comet trail to the time-sensitive layers (markers, paths,
      * unclustered cluster points). Pass null/undefined `now` to remove.
      */

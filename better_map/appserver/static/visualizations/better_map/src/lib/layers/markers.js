@@ -45,6 +45,18 @@ export const LAYER_PULSE_HEARTBEAT = 'better_map_markers_pulse_heartbeat';
 export const LAYER_BG = 'better_map_markers_bg';
 export const LAYER_DOT = 'better_map_markers_dot';
 export const LAYER_LABEL = 'better_map_markers_label';
+// v1.7 — selected-feature emphasis (Tier 1 #1).
+//
+// When a dashboard binds `selectedFeatureValue` to a token, every marker
+// whose `selectedFeatureField` matches the value gets bumped to two extra
+// layers drawn ABOVE the regular dot:
+//   - LAYER_SELECTED_HALO  — coloured ring around the selected marker
+//   - LAYER_SELECTED_DOT   — scaled-up copy of the marker (sizeMultiplier)
+// The rest of the data stays visible so the operator keeps spatial
+// context; emphasis is purely additive. The dashboard author no longer
+// has to filter the data source down to one row.
+export const LAYER_SELECTED_HALO = 'better_map_markers_selected_halo';
+export const LAYER_SELECTED_DOT = 'better_map_markers_selected_dot';
 
 const DEFAULT_COLOR = SET3[0];
 const DEFAULT_RADIUS = 6;
@@ -140,6 +152,26 @@ const pulseState = {
  * mount/update API which is also module-global.
  */
 let _defaults = null;
+
+/*
+ * v1.7 — last applied selection state (Tier 1 #1). The selection layers
+ * filter on a literal value, so update() needs to re-read the most
+ * recent value AND the field name when it re-applies setFilter. Kept
+ * at module scope so the dispatcher's option bag can be missing one
+ * cycle (e.g. layer dispatch decided to use clusters) without the
+ * selection state being lost.
+ */
+const selectionState = {
+    field: 'id',
+    value: null,            // null means "no current selection"
+    sizeMultiplier: 2.5,
+    haloColor: '#22D3EE',
+    haloWidth: 4,
+    flyToOnChange: true,
+    flyToZoom: 8,
+    // Bookkeeping so we don't fly to the same id twice in a row.
+    lastFlownValue: null
+};
 
 export function mount(map, opts) {
     const options = opts || {};
@@ -271,29 +303,223 @@ export function mount(map, opts) {
         stopPulse();
     }
 
-    if (options.showLabels && !map.getLayer(LAYER_LABEL)) {
+    // v1.7 — labels (Tier 1 #3). Always reconcile the label layer on
+    // every mount so toggling `showLabels` from the formatter takes
+    // effect without unmounting / remounting markers.
+    reconcileLabelLayer(map, options, baseRadiusLiteral);
+
+    // v1.7 — selected-feature emphasis (Tier 1 #1). Always reconcile so
+    // formatter changes (different colour / size multiplier / wider halo)
+    // and selection changes (different token value) both take effect.
+    reconcileSelectionLayers(map, options, baseRadiusLiteral);
+}
+
+/*
+ * v1.7 — Label layer reconciliation (Tier 1 #3).
+ *
+ * Reads the configurable label options off `options` and applies them
+ * to LAYER_LABEL. Idempotent: if `showLabels` is false we hide the
+ * layer (or skip mounting), otherwise we mount or update.
+ *
+ * Why min-zoom matters: at world zoom (zoom < 3) labels collide badly
+ * and produce a wall of overlapping text. The default of 3 means
+ * labels only appear once the user has zoomed to a continent-or-closer
+ * level — which is the level at which a 5-metre-away NOC operator can
+ * actually read them.
+ */
+function reconcileLabelLayer(map, options, baseRadius) {
+    const show = !!options.showLabels;
+    const exists = !!map.getLayer(LAYER_LABEL);
+    if (!show) {
+        if (exists) {
+            try { map.setLayoutProperty(LAYER_LABEL, 'visibility', 'none'); }
+            catch (_e) { /* style transition; bail */ }
+        }
+        return;
+    }
+    const minZoom = isFinite(options.labelMinZoom) ? Number(options.labelMinZoom) : 3;
+    const offsetY = isFinite(options.labelOffsetY) ? Number(options.labelOffsetY) : 1.1;
+    const fieldName = typeof options.labelField === 'string' && options.labelField
+        ? options.labelField
+        : null;
+    // text-field expression: prefer the explicit user-chosen field, then
+    // the historic three-field coalesce so old dashboards keep working.
+    const textField = fieldName
+        ? ['coalesce', ['get', fieldName], ['get', 'label'], ['get', 'name'], ['get', 'tooltip']]
+        : ['coalesce', ['get', 'label'], ['get', 'name'], ['get', 'tooltip']];
+    const color = options.labelColor || '#e6eef9';
+    // Accept either `labelHaloColor` (new contract) or `labelHalo`
+    // (back-compat with v1.3.25-era callers that pre-shipped the
+    // partial label plumbing).
+    const haloColor = options.labelHaloColor || options.labelHalo || '#0b1a2d';
+    if (!exists) {
         // v1.3.25 — `text-font` MUST be declared explicitly. See paths.js
         // for the full root-cause explanation; same trap applies here.
-        map.addLayer({
-            id: LAYER_LABEL,
-            type: 'symbol',
-            source: SOURCE_ID,
-            layout: {
-                'text-field': ['coalesce', ['get', 'label'], ['get', 'name'], ['get', 'tooltip']],
-                'text-font': ['Noto Sans Regular'],
-                'text-size': 11,
-                'text-offset': [0, 1.1],
-                'text-anchor': 'top',
-                'text-allow-overlap': false,
-                'text-ignore-placement': false
-            },
-            paint: {
-                'text-color': options.labelColor || '#e6eef9',
-                'text-halo-color': options.labelHalo || '#0b1a2d',
-                'text-halo-width': 1.2
-            }
-        });
+        try {
+            map.addLayer({
+                id: LAYER_LABEL,
+                type: 'symbol',
+                source: SOURCE_ID,
+                minzoom: minZoom,
+                layout: {
+                    'text-field': textField,
+                    'text-font': ['Noto Sans Regular'],
+                    'text-size': 11,
+                    'text-offset': [0, offsetY],
+                    'text-anchor': 'top',
+                    'text-allow-overlap': false,
+                    'text-ignore-placement': false
+                },
+                paint: {
+                    'text-color': color,
+                    'text-halo-color': haloColor,
+                    'text-halo-width': 1.2
+                }
+            });
+        } catch (_e) { /* swallow during style transition */ }
+        return;
     }
+    // Layer already exists — apply per-property updates so the formatter
+    // can change values at runtime without a full re-mount.
+    try {
+        map.setLayerZoomRange(LAYER_LABEL, minZoom, 24);
+        map.setLayoutProperty(LAYER_LABEL, 'visibility', 'visible');
+        map.setLayoutProperty(LAYER_LABEL, 'text-field', textField);
+        map.setLayoutProperty(LAYER_LABEL, 'text-offset', [0, offsetY]);
+        map.setPaintProperty(LAYER_LABEL, 'text-color', color);
+        map.setPaintProperty(LAYER_LABEL, 'text-halo-color', haloColor);
+    } catch (_e) { /* swallow during style transition */ }
+    // Avoid unused-parameter lint warning while keeping the door open
+    // for future zoom-aware sizing tied to baseRadius.
+    void baseRadius;
+}
+
+/*
+ * v1.7 — Selected-feature emphasis reconciliation (Tier 1 #1).
+ *
+ * Mounts two layers ABOVE LAYER_DOT:
+ *   - LAYER_SELECTED_HALO — wider, lower-opacity ring
+ *   - LAYER_SELECTED_DOT  — scaled-up copy of the marker dot
+ *
+ * Both layers filter on `selectionState.field` equal to
+ * `selectionState.value`. When `value` is null we set the filter to
+ * `['==', 'unset_field', 'unset_value']` (never matches) so both layers
+ * stay mounted but draw nothing — no churn on selection-on/off cycles.
+ *
+ * Reading the per-feature `color` keeps the emphasis in sync with the
+ * marker palette: a red critical marker gets a red halo on selection.
+ * The halo colour can still be overridden via `selectedHaloColor` for
+ * dashboards that want a fixed accent.
+ */
+function reconcileSelectionLayers(map, options, baseRadius) {
+    // Pull selection bookkeeping from options when provided; otherwise
+    // keep the previous values so a stray update() call without the
+    // selection bag doesn't accidentally clear the selection.
+    if (options.selectedFeatureField) {
+        selectionState.field = String(options.selectedFeatureField);
+    }
+    if (options.selectedFeatureValue !== undefined) {
+        selectionState.value = options.selectedFeatureValue;
+    }
+    if (isFinite(options.selectedSizeMultiplier) && Number(options.selectedSizeMultiplier) > 0) {
+        selectionState.sizeMultiplier = Number(options.selectedSizeMultiplier);
+    }
+    if (typeof options.selectedHaloColor === 'string' && options.selectedHaloColor) {
+        selectionState.haloColor = options.selectedHaloColor;
+    }
+    if (isFinite(options.selectedHaloWidth)) {
+        selectionState.haloWidth = Math.max(0, Number(options.selectedHaloWidth));
+    }
+    if (options.selectedFlyToOnChange !== undefined) {
+        selectionState.flyToOnChange = !!options.selectedFlyToOnChange;
+    }
+    if (isFinite(options.selectedFlyToZoom)) {
+        selectionState.flyToZoom = Number(options.selectedFlyToZoom);
+    }
+
+    const radius = baseRadius || DEFAULT_RADIUS;
+    const sizeMul = selectionState.sizeMultiplier;
+    const haloRadius = radius * sizeMul + selectionState.haloWidth + 2;
+    const filter = buildSelectionFilter();
+
+    // Halo layer (drawn first so the scaled dot sits ON TOP of the halo)
+    if (!map.getLayer(LAYER_SELECTED_HALO)) {
+        try {
+            map.addLayer({
+                id: LAYER_SELECTED_HALO,
+                type: 'circle',
+                source: SOURCE_ID,
+                filter: filter,
+                paint: {
+                    'circle-radius': haloRadius,
+                    'circle-color': selectionState.haloColor,
+                    'circle-opacity': 0.18,
+                    'circle-blur': 0.5,
+                    'circle-stroke-color': selectionState.haloColor,
+                    'circle-stroke-width': selectionState.haloWidth,
+                    'circle-stroke-opacity': 0.85
+                }
+            });
+        } catch (_e) { /* swallow during style transition */ }
+    } else {
+        try {
+            map.setFilter(LAYER_SELECTED_HALO, filter);
+            map.setPaintProperty(LAYER_SELECTED_HALO, 'circle-radius', haloRadius);
+            map.setPaintProperty(LAYER_SELECTED_HALO, 'circle-color', selectionState.haloColor);
+            map.setPaintProperty(LAYER_SELECTED_HALO, 'circle-stroke-color', selectionState.haloColor);
+            map.setPaintProperty(LAYER_SELECTED_HALO, 'circle-stroke-width', selectionState.haloWidth);
+        } catch (_e) { /* swallow */ }
+    }
+
+    // Scaled-up dot layer. Inherits the per-feature colour so the
+    // emphasis layer matches the underlying marker's palette.
+    const scaledRadius = radius * sizeMul;
+    const color = expressionOr(['get', 'color'], options.color || DEFAULT_COLOR);
+    if (!map.getLayer(LAYER_SELECTED_DOT)) {
+        try {
+            map.addLayer({
+                id: LAYER_SELECTED_DOT,
+                type: 'circle',
+                source: SOURCE_ID,
+                filter: filter,
+                paint: {
+                    'circle-radius': scaledRadius,
+                    'circle-color': color,
+                    'circle-opacity': 1.0,
+                    'circle-stroke-width': 2,
+                    'circle-stroke-color': options.outline || '#0b1a2d'
+                }
+            });
+        } catch (_e) { /* swallow */ }
+    } else {
+        try {
+            map.setFilter(LAYER_SELECTED_DOT, filter);
+            map.setPaintProperty(LAYER_SELECTED_DOT, 'circle-radius', scaledRadius);
+            map.setPaintProperty(LAYER_SELECTED_DOT, 'circle-color', color);
+            map.setPaintProperty(LAYER_SELECTED_DOT, 'circle-stroke-color', options.outline || '#0b1a2d');
+        } catch (_e) { /* swallow */ }
+    }
+}
+
+/*
+ * Build a MapLibre filter expression that matches every feature whose
+ * `selectionState.field` equals the current `selectionState.value`.
+ * When value is null we return a never-match filter so the layers
+ * remain mounted but draw nothing. Strings, numbers, and booleans are
+ * compared loosely (we coerce the value to string on both sides) so a
+ * SPL `id=NYC01` row matches both `"NYC01"` (string) and `NYC01`
+ * (Splunk's stringified token coming in via the formatter).
+ */
+function buildSelectionFilter() {
+    if (selectionState.value === null || selectionState.value === undefined || selectionState.value === '') {
+        return ['==', ['literal', '__never_match__'], 'sentinel'];
+    }
+    const wantStr = String(selectionState.value);
+    return [
+        '==',
+        ['to-string', ['coalesce', ['get', selectionState.field], '']],
+        wantStr
+    ];
 }
 
 export function update(map, fc) {
@@ -310,21 +536,137 @@ export function update(map, fc) {
 
 export function unmount(map) {
     if (!map) return;
-    [LAYER_LABEL, LAYER_DOT, LAYER_BG, LAYER_PULSE_HEARTBEAT, LAYER_PULSE_INNER, LAYER_PULSE_OUTER].forEach(function (id) {
+    // Order matters: selected layers sit on top, so remove them first.
+    // LAYER_LABEL must come before the dot layers; the underlying
+    // source is destroyed last so each removeLayer() can still resolve.
+    [
+        LAYER_SELECTED_DOT,
+        LAYER_SELECTED_HALO,
+        LAYER_LABEL,
+        LAYER_DOT,
+        LAYER_BG,
+        LAYER_PULSE_HEARTBEAT,
+        LAYER_PULSE_INNER,
+        LAYER_PULSE_OUTER
+    ].forEach(function (id) {
         if (map.getLayer(id)) map.removeLayer(id);
     });
     if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
     if (pulseState.map === map) {
         stopPulse();
     }
+    // Reset selection bookkeeping so the next mount starts clean.
+    selectionState.value = null;
+    selectionState.lastFlownValue = null;
 }
 
 export function setVisible(map, visible) {
-    [LAYER_PULSE_OUTER, LAYER_PULSE_INNER, LAYER_PULSE_HEARTBEAT, LAYER_LABEL, LAYER_DOT, LAYER_BG].forEach(function (id) {
+    [
+        LAYER_PULSE_OUTER,
+        LAYER_PULSE_INNER,
+        LAYER_PULSE_HEARTBEAT,
+        LAYER_LABEL,
+        LAYER_DOT,
+        LAYER_BG,
+        LAYER_SELECTED_HALO,
+        LAYER_SELECTED_DOT
+    ].forEach(function (id) {
         if (map.getLayer(id)) {
             map.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
         }
     });
+}
+
+/*
+ * v1.7 — Selection token applier (Tier 1 #1).
+ *
+ * Called by visualization_source.updateView when a new
+ * `selectedFeatureValue` arrives. Updates the filter and optionally
+ * flies the camera to the matching feature's coordinates.
+ *
+ * Decoupled from mount() because mount() runs once per layer-set
+ * change, while selection changes happen on every token push (which
+ * is much more frequent and must not churn layers).
+ */
+export function applySelection(map, fc, opts) {
+    if (!map) return;
+    const next = opts || {};
+    const prev = selectionState.value;
+    if (next.field) selectionState.field = String(next.field);
+    if (next.value !== undefined) {
+        selectionState.value = next.value;
+        // Reset fly-to bookkeeping when the selection is cleared so the
+        // next non-null value triggers a fresh fly-to, even if it's the
+        // same id as before. Without this, a dashboard that does
+        // `select NYC01 → clear → select NYC01 again` would not get
+        // a second fly-to — counter-intuitive UX.
+        if (next.value === null || next.value === '' || next.value === undefined) {
+            selectionState.lastFlownValue = null;
+        }
+    }
+    if (isFinite(next.sizeMultiplier) && Number(next.sizeMultiplier) > 0) {
+        selectionState.sizeMultiplier = Number(next.sizeMultiplier);
+    }
+    if (typeof next.haloColor === 'string' && next.haloColor) {
+        selectionState.haloColor = next.haloColor;
+    }
+    if (isFinite(next.haloWidth)) {
+        selectionState.haloWidth = Math.max(0, Number(next.haloWidth));
+    }
+    if (next.flyToOnChange !== undefined) {
+        selectionState.flyToOnChange = !!next.flyToOnChange;
+    }
+    if (isFinite(next.flyToZoom)) {
+        selectionState.flyToZoom = Number(next.flyToZoom);
+    }
+
+    // Re-apply paint + filter against the existing layers.
+    const filter = buildSelectionFilter();
+    [LAYER_SELECTED_HALO, LAYER_SELECTED_DOT].forEach(function (id) {
+        if (map.getLayer(id)) {
+            try { map.setFilter(id, filter); } catch (_e) { /* swallow */ }
+        }
+    });
+
+    // Fly-to: only when the value actually changed, the option is on,
+    // and we can find a matching feature in the supplied FeatureCollection.
+    // Comparing against lastFlownValue (not prev) prevents repeated
+    // flyTo on every updateView cycle when the token value is unchanged.
+    if (
+        selectionState.flyToOnChange &&
+        selectionState.value &&
+        selectionState.value !== selectionState.lastFlownValue
+    ) {
+        const target = findSelectedCoords(fc, selectionState.field, selectionState.value);
+        if (target) {
+            try {
+                map.flyTo({
+                    center: target,
+                    zoom: selectionState.flyToZoom,
+                    essential: true   // accessibility — bypass reduced-motion
+                });
+                selectionState.lastFlownValue = selectionState.value;
+            } catch (_e) { /* swallow during style transition */ }
+        }
+    }
+    // Avoid unused-variable lint warning.
+    void prev;
+}
+
+function findSelectedCoords(fc, field, value) {
+    if (!fc || !Array.isArray(fc.features)) return null;
+    const want = String(value);
+    for (let i = 0; i < fc.features.length; i++) {
+        const f = fc.features[i];
+        if (!f || !f.properties) continue;
+        if (String(f.properties[field]) !== want) continue;
+        const g = f.geometry;
+        if (!g) continue;
+        if (g.type === 'Point' && Array.isArray(g.coordinates) && g.coordinates.length >= 2) {
+            return [Number(g.coordinates[0]), Number(g.coordinates[1])];
+        }
+    }
+    return null;
 }
 
 // -------------------------------------------------------------------------

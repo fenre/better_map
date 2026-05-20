@@ -56,6 +56,12 @@ export function createCrossPanel(map, viz, options) {
     function broadcastCamera() {
         const now = Date.now();
         if (now - lastBroadcast < minIntervalMs) return;
+        // v1.7 — Tier 1 #2: if we just applied an inbound camera token
+        // jump, suppress the outbound moveend echo for ~350ms. Without
+        // this, a paired panel A → token → panel B → moveend → token →
+        // panel A creates a permanent ping-pong every time the user
+        // pans either map.
+        if (instance && instance._suppressBroadcastUntilMs > now) return;
         lastBroadcast = now;
         const center = map.getCenter();
         const tokens = {
@@ -99,10 +105,44 @@ export function createCrossPanel(map, viz, options) {
         });
     }
 
-    return {
+    // v1.7 — Tier 1 #2: receive-side camera control.
+    //
+    // The dashboard publishes new lng/lat/zoom values into tokens
+    // (typically `better_map.camera.lng/lat/zoom`) and the parent
+    // visualization sees those values flow through config in
+    // updateView. Rather than re-implementing the token-resolution
+    // dance there, we expose a simple "given these numbers, move the
+    // camera" path on the cross-panel instance.
+    //
+    // Suppression flags (_suppressBroadcastUntilMs) prevent the
+    // resulting moveend events from immediately re-broadcasting the
+    // same values and creating an echo loop with the sibling panel.
+    function applyRemoteCameraFromObj(cam) {
+        if (!cam || !Number.isFinite(cam.lng) || !Number.isFinite(cam.lat)) return;
+        const cur = map.getCenter();
+        const curZoom = map.getZoom();
+        const dLng = Math.abs(cur.lng - cam.lng);
+        const dLat = Math.abs(cur.lat - cam.lat);
+        const dZoom = Number.isFinite(cam.zoom) ? Math.abs(curZoom - cam.zoom) : 0;
+        // 1e-4 deg ~= 11 m at equator, dZoom < 0.05 = sub-zoom-level.
+        // Anything tighter is a no-op flicker.
+        if (dLng < 1e-4 && dLat < 1e-4 && dZoom < 0.05) return;
+        // Suppress our own broadcast for the duration of this jump so
+        // crossPanel.broadcastCamera() doesn't fire-and-create echo.
+        instance._suppressBroadcastUntilMs = Date.now() + 350;
+        const next = { center: [cam.lng, cam.lat] };
+        if (Number.isFinite(cam.zoom)) next.zoom = cam.zoom;
+        if (Number.isFinite(cam.pitch)) next.pitch = cam.pitch;
+        if (Number.isFinite(cam.bearing)) next.bearing = cam.bearing;
+        try { map.jumpTo(next); } catch (_e) { /* ignore */ }
+    }
+
+    var instance = {
         broadcastCamera: broadcastCamera,
         broadcastTime: broadcastTime,
         publishSelection: publishSelection,
+        applyRemoteCamera: applyRemoteCameraFromObj,
+        _suppressBroadcastUntilMs: 0,
         destroy: function () {
             map.off('moveend', broadcastCamera);
             map.off('zoomend', broadcastCamera);
@@ -110,6 +150,7 @@ export function createCrossPanel(map, viz, options) {
             map.off('rotateend', broadcastCamera);
         }
     };
+    return instance;
 }
 
 /**

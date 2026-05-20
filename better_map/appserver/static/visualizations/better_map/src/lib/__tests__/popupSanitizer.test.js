@@ -428,3 +428,157 @@ describe('integration — popup with mixed safe + unsafe content', () => {
         expect(clean).not.toContain('http://insecure.example');
     });
 });
+
+/*
+ * v1.7 — Tier 2 #6: opt-in inline-style allowlist.
+ *
+ * Three test classes:
+ *   1. Default behaviour preserved — without opts, `style=` is stripped.
+ *   2. Opt-in flag — with `{allowInlineStyles:true}`, the SAFE_STYLE_PROPS
+ *      allow-list is honoured and unsafe declarations are dropped.
+ *   3. Defense-in-depth — explicit attempts to inject CSS-level attacks
+ *      (url(), expression(), behavior:, position:fixed, @import,
+ *      backslash escapes, !important escalation) ALL fail closed even
+ *      when their property name is in SAFE_STYLE_PROPS.
+ */
+describe('sanitizePopup — inline-style allowlist (Tier 2 #6)', () => {
+    describe('default (allowInlineStyles=false)', () => {
+        it('strips style attributes by default', () => {
+            const clean = sanitizePopup('<p style="color:#f00">hi</p>');
+            expect(clean).toContain('<p>hi</p>');
+            expect(clean).not.toContain('style');
+            expect(clean).not.toContain('color');
+        });
+
+        it('strips style even when opts is undefined explicitly', () => {
+            const clean = sanitizePopup('<span style="color:red">x</span>', undefined);
+            expect(clean).not.toContain('style');
+        });
+
+        it('strips style when opts.allowInlineStyles is omitted', () => {
+            const clean = sanitizePopup('<b style="color:red">x</b>', {});
+            expect(clean).not.toContain('style');
+        });
+    });
+
+    describe('opt-in (allowInlineStyles=true)', () => {
+        const allow = { allowInlineStyles: true };
+
+        it('preserves safe color declarations', () => {
+            const clean = sanitizePopup('<span style="color: #ff0000">19,217</span>', allow);
+            expect(clean).toContain('style="color: #ff0000"');
+            expect(clean).toContain('19,217');
+        });
+
+        it('preserves safe background-color', () => {
+            const clean = sanitizePopup('<span style="background-color: rgb(34, 211, 238)">x</span>', allow);
+            expect(clean).toContain('background-color: rgb(34, 211, 238)');
+        });
+
+        it('preserves font-weight + font-size in one declaration', () => {
+            const clean = sanitizePopup('<b style="font-weight: 700; font-size: 14px">19,217</b>', allow);
+            expect(clean).toContain('font-weight: 700');
+            expect(clean).toContain('font-size: 14px');
+        });
+
+        it('preserves multiple declarations, drops unsafe ones, keeps safe ones', () => {
+            const clean = sanitizePopup(
+                '<p style="color: red; position: fixed; font-weight: bold; display: block">x</p>',
+                allow
+            );
+            // safe declarations survive
+            expect(clean).toContain('color: red');
+            expect(clean).toContain('font-weight: bold');
+            // unsafe / non-allowlisted declarations dropped
+            expect(clean).not.toContain('position');
+            expect(clean).not.toContain('display');
+        });
+
+        it('preserves padding/margin/text-align', () => {
+            const clean = sanitizePopup(
+                '<div style="padding: 6px; margin: 4px; text-align: center">x</div>',
+                allow
+            );
+            expect(clean).toContain('padding: 6px');
+            expect(clean).toContain('margin: 4px');
+            expect(clean).toContain('text-align: center');
+        });
+    });
+
+    describe('opt-in — unsafe declarations rejected even with allowlist on', () => {
+        const allow = { allowInlineStyles: true };
+
+        it.each([
+            // url() — exfiltration / Referer
+            ['<p style="color: red; background-image: url(https://evil.example/x.png)">x</p>', 'url('],
+            ['<p style="color: url(https://evil.example/x.png)">x</p>', 'url('],
+            // expression() — legacy IE script-equivalent
+            ['<p style="color: expression(alert(1))">x</p>', 'expression('],
+            // behavior: — legacy IE behaviour binding
+            ['<p style="behavior: url(#xss)">x</p>', 'behavior'],
+            // position:fixed — clickjacking via popup overlay
+            ['<p style="color: red; position: fixed">x</p>', 'position'],
+            ['<p style="color: red; position: absolute">x</p>', 'absolute'],
+            ['<p style="color: red; position: sticky">x</p>', 'sticky'],
+            // @import / @charset — at-rule injection
+            ['<p style="@import url(https://evil.example)">x</p>', '@import'],
+            // javascript: / vbscript: / data:text inside a value
+            ['<p style="background-image: javascript:alert(1)">x</p>', 'javascript:'],
+            ['<p style="background-image: vbscript:msgbox(1)">x</p>', 'vbscript'],
+            // backslash escapes (\\0006a = "j", classic CSS bypass)
+            ['<p style="color: \\0006a">x</p>', '\\']
+        ])('strips: %s', (dirty, leakedToken) => {
+            const clean = sanitizePopup(dirty, allow);
+            // Don't mind whether the style attribute survives empty —
+            // only that no fragment of the dangerous value remains.
+            expect(clean.toLowerCase()).not.toContain(leakedToken.toLowerCase());
+        });
+
+        it('drops the entire style attribute when nothing safe survives', () => {
+            const clean = sanitizePopup(
+                '<p style="position: fixed; behavior: url(#xss)">x</p>',
+                allow
+            );
+            expect(clean).not.toContain('style');
+        });
+
+        it('strips !important escalation suffix from kept declarations', () => {
+            const clean = sanitizePopup('<b style="color: red !important">x</b>', allow);
+            // color: red survives, !important does not.
+            expect(clean).toContain('color: red');
+            expect(clean).not.toContain('!important');
+        });
+
+        it('drops empty declarations and malformed entries gracefully', () => {
+            const clean = sanitizePopup(
+                '<p style=";;;; color: red; ; font-size: 10px; ; ;">x</p>',
+                allow
+            );
+            expect(clean).toContain('color: red');
+            expect(clean).toContain('font-size: 10px');
+        });
+    });
+
+    describe('flag reset between calls (no global leak)', () => {
+        it('after an allow-inline-styles call, the next default call strips styles', () => {
+            const allow = { allowInlineStyles: true };
+            const a = sanitizePopup('<p style="color: red">a</p>', allow);
+            expect(a).toContain('color: red');
+            const b = sanitizePopup('<p style="color: red">b</p>'); // default
+            expect(b).not.toContain('style');
+            expect(b).not.toContain('color: red');
+        });
+
+        it('script and iframe stay blocked even with inline styles on', () => {
+            const allow = { allowInlineStyles: true };
+            const clean = sanitizePopup(
+                '<p style="color: red">ok</p><script>alert(1)</script><iframe></iframe><style>body{}</style>',
+                allow
+            );
+            expect(clean).toContain('color: red');
+            expect(clean).not.toContain('<script');
+            expect(clean).not.toContain('<iframe');
+            expect(clean).not.toContain('<style');
+        });
+    });
+});

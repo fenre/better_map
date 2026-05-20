@@ -110,6 +110,135 @@
             <p class="splunk-formatter-help">Clicks on a feature open a sanitized popup using the <code>popup</code>, <code>tooltip</code>, or <code>description</code> field. HTML is filtered through DOMPurify with a strict allow-list.</p>
         </div>
         <div class="splunk-formatter-row">
+            <label for="bm-popupAllowInlineStyles">Allow inline styles in popups</label>
+            <select id="bm-popupAllowInlineStyles" data-name="popupAllowInlineStyles">
+                <option value="false" selected>Disabled</option>
+                <option value="true">Enabled</option>
+            </select>
+            <p class="splunk-formatter-help">Permits the <code>style</code> attribute on allowed tags so dashboard authors can colour severity numbers inline. Restricted to a CSS allow-list (<code>color</code>, <code>background-color</code>, <code>font-weight</code>, <code>font-size</code>, <code>text-align</code>, <code>padding</code>, <code>margin</code>, plus a few related shorthands); dangerous values (<code>url()</code>, <code>expression()</code>, <code>position:fixed</code>, <code>behavior:</code>, <code>@import</code>, <code>javascript:</code>) are always rejected.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-closePopupOnDrilldown">Suppress popup when drilldown fires</label>
+            <select id="bm-closePopupOnDrilldown" data-name="closePopupOnDrilldown">
+                <option value="false" selected>Disabled (popup + drilldown)</option>
+                <option value="true">Enabled (drilldown only)</option>
+            </select>
+            <p class="splunk-formatter-help">When ON, clicking a feature fires the drilldown but skips the popup &mdash; useful when a marker click should change the dashboard rather than open a richer view. The popup briefly flashes on click without this flag.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-enableHoverPreview">Enable hover preview popup</label>
+            <select id="bm-enableHoverPreview" data-name="enableHoverPreview">
+                <option value="false" selected>Disabled</option>
+                <option value="true">Enabled</option>
+            </select>
+            <p class="splunk-formatter-help">Shows a small, dismissable-on-leave popup on mouseover, distinct from the click popup. Useful for "what is this dot" glance views in security investigation and supply-chain dashboards. Default off &mdash; NOC walls don't have mice.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-hoverHtmlField">Hover popup HTML field</label>
+            <input id="bm-hoverHtmlField" type="text" data-name="hoverHtmlField" placeholder="hover" />
+            <p class="splunk-formatter-help">Row field whose value populates the hover popup (HTML, sanitised). Defaults to <code>hover</code>. Use a separate field from <code>popup</code> so click and hover can show different views.</p>
+        </div>
+
+        <h3 class="splunk-formatter-heading">Selected-feature emphasis</h3>
+        <div class="splunk-formatter-row">
+            <label for="bm-selectedFeatureToken">Selection token name</label>
+            <input id="bm-selectedFeatureToken" type="text" data-name="selectedFeatureToken" placeholder="selected_site" />
+            <p class="splunk-formatter-help">Name of a dashboard token; when its value matches a row's <em>selection field</em>, that row is bumped to a top emphasis layer with a halo and an optional fly-to. Leave blank to disable. Pair with <code>drilldown.setToken</code> on the panel to flow clicks into the same token.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-selectedFeatureField">Selection field</label>
+            <input id="bm-selectedFeatureField" type="text" data-name="selectedFeatureField" placeholder="id" />
+            <p class="splunk-formatter-help">Row column to match against the selection token's value. Default <code>id</code>. Must match the column the dashboard publishes into the selection token.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-selectedSizeMultiplier">Emphasis size multiplier</label>
+            <input id="bm-selectedSizeMultiplier" type="number" min="1" max="6" step="0.1" data-name="selectedSizeMultiplier" placeholder="2.5" />
+            <p class="splunk-formatter-help">How much larger the selected marker grows. <code>1</code> = same size (halo only); <code>2.5</code> default; <code>6</code> = dominant. Halo extends slightly beyond the scaled dot regardless.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-selectedHaloColor">Halo color</label>
+            <input id="bm-selectedHaloColor" type="color" data-name="selectedHaloColor" value="#22D3EE" />
+            <p class="splunk-formatter-help">Ring colour around the selected marker. Use a vivid accent that contrasts with both the base palette and the marker fill.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-selectedHaloWidth">Halo stroke width (px)</label>
+            <input id="bm-selectedHaloWidth" type="number" min="0" max="16" step="1" data-name="selectedHaloWidth" placeholder="4" />
+            <p class="splunk-formatter-help">Halo ring thickness. <code>0</code> = no ring (just the scaled dot); <code>4</code> default; <code>8+</code> for very dense maps where the selection needs to "punch through" the surrounding markers.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-selectedFlyToOnChange">Fly-to on selection change</label>
+            <select id="bm-selectedFlyToOnChange" data-name="selectedFlyToOnChange">
+                <option value="true" selected>Enabled</option>
+                <option value="false">Disabled</option>
+            </select>
+            <p class="splunk-formatter-help">When ON, the camera animates to the newly-selected marker's coordinates. Pairs with <code>Fly-to zoom</code> below. Disable for dashboards that want to keep the camera locked at an overview while emphasising selection.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-selectedFlyToZoom">Fly-to zoom</label>
+            <input id="bm-selectedFlyToZoom" type="number" min="1" max="22" step="0.5" data-name="selectedFlyToZoom" placeholder="8" />
+            <p class="splunk-formatter-help">Target zoom level for the fly-to (1 = world, 22 = building). <code>8</code> default is a metro-area view.</p>
+        </div>
+
+        <h3 class="splunk-formatter-heading">Per-row marker labels</h3>
+        <div class="splunk-formatter-row">
+            <label for="bm-showLabels">Show labels</label>
+            <select id="bm-showLabels" data-name="showLabels">
+                <option value="false" selected>Disabled</option>
+                <option value="true">Enabled</option>
+            </select>
+            <p class="splunk-formatter-help">Renders a text label below each marker so operators can read site names from across a NOC wall without hovering. Default off &mdash; labels collide at world zoom; set <em>Label min zoom</em> below to control when they appear.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-labelField">Label field</label>
+            <input id="bm-labelField" type="text" data-name="labelField" placeholder="name" />
+            <p class="splunk-formatter-help">Row column to use for the label text. Auto-falls-back to <code>label</code>, <code>name</code>, then <code>tooltip</code> when the chosen field is empty.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-labelMinZoom">Label min zoom</label>
+            <input id="bm-labelMinZoom" type="number" min="0" max="22" step="0.5" data-name="labelMinZoom" placeholder="3" />
+            <p class="splunk-formatter-help">Below this zoom level, labels are hidden so they don't collide at world zoom. Default <code>3</code> = continent-or-closer. Increase to <code>5+</code> for very dense maps.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-labelColor">Label color</label>
+            <input id="bm-labelColor" type="color" data-name="labelColor" value="#E6EEF9" />
+            <p class="splunk-formatter-help">Foreground text colour. Defaults to off-white for dark themes.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-labelHaloColor">Label halo color</label>
+            <input id="bm-labelHaloColor" type="color" data-name="labelHaloColor" value="#0B1A2D" />
+            <p class="splunk-formatter-help">Outline / halo around the text for legibility over busy basemaps. Defaults to deep navy.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-labelOffsetY">Label vertical offset (em)</label>
+            <input id="bm-labelOffsetY" type="number" min="0" max="3" step="0.1" data-name="labelOffsetY" placeholder="1.1" />
+            <p class="splunk-formatter-help">How far below the marker the label sits, measured in text-height multiples. Default <code>1.1</code>. Increase if marker size is large and the label feels too tight.</p>
+        </div>
+
+        <h3 class="splunk-formatter-heading">Remote camera control</h3>
+        <div class="splunk-formatter-row">
+            <label for="bm-acceptRemoteCamera">Accept inbound camera tokens</label>
+            <select id="bm-acceptRemoteCamera" data-name="acceptRemoteCamera">
+                <option value="false" selected>Disabled</option>
+                <option value="true">Enabled</option>
+            </select>
+            <p class="splunk-formatter-help">When ON, the map subscribes to <code>better_map.camera.lng/lat/zoom</code> dashboard tokens and moves the camera whenever they change. Use to drive the map from another panel, a deep link, or a programmatic <code>setToken</code>. Mirrors the outbound <em>Publish camera state</em> toggle above.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-remoteCameraTokenLng">Custom longitude token</label>
+            <input id="bm-remoteCameraTokenLng" type="text" data-name="remoteCameraTokenLng" placeholder="(default: better_map.camera.lng)" />
+            <p class="splunk-formatter-help">Override the default token name. Use if multiple Better Map panels need independent camera channels.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-remoteCameraTokenLat">Custom latitude token</label>
+            <input id="bm-remoteCameraTokenLat" type="text" data-name="remoteCameraTokenLat" placeholder="(default: better_map.camera.lat)" />
+            <p class="splunk-formatter-help">Override the default token name.</p>
+        </div>
+        <div class="splunk-formatter-row">
+            <label for="bm-remoteCameraTokenZoom">Custom zoom token</label>
+            <input id="bm-remoteCameraTokenZoom" type="text" data-name="remoteCameraTokenZoom" placeholder="(default: better_map.camera.zoom)" />
+            <p class="splunk-formatter-help">Override the default token name.</p>
+        </div>
+        <div class="splunk-formatter-row">
             <label for="bm-showPerfHUD">Show performance HUD</label>
             <select id="bm-showPerfHUD" data-name="showPerfHUD">
                 <option value="false" selected>Disabled</option>

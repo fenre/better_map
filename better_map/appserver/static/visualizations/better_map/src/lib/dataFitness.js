@@ -71,6 +71,18 @@ const POPUP_ALIASES = ['popup', 'tooltip', 'description'];
 const ICON_ALIASES = ['icon', 'symbol'];
 const COLOR_ALIASES = ['color', 'colour'];
 const SIZE_ALIASES = ['size', 'radius'];
+// v1.7 — Tier 1 #3 label field auto-detection. Tried in order; the
+// first existing row column wins. Sites typically have one of these:
+//   - `label`     (explicit override authored in SPL)
+//   - `name`      (site / host / device name)
+//   - `host`      (Splunk-default host)
+//   - `display_name` (UCS / Meraki / ISE)
+// Falls back to `tooltip` for back-compat with older v1.3.x decks.
+const LABEL_ALIASES = ['label', 'name', 'host', 'display_name', 'tooltip'];
+// v1.7 — Tier 2 #5 hover preview popup field. Distinct from `popup`
+// (click) so dashboard authors can show a concise "name + status"
+// glance preview vs a richer click view.
+const HOVER_ALIASES = ['hover', 'hover_html', 'preview'];
 
 /*
  * v1.5.0 — origin/destination aliases. When all four are present on a
@@ -163,6 +175,9 @@ export function analyze(input, opts) {
         floorField: pickField(fieldNames, FLOOR_ALIASES),
         idField: pickField(fieldNames, ID_ALIASES),
         popupField: pickField(fieldNames, POPUP_ALIASES),
+        // v1.7 — Tier 1 #3 + Tier 2 #5
+        labelField: pickField(fieldNames, LABEL_ALIASES),
+        hoverField: pickField(fieldNames, HOVER_ALIASES),
         iconField: pickField(fieldNames, ICON_ALIASES),
         colorField: pickField(fieldNames, COLOR_ALIASES),
         sizeField: pickField(fieldNames, SIZE_ALIASES),
@@ -488,6 +503,24 @@ function buildProps(fields, row, colIdx, detected) {
     }
     if (detected.popupField && detected.popupField in props) {
         props.popup = props[detected.popupField];
+    }
+    // v1.7 — Tier 1 #3: expose a canonical `label` property used by the
+    // marker label layer. Only set when the detected field actually
+    // resolved to a non-empty value; the layer's text-field expression
+    // coalesces `label` → `name` → `tooltip` so missing values still
+    // get a sensible default.
+    if (detected.labelField && detected.labelField in props && !('label' in props)) {
+        const raw = props[detected.labelField];
+        if (raw !== undefined && raw !== null && String(raw).length > 0) {
+            props.label = raw;
+        }
+    }
+    // v1.7 — Tier 2 #5: expose `hover` for the hover-preview popup.
+    if (detected.hoverField && detected.hoverField in props && !('hover' in props)) {
+        const rawH = props[detected.hoverField];
+        if (rawH !== undefined && rawH !== null && String(rawH).length > 0) {
+            props.hover = rawH;
+        }
     }
     if (detected.iconField && detected.iconField in props) {
         props.icon = props[detected.iconField];
