@@ -251,7 +251,9 @@ nav:
       - 'CSV lookup (geo points) — paths': recipes/csv-lookup-geo/paths.md
       - 'CSV lookup (geo points) — supercluster': recipes/csv-lookup-geo/supercluster.md
       - 'CSV lookup (geo polygons) — polygons': recipes/csv-lookup-geo/polygons.md
+      - 'CSV lookup (region metrics) — 3D extrusion': recipes/csv-lookup-geo/extrusion-3d.md
       - 'CSV lookup (region metrics) — vector-tile join': recipes/csv-lookup-geo/vector-tile-join.md
+      - 'Cisco Cyber Vision (components + vulnerabilities) — 3D extrusion': recipes/cyber-vision/extrusion-3d.md
       - 'Cisco Cyber Vision (components + vulnerabilities) — choropleth': recipes/cyber-vision/choropleth.md
       - 'Cisco Cyber Vision (components + vulnerabilities) — H3 hexbin': recipes/cyber-vision/h3.md
       - 'Cisco Cyber Vision (components + vulnerabilities) — heatmap': recipes/cyber-vision/heat.md
@@ -266,6 +268,7 @@ nav:
       - 'Cisco ThousandEyes (agent fleet) — supercluster': recipes/thousandeyes/supercluster.md
       - 'Cisco ThousandEyes (agent fleet) — vector-tile join': recipes/thousandeyes/vector-tile-join.md
       - 'Cisco ThousandEyes (path visualization) — paths': recipes/thousandeyes/paths.md
+      - 'ES Risk-Based Alerting (risk index) — choropleth': recipes/es-risk/choropleth.md
       - 'ES Risk-Based Alerting (risk index) — H3 hexbin': recipes/es-risk/h3.md
       - 'ES Risk-Based Alerting (risk index) — heatmap': recipes/es-risk/heat.md
       - 'ES Risk-Based Alerting (risk index) — markers': recipes/es-risk/markers.md

@@ -4,7 +4,7 @@
 
 This file is the body-inclusive sibling of `llms.txt` and concatenates every page on the Better Map documentation site into a single, LLM-friendly text dump. The short companion index is at <https://fenre.github.io/better_map/llms.txt>. Pages appear in `mkdocs.yml` `nav:` declaration order. Each page block carries a stable `# === ... ===` separator plus the source-of-truth path on disk and the published URL so the same content can be grepped by either dimension.
 
-At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 97 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 100 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
 
 All page URLs resolve to publicly accessible Material-themed HTML on GitHub Pages. The project ships under the MIT licence; the canonical repo is <https://github.com/fenre/better_map>.
 
@@ -1101,7 +1101,7 @@ generated from
 so it cannot drift from the recipe files.
 
 <!-- recipes-matrix trimmed for llms-full.txt token budget (see Wave 16 ROADMAP block); full matrix at <https://fenre.github.io/better_map/recipes/> and source-of-truth YAML at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>; per-recipe details (status, apps, expected-field contract, formatter options) are kept verbatim under the matching `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file -->
-**Total: 97 recipes · 15 source dir(s) · 9 layer type(s).**
+**Total: 100 recipes · 15 source dir(s) · 9 layer type(s).**
 
 Source dirs and the layer ids that already ship for each (any `(source, layer)` not listed below is an open cell in the E5 matrix and is a candidate for the next recipe wave):
 
@@ -1109,9 +1109,9 @@ Source dirs and the layer ids that already ship for each (any `(source, layer)` 
 - `cim-authentication`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster
 - `cim-network-traffic`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster, vector-tile-join
 - `cim-performance`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster, vector-tile-join
-- `csv-lookup-geo`: h3, heat, markers, paths, polygons, supercluster, vector-tile-join
-- `cyber-vision`: choropleth, h3, heat, markers, paths, supercluster
-- `es-risk`: h3, heat, markers, paths, supercluster, vector-tile-join
+- `csv-lookup-geo`: extrusion-3d, h3, heat, markers, paths, polygons, supercluster, vector-tile-join
+- `cyber-vision`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster
+- `es-risk`: choropleth, h3, heat, markers, paths, supercluster, vector-tile-join
 - `geo-us-states`: choropleth, extrusion-3d
 - `itsi-kpi-base`: choropleth, h3, heat, markers, paths, supercluster
 - `kvstore-latlon`: h3, heat, markers, paths, polygons, supercluster, vector-tile-join
@@ -1121,7 +1121,7 @@ Source dirs and the layer ids that already ship for each (any `(source, layer)` 
 - `splunk-stream`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster
 - `thousandeyes`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster, vector-tile-join
 
-**OT-safety-relevant recipes (12):** `cyber-vision/choropleth`, `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `cyber-vision/paths`, `cyber-vision/supercluster`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`, `ot-datastreamer/paths`, `ot-datastreamer/supercluster`, `ot-datastreamer/vector-tile-join`.
+**OT-safety-relevant recipes (13):** `cyber-vision/choropleth`, `cyber-vision/extrusion-3d`, `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `cyber-vision/paths`, `cyber-vision/supercluster`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`, `ot-datastreamer/paths`, `ot-datastreamer/supercluster`, `ot-datastreamer/vector-tile-join`.
 
 The remaining matrix cells from the E5 design — every layer × every
 source pattern — are tracked in
@@ -5776,6 +5776,192 @@ _Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 wal
 
 # === END: https://fenre.github.io/better_map/recipes/csv-lookup-geo/polygons/ ===
 
+# === BEGIN: https://fenre.github.io/better_map/recipes/csv-lookup-geo/extrusion-3d/ ===
+
+# Recipes / CSV lookup (region metrics) — 3D extrusion
+
+> Source: `docs/recipes/csv-lookup-geo/extrusion-3d.md`  
+> URL: <https://fenre.github.io/better_map/recipes/csv-lookup-geo/extrusion-3d/>
+
+# CSV lookup (region metrics) — US states 3D extrusion
+
+Render a per-state value from a customer-owned CSV (sales,
+incidents, SLO compliance, operational health, headcount, etc.)
+as a **3D-extruded US-states prism** over the bundled
+`us-states.pmtiles` preset. Per-state height + colour both
+encode the CSV's `value` column. This is the "bring your own
+state-aggregated CSV" recipe — used when the data is already
+pre-aggregated upstream (warehouse roll-up, planning
+spreadsheet, manually-curated metric table) rather than
+computed live from Splunk events.
+
+The right shape for **executive scorecard panels driven by
+business-intelligence outputs** (e.g., monthly per-state sales
+totals from a finance data warehouse exported as CSV), **per-
+state SLO compliance reviews** (where the SLO computation runs
+elsewhere and produces a per-region CSV), and **air-gap-friendly
+operational maps** where the data source is intentionally NOT
+an event index (smaller security review surface, simpler audit
+trail).
+
+The **8th extrusion-3d recipe in the matrix** — joining
+[geo-us-states](../geo-us-states/extrusion-3d.md),
+[cim-network-traffic](../cim-network-traffic/extrusion-3d.md),
+[cim-authentication](../cim-authentication/extrusion-3d.md),
+[cim-alerts](../cim-alerts/extrusion-3d.md),
+[cim-performance](../cim-performance/extrusion-3d.md),
+[meraki](../meraki/extrusion-3d.md), and
+[splunk-stream](../splunk-stream/extrusion-3d.md). This advances
+the extrusion-3d layer column from 7 cells to 8, and brings the
+csv-lookup-geo source row from 7 cells to 8 (markers, h3, heat,
+supercluster, paths, polygons, vector-tile-join, plus
+extrusion-3d now) — the second-most-complete row in the matrix
+after the CIM Network Traffic and CIM Performance 8-cell rows.
+
+Zero Splunk add-ons required. The CSV is operator-maintained on
+the search head; the US-states polygon geometry lives in the
+bundled `presets/us-states.pmtiles` file. No external API calls.
+
+## 1. Source description
+
+Same **CSV lookup** mechanism as the
+[markers](./markers.md), [supercluster](./supercluster.md), and
+[vector-tile-join](./vector-tile-join.md) siblings — a CSV file
+under `<app>/lookups/<name>.csv` exposed via a `transforms.conf`
+stanza, queried with `| inputlookup <name>`. The recipe binds
+to a lookup named `state_metrics.csv` (rename to match your
+install) with the columns `state_code` (USPS 2-letter:
+"CA" / "TX" / "NY"), `state_name`, and `value`.
+
+The recipe's contract (same as the
+[vector-tile-join sibling §1](./vector-tile-join.md#1-source-description)
+philosophically — the small dataset lives in the CSV, the big
+dataset is the polygon geometry):
+
+- **Customer owns the CSV.** The recipe assumes you have a
+  pre-aggregated state-level CSV available as a Splunk lookup.
+  Aggregating raw events into per-state rows is OUT of scope
+  for this recipe — for live event-driven aggregation use the
+  [cim-performance/extrusion-3d](../cim-performance/extrusion-3d.md),
+  [cim-alerts/extrusion-3d](../cim-alerts/extrusion-3d.md), or
+  [splunk-stream/extrusion-3d](../splunk-stream/extrusion-3d.md)
+  recipes (live `tstats` / `iplocation` / `geom geo_us_states`
+  chains).
+- **The CSV's `state_code` column matches the
+  `us-states.pmtiles` `promoteId`** — that's the USPS 2-letter
+  code (`stusps`: "CA", "TX", "NY", "DC"). Same join contract
+  as every other US-states recipe in the matrix.
+- **The CSV's `value` column is numeric.** The choropleth
+  shading + extrusion height both consume `value` — non-numeric
+  rows render with the unmatched-grey fallback fill and
+  zero-height prism.
+
+**Typical sourcetype / index:** none — `| inputlookup` runs
+against the CSV directly, no event ingestion involved. (Some
+production dashboards `| stats sum(value) BY state_code` over
+real events and feed THAT into the lookup — see §6 Gotchas for
+the "summary-search join" pattern.)
+
+**Why extrusion-3d for a CSV.** The CSV pattern is the canonical
+"data lives elsewhere, Splunk renders it" recipe — perfect for
+business-intelligence outputs (warehouse roll-ups, manually-
+curated planning metrics, externally-computed SLO scores) where
+the EVENT-driven recipes don't fit. The extrusion variant adds
+**rank visibility for sparse CSVs** where only a handful of
+states have non-zero values — the prism height pre-attentively
+ranks the top states even when colour ramp saturates.
+
+The use cases this recipe unlocks beyond the
+[vector-tile-join sibling](./vector-tile-join.md):
+
+- **Finance / sales per-region dashboards** — monthly per-state
+  revenue from a warehouse-exported CSV, height-encoded for
+  rank visibility at executive shareholder reviews.
+- **SLO compliance scorecards** — externally-computed SLO
+  scores per region (where the SLO logic runs in a dedicated
+  observability stack and Splunk is the executive presentation
+  layer), height-encoded with magma palette for "where are we
+  falling behind".
+- **Headcount / capacity planning views** — per-state
+  workforce totals from an HR system exported as CSV,
+  height-encoded for "where do we need the next hire" visual.
+- **Compliance / regulatory metric reviews** — per-state
+  filing counts, breach notifications, audit findings — all
+  data that lives in a compliance system, not in Splunk
+  events, but where the per-state choropleth + extrusion is
+  the right executive surface.
+
+**One-time setup** (skip if your lookup already exists):
+
+```spl
+| makeresults
+| eval state_code="CA", state_name="California", value=847.3
+| append [
+  | makeresults
+  | eval state_code="TX", state_name="Texas", value=612.8]
+| append [
+  | makeresults
+  | eval state_code="NY", state_name="New York", value=534.1]
+| append [
+  | makeresults
+  | eval state_code="VA", state_name="Virginia", value=421.6]
+| append [
+  | makeresults
+  | eval state_code="WA", state_name="Washington", value=298.4]
+| fields - _time
+| outputlookup state_metrics.csv
+```
+
+(The one-time setup is the only place `| makeresults` is allowed
+in this recipe — it is bootstrap data, not panel data. Per
+ROADMAP §1a and the Splunk SPL anti-pattern rules, `| makeresults`
+is BANNED in panel SPL because it bypasses time-range filtering
+and can't be distributed.)
+
+After the `| outputlookup`, register the lookup in
+`transforms.conf` (already done if you use the Splunk Web lookup
+UI). See the [Splunk lookups
+skill](https://github.com/fenre/better_map/blob/main/.cursor/skills/splunk-lookups/SKILL.md)
+for the full transforms.conf stanza pattern.
+
+## 2. SPL recipe
+
+```spl
+| inputlookup state_metrics.csv
+| rename state_code AS id
+| fields id, state_name, value
+| sort - value
+```
+
+## 3. Expected fields
+
+| field      | type   | example      |
+|------------|--------|--------------|
+| id         | string | CA           |
+| state_name | string | California   |
+| value      | number | 847.3        |
+
+The polygon geometry itself is NOT a field — Better Map fetches
+it internally from the bundled `presets/us-states.pmtiles` file
+referenced via `featureJoinPreset: "us-states"` in §4.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinPreset": "us-states",
+  "enable3DExtrusion": "true",
+  "extrusionHeightField": "value",
+  "extrusionScale": 10000.0,
+  "enableChoropleth": "true",
+  "palette": "viridis"
+}
+```
+
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/extrusion-3d/>._
+
+# === END: https://fenre.github.io/better_map/recipes/csv-lookup-geo/extrusion-3d/ ===
+
 # === BEGIN: https://fenre.github.io/better_map/recipes/csv-lookup-geo/vector-tile-join/ ===
 
 # Recipes / CSV lookup (region metrics) — vector-tile join
@@ -5904,6 +6090,215 @@ internally from the PMTiles URL configured in §4.
 _Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/csv-lookup-geo/vector-tile-join/>._
 
 # === END: https://fenre.github.io/better_map/recipes/csv-lookup-geo/vector-tile-join/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/cyber-vision/extrusion-3d/ ===
+
+# Recipes / Cisco Cyber Vision (components + vulnerabilities) — 3D extrusion
+
+> Source: `docs/recipes/cyber-vision/extrusion-3d.md`  
+> URL: <https://fenre.github.io/better_map/recipes/cyber-vision/extrusion-3d/>
+
+# Cisco Cyber Vision — US states 3D extrusion
+
+The third-dimension companion to the
+[cyber-vision/choropleth](./choropleth.md) recipe — same Cisco
+Cyber Vision component + vulnerability rollup, same operator-
+maintained `cybervision_sites.csv` lookup chain, same
+`us-states` PMTiles preset, but per-state shading is
+**augmented by per-state vertical extrusion**. Tall states host
+more vulnerable OT assets; short states host less. The right
+shape for **OT-SecOps executive briefings where the absolute
+vulnerable-asset delta between states matters** (the
+choropleth's colour ramp saturates once a few manufacturing-
+belt states pass the 80th percentile — extrusion's height has
+unbounded headroom), **plant-floor patching capacity-planning
+reviews** where the visual cliff over a Texas / Ohio / Michigan
+prism pre-attentively communicates "this plant region needs the
+next firmware refresh", and **NERC CIP / IEC 62443 per-
+jurisdiction compliance posture views** (per-state vulnerable
+OT asset count as the proxy for "which BES-cyber-system regions
+have the largest exposure backlog").
+
+The **8th extrusion-3d recipe in the matrix** — joining
+[geo-us-states](../geo-us-states/extrusion-3d.md),
+[cim-network-traffic](../cim-network-traffic/extrusion-3d.md),
+[cim-authentication](../cim-authentication/extrusion-3d.md),
+[cim-alerts](../cim-alerts/extrusion-3d.md),
+[cim-performance](../cim-performance/extrusion-3d.md),
+[meraki](../meraki/extrusion-3d.md), and
+[splunk-stream](../splunk-stream/extrusion-3d.md). This advances
+the extrusion-3d layer column from 7 cells to 8, and brings the
+cyber-vision source row from 6 cells to 7 (markers, h3, heat,
+supercluster, paths, choropleth, plus extrusion-3d now). The
+recipe is the **first OT-safety-relevant 3D-extrusion in the
+matrix** — the metric being extruded is `safety_related=Y`-marked
+OT asset exposure, with the full
+[`~/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc)
+contract applied to the input data (passive-DPI-only collection
+via Cyber Vision, no active probing of the OT zone, read-only
+mirror of the customer SRS for safety-classification annotations).
+
+## 1. Source description
+
+Same **Cisco Cyber Vision** passive-DPI platform as the
+[markers](./markers.md), [h3](./h3.md), [heat](./heat.md),
+[supercluster](./supercluster.md), [paths](./paths.md), and
+[choropleth](./choropleth.md) companions — see
+[cyber-vision/markers §1](./markers.md#1-source-description)
+for the full platform background, the four sourcetype streams
+(`cisco:cybervision:components` / `:flows` / `:events` /
+`:vulnerabilities`), and the OT-safety boundary (Rule 1: Cyber
+Vision is the reference passive-DPI design; this recipe
+consumes its already-passive metadata stream).
+
+The relevant distinction for THIS recipe: the panel renders the
+same per-state vulnerable-asset aggregation as the
+[choropleth companion](./choropleth.md) but encodes the rank as
+**polygon vertical extrusion** in addition to (or instead of)
+colour shading. Same SPL as the choropleth companion (verbatim) —
+the only differences live in the formatter config (§4).
+
+**Why extrusion-3d for Cyber Vision.** A choropleth saturates
+fast: once Texas, Ohio, Michigan, Indiana, and Pennsylvania all
+exceed the 80th percentile of vulnerable-OT-asset counts, the
+magma colour ramp can't distinguish them — they're all "dark
+magma". Extrusion-3d preserves rank visibility because height-
+encoding has unbounded headroom — Texas with 47 vulnerable
+assets is **4× taller** than Iowa with 12 vulnerable assets, and
+the visual gap is impossible to miss even when both states are
+at the saturated end of the colour ramp. Combined with the
+additive choropleth (height + colour encode the same `value`
+— see §4), the panel becomes double-encoded: height for absolute
+rank, colour for severity tint. The OT-SecOps handoff at shift
+change reads off the panel in under 5 seconds — the tallest
+prism over the most saturated colour identifies the highest-
+priority plant region without forcing the on-call to interpret
+a numeric legend.
+
+The use cases this recipe unlocks beyond the choropleth companion:
+
+- **Plant-floor firmware-budget reviews** — the 3D prism over
+  the most-pressured plant region is the focal point of the OT-
+  engineering conversation; the colour ramp adds the "is this
+  exposure trending up vs the prior 24 h" signal as a secondary
+  visual cue (rerun with `earliest=-48h` for the trend
+  comparison).
+- **Multi-state OT capacity-planning views** — height pre-
+  attentively ranks the top 5 plant-region states even when
+  their colour-ramp positions saturate, supporting "we need a
+  patching crew on-site in Ohio next" discussions without
+  forcing the reader to interpret a colour legend.
+- **Per-jurisdiction OT-compliance posture views** — the visual
+  cliff over a high-exposure manufacturing state serves as the
+  executive talking point for NERC CIP audit prep or IEC 62443
+  zone-conduit reviews.
+
+**Typical sourcetype / index:** Same as the
+[markers companion §1](./markers.md#1-source-description) —
+`index=cybervision`, sourcetype-prefixed `cisco:cybervision:*`.
+The TA is `TA-cisco-cybervision`. The site lookup is operator-
+maintained (no automated way to derive plant-floor coordinates
+from Cyber Vision metadata) and MUST be extended with `lat` /
+`lon` columns per the
+[markers companion §6 Gotchas](./markers.md#6-gotchas) site
+lookup schema.
+
+**No add-on required beyond `TA-cisco-cybervision`** for the
+Cyber Vision data and Splunk Core's bundled `geo_us_states`
+geometry lookup for the point-in-polygon step. Fully air-gap
+compatible per ROADMAP §1a.
+
+## 2. SPL recipe
+
+Identical to the
+[choropleth companion §2](./choropleth.md#2-spl-recipe) — same
+components + vulnerabilities subsearch chain, same per-asset
+`max_cvss` rollup, same site-lookup-derived lat/lon, same
+`geom geo_us_states` point-in-polygon, same per-state
+aggregation, same `value=vulnerable_asset_count` projection:
+
+```spl
+index=cybervision sourcetype="cisco:cybervision:components" earliest=-24h latest=now
+| dedup asset_id sortby - _time
+| rename asset_id AS id
+| join type=left id [
+    search index=cybervision sourcetype="cisco:cybervision:vulnerabilities" earliest=-24h latest=now
+    | stats max(cvss_score) AS max_cvss BY asset_id
+    | rename asset_id AS id
+  ]
+| fillnull value=0 max_cvss
+| eval is_vulnerable=if(max_cvss >= 7.0, 1, 0)
+| lookup cybervision_sites.csv asset_id AS id OUTPUT lat, lon, safety_related, site_name
+| where isnotnull(lat) AND isnotnull(lon)
+| geom geo_us_states featureIdField="stusps" latitude=lat longitude=lon
+| where isnotnull(featureId)
+| stats sum(is_vulnerable) AS vulnerable_asset_count,
+    count AS total_asset_count,
+    values(state_name) AS state_name
+  BY featureId
+| eval vulnerable_ratio=round(vulnerable_asset_count / total_asset_count, 2)
+| eval value=vulnerable_asset_count
+| rename featureId AS id
+| fields id, state_name, value, vulnerable_asset_count, total_asset_count, vulnerable_ratio
+| sort - value
+```
+
+See the
+[choropleth companion §2](./choropleth.md#2-spl-recipe) for the
+line-by-line walkthrough of every stage — the per-stage
+rationale (CVSS-≥-7 NIST-High threshold semantics, site-lookup
+schema for the lat/lon + safety_related + site_name OUTPUT,
+`isnotnull(featureId)` US-only filter, ratio-variant alternative
+for fleet-size-normalised views) is identical between the two
+recipes.
+
+For an **alternative height encoding**: swap
+`eval value=vulnerable_asset_count` to `eval value=ceil(
+vulnerable_ratio * 100)` to get height = "% of state fleet
+vulnerable" instead of height = "absolute vulnerable count".
+Visually, the RATIO variant prevents the manufacturing-belt
+states (TX, OH, MI, IN, PA) from always dominating — a small
+state where 80% of its OT fleet is vulnerable will tower over
+a large manufacturing state with 20% fleet vulnerable, even
+though the latter has more absolute vulnerable assets. Same
+SPL change, same formatter config below.
+
+Every `|` starts its own physical line per the SPL pipe-per-line
+contract.
+
+## 3. Expected fields
+
+| field                    | type    | example     |
+|--------------------------|---------|-------------|
+| id                       | string  | TX          |
+| state_name               | string  | Texas       |
+| value                    | integer | 12          |
+| vulnerable_asset_count   | integer | 12          |
+| total_asset_count        | integer | 47          |
+| vulnerable_ratio         | number  | 0.26        |
+
+Identical to the
+[choropleth companion §3](./choropleth.md#3-expected-fields)
+— same six fields, same role contract. `value` now drives BOTH
+the choropleth shading AND the extrusion height
+(`extrusionHeightField: "value"` in §4 below).
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinPreset": "us-states",
+  "enable3DExtrusion": "true",
+  "extrusionHeightField": "value",
+  "extrusionScale": 50000.0,
+  "enableChoropleth": "true",
+  "palette": "magma"
+}
+```
+
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/extrusion-3d/>._
+
+# === END: https://fenre.github.io/better_map/recipes/cyber-vision/extrusion-3d/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/cyber-vision/choropleth/ ===
 
@@ -7832,6 +8227,206 @@ detail the popup surfaces).
 _Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/paths/>._
 
 # === END: https://fenre.github.io/better_map/recipes/thousandeyes/paths/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/es-risk/choropleth/ ===
+
+# Recipes / ES Risk-Based Alerting (risk index) — choropleth
+
+> Source: `docs/recipes/es-risk/choropleth.md`  
+> URL: <https://fenre.github.io/better_map/recipes/es-risk/choropleth/>
+
+# ES Risk-Based Alerting — US states choropleth
+
+Render the **US-jurisdictional distribution of ES Risk-Based
+Alerting (RBA) accumulated risk** by joining the `risk` index
+aggregated to entity home state (via the ES Asset & Identity
+framework's `identities.csv` / `assets.csv` lookups extended
+with an `ip` field, then `iplocation` → `Region` → USPS
+2-letter code chain) against the bundled `us-states.pmtiles`
+preset. Per-state colour saturation encodes the **total
+accumulated risk score** of risky entities (`entity_risk >=
+50`) whose A&I-recorded IP geocodes to that US state. The
+**US-jurisdictional companion** to the
+[es-risk/vector-tile-join](./vector-tile-join.md) recipe — same
+RBA scoring engine, same A&I-driven entity geocoding, but
+aggregated by US state instead of by country.
+
+The right shape for **US-only SOC executive briefings**, **per-
+state regulatory-notification reviews** (where state Attorney-
+General notification laws drive risk-distribution reporting —
+California's CCPA, Virginia's CDPA, Colorado's CPA, etc.), and
+**incident-retro panels** ("the campaign pivot was concentrated
+in our California and Texas user populations"). For tenants
+with a global user base, use the
+[es-risk/vector-tile-join](./vector-tile-join.md) sibling
+instead — same SPL shape, swapped to ISO 3166-1 alpha-3 country
+codes against a customer-hosted world-countries PMTiles.
+
+The **10th choropleth recipe in the matrix** — joining
+[geo-us-states](../geo-us-states/choropleth.md),
+[cim-network-traffic](../cim-network-traffic/choropleth.md),
+[cim-authentication](../cim-authentication/choropleth.md),
+[cim-alerts](../cim-alerts/choropleth.md),
+[cim-performance](../cim-performance/choropleth.md),
+[thousandeyes](../thousandeyes/choropleth.md),
+[itsi-kpi-base](../itsi-kpi-base/choropleth.md),
+[splunk-stream](../splunk-stream/choropleth.md), and
+[cyber-vision](../cyber-vision/choropleth.md). This advances the
+choropleth layer column from 9 cells to 10, and brings the
+es-risk source row from 6 cells to 7 (markers, h3, heat,
+supercluster, paths, vector-tile-join, plus choropleth now).
+
+## 1. Source description
+
+Same **Risk-Based Alerting (RBA)** data source as the
+[markers](./markers.md), [h3](./h3.md), [heat](./heat.md),
+[supercluster](./supercluster.md), [paths](./paths.md), and
+[vector-tile-join](./vector-tile-join.md) companions — see
+[es-risk/markers §1](./markers.md#1-source-description) for the
+full RBA platform background, the `risk` index schema, the
+`action.risk = 1` adaptive-response contract, and the ES Asset
+& Identity (A&I) lookup chain.
+
+The relevant distinction for THIS recipe: instead of per-entity
+markers (markers companion) or per-country aggregation
+(vector-tile-join companion), the panel aggregates **per US
+state**. Per-entity risk accumulation (the `stats sum(risk_score)
+BY risk_object` rollup from markers) is computed first, then the
+entity is joined against the A&I framework to get an IP address,
+then `iplocation ip` derives the US state via `Region`, then
+mapped to USPS 2-letter codes for the `us-states.pmtiles` join.
+
+The SPL is structurally identical to the
+[vector-tile-join companion §2](./vector-tile-join.md#2-spl-recipe)
+through the `iplocation` stage; the divergence is at the
+geographic-resolution step — VTJ aggregates by `Country` and
+maps to `iso_a3`, this recipe aggregates by `Region` and maps
+to `stusps`.
+
+**Why choropleth for ES Risk.** A vector-tile-join answers "which
+COUNTRIES carry the most accumulated risk" — the global SOC
+question. A US-states choropleth answers the US-jurisdictional
+variant: "across the 50 US states, which carry the most risk?"
+This matters for:
+
+- **Multi-state US enterprises** — a US-headquartered company
+  with VPN-egress IPs concentrated across multiple states wants
+  the per-state risk distribution, not the per-country roll-up.
+  At the country level the answer is always "United States 95%,
+  others 5%"; the per-state choropleth answers the actually-
+  actionable "which state is the SOC focus this hour?".
+- **Per-state regulatory notification readiness** — CCPA
+  (California), CDPA (Virginia), CPA (Colorado), CTDPA
+  (Connecticut), UCPA (Utah) all require state-AG
+  notification on certain risk-realisation thresholds. A
+  choropleth surfacing per-state accumulated risk is the proxy
+  for "which state's regulator might we be filing with this
+  quarter".
+- **Multi-region executive briefings** — when the global VTJ
+  view is too coarse (all US risk collapsed into one country
+  cell) and the per-entity markers view is too noisy (5,000
+  individual entities), the US-states choropleth is the
+  Goldilocks zone: 51 cells (50 states + DC), each pre-
+  attentively readable, with the geographic context that
+  matters for US-jurisdictional incident response.
+
+**Why the bundled `us-states.pmtiles` preset.** Same air-gap
+posture as the
+[cim-performance/choropleth](../cim-performance/choropleth.md)
+and [cim-alerts/choropleth](../cim-alerts/choropleth.md)
+companions: bundled preset, no CDN, no add-on beyond Splunk
+Core's `iplocation` for the state geocoding, fully air-gap
+compatible per ROADMAP §1a.
+
+**Typical sourcetype / index:** `` `risk` `` macro (resolves to
+`index=risk`, possibly sharded). The TA app context is
+`SplunkEnterpriseSecuritySuite`; the recipe also requires
+`Splunk_SA_CIM` and an A&I lookup extended with an `ip` field
+(matching the asset / identity to a public IP).
+
+**No add-on required beyond ES** for the `risk` index data and
+Splunk's built-in `iplocation` for the state geocoding. Fully
+air-gap compatible per ROADMAP §1a.
+
+## 2. SPL recipe
+
+```spl
+`risk` earliest=-24h latest=now
+| stats sum(risk_score) AS entity_risk,
+    values(annotations.mitre_attack{}) AS techniques_mv
+  BY risk_object, risk_object_type
+| where entity_risk >= 50
+| lookup identity_lookup_expanded identity AS risk_object OUTPUT ip AS identity_ip
+| lookup asset_lookup_by_str src AS risk_object OUTPUT ip AS asset_ip
+| eval entity_ip=coalesce(identity_ip, asset_ip)
+| where isnotnull(entity_ip) AND entity_ip != ""
+| iplocation entity_ip
+| where Country="United States" AND isnotnull(Region) AND Region != ""
+| stats sum(entity_risk) AS total_risk,
+    count AS risky_entity_count,
+    dc(mvjoin(techniques_mv, ",")) AS distinct_techniques
+  BY Region
+| eval id=upper(case(
+    Region=="California","CA",
+    Region=="New York","NY",
+    Region=="Texas","TX",
+    Region=="Washington","WA",
+    Region=="Illinois","IL",
+    Region=="Florida","FL",
+    Region=="Massachusetts","MA",
+    Region=="Virginia","VA",
+    Region=="Colorado","CO",
+    Region=="Oregon","OR",
+    Region=="Pennsylvania","PA",
+    Region=="New Jersey","NJ",
+    Region=="Georgia","GA",
+    Region=="North Carolina","NC",
+    Region=="Ohio","OH",
+    Region=="Michigan","MI",
+    Region=="Arizona","AZ",
+    Region=="Minnesota","MN",
+    Region=="Indiana","IN",
+    Region=="Tennessee","TN",
+    Region=="District of Columbia","DC",
+    true(),substr(Region,1,2)))
+| eval value=total_risk
+| rename Region AS state_name
+| fields id, state_name, value, total_risk, risky_entity_count, distinct_techniques
+| sort - value
+```
+
+## 3. Expected fields
+
+| field                | type    | example       |
+|----------------------|---------|---------------|
+| id                   | string  | CA            |
+| state_name           | string  | California    |
+| value                | integer | 412           |
+| total_risk           | integer | 412           |
+| risky_entity_count   | integer | 14            |
+| distinct_techniques  | integer | 7             |
+
+Six fields, all in `expected_fields` in the frontmatter and
+cross-checked by `scripts/check-recipe-schema.py`. `value`
+drives the choropleth shading; `state_name` / `total_risk` /
+`risky_entity_count` / `distinct_techniques` flow through as
+feature properties on the joined polygon for popups (a hover
+over "California" reads e.g., "California — total risk 412, 14
+risky entities, 7 distinct MITRE techniques").
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinPreset": "us-states",
+  "enableChoropleth": "true",
+  "palette": "magma"
+}
+```
+
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/choropleth/>._
+
+# === END: https://fenre.github.io/better_map/recipes/es-risk/choropleth/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/es-risk/h3/ ===
 
@@ -15031,7 +15626,7 @@ The full per-integration matrix (status, app required, Splunk version min, endpo
 
 <!-- Appendix B matrix trimmed for llms-full.txt token budget (see Wave 36 ROADMAP block); the agent-actionable lookup (per-source-dir layer presence list, total counts, OT-safety inventory) is in the `recipes/` page body block earlier in this same file (rendered by `strip_recipes_index_matrix`); the structured per-recipe metadata (status, apps required, expected-fields contract, formatter options, verified-against) is in `docs/_machine/recipes/index.yaml`; the per-recipe SPL + formatter config + field contract is kept verbatim under each `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file. -->
 
-**97 recipe(s)** indexed at the source of truth: [`docs/_machine/recipes/index.yaml`](https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml) — structured YAML carrying recipe id, source, layer, status, splunk apps required, expected-field contract, formatter options, ot-safety relevance, and verification metadata for every recipe in the matrix. See the `recipes/` page body block earlier in this file for the agent-actionable summary (total counts + per-source-dir layer presence list + OT-safety-relevant recipe inventory). See each `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this file for the per-recipe SPL recipe, expected-fields contract (§3 verbatim), and recommended formatter config (§4 verbatim).
+**100 recipe(s)** indexed at the source of truth: [`docs/_machine/recipes/index.yaml`](https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml) — structured YAML carrying recipe id, source, layer, status, splunk apps required, expected-field contract, formatter options, ot-safety relevance, and verification metadata for every recipe in the matrix. See the `recipes/` page body block earlier in this file for the agent-actionable summary (total counts + per-source-dir layer presence list + OT-safety-relevant recipe inventory). See each `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this file for the per-recipe SPL recipe, expected-fields contract (§3 verbatim), and recommended formatter config (§4 verbatim).
 # === END: appendix:recipes ===
 
 # === BEGIN: appendix:meta ===
