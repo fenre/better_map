@@ -4,7 +4,7 @@
 
 This file is the body-inclusive sibling of `llms.txt` and concatenates every page on the Better Map documentation site into a single, LLM-friendly text dump. The short companion index is at <https://fenre.github.io/better_map/llms.txt>. Pages appear in `mkdocs.yml` `nav:` declaration order. Each page block carries a stable `# === ... ===` separator plus the source-of-truth path on disk and the published URL so the same content can be grepped by either dimension.
 
-At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 93 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 95 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
 
 All page URLs resolve to publicly accessible Material-themed HTML on GitHub Pages. The project ships under the MIT licence; the canonical repo is <https://github.com/fenre/better_map>.
 
@@ -1101,14 +1101,14 @@ generated from
 so it cannot drift from the recipe files.
 
 <!-- recipes-matrix trimmed for llms-full.txt token budget (see Wave 16 ROADMAP block); full matrix at <https://fenre.github.io/better_map/recipes/> and source-of-truth YAML at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>; per-recipe details (status, apps, expected-field contract, formatter options) are kept verbatim under the matching `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file -->
-**Total: 93 recipes · 15 source dir(s) · 9 layer type(s).**
+**Total: 95 recipes · 15 source dir(s) · 9 layer type(s).**
 
 Source dirs and the layer ids that already ship for each (any `(source, layer)` not listed below is an open cell in the E5 matrix and is a candidate for the next recipe wave):
 
 - `cim-alerts`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster
 - `cim-authentication`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster
 - `cim-network-traffic`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster, vector-tile-join
-- `cim-performance`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster
+- `cim-performance`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster, vector-tile-join
 - `csv-lookup-geo`: h3, heat, markers, paths, polygons, supercluster, vector-tile-join
 - `cyber-vision`: h3, heat, markers, paths, supercluster
 - `es-risk`: h3, heat, markers, paths, supercluster
@@ -1118,7 +1118,7 @@ Source dirs and the layer ids that already ship for each (any `(source, layer)` 
 - `meraki`: extrusion-3d, h3, heat, markers, supercluster, vector-tile-join
 - `netflow-sflow-ipfix`: h3, heat, markers, paths, supercluster, vector-tile-join
 - `ot-datastreamer`: h3, heat, markers, paths, supercluster, vector-tile-join
-- `splunk-stream`: extrusion-3d, h3, heat, markers, paths, supercluster
+- `splunk-stream`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster
 - `thousandeyes`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster, vector-tile-join
 
 **OT-safety-relevant recipes (11):** `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `cyber-vision/paths`, `cyber-vision/supercluster`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`, `ot-datastreamer/paths`, `ot-datastreamer/supercluster`, `ot-datastreamer/vector-tile-join`.
@@ -4862,6 +4862,214 @@ are cross-checked by `scripts/check-recipe-schema.py`.
 _Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/cim-performance/supercluster/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/cim-performance/vector-tile-join/ ===
+
+# Recipes / CIM Performance (CPU / memory / facilities) — vector-tile join
+
+> Source: `docs/recipes/cim-performance/vector-tile-join.md`  
+> URL: <https://fenre.github.io/better_map/recipes/cim-performance/vector-tile-join/>
+
+# CIM Performance — vector-tile join (customer PMTiles, world countries)
+
+Render the global distribution of monitored-host fleet pressure
+by joining **CIM Performance host telemetry** (breaching-host
+count, geocoded via the ES Asset & Identity asset lookup) against
+a **customer-hosted world-countries PMTiles vector tileset**. The
+**global companion** to the
+[cim-performance/choropleth](./choropleth.md) recipe — same triple-
+threshold breach detection (CPU > 80%, Memory > 80%, Storage >
+85%), same per-host pressure logic, but instead of aggregating to
+the 50 US states + DC via the bundled `us-states.pmtiles` preset,
+the panel aggregates to **all countries worldwide** via a custom
+PMTiles tileset (~5-15 MB from Natural Earth via
+[protomaps/basemaps-assets](https://github.com/protomaps/basemaps-assets)).
+
+The **8th vector-tile-join recipe in the matrix** — joining
+[csv-lookup-geo](../csv-lookup-geo/vector-tile-join.md),
+[kvstore-latlon](../kvstore-latlon/vector-tile-join.md),
+[cim-network-traffic](../cim-network-traffic/vector-tile-join.md),
+[meraki](../meraki/vector-tile-join.md),
+[ot-datastreamer](../ot-datastreamer/vector-tile-join.md),
+[netflow-sflow-ipfix](../netflow-sflow-ipfix/vector-tile-join.md),
+and [thousandeyes](../thousandeyes/vector-tile-join.md). This
+advances the vector-tile-join layer column from 7 cells to 8,
+and brings the cim-performance source row from 7 cells to 8
+(markers, h3, heat, supercluster, paths, choropleth, extrusion-
+3d, plus vector-tile-join now) — making cim-performance one of
+the **most-covered source rows in the matrix** (matched only by
+the CIM Network Traffic row).
+
+The recipe is the canonical "global infrastructure fleet
+pressure" panel for any tenant whose monitored host fleet spans
+multiple continents — multinationals with EMEA / APAC / AMER
+datacenters, SaaS vendors with multi-region cloud presence,
+managed-service providers with multi-tenant host inventories.
+
+## 1. Source description
+
+Same **CIM Performance** data model as the
+[markers](./markers.md), [choropleth](./choropleth.md),
+[extrusion-3d](./extrusion-3d.md), [h3](./h3.md), [heat](./heat.md),
+[supercluster](./supercluster.md), and [paths](./paths.md)
+companions — see
+[cim-performance/markers §1](./markers.md#1-source-description)
+for the full data model background, the six datasets (CPU,
+Memory, Storage, Network, Facilities, Uptime), and the
+acceleration / `tstats summariesonly=true` contract.
+
+The relevant distinction for THIS recipe: instead of per-state
+aggregation via `geom geo_us_states` (the
+[choropleth companion](./choropleth.md#2-spl-recipe) pattern),
+the panel aggregates per-COUNTRY via a chained
+`asset_lookup_by_str` → `iplocation` lookup. The mid-pipeline
+substitution is a small SPL change (one lookup re-target, one
+extra aggregation column, one lookup join with
+`iso_country_codes`), but the operational impact is large:
+panel now answers "in which **countries** does our fleet have
+the most pressured hosts?" instead of "in which **US states**".
+
+**Why use the asset-lookup-derived IP rather than direct host
+geocoding.** Same constraint as the
+[choropleth companion §1](./choropleth.md#1-source-description):
+CIM Performance's `dest` field is a hostname, NOT an IP, so
+`iplocation dest` would not work. The
+[choropleth companion](./choropleth.md) chains via
+`asset_lookup_by_str` to get `lat` / `lon` for `geom
+geo_us_states`. THIS recipe takes the parallel approach but uses
+the asset lookup to get a public `ip` instead, then chains
+`iplocation ip` to derive the country directly (same path the
+[cim-network-traffic/vector-tile-join](../cim-network-traffic/vector-tile-join.md)
+and [meraki/vector-tile-join](../meraki/vector-tile-join.md)
+companions use, just with the IP sourced from a lookup instead
+of directly from event fields).
+
+**Why vector-tile-join (custom PMTiles) for CIM Performance.**
+A US-states choropleth answers "which US states host our
+pressured infrastructure" — and that's the right question for
+many US-centric tenants. But for a global tenant (EMEA / APAC /
+AMER footprint), the US-only choropleth answers the wrong
+question; entire continents render as the unmatched-grey
+fallback fill and the executive viewer can't tell whether
+"grey = no pressure" or "grey = no coverage at all". A world-
+countries vector-tile-join surfaces both questions correctly:
+shaded countries have monitored hosts with measured pressure;
+unshaded countries are operationally "no fleet there" (which
+itself is informative — "we have no monitored infrastructure in
+LATAM, that's a capacity-coverage gap").
+
+Typical use cases:
+
+- **Global CIO infrastructure-coverage reviews** — "Where is
+  our monitored-host fleet pressured worldwide? Are EMEA and
+  APAC absorbing more capacity pressure than AMER?"
+- **Multi-region datacenter capacity-planning** — "Our
+  Germany / Singapore / Sydney regions all show >20% breaching
+  hosts; the next quarter's CapEx focus should be those three
+  regions, not the comparatively lightly-loaded US-East /
+  US-West baseline."
+- **Compliance jurisdictional health reports** — "Per-country
+  monitored-host fleet health, suitable for GDPR / data-
+  residency reporting where infrastructure-incident counts
+  need per-jurisdiction breakdown."
+- **Sales-engineering RFP infrastructure-coverage visuals** —
+  "We monitor host fleets across 42 countries; the heat map
+  shows where our top-tier coverage lives today."
+
+**Typical sourcetype / index:** Same broad catalogue as the
+[markers companion](./markers.md#1-source-description) —
+`nix:cpu`, `Perfmon:CPU`, `cisco:dnac:device`,
+`cloudwatch:host`, `azure:monitor:metric`,
+`vmware:vsphere:host:performance`, etc. The TA app context
+required is `Splunk_SA_CIM`. The asset lookup is operator-
+maintained; the `iso_country_codes` lookup is the same 250-row
+CSV the
+[cim-network-traffic/vector-tile-join](../cim-network-traffic/vector-tile-join.md)
+and [meraki/vector-tile-join](../meraki/vector-tile-join.md)
+companions document in their §6 Gotchas (one-time bootstrap
+from the Natural Earth countries dataset).
+
+**No add-on required beyond Splunk_SA_CIM** for the data model
+and Splunk's built-in `iplocation` for geocoding. The PMTiles
+file is customer-hosted (on the Splunk app's own
+`appserver/static/` folder for air-gapped tenants, or on a
+customer CDN for non-air-gapped). No external API calls. Fully
+air-gap compatible per ROADMAP §1a when the PMTiles file is
+bundled into the app.
+
+## 2. SPL recipe
+
+```spl
+| tstats summariesonly=true latest(Performance.cpu_load_percent) AS cpu_load_percent FROM datamodel=Performance.CPU WHERE earliest=-15m latest=now BY Performance.dest
+| rename Performance.dest AS dest
+| append [
+    | tstats summariesonly=true latest(Performance.mem_used_percent) AS mem_used_percent FROM datamodel=Performance.Memory WHERE earliest=-15m latest=now BY Performance.dest
+    | rename Performance.dest AS dest
+  ]
+| append [
+    | tstats summariesonly=true latest(Performance.storage_used_percent) AS storage_used_percent FROM datamodel=Performance.Storage WHERE earliest=-15m latest=now BY Performance.dest
+    | rename Performance.dest AS dest
+  ]
+| stats latest(cpu_load_percent) AS cpu_load_percent, latest(mem_used_percent) AS mem_used_percent, latest(storage_used_percent) AS storage_used_percent BY dest
+| eval cpu_signal=if(cpu_load_percent>80, 1, 0)
+| eval mem_signal=if(mem_used_percent>80, 1, 0)
+| eval storage_signal=if(storage_used_percent>85, 1, 0)
+| eval signal_count=cpu_signal+mem_signal+storage_signal
+| eval is_signalling=if(signal_count >= 1, 1, 0)
+| lookup asset_lookup_by_str src AS dest OUTPUT ip AS host_ip
+| where isnotnull(host_ip) AND host_ip != ""
+| iplocation host_ip
+| where isnotnull(Country) AND Country != ""
+| stats sum(is_signalling) AS signal_host_count,
+    count AS total_host_count
+  BY Country
+| lookup iso_country_codes country_name AS Country OUTPUT iso_a3 AS id
+| where isnotnull(id) AND id != ""
+| eval signal_ratio=round(signal_host_count / total_host_count, 2)
+| eval value=signal_host_count
+| rename Country AS country_name
+| fields id, country_name, value, signal_host_count, total_host_count, signal_ratio
+| sort - value
+```
+
+## 3. Expected fields
+
+| field             | type    | example       |
+|-------------------|---------|---------------|
+| id                | string  | USA           |
+| country_name      | string  | United States |
+| value             | integer | 73            |
+| signal_host_count | integer | 73            |
+| total_host_count  | integer | 412           |
+| signal_ratio      | number  | 0.18          |
+
+Six fields, all of which appear in `expected_fields` in the
+frontmatter and are cross-checked by
+`scripts/check-recipe-schema.py`. `value` drives the choropleth
+shading; `country_name` / `signal_host_count` /
+`total_host_count` / `signal_ratio` flow through as feature
+properties on the joined polygon for popups (a hover over
+"Germany" reads e.g., "Germany — 23 of 87 hosts breaching, 26%
+ratio").
+
+The polygon geometry itself is NOT a field — Better Map fetches
+it internally from the PMTiles URL configured in §4.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinUrl": "https://cdn.example.com/tilesets/world-countries.pmtiles",
+  "featureJoinPromoteId": "iso_a3",
+  "featureJoinSourceLayer": "countries",
+  "enableChoropleth": "true",
+  "palette": "viridis"
+}
+```
+
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cim-performance/vector-tile-join/>._
+
+# === END: https://fenre.github.io/better_map/recipes/cim-performance/vector-tile-join/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/csv-lookup-geo/h3/ ===
 
@@ -12158,6 +12366,180 @@ _Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 wal
 
 # === END: https://fenre.github.io/better_map/recipes/splunk-stream/h3/ ===
 
+# === BEGIN: https://fenre.github.io/better_map/recipes/splunk-stream/choropleth/ ===
+
+# Recipes / Splunk Stream (wire data) — choropleth
+
+> Source: `docs/recipes/splunk-stream/choropleth.md`  
+> URL: <https://fenre.github.io/better_map/recipes/splunk-stream/choropleth/>
+
+# Splunk Stream (wire data) — US states choropleth
+
+The flat-fill companion to the
+[splunk-stream/extrusion-3d](./extrusion-3d.md) recipe — same wire-
+data source, same per-state aggregation, same `us-states` PMTiles
+preset, but per-state shading uses **colour saturation alone**
+(no vertical extrusion). The right shape for **executive
+egress-distribution briefings** where the question is "which US
+states are receiving our outbound TLS traffic, ranked by byte
+volume" — the choropleth answer is more legible at small panel
+sizes than the extrusion sibling (which can occlude smaller states
+when the camera pitch is high), and renders correctly in
+print-export / PDF-export scenarios where 3D camera state is lost.
+
+The **8th choropleth recipe in the matrix** — joining
+[geo-us-states](../geo-us-states/choropleth.md),
+[cim-network-traffic](../cim-network-traffic/choropleth.md),
+[cim-authentication](../cim-authentication/choropleth.md),
+[cim-alerts](../cim-alerts/choropleth.md),
+[cim-performance](../cim-performance/choropleth.md),
+[thousandeyes](../thousandeyes/choropleth.md), and
+[itsi-kpi-base](../itsi-kpi-base/choropleth.md). This advances the
+choropleth layer column from 7 cells to 8, and brings the
+splunk-stream source row from 6 cells to 7 (markers, h3, heat,
+supercluster, paths, extrusion-3d, plus choropleth now) — the
+**first wire-data choropleth recipe**, where the metric being
+shaded is **observed wire-level byte volume** rather than
+event-count aggregations (CIM Network Traffic) or device inventory
+(ThousandEyes / Meraki). It is the canonical demo for "you can
+render any wire-data telemetry as a flat-fill choropleth, not just
+as point-density layers".
+
+## 1. Source description
+
+Same **Splunk Stream** wire-data source as the
+[markers](./markers.md), [extrusion-3d](./extrusion-3d.md),
+[h3](./h3.md), [heat](./heat.md), [supercluster](./supercluster.md),
+and [paths](./paths.md) companions — see
+[splunk-stream/markers §1](./markers.md#1-source-description) for
+the full platform background (`streamfwd`, the `stream:tls`
+sourcetype, the SPAN/mirror-port capture model, and why TLS is the
+right protocol for outbound-destination panels).
+
+The relevant distinction for THIS recipe: identical SPL to the
+[extrusion-3d companion](./extrusion-3d.md) (`iplocation dest_ip`
+→ `Region` → USPS code mapping), but the formatter config (§4)
+disables `enable3DExtrusion` and the result is a flat-fill
+choropleth. Same `bytes_out`-driven shading, different geometry
+rendering mode.
+
+**Why choropleth for wire data.** The
+[extrusion-3d sibling](./extrusion-3d.md) is the gold standard
+for "show me where my egress goes" panels at full size — height
+preserves rank visibility even when colour saturates. But there
+are operational contexts where the choropleth is the right
+choice:
+
+1. **Print / PDF export views.** Dashboard Studio's PDF-export
+   renders the panel at its current camera state. If the user
+   exported the extrusion-3d sibling at a high camera pitch,
+   neighbouring smaller states get occluded by tall prisms in
+   the print copy. The choropleth has no camera-state dependency
+   — flat polygons render identically at any pitch.
+2. **Multi-panel dashboards at small panel sizes.** When the
+   panel is one of 8-12 tiles in a grid layout, the
+   choropleth's "colour-encoded fill" reads correctly even at
+   sub-300px panel widths. The extrusion needs ≥500px panel
+   width and visible camera-tilt UI to be useful at small
+   sizes.
+3. **Print briefings + slide decks.** The choropleth lifts
+   cleanly into a static screenshot for inclusion in an
+   executive deck without losing information; the extrusion-3d
+   sibling requires the reader to be looking at the live panel
+   with the camera tilted to extract full value.
+4. **Accessibility (low-vision users).** A high-contrast
+   colour ramp (e.g., `palette: "magma"`) gives stronger
+   visual differentiation than a height-extrusion at fixed
+   camera pitch for users with reduced depth-perception
+   capabilities.
+
+For the inverse "I want maximum visual impact, multiple states
+will saturate the ramp" use case, ship the
+[extrusion-3d sibling](./extrusion-3d.md). Both recipes can
+co-exist in the same dashboard — same SPL backing both panels
+via a data-source reference, different formatter configs per
+panel.
+
+**Typical sourcetype / index:** `sourcetype="stream:tls"` /
+`index=wire_data` (defaults per the
+[splunk-stream-setup skill](https://github.com/fenre/better_map/blob/main/.cursor/rules/splunk-stream-setup.mdc)).
+
+**No add-on required beyond `Splunk_TA_stream`** for the wire-
+data capture, the bundled `us-states.pmtiles` preset for the
+polygons, and Splunk's built-in `iplocation` for the dest_ip
+geocoding. Fully air-gap compatible per ROADMAP §1a.
+
+## 2. SPL recipe
+
+```spl
+index=wire_data sourcetype="stream:tls" earliest=-24h latest=now
+| stats sum(bytes_out) AS bytes_out,
+    count AS session_count
+  BY dest_ip
+| iplocation dest_ip
+| where Country="United States" AND isnotnull(Region)
+| stats sum(bytes_out) AS bytes_out,
+    sum(session_count) AS session_count
+  BY Region
+| eval id=upper(case(
+    Region=="California","CA",
+    Region=="New York","NY",
+    Region=="Texas","TX",
+    Region=="Washington","WA",
+    Region=="Illinois","IL",
+    Region=="Florida","FL",
+    Region=="Massachusetts","MA",
+    Region=="Virginia","VA",
+    Region=="Colorado","CO",
+    Region=="Oregon","OR",
+    Region=="Pennsylvania","PA",
+    Region=="New Jersey","NJ",
+    Region=="Georgia","GA",
+    Region=="North Carolina","NC",
+    Region=="Ohio","OH",
+    Region=="Michigan","MI",
+    Region=="Arizona","AZ",
+    Region=="Minnesota","MN",
+    Region=="Indiana","IN",
+    Region=="Tennessee","TN",
+    Region=="District of Columbia","DC",
+    true(),substr(Region,1,2)))
+| eval value=bytes_out
+| rename Region AS state_name
+| fields id, state_name, value, bytes_out, session_count
+| sort - value
+```
+
+## 3. Expected fields
+
+| field         | type    | example      |
+|---------------|---------|--------------|
+| id            | string  | CA           |
+| state_name    | string  | California   |
+| value         | integer | 12847291     |
+| bytes_out     | integer | 12847291     |
+| session_count | integer | 8421         |
+
+Five fields, all of which appear in `expected_fields` in the
+frontmatter and are cross-checked by
+`scripts/check-recipe-schema.py`. `value` drives the choropleth
+shading; `state_name` / `bytes_out` / `session_count` flow
+through as feature properties on the joined polygon for popups.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinPreset": "us-states",
+  "enableChoropleth": "true",
+  "palette": "viridis"
+}
+```
+
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/splunk-stream/choropleth/>._
+
+# === END: https://fenre.github.io/better_map/recipes/splunk-stream/choropleth/ ===
+
 # === BEGIN: https://fenre.github.io/better_map/recipes/splunk-stream/heat/ ===
 
 # Recipes / Splunk Stream (wire data) — heatmap
@@ -14891,7 +15273,7 @@ The full per-integration matrix (status, app required, Splunk version min, endpo
 
 # Appendix B — Per-source recipe matrix
 
-> Source of truth: `docs/_machine/recipes/index.yaml` (93 recipe(s), emission order)
+> Source of truth: `docs/_machine/recipes/index.yaml` (95 recipe(s), emission order)
 
 Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answer 'which recipe matches this data source?' without fetching every recipe page. Recipes carry one of three statuses: `verified` (smoke-tested against a live Splunk tenant with proof in the YAML metadata), `unverified` (the recipe follows the contract but has not yet been smoke-tested), or `deferred` (the recipe is known to be incomplete pending upstream work). The expected-field contract for each recipe lives in §3 of the recipe page (kept verbatim in this file under the matching `# === BEGIN: …/recipes/<source>/<layer>/ ===` block); follow the Page link below to jump to it.
 
@@ -14926,6 +15308,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `cim-performance--markers` | CIM Performance (CPU / memory / facilities) → Markers | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/markers.md](https://fenre.github.io/better_map/recipes/cim-performance/markers/) |
 | `cim-performance--paths` | CIM Performance (CPU / memory / facilities) → Paths | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/paths.md](https://fenre.github.io/better_map/recipes/cim-performance/paths/) |
 | `cim-performance--supercluster` | CIM Performance (CPU / memory / facilities) → Supercluster | unverified | `Splunk_SA_CIM` | — | [docs/recipes/cim-performance/supercluster.md](https://fenre.github.io/better_map/recipes/cim-performance/supercluster/) |
+| `cim-performance--vector-tile-join` | CIM Performance (CPU / memory / facilities) → Vector-tile join (customer PMTiles) | unverified | `Splunk_SA_CIM`, `builtin:iplocation` | — | [docs/recipes/cim-performance/vector-tile-join.md](https://fenre.github.io/better_map/recipes/cim-performance/vector-tile-join/) |
 | `csv-lookup-geo--h3` | CSV lookup (geo points) → H3 hexbin | unverified | — | — | [docs/recipes/csv-lookup-geo/h3.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/h3/) |
 | `csv-lookup-geo--heat` | CSV lookup (geo polygons) → Heatmap | unverified | — | — | [docs/recipes/csv-lookup-geo/heat.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/heat/) |
 | `csv-lookup-geo--markers` | CSV lookup (geo polygons) → Markers | unverified | — | — | [docs/recipes/csv-lookup-geo/markers.md](https://fenre.github.io/better_map/recipes/csv-lookup-geo/markers/) |
@@ -14976,6 +15359,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `ot-datastreamer--paths` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Paths | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/paths.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/paths/) |
 | `ot-datastreamer--supercluster` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Supercluster | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/supercluster.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/supercluster/) |
 | `ot-datastreamer--vector-tile-join` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Vector-tile join (customer PMTiles) | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/vector-tile-join.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/vector-tile-join/) |
+| `splunk-stream--choropleth` | Splunk Stream (wire data) → Choropleth | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/choropleth.md](https://fenre.github.io/better_map/recipes/splunk-stream/choropleth/) |
 | `splunk-stream--extrusion-3d` | Splunk Stream (wire data) → 3D extrusion | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/extrusion-3d.md](https://fenre.github.io/better_map/recipes/splunk-stream/extrusion-3d/) |
 | `splunk-stream--h3` | Splunk Stream (wire data) → H3 hexbin | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/h3.md](https://fenre.github.io/better_map/recipes/splunk-stream/h3/) |
 | `splunk-stream--heat` | Splunk Stream (wire data) → Heatmap | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/heat.md](https://fenre.github.io/better_map/recipes/splunk-stream/heat/) |

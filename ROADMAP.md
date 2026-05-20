@@ -1,5 +1,59 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-31): E5 Phase 2 wave 35b recipes
+> SHIPPED — 2 new diversification recipes (93 → 95): (1)
+> `cim-performance/vector-tile-join` (vector-tile-join layer
+> 7→8 cells, cim-performance source row 7→8 — joint-most-covered
+> source row in the matrix alongside cim-network-traffic; chains
+> the triple-tstats Performance breach-detection block from the
+> [cim-performance/choropleth](docs/recipes/cim-performance/choropleth.md)
+> companion verbatim and substitutes the geocoding tail —
+> `asset_lookup_by_str → ip → iplocation → Country → iso_country_codes
+> → iso_a3` — for the US-states `geom geo_us_states` chain, lifting
+> the recipe from per-state to per-country aggregation against a
+> customer-hosted world-countries PMTiles tileset; the canonical
+> "global CIO infrastructure-fleet-pressure" panel for any
+> multinational with EMEA / APAC / AMER datacenter monitoring);
+> (2) `splunk-stream/choropleth` (choropleth layer 7→8 cells,
+> splunk-stream source row 6→7 — first wire-data choropleth in the
+> matrix, where the metric being shaded is observed wire-level byte
+> volume rather than event-count aggregations or device inventory;
+> direct flat-fill sibling of the
+> [splunk-stream/extrusion-3d](docs/recipes/splunk-stream/extrusion-3d.md)
+> companion sharing identical SPL — `iplocation dest_ip` → `Region`
+> → USPS code mapping — and differing only in the §4 formatter config
+> by dropping `enable3DExtrusion` / `extrusionHeightField` /
+> `extrusionScale`; the print-friendly / small-panel-friendly /
+> accessibility-friendly companion to the extrusion-3d sibling).
+> Wave 35b ships 2 recipes (not the typical 3) because the wave-35a
+> trim left only 3,931 WARN headroom — at ~1,780 tokens per recipe
+> (post-wave-32-trim-consolidation absorption), three recipes would
+> have inflated the corpus past the 175k WARN ceiling; two recipes
+> land at 174,629 estimated tokens (371 WARN headroom remaining,
+> below the 7,000-token threshold that mandates a token-trim wave
+> next). Wave 36a will start with a token-trim PR — the highest-
+> ROI lever left in the corpus is per-recipe §6 Gotchas compaction
+> (re-evaluate whether `strip_recipe_advisory()` already covers it
+> via the wave-32 footer-consolidation; broadening the strip to
+> "from §5 to end of file" is estimated to reclaim ~5k tokens at
+> 95 recipes × ~50 tokens of pre-pointer §6 boilerplate, the single
+> highest-ceiling lever remaining — see the wave-35a status block
+> below for the full priority-ordered trim-lever inventory). Both
+> recipes follow the wave-13 generalised recipe contract verbatim
+> (frontmatter + §1-§6 + ## Verification status), pass
+> check-recipe-schema.py for the 95/95 catalogue, and their SPL
+> follows the pipe-per-line contract end-to-end. mkdocs.yml nav
+> entries are alphabetically inserted within each source group per
+> the canonical case-sensitive-ASCII ordering (cim-performance:
+> after supercluster; splunk-stream: between H3-hexbin and heatmap).
+> All gates green locally (`build-llms-full-txt.py --check`,
+> `build-llms-txt.py --check`, `check-recipe-schema.py`,
+> `build-reference-pages.py --check`, `check-manifest.py`,
+> `check-formatter-schema.py`, `check-formatter-coverage.py`,
+> `mkdocs build --strict`). Token cadence: 171,069 (post-wave-35a
+> merge) → 174,629 (+3,560 net for 2 recipes ≈ 1,780/recipe, in line
+> with the post-wave-32-trim per-recipe cost expectation).**
+
 > **Status (v1.7-prep, 2026-05-31): E5 Phase 2 wave 35a token-trim
 > SHIPPED — drop the entire `## 4. Milestone sequencing` section from
 > `ROADMAP.md` in the llms-full.txt corpus pipeline; reclaimed

@@ -244,6 +244,7 @@ nav:
       - 'CIM Performance (CPU / memory / facilities) — markers': recipes/cim-performance/markers.md
       - 'CIM Performance (CPU / memory / facilities) — paths': recipes/cim-performance/paths.md
       - 'CIM Performance (CPU / memory / facilities) — supercluster': recipes/cim-performance/supercluster.md
+      - 'CIM Performance (CPU / memory / facilities) — vector-tile join': recipes/cim-performance/vector-tile-join.md
       - 'CSV lookup (geo points) — H3 hexbin': recipes/csv-lookup-geo/h3.md
       - 'CSV lookup (geo points) — heatmap': recipes/csv-lookup-geo/heat.md
       - 'CSV lookup (geo points) — markers': recipes/csv-lookup-geo/markers.md
@@ -302,6 +303,7 @@ nav:
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — vector-tile join': recipes/ot-datastreamer/vector-tile-join.md
       - 'Splunk Stream (wire data) — 3D extrusion': recipes/splunk-stream/extrusion-3d.md
       - 'Splunk Stream (wire data) — H3 hexbin': recipes/splunk-stream/h3.md
+      - 'Splunk Stream (wire data) — choropleth': recipes/splunk-stream/choropleth.md
       - 'Splunk Stream (wire data) — heatmap': recipes/splunk-stream/heat.md
       - 'Splunk Stream (wire data) — markers': recipes/splunk-stream/markers.md
       - 'Splunk Stream (wire data) — paths': recipes/splunk-stream/paths.md
