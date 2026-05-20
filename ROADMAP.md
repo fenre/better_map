@@ -1,5 +1,39 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-20): E5 Phase 2 wave 32 recipes
+> SHIPPED — 3 new recipes (`thousandeyes/vector-tile-join` +
+> `splunk-stream/extrusion-3d` + `cim-performance/choropleth`),
+> bringing total recipe count from 84 → 87.** All three are
+> diversification entries that expand layer-type coverage on
+> already-shipping sources rather than adding new sources to the
+> matrix: `vector-tile-join` advances 3 → 4 cells — the new
+> `thousandeyes/vector-tile-join` recipe is the first GLOBAL
+> world-countries PMTiles companion to the US-only choropleth
+> sibling, joining csv-lookup-geo + kvstore-latlon + cim-network-
+> traffic; `extrusion-3d` advances 5 → 6 cells (joins geo-us-states,
+> cim-network-traffic, cim-authentication, cim-alerts, meraki — the
+> first wire-data extrusion recipe driving per-state bytes-out prisms
+> from `iplocation` over a Splunk Stream sourcetype filter); and
+> `choropleth` advances 5 → 6 cells (joins geo-us-states, cim-network-
+> traffic, cim-authentication, cim-alerts, thousandeyes — a per-state
+> breach-host count over the CIM Performance dataset). Source rows
+> bump: thousandeyes 6 → 7, splunk-stream 5 → 6, cim-performance
+> 5 → 6. All three follow the wave-13 generalised recipe contract
+> (`schema_version: 1` + frontmatter + §1-§6 + `## Verification status`
+> trailer) and pass `check-recipe-schema.py` (87/87). Token cost:
+> ~5,502 tokens net (163,298 → 168,800, 6,200 WARN headroom
+> remaining) — the pointer-consolidation trim from PR #87 absorbed
+> roughly half of the new-recipe cost (gross ~10k → net ~5.5k). The
+> 6,200-token headroom means wave 33 needs another token-trim BEFORE
+> any new recipes ship; the §6 Gotchas compaction lever flagged in
+> the wave-31-recipes status block remains the highest-ROI next
+> trim (estimated 3-4k tokens reclaim). All gates green locally
+> (`build-llms-full-txt.py --check`, `build-llms-txt.py --check`,
+> `check-recipe-schema.py`, `build-reference-pages.py --check`,
+> `check-manifest.py`, `check-formatter-schema.py`,
+> `check-formatter-coverage.py`, `mkdocs build --strict`).
+> Subsequent wave 33 trim + recipes will fold in below this block.
+
 > **Status (v1.7-prep, 2026-05-26): E5 Phase 2 wave 32 token-trim
 > SHIPPED — consolidated three per-recipe pointer footers into one;
 > reclaimed 7,397 tokens (170,695 → 163,298, 11,702 WARN headroom).**
