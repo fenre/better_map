@@ -282,7 +282,39 @@ detail is recoverable from the live MkDocs page via the pointers
 the trim retains AND from the canonical script sources at
 ``docker/scripts/bootstrap.sh``, ``docker/scripts/teardown.sh``,
 and ``scripts/dispatch-test.py``; see
-``strip_local_splunk_harness_operational`` below):
+``strip_local_splunk_harness_operational`` below) — and in wave
+37d by dropping the THREE contiguous trailing operational
+HOW-DO-I-RUN-IT / transient-tracking H2 sections (``## Known
+gaps`` ≈ 357 tokens of 4-row markdown tracking table for CI
+coverage gaps with stakes + ROADMAP §3 follow-up references —
+the LLM-relevant facts already live authoritatively in ROADMAP
+§3 D2 / D5; ``## Reading a failing CI run`` ≈ 296 tokens of
+operational walkthrough plus 6-row per-gate troubleshooting
+pointer list — the genuinely useful per-gate pointers are
+duplicate cross-references to the target pages
+(``COMPAT-MATRIX``, ``_machine/agents.md``,
+``appinspect-triage.md``, ``supply-chain.md``,
+``upgrade-hygiene.md``, ``lint-js-css-contract.js``);
+``## Updating this document`` ≈ 189 tokens of 4-step process
+walkthrough for adding a new gate — duplicates the per-script
+header blocks and ``docs/_machine/agents.md`` §7 pre-commit
+checklist) from ``docs/CI-GATES.md`` (combined ~842 tokens; the
+page was already trimmed in wave 34a by dropping
+``## Gate matrix``, so wave 37d is the second-pass trim
+extension; the KEPT post-wave-37d sections — ``## TL;DR`` (kept
+verbatim, ~285 tokens — names every workflow + summarises gating
+philosophy), ``## Runtime versions`` (kept — Node / Python /
+Splunk version pins), ``## Why this document exists`` (kept —
+design rationale), ``## Defense-in-depth posture`` (kept,
+~285 tokens — explains the layered-redundancy design),
+``## See also`` (kept — cross-references the per-gate runbooks)
+— give an LLM consumer a complete first-order answer to "what
+CI gates does Better Map enforce?" without the operational drag;
+the operational HOW-DO-I-RUN-IT detail and the transient
+gap-tracking table are recoverable from the live MkDocs page via
+the pointer the trim retains AND from the ROADMAP / per-gate
+runbook pages the §See also section already cross-references;
+see ``strip_ci_gates_tracking_and_ops`` below):
 
   * Per-page warning at **50,000 estimated tokens** — one page should
     not dominate the corpus.
@@ -885,6 +917,70 @@ _LOCAL_SPLUNK_HARNESS_WALKTHROUGHS = re.compile(
 _LOCAL_SPLUNK_HARNESS_FAILURE_MODES = re.compile(
     r"^## Common failure modes[^\n]*\n"
     r"(?:(?!^## Why CI integration is deferred).*\n)*",
+    re.MULTILINE,
+)
+
+# CI-GATES second-pass trim contract — see strip_ci_gates_tracking_and_ops()
+# and the E5 Phase 2 wave 37d ROADMAP block. ``docs/CI-GATES.md`` was
+# already trimmed in wave 34a by dropping the heavy ``## Gate matrix``
+# H2 (the per-workflow + per-job CI gate row catalogue) via
+# ``strip_ci_gates_matrix``. Wave 37d follows up by dropping THREE
+# contiguous trailing H2 sections that are operational HOW-DO-I-RUN-IT
+# or transient tracking content rather than architectural reference:
+#
+# (1) ``## Known gaps`` ≈ 357 tokens of 4-row markdown table tracking
+# CI coverage gaps (docs gates in ci.yml/docs.yml but not release.yml,
+# D5 live dispatch test deferred, D2 browser-compat Linux-only,
+# appinspect job parallelism); each row carries its own ROADMAP §3
+# follow-up reference. The LLM-relevant facts (D5 deferred to Phase 2,
+# D2 cross-OS deferred to Phase 2, both blocked on self-hosted-runner
+# decision) live authoritatively in ROADMAP §3 D2 / D5 — the table on
+# this page is a tracker / audit log, not the source of truth.
+#
+# (2) ``## Reading a failing CI run`` ≈ 296 tokens of operational
+# walkthrough (read step name → match to gate-matrix row → download
+# artefact) plus a 6-row per-gate troubleshooting pointer list. The
+# per-gate troubleshooting pointers are the genuinely useful content
+# but they live verbatim in their target pages (COMPAT-MATRIX,
+# _machine/agents.md, appinspect-triage.md, supply-chain.md,
+# upgrade-hygiene.md, lint-js-css-contract.js); the walkthrough
+# prose is recoverable from the live MkDocs page.
+#
+# (3) ``## Updating this document`` ≈ 189 tokens of 4-step process
+# walkthrough for adding a new gate (add workflow step → add matrix
+# row → add release-only row → run PR-gate locally). This is process
+# documentation that lives more authoritatively in the per-script
+# header blocks (``scripts/check-*.py`` source comments) and the
+# ``docs/_machine/agents.md`` §7 pre-commit checklist; the
+# ``CI-GATES.md`` walkthrough is a duplicate cross-reference.
+#
+# Safety rationale: the on-disk ``docs/CI-GATES.md`` is unchanged; the
+# MkDocs site renders the full page (including ``## Known gaps`` +
+# ``## Reading a failing CI run`` + ``## Updating this document``) for
+# human readers; the trim runs only in the in-memory writer pipeline
+# of ``build-llms-full-txt.py`` via
+# ``strip_ci_gates_tracking_and_ops()`` — H2-anchored regex with
+# defensive no-op fallback, replacement pointer carrying the live
+# MkDocs anchors (``#known-gaps``, ``#reading-a-failing-ci-run``,
+# ``#updating-this-document``) so each pointer is click-through-
+# valid. The KEPT post-wave-37d sections answer the LLM-useful
+# questions: ``## TL;DR`` (kept verbatim, ~285 tokens) names every
+# workflow and summarises gating philosophy; ``## Runtime versions``
+# (kept) carries the Node / Python / Splunk version pins;
+# ``## Why this document exists`` (kept) carries the design rationale;
+# ``## Defense-in-depth posture`` (kept, ~285 tokens) explains the
+# layered-redundancy design; ``## See also`` (kept) cross-references
+# the per-gate runbooks.
+#
+# One regex (single contiguous block of 3 trailing H2s before
+# ``## See also``). The first H2 of the block (``## Known gaps``) is
+# the start anchor; ``## See also`` is the stop anchor. The
+# intermediate H2s (``## Reading a failing CI run``, ``## Updating
+# this document``) are matched as content lines of the tempered-
+# greedy-token because they do not match the stop pattern.
+_CI_GATES_TRACKING_AND_OPS = re.compile(
+    r"^## Known gaps[^\n]*\n"
+    r"(?:(?!^## See also).*\n)*",
     re.MULTILINE,
 )
 
@@ -2041,6 +2137,53 @@ def strip_ci_gates_matrix(
     return cleaned, count > 0
 
 
+def strip_ci_gates_tracking_and_ops(
+    body: str, page_url: str
+) -> tuple[str, bool]:
+    """Drop ``## Known gaps`` + ``## Reading a failing CI run`` +
+    ``## Updating this document`` from CI-GATES.md.
+
+    See the module-level ``_CI_GATES_TRACKING_AND_OPS`` contract for the
+    full rationale. Returns ``(cleaned_body, dropped)`` where
+    ``dropped`` is ``True`` when the three-H2 contiguous block was
+    found and replaced with a pointer, ``False`` when the page does
+    not contain the block (defensive — the helper is a no-op on
+    already-trimmed CI-GATES bodies and on synthetic test fixtures).
+
+    The block is replaced with a one-line pointer back to the live
+    CI-GATES page so an LLM consumer following the corpus's per-page
+    structure still sees a breadcrumb to the full gap-tracking matrix
+    and the operational walkthroughs. The pointer headings match the
+    MkDocs-generated anchors (``#known-gaps``,
+    ``#reading-a-failing-ci-run``, ``#updating-this-document``) so
+    each pointer is click-through-valid.
+    """
+    pointer = (
+        "## Known gaps\n\n"
+        "_§Known gaps (4-row tracking table of CI coverage gaps with"
+        " stakes + ROADMAP §3 follow-up references), §Reading a"
+        " failing CI run (operational walkthrough: read step name →"
+        " match to gate-matrix row → download artefact, plus 6-row"
+        " per-gate troubleshooting pointer list), and §Updating this"
+        " document (4-step process walkthrough for adding a new gate)"
+        " omitted from llms-full.txt for token-budget headroom; read"
+        f" all three sections at <{page_url}#known-gaps>,"
+        f" <{page_url}#reading-a-failing-ci-run>, and"
+        f" <{page_url}#updating-this-document>, or inspect the gate-"
+        "tracking source of truth at"
+        " <https://github.com/fenre/better_map/blob/main/ROADMAP.md>"
+        " (ROADMAP §3 D2 / D5 carry the deferred-gate design rationale"
+        " authoritatively) and the per-gate runbooks at the §See also"
+        " cross-references that follow this pointer._\n\n"
+    )
+
+    def _replace(_match: re.Match[str]) -> str:
+        return pointer
+
+    cleaned, count = _CI_GATES_TRACKING_AND_OPS.subn(_replace, body)
+    return cleaned, count > 0
+
+
 def strip_roadmap_workitem_bodies(
     body: str, page_url: str
 ) -> tuple[str, int]:
@@ -2297,6 +2440,9 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
             )
         if is_ci_gates_page(relpath):
             expanded, _matrix = strip_ci_gates_matrix(expanded, url)
+            expanded, _tracking_ops = strip_ci_gates_tracking_and_ops(
+                expanded, url
+            )
         if is_compat_matrix_page(relpath):
             expanded, _compat = strip_compat_matrix_operational(
                 expanded, url
