@@ -14180,74 +14180,7 @@ first boot is ~30 s because the splunk container is already healthy.
 
 ## What `bootstrap.sh` does, step by step
 
-1. **Validates prerequisites** — Docker present, `docker compose`
-   available, `docker/.env` exists, `SPLUNK_PASSWORD` is not the
-   placeholder.
-2. **Starts the container** — `docker compose up -d splunk` with the
-   port mappings and env vars from `docker/.env`.
-3. **Waits for splunkd** — polls
-   `https://localhost:8089/services/server/info` with basic auth
-   until 200 OK (deadline: 10 minutes; first boot ≈ 1–2 minutes).
-4. **Mints a REST bearer token** — calls `splunk add token` inside
-   the container, scoped to admin, audience
-   `better_map_harness_<timestamp>`, 30-day expiry. The token is
-   long-lived so you don't have to re-run bootstrap every time you
-   close your laptop.
-5. **Builds the tarball** (unless `--skip-build`) — runs
-   `npm run build` if `visualization.js` is missing, then stages the
-   app tree via the same rsync rules `scripts/run-appinspect-local.sh`
-   and `.github/workflows/release.yml` use (strip `node_modules`,
-   `src`, `scripts`, build config, `harness.json`). Output:
-   `docker/staging/better_map-local.tar.gz`.
-6. **Installs the app** (unless `--skip-install`) — POSTs to
-   `/services/apps/local` with `name=/staging/better_map-local.tar.gz`
-   `filename=true` `update=true`. The `/staging` directory is bind-
-   mounted into the container, so splunkd sees the path on its own
-   filesystem and accepts it without the multipart-upload gotcha
-   documented in
-   `~/.cursor/skills/splunk-remote-app-deploy/SKILL.md`.
-7. **Restarts splunkd** — POST `/services/server/control/restart`,
-   then polls `/services/server/info` until back up.
-8. **Writes `secrets.env`** — at the repo root, chmod 600, with
-   `SPLUNK_HOST=localhost`, `SPLUNK_PORT=8089`, the minted
-   `SPLUNK_TOKEN`, the HEC port + token, and `SPLUNK_INSECURE=1` for
-   the self-signed lab cert.
-
-After bootstrap completes, `secrets.env` is the single point of
-truth every helper script reads (`scripts/check-splunk-messages.sh`,
-`scripts/dispatch-test.py`, anything you add later).
-
-## What `dispatch-test.py` does
-
-```bash
-python3 scripts/dispatch-test.py
-python3 scripts/dispatch-test.py --filter overview
-python3 scripts/dispatch-test.py --verbose
-python3 scripts/dispatch-test.py --timeout 120
-```
-
-1. Loads `secrets.env`, validates `SPLUNK_HOST` and `SPLUNK_TOKEN`.
-2. Pre-flight `GET /services/server/info` — fails fast if the token
-   is rejected or splunkd is unreachable.
-3. Walks `better_map/default/data/ui/views/*.xml`, parses each
-   Dashboard Studio dashboard's CDATA JSON, extracts every
-   `ds.search` query.
-4. For each query:
-   - `POST /servicesNS/nobody/better_map/search/jobs`
-     `search=<spl>` `exec_mode=normal` `earliest_time=-24h@h`
-     `latest_time=now`.
-   - Polls the returned `sid` until `isDone=true` (timeout: 60 s by
-     default; override with `--timeout`).
-   - Collects the `messages` array from the job content.
-5. Classifies messages: `info` / `warn` / `error` / `fatal`. A
-   dashboard FAILs if any of its queries returns an `error` or
-   `fatal`; WARNs if any returns a `warn` but no errors; PASSes
-   otherwise.
-6. Prints a per-dashboard report and exits 0 / 1.
-
-Today's repo has **13 dashboards / 66 queries**. Expected wall-clock:
-30–60 s on a warm Splunk (all queries use `| makeresults` so they
-don't touch any real index).
+_§What `bootstrap.sh` does (8-step bootstrap walkthrough: prerequisite validation → `docker compose up` → splunkd readiness poll → bearer-token mint → tarball build → app install via `/staging` bind-mount → splunkd restart → `secrets.env` write) and §What `dispatch-test.py` does (6-step dashboard smoke-test walkthrough: `secrets.env` load → pre-flight `/services/server/info` → XML walk over `data/ui/views/*.xml` → per-query dispatch + poll → message classification → exit code) omitted from llms-full.txt for token-budget headroom; read both walkthroughs at <https://fenre.github.io/better_map/development/local-splunk-harness/#what-bootstrapsh-does-step-by-step> and <https://fenre.github.io/better_map/development/local-splunk-harness/#what-dispatch-testpy-does>, or inspect the canonical script sources at <https://github.com/fenre/better_map/blob/main/docker/scripts/bootstrap.sh> and <https://github.com/fenre/better_map/blob/main/scripts/dispatch-test.py> for the authoritative step definitions._
 
 ## Talking to a remote Splunk instead of the local harness
 
@@ -14272,40 +14205,7 @@ teardown doesn't clobber a remote-tenant config.
 
 ## Common failure modes
 
-### `bootstrap.sh` exits with "splunkd did not come up within 10 minutes"
-
-Almost always low memory. Check Docker's per-container memory limit
-in Docker Desktop → Settings → Resources; allocate at least 4 GB.
-Then `docker logs better_map_splunk --tail 100` for the splunk-
-ansible failure message.
-
-### `dispatch-test.py` reports `error: timeout: job <sid> did not complete within 60s`
-
-A real Splunk searching against a real index would hit this; the
-13 starter dashboards all use `| makeresults` so they shouldn't.
-Re-run with `--timeout 180` and `--filter <name>` to isolate the
-specific dashboard, then inspect the SPL — usually a `streamstats`
-without a partitioning key against high-cardinality data.
-
-### `dispatch-test.py` reports HTTP 401 on the pre-flight
-
-The token expired (30-day default). Re-run `bash
-docker/scripts/bootstrap.sh` — it mints a fresh one and rewrites
-`secrets.env`.
-
-### `bootstrap.sh` reports HTTP 400 "Unparsable URI-encoded request data" on the install step
-
-The skill at `~/.cursor/skills/splunk-remote-app-deploy/SKILL.md`
-documents the cause: somebody changed the install POST from
-URL-encoded `name=<path>` `filename=true` to a multipart body.
-splunkd:8089 does not accept multipart. Revert.
-
-### Splunk Web shows the better_map app but `dispatch-test.py` reports HTTP 404 on every query
-
-Namespace mismatch — usually means the app installed under a
-different folder name than `better_map`. The dispatch URL uses
-`/servicesNS/nobody/better_map/...`; if you forked the app, set
-`SPLUNK_NAMESPACE=nobody:<your-app-id>` in `secrets.env`.
+_§Common failure modes (five worked-example diagnostics with remediation steps: `bootstrap.sh` 10-min splunkd timeout = low Docker memory; `dispatch-test.py` 60-s job timeout = SPL bug; pre-flight HTTP 401 = expired token; install HTTP 400 = multipart-body regression per the `splunk-remote-app-deploy` skill; Splunk Web sees app but dispatch HTTP 404s = namespace mismatch) omitted from llms-full.txt for token-budget headroom; read all five subsections at <https://fenre.github.io/better_map/development/local-splunk-harness/#common-failure-modes>, or inspect the canonical diagnostic logic at <https://github.com/fenre/better_map/blob/main/scripts/dispatch-test.py> and the deployment skill at `~/.cursor/skills/splunk-remote-app-deploy/SKILL.md` for the multipart-body failure-mode origin._
 
 ## Why CI integration is deferred
 

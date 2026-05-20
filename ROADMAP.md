@@ -1,5 +1,99 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-31): E5 Phase 2 wave 37c token-trim
+> SHIPPED — drop the TWO non-contiguous operational HOW-DO-I-RUN-IT
+> clusters (Block A — two contiguous H2s: ``## What `bootstrap.sh`
+> does, step by step`` ≈ 480 tokens of 8-step bootstrap walkthrough
+> (prerequisite validation → ``docker compose up`` → splunkd
+> readiness poll → bearer-token mint → tarball build → app install
+> via ``/staging`` bind-mount → splunkd restart → ``secrets.env``
+> write), and ``## What `dispatch-test.py` does`` ≈ 350 tokens of
+> 6-step dashboard-smoke-test walkthrough (``secrets.env`` load →
+> pre-flight ``/services/server/info`` → XML walk over
+> ``data/ui/views/*.xml`` → per-query dispatch + poll → message
+> classification → exit code); Block B — single H2 with 5 H3s:
+> ``## Common failure modes`` ≈ 400 tokens of five worked-example
+> failure modes with diagnosis + remediation steps (``bootstrap.sh``
+> 10-min splunkd timeout = low Docker memory; ``dispatch-test.py``
+> 60-s job timeout = SPL bug; pre-flight HTTP 401 = expired token;
+> install HTTP 400 = multipart-body regression per the
+> ``splunk-remote-app-deploy`` skill; Splunk Web sees app but
+> dispatch HTTP 404s = namespace mismatch)) from
+> ``docs/development/local-splunk-harness.md`` in the llms-full.txt
+> corpus pipeline, reclaiming 1,624 tokens (169,942 → 168,318,
+> 5,058 → 6,682 WARN headroom). The wave-37b status block flagged
+> ``integrations/catalogue/`` at 2,827 tokens as the next-priority
+> lever, but ``development/local-splunk-harness/`` at 2,477 tokens
+> was selected instead because its two operational clusters split
+> CLEANLY along H2 boundaries (same shape as the wave-37a supply-
+> chain Block A / Block B split) and the canonical script sources
+> (``docker/scripts/bootstrap.sh``, ``docker/scripts/teardown.sh``,
+> ``scripts/dispatch-test.py``) provide a stronger pointer target
+> than the integrations catalogue's operational subsections (which
+> are intermixed with vendor / sourcetype reference data that an
+> LLM consumer cross-references frequently). The KEPT sections
+> answer the LLM-useful questions: ``## Prerequisites`` (kept,
+> ~210 tokens — carries the Docker / Node / repo-tree / RAM
+> requirements list); ``## Quick start`` (kept, ~440 tokens — the
+> canonical 4-command bash invocation block plus first-boot timing
+> expectations and 30-second re-bootstrap idempotency note);
+> ``## Talking to a remote Splunk instead of the local harness``
+> (kept, ~200 tokens — the ``secrets.env`` field map for remote-
+> tenant dispatch including ``SPLUNK_INSECURE`` semantics and the
+> teardown.sh remote-preservation contract); ``## Why CI
+> integration is deferred`` (kept, ~250 tokens — the design
+> rationale: 4GB-per-container memory ceiling vs GitHub Actions'
+> 7GB runner, plus the 10.2 × 10.3 version matrix doubling cost,
+> driving the maintainer-driven gate posture); ``## Cleaning up``
+> (kept, ~100 tokens — teardown contract with ``--keep-volumes``
+> flag for data-preserving teardowns + remote-tenant
+> ``secrets.env`` preservation). Safety rationale: the on-disk
+> ``docs/development/local-splunk-harness.md`` is unchanged; the
+> MkDocs site renders the full page (including both operational
+> clusters) for human readers; the trim runs ONLY in the in-memory
+> writer pipeline of ``build-llms-full-txt.py`` via
+> ``strip_local_splunk_harness_operational()`` — the function
+> follows the same shape as ``strip_supply_chain_operational``
+> (wave 37a): TWO H2-anchored regex constants
+> (``_LOCAL_SPLUNK_HARNESS_WALKTHROUGHS`` and
+> ``_LOCAL_SPLUNK_HARNESS_FAILURE_MODES``) because the trimmed
+> sections form TWO non-contiguous blocks in the page layout (the
+> kept ``## Talking to a remote Splunk`` H2 sits between Block A
+> and Block B), with defensive no-op fallback per block,
+> replacement pointers carrying the live MkDocs anchors
+> (``#what-bootstrapsh-does-step-by-step``,
+> ``#what-dispatch-testpy-does``, ``#common-failure-modes``) so
+> each pointer is click-through-valid, plus cross-references to
+> ``docker/scripts/bootstrap.sh`` + ``scripts/dispatch-test.py``
+> for the canonical step definitions and the
+> ``splunk-remote-app-deploy`` skill for the multipart-body
+> failure-mode origin. Actual reclaim is 1,624 tokens (under the
+> 2,477-token total page weight because the 5 kept H2 sections —
+> Prerequisites, Quick start, Talking to a remote Splunk, Why CI
+> integration is deferred, Cleaning up — together retain ~1,200
+> tokens of LLM-relevant content plus the page header / intro
+> anchors at top). Post-wave-37c WARN headroom of 6,682 tokens is
+> STILL BELOW the 7,000-token threshold (mandatorily triggering
+> trim-before-recipes when headroom drops below 7k) but VERY CLOSE
+> — wave 37d will need ONE more modest trim wave to clear the
+> threshold and unblock recipes. Next-priority levers per the
+> wave-36a inventory and post-37c page profile:
+> ``integrations/catalogue/`` at 2,827 tokens (operational
+> integration-catalogue detail; requires careful subsection
+> analysis to separate LLM-relevant inventory from operational
+> HOW-DO-I-CONFIGURE detail), ``CI-GATES/`` at 2,118 tokens
+> (further compaction beyond wave 34a's gate-matrix drop;
+> remaining sections include ``## TL;DR``, ``## Defense-in-depth
+> posture``, ``## What's NOT a gate``, ``## Adding a new gate``),
+> and ``COMPAT-MATRIX/`` at 1,976 tokens (further compaction
+> beyond wave 36b's operational-trim; remaining sections include
+> the kept browser-engine support matrix + ``## What this matrix
+> guarantees``). All gates green locally (``build-llms-full-txt.py
+> --check``, ``build-llms-txt.py --check``, ``check-recipe-
+> schema.py`` [97/97 valid], ``build-reference-pages.py --check``,
+> ``check-manifest.py``, ``check-formatter-schema.py``,
+> ``check-formatter-coverage.py``, ``mkdocs build --strict``).**
+
 > **Status (v1.7-prep, 2026-05-31): E5 Phase 2 wave 37b token-trim
 > SHIPPED — drop the THREE contiguous operational HOW-DO-I-RUN-IT
 > H2 sections (``## Procedure — detect orphans`` ≈ 750 tokens of
