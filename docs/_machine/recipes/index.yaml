@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 90
+recipe_count: 93
 recipes:
 - id: cim-alerts--choropleth
   source:
@@ -2711,6 +2711,71 @@ recipes:
   - description: featureJoin layer (us-states PMTiles preset; promoteId=stusps)
     path: better_map/appserver/static/visualizations/better_map/src/lib/layers/featureJoin.js
   path: docs/recipes/geo-us-states/extrusion-3d.md
+- id: itsi-kpi-base--choropleth
+  source:
+    id: itsi-kpi-base
+    display_name: ITSI service health (KPI base searches)
+    pattern: splunk-premium-itsi
+  layer:
+    id: choropleth
+    display_name: Choropleth
+  status: unverified
+  last_verified_iso8601: '2026-05-29'
+  verified_against: null
+  splunk_apps_required:
+  - id: SA-ITOA
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: CA
+    drives_formatter_option: idField
+  - name: state_name
+    type: string
+    example: California
+  - name: value
+    type: integer
+    example: '78'
+  - name: avg_health_score
+    type: integer
+    example: '78'
+  - name: service_count
+    type: integer
+    example: '12'
+  - name: critical_service_count
+    type: integer
+    example: '2'
+  required_formatter_options:
+  - featureJoinPreset
+  - enableChoropleth
+  - palette
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, markers layer (per-service drilldown)
+    path: docs/recipes/itsi-kpi-base/markers.md
+  - description: Companion recipe — same source, H3 hexbin (service density at scale)
+    path: docs/recipes/itsi-kpi-base/h3.md
+  - description: Companion recipe — same source, heatmap (smoothed service density)
+    path: docs/recipes/itsi-kpi-base/heat.md
+  - description: Companion recipe — same source, supercluster (zoom-adaptive)
+    path: docs/recipes/itsi-kpi-base/supercluster.md
+  - description: Companion recipe — same source, paths (service-dependency arcs)
+    path: docs/recipes/itsi-kpi-base/paths.md
+  - description: Pattern reference — choropleth via iplocation + us-states preset (cim-network-traffic)
+    path: docs/recipes/cim-network-traffic/choropleth.md
+  - description: Pattern reference — choropleth via geom + us-states (cim-performance, per-state breach count)
+    path: docs/recipes/cim-performance/choropleth.md
+  - description: Pattern reference — choropleth via iplocation + us-states (thousandeyes, per-state agent count)
+    path: docs/recipes/thousandeyes/choropleth.md
+  - description: splunk-itsi skill — itsi_summary schema, SHKPI- service health, entity attributes
+    path: ~/.cursor/skills/splunk-itsi/SKILL.md
+  - description: splunk-itsi-content skill — ITSI service / KPI / entity content packaging
+    path: ~/.cursor/skills/splunk-itsi-content/SKILL.md
+  - description: Layer reference — choropleth
+    path: docs/reference/layers.md
+  - description: Formatter schema — enableChoropleth, featureJoinPreset, palette
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/itsi-kpi-base/choropleth.md
 - id: itsi-kpi-base--h3
   source:
     id: itsi-kpi-base
@@ -3965,6 +4030,73 @@ recipes:
   - description: BM-CT-1 contract — every layer exposes setEnabled/isEnabled/reset
     path: docs/reference/bm-ct-1.md
   path: docs/recipes/netflow-sflow-ipfix/supercluster.md
+- id: netflow-sflow-ipfix--vector-tile-join
+  source:
+    id: netflow-sflow-ipfix
+    display_name: NetFlow / sFlow / IPFIX (flow records)
+    pattern: splunk-vendor-ta
+  layer:
+    id: vector-tile-join
+    display_name: Vector-tile join (customer PMTiles)
+  status: unverified
+  last_verified_iso8601: '2026-05-29'
+  verified_against: null
+  splunk_apps_required:
+  - id: Splunk_TA_netflow
+    optional: false
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: USA
+    drives_formatter_option: idField
+  - name: country_name
+    type: string
+    example: United States
+  - name: value
+    type: number
+    example: '184320000000'
+  - name: total_bytes
+    type: number
+    example: '184320000000'
+  - name: flow_count
+    type: integer
+    example: '8472913'
+  - name: peer_count
+    type: integer
+    example: '4112'
+  required_formatter_options:
+  - featureJoinUrl
+  - featureJoinPromoteId
+  - featureJoinSourceLayer
+  - enableChoropleth
+  - palette
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, H3 hex layer (point-level density)
+    path: docs/recipes/netflow-sflow-ipfix/h3.md
+  - description: Companion recipe — same source, heatmap layer (smoothed continuous density)
+    path: docs/recipes/netflow-sflow-ipfix/heat.md
+  - description: Companion recipe — same source, markers layer (per-destination drilldown)
+    path: docs/recipes/netflow-sflow-ipfix/markers.md
+  - description: Companion recipe — same source, paths layer (top-talker great-circle arcs)
+    path: docs/recipes/netflow-sflow-ipfix/paths.md
+  - description: Companion recipe — same source, supercluster layer (zoom-adaptive)
+    path: docs/recipes/netflow-sflow-ipfix/supercluster.md
+  - description: Pattern reference — vector-tile-join via iplocation publicIp / src_ip / dest_ip + world-countries PMTiles (cim-network-traffic)
+    path: docs/recipes/cim-network-traffic/vector-tile-join.md
+  - description: Pattern reference — vector-tile-join with vendor-TA inventory source (Cisco Meraki publicIp)
+    path: docs/recipes/meraki/vector-tile-join.md
+  - description: Pattern reference — vector-tile-join with synthetic-test fleet (ThousandEyes agent_ip)
+    path: docs/recipes/thousandeyes/vector-tile-join.md
+  - description: Splunk Network Explorer skill — flow-data collection patterns and field contracts
+    path: ~/.cursor/skills/splunk-network-explorer/SKILL.md
+  - description: Layer reference — feature join (custom PMTiles backdrop)
+    path: docs/reference/layers.md
+  - description: featureJoin layer source (promoteId + source-layer + URL contract)
+    path: better_map/appserver/static/visualizations/better_map/src/lib/layers/featureJoin.js
+  path: docs/recipes/netflow-sflow-ipfix/vector-tile-join.md
 - id: ot-datastreamer--h3
   source:
     id: ot-datastreamer
@@ -4756,6 +4888,67 @@ recipes:
   - description: Formatter schema — enableChoropleth, featureJoinPreset, palette
     path: docs/_machine/formatter-schema.json
   path: docs/recipes/thousandeyes/choropleth.md
+- id: thousandeyes--extrusion-3d
+  source:
+    id: thousandeyes
+    display_name: Cisco ThousandEyes (agent fleet)
+    pattern: splunk-vendor-ta
+  layer:
+    id: extrusion-3d
+    display_name: 3D extrusion
+  status: unverified
+  last_verified_iso8601: '2026-05-29'
+  verified_against: null
+  splunk_apps_required:
+  - id: ta_cisco_thousandeyes
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: CA
+    drives_formatter_option: idField
+  - name: state_name
+    type: string
+    example: California
+  - name: value
+    type: integer
+    example: '47'
+    drives_formatter_option: extrusionHeightField
+  - name: agent_count
+    type: integer
+    example: '47'
+  - name: online_count
+    type: integer
+    example: '44'
+  - name: online_ratio
+    type: number
+    example: '0.94'
+  required_formatter_options:
+  - featureJoinPreset
+  - enable3DExtrusion
+  - extrusionHeightField
+  - extrusionScale
+  - enableChoropleth
+  - palette
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, choropleth layer (flat-fill sibling — same SPL, height-free encoding)
+    path: docs/recipes/thousandeyes/choropleth.md
+  - description: Companion recipe — same source, vector-tile-join layer (global per-country footprint)
+    path: docs/recipes/thousandeyes/vector-tile-join.md
+  - description: Companion recipe — same source, markers / h3 / heat / supercluster / paths layers
+    path: docs/recipes/thousandeyes/markers.md
+  - description: Pattern reference — extrusion-3d on CIM Performance (sibling per-state breaching-host height encoding)
+    path: docs/recipes/cim-performance/extrusion-3d.md
+  - description: Pattern reference — extrusion-3d on the bundled us-states preset (canonical demo)
+    path: docs/recipes/geo-us-states/extrusion-3d.md
+  - description: ThousandEyes setup skill — agent inventory, sourcetypes, OAuth flow
+    path: ~/.cursor/skills/cisco-thousandeyes-setup/SKILL.md
+  - description: Layer reference — extrusion-3d
+    path: docs/reference/layers.md
+  - description: Formatter schema — enable3DExtrusion, extrusionHeightField, extrusionScale
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/thousandeyes/extrusion-3d.md
 - id: thousandeyes--h3
   source:
     id: thousandeyes

@@ -256,6 +256,7 @@ nav:
       - 'Cisco Cyber Vision (components + vulnerabilities) — markers': recipes/cyber-vision/markers.md
       - 'Cisco Cyber Vision (components + vulnerabilities) — paths': recipes/cyber-vision/paths.md
       - 'Cisco Cyber Vision (components + vulnerabilities) — supercluster': recipes/cyber-vision/supercluster.md
+      - 'Cisco ThousandEyes (agent fleet) — 3D extrusion': recipes/thousandeyes/extrusion-3d.md
       - 'Cisco ThousandEyes (agent fleet) — H3 hexbin': recipes/thousandeyes/h3.md
       - 'Cisco ThousandEyes (agent fleet) — choropleth': recipes/thousandeyes/choropleth.md
       - 'Cisco ThousandEyes (agent fleet) — heatmap': recipes/thousandeyes/heat.md
@@ -269,6 +270,7 @@ nav:
       - 'ES Risk-Based Alerting (risk index) — paths': recipes/es-risk/paths.md
       - 'ES Risk-Based Alerting (risk index) — supercluster': recipes/es-risk/supercluster.md
       - 'ITSI service health (KPI base searches) — H3 hexbin': recipes/itsi-kpi-base/h3.md
+      - 'ITSI service health (KPI base searches) — choropleth': recipes/itsi-kpi-base/choropleth.md
       - 'ITSI service health (KPI base searches) — heatmap': recipes/itsi-kpi-base/heat.md
       - 'ITSI service health (KPI base searches) — markers': recipes/itsi-kpi-base/markers.md
       - 'ITSI service health (KPI base searches) — paths': recipes/itsi-kpi-base/paths.md
@@ -291,6 +293,7 @@ nav:
       - 'NetFlow / sFlow / IPFIX — markers': recipes/netflow-sflow-ipfix/markers.md
       - 'NetFlow / sFlow / IPFIX — paths': recipes/netflow-sflow-ipfix/paths.md
       - 'NetFlow / sFlow / IPFIX — supercluster': recipes/netflow-sflow-ipfix/supercluster.md
+      - 'NetFlow / sFlow / IPFIX — vector-tile join': recipes/netflow-sflow-ipfix/vector-tile-join.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — H3 hexbin': recipes/ot-datastreamer/h3.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — heatmap': recipes/ot-datastreamer/heat.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — markers': recipes/ot-datastreamer/markers.md
