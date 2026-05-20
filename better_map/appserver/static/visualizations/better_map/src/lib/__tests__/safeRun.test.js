@@ -118,19 +118,38 @@ describe('safeRun — reporter chain', () => {
         expect(getRecentErrors()).toHaveLength(0);
     });
 
-    it('default reporter logs structured [scope] severity: message line', () => {
+    it('default reporter logs structured [better_map] scope severity: message line', () => {
+        // Q-2 console-noise contract requires the literal [better_map] prefix
+        // and forbids console.log in shipping source, so the default reporter
+        // emits via console.warn (non-fatal) or console.error (fatal).
         const logs = [];
-        const origLog = console.log;
-        console.log = function () { logs.push(Array.from(arguments).join(' ')); };
+        const origWarn = console.warn;
+        console.warn = function () { logs.push(Array.from(arguments).join(' ')); };
         try {
             safeRun({
                 scope: LAYER_MARKERS,
                 action: function () { throw new Error('boom'); }
             });
         } finally {
-            console.log = origLog;
+            console.warn = origWarn;
         }
-        expect(logs[0]).toBe('[better_map:layer:markers] warning: boom');
+        expect(logs[0]).toBe('[better_map] layer:markers warning: boom');
+    });
+
+    it('default reporter routes fatal envelopes to console.error', () => {
+        const errs = [];
+        const origErr = console.error;
+        console.error = function () { errs.push(Array.from(arguments).join(' ')); };
+        try {
+            safeRun({
+                scope: LAYER_MARKERS,
+                severity: 'fatal',
+                action: function () { throw new Error('boom'); }
+            });
+        } finally {
+            console.error = origErr;
+        }
+        expect(errs[0]).toBe('[better_map] layer:markers fatal: boom');
     });
 
     it('test reporter receives envelope', () => {

@@ -76,16 +76,25 @@ function _safeOnError(onError, err) {
     } catch (cleanupErr) {
         try {
             // eslint-disable-next-line no-console
-            console.error('[better_map:safeRun] onError handler threw:', cleanupErr);
+            console.error('[better_map] safeRun onError handler threw:', cleanupErr);
         } catch (_) { /* nothing more we can do */ }
     }
 }
 
 function _defaultReporter(envelope) {
     try {
-        const prefix = '[better_map:' + envelope.scope + '] ' + envelope.severity + ':';
-        // eslint-disable-next-line no-console
-        console.log(prefix, envelope.message);
+        // Q-2 console-noise contract: shipping source must use console.warn or
+        // console.error (never console.log) AND the first argument has to be a
+        // string LITERAL starting with [better_map] on the SAME physical line
+        // as the console call (the linter is per-line). We branch on severity
+        // so fatal envelopes surface as errors and warnings stay at warn-level.
+        if (envelope.severity === 'fatal') {
+            // eslint-disable-next-line no-console
+            console.error('[better_map] ' + envelope.scope + ' ' + envelope.severity + ': ' + envelope.message);
+        } else {
+            // eslint-disable-next-line no-console
+            console.warn('[better_map] ' + envelope.scope + ' ' + envelope.severity + ': ' + envelope.message);
+        }
     } catch (_) { /* console may be unavailable */ }
 }
 
@@ -96,12 +105,7 @@ function _safeReport(envelope) {
     } catch (reporterErr) {
         try {
             // eslint-disable-next-line no-console
-            console.error(
-                '[better_map:safeRun-itself] reporter threw:',
-                reporterErr,
-                '\noriginal envelope:',
-                envelope
-            );
+            console.error('[better_map] safeRun reporter threw:', reporterErr, '\noriginal envelope:', envelope);
         } catch (_) { /* nothing more we can do */ }
     }
 }
