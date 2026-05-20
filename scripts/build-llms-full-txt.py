@@ -148,7 +148,29 @@ tokens) bounds the scope, and the work-item-ID cross-link surface
 §3 trim — so per-milestone sub-totals + exit criteria are
 operational planning detail that an LLM consumer can fetch on
 demand via the pointer; see ``strip_roadmap_milestone_sequencing``
-below):
+below — and in wave 36 by compacting ``Appendix B — Per-source
+recipe matrix`` from a 95-row × 6-column table to a 3-line pointer
+(the table reached ~5.8k rendered tokens at 95 recipes — the single
+largest unstripped content block in the corpus by wave 35b — but
+every per-row datum is structurally redundant with content kept
+elsewhere in the corpus: display name + source/layer are in the
+per-recipe ``# === BEGIN: .../recipes/<source>/<layer>/ ===`` headers
+and H1s, apps-required is restated in §1 prose of every recipe,
+status / verified-against columns are mechanical until D5 Phase 2
+lands (status="unverified" for every row today, verified-against="—"
+for every row today), and the ``recipes/`` page block earlier in this
+same file ALREADY carries the agent-actionable pivot — total counts +
+per-source-dir → layer-id presence list + OT-safety inventory — that
+the wave-12 matrix was designed to expose; the wave-12 matrix was a
+bridge between corpus body / per-recipe sections / structured YAML
+when each was incomplete, and in v1.7-prep all three views are
+production-quality and the bridge is redundant; the trim leaves a
+pointer to ``docs/_machine/recipes/index.yaml`` (the structured
+source-of-truth for status / apps / expected-fields / formatter
+options / OT relevance / verification metadata) and to the
+``recipes/`` page block (the agent-actionable summary); see the
+inline format-contract block immediately preceding the
+``# === BEGIN: appendix:recipes ===`` write block):
 
   * Per-page warning at **50,000 estimated tokens** — one page should
     not dominate the corpus.
@@ -1729,84 +1751,86 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
 
     # ------------- Recipes appendix
     #
-    # Format contract (recalibrated in E5 Phase 2 wave 12 — see the
-    # corresponding ROADMAP status block): the appendix renders as a
-    # single matrix table rather than per-recipe sections with bulleted
-    # `Expected fields:` lists. The pre-wave-12 per-section format
-    # carried ~150 tokens per recipe (~5.3k tokens across 36 recipes,
-    # the second-largest content block after roadmap.md), and >70% of
-    # that was the `expected_fields` list — which is fully duplicated
-    # in §3 of each recipe page body, retained in llms-full.txt under
-    # the wave-4a `## 5. Screenshot` trim point. The matrix preserves
-    # the agent-actionable lookup contract (which recipe matches which
-    # source+layer? where is the unabridged page? what apps are
-    # required? what's the verification status?) while shedding the
-    # ~4k tokens of duplication. Agents that need the field contract
-    # follow the per-row Page link, which lands on the body block that
-    # already contains §3 in this same file.
+    # Format contract:
+    #
+    #   * Wave 12 (initial table): the appendix was first compacted from
+    #     per-recipe sections with bulleted ``Expected fields:`` lists
+    #     (the pre-wave-12 format carried ~150 tokens per recipe, ~5.3k
+    #     across 36 recipes, with >70% duplicating §3 of each recipe
+    #     page) down to a single 6-column matrix table. The matrix
+    #     preserved the agent-actionable lookup contract (which recipe
+    #     matches which source+layer? where is the unabridged page?
+    #     what apps are required? what's the verification status?)
+    #     while shedding the duplication.
+    #   * Wave 36 (compact pointer): by wave 35 the recipe count had
+    #     grown from 36 to 95 and the matrix table reached ~5.8k tokens
+    #     — the single largest unstripped content block in llms-full.txt
+    #     after the wave-33 ROADMAP §3 strip and the wave-34 CI-GATES
+    #     matrix strip. The wave-35a status block flagged "per-recipe
+    #     §6 Gotchas compaction" as the next trim, but profiling
+    #     showed that ``strip_recipe_advisory`` already drops every
+    #     line from §5 to end of file — there was no §6 boilerplate
+    #     left in the corpus to reclaim. Re-profiling identified the
+    #     appendix:recipes table as the actual next-highest-ROI lever.
+    #     The information in the table is structurally redundant with
+    #     the corpus body: every recipe's display name + source/layer
+    #     is already present in the per-recipe `# === BEGIN:
+    #     .../recipes/<source>/<layer>/ ===` headers and the H1 of
+    #     each recipe page; the apps-required list is restated in the
+    #     §1 prose of every recipe; the verified-against and status
+    #     columns are mechanical (status is "unverified" for every
+    #     row today, verified-against is "—" for every row today —
+    #     they will start to differ when D5 Phase 2 lands and recipes
+    #     are smoke-tested, at which point ``status: verified`` rows
+    #     in `docs/_machine/recipes/index.yaml` will carry the
+    #     verification metadata that an LLM can fetch on demand).
+    #     Critically, the ``recipes/`` index page body block (rendered
+    #     earlier in this same file via ``strip_recipes_index_matrix``)
+    #     already carries the compact pivot — total counts + per-source-
+    #     dir → layer-id presence list + OT-safety-relevant inventory
+    #     — which is the agent-actionable lookup the wave-12 matrix
+    #     was designed to expose. The wave-36 trim collapses the
+    #     95-row table to a 3-line pointer to that pivot + the YAML
+    #     source-of-truth, reclaiming ~5.7k tokens. Every per-row
+    #     piece of data is still recoverable: ``recipes/`` index
+    #     answers "which recipes ship?", per-recipe body blocks
+    #     answer "what's the SPL / formatter config / field contract
+    #     for recipe X?", and ``docs/_machine/recipes/index.yaml``
+    #     answers "what's the structured metadata for every recipe?".
+    #     The wave-12 matrix was a bridge between those three views
+    #     when each was incomplete; in v1.7-prep all three views are
+    #     production-quality and the bridge is redundant.
     buf.write("\n# === BEGIN: appendix:recipes ===\n\n")
     buf.write("# Appendix B — Per-source recipe matrix\n\n")
     buf.write(
-        "> Source of truth: `docs/_machine/recipes/index.yaml` "
-        f"({len(recipes)} recipe(s), emission order)\n\n"
+        "<!-- Appendix B matrix trimmed for llms-full.txt token budget "
+        "(see Wave 36 ROADMAP block); the agent-actionable lookup "
+        "(per-source-dir layer presence list, total counts, OT-safety "
+        "inventory) is in the `recipes/` page body block earlier in "
+        "this same file (rendered by `strip_recipes_index_matrix`); "
+        "the structured per-recipe metadata (status, apps required, "
+        "expected-fields contract, formatter options, verified-against) "
+        "is in `docs/_machine/recipes/index.yaml`; the per-recipe SPL "
+        "+ formatter config + field contract is kept verbatim under "
+        "each `# === BEGIN: .../recipes/<source>/<layer>/ ===` block "
+        "in this same file. -->\n\n"
     )
     buf.write(
-        "Each row distils a `docs/recipes/<source>/<layer>.md` page so "
-        "an agent can answer 'which recipe matches this data source?' "
-        "without fetching every recipe page. Recipes carry one of three "
-        "statuses: `verified` (smoke-tested against a live Splunk tenant "
-        "with proof in the YAML metadata), `unverified` (the recipe "
-        "follows the contract but has not yet been smoke-tested), or "
-        "`deferred` (the recipe is known to be incomplete pending "
-        "upstream work). The expected-field contract for each recipe "
-        "lives in §3 of the recipe page (kept verbatim in this file "
-        "under the matching `# === BEGIN: …/recipes/<source>/<layer>/ "
-        "===` block); follow the Page link below to jump to it.\n\n"
+        f"**{len(recipes)} recipe(s)** indexed at the source of truth: "
+        "[`docs/_machine/recipes/index.yaml`]"
+        "(https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml) "
+        "— structured YAML carrying recipe id, source, layer, status, "
+        "splunk apps required, expected-field contract, formatter options, "
+        "ot-safety relevance, and verification metadata for every "
+        "recipe in the matrix. See the `recipes/` page body block "
+        "earlier in this file for the agent-actionable summary "
+        "(total counts + per-source-dir layer presence list + "
+        "OT-safety-relevant recipe inventory). See each "
+        "`# === BEGIN: .../recipes/<source>/<layer>/ ===` block "
+        "in this file for the per-recipe SPL recipe, expected-fields "
+        "contract (§3 verbatim), and recommended formatter config "
+        "(§4 verbatim).\n"
     )
-    if not recipes:
-        buf.write(
-            "(No recipes shipped yet — see E5 in the roadmap for the "
-            "matrix design.)\n"
-        )
-    else:
-        buf.write("| Recipe ID | Source → Layer | Status | Apps required | Verified against | Page |\n")
-        buf.write("| :-- | :-- | :-- | :-- | :-- | :-- |\n")
-        for entry in recipes:
-            source = entry.get("source") or {}
-            layer = entry.get("layer") or {}
-            label = (
-                f"{source.get('display_name', source.get('id', '?'))} → "
-                f"{layer.get('display_name', layer.get('id', '?'))}"
-            )
-            recipe_id = entry.get("id", "")
-            status = entry.get("status", "unknown")
-            apps = entry.get("splunk_apps_required") or []
-            app_cells: list[str] = []
-            for app in apps:
-                if isinstance(app, dict):
-                    app_id = app.get("id", "?")
-                    app_min = app.get("min_version", "")
-                    app_cells.append(
-                        f"`{app_id}`" + (f" ≥ {app_min}" if app_min else "")
-                    )
-            apps_cell = ", ".join(app_cells) if app_cells else "—"
-            verified = entry.get("verified_against") or {}
-            if isinstance(verified, dict) and verified:
-                verified_cell = ", ".join(f"{k}={v}" for k, v in verified.items())
-            else:
-                verified_cell = "—"
-            path = entry.get("path", "")
-            if path:
-                rel_short = path[len("docs/") :] if path.startswith("docs/") else path
-                page_url = url_for(site_url, rel_short)
-                page_cell = f"[{path}]({page_url})"
-            else:
-                page_cell = "—"
-            buf.write(
-                f"| `{recipe_id}` | {label} | {status} | {apps_cell} | "
-                f"{verified_cell} | {page_cell} |\n"
-            )
-        buf.write("\n")
     buf.write("# === END: appendix:recipes ===\n")
 
     # ------------- Footer
