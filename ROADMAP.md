@@ -1,5 +1,54 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-06-01): E5 Phase 2 wave 39 token-trim
+> SHIPPED — tighten ``_CHANGELOG_KEEP_VERSIONS`` from 3 to 1 in
+> ``scripts/build-llms-full-txt.py``. Post-Wave-38 the WARN
+> headroom dropped to 694 tokens (174,306 / 175,000) — under the
+> 7,000-token threshold that mandates trim-before-recipes. The
+> CHANGELOG trim is the lowest-risk single-lever lift in the
+> post-Wave-37d profile: keeping the top 3 release sections
+> consumed ~3,580 tokens in the corpus (1.6.2 ~581 + 1.6.1
+> ~782 + 1.6.0 ~2,217); keeping only the top 1 (the LATEST
+> release, currently 1.6.2) consumes ~581 tokens — a ~2,989-token
+> recovery without breaking any "what just changed?" question
+> because the latest release subsumes the contract changes the
+> recent ones introduced. The wave-9 / wave-10-era justification
+> for keeping 3 versions ("the older versions tell the agent
+> what just changed across the current release cycle") is no
+> longer load-bearing — by wave 39 the release cadence is closer
+> to "v1.6.x patches every few days" and the latest release
+> consolidates everything. The trim function
+> ``strip_changelog_old_versions`` and the trim pointer (which
+> lists every OLDER version's title + date so the agent still
+> knows WHICH historical versions exist) are unchanged — only
+> the single ``_CHANGELOG_KEEP_VERSIONS = 1`` constant flips.
+> Token impact: 174,306 → 171,317 estimated tokens (-2,989
+> recovered; close to the predicted -2,999). WARN headroom rises
+> to 3,683 tokens, but STILL UNDER the 7,000-token threshold —
+> wave 40 will be another token-trim wave before any further
+> recipes ship. Next-priority trim levers per the post-Wave-39
+> page profile: Recipes index operational subsections (Generated
+> index + CI gates + Adding a new recipe; ~430 tokens), Integration
+> catalogue per-integration prose (8 subsections × ~150 tokens
+> each, with ~700 tokens reclaimable while keeping the LLM-relevant
+> matrix + endpoint detail intact), COMPAT-MATRIX Phase 2 deferred-
+> matrix + worked-example bullets (~600 tokens), supply-chain
+> Splunkbase-submission + Roadmap-follow-ups + SBOM-worked-examples
+> sections (~500 tokens), or — the highest-ROI lever per the wave-31
+> design hint — per-recipe ``## 6. Gotchas`` compaction (but §6
+> is already auto-stripped in llms-full.txt today, so the lever
+> needs revisiting). The on-disk ``CHANGELOG.md`` is unchanged
+> — every historical version (1.6.2 down to 0.1.0, 17 versions)
+> is preserved in source-of-truth form. The MkDocs site
+> continues to render every version for human readers via the
+> unaltered ``{% include-markdown "../CHANGELOG.md" %}`` include.
+> All gates green locally (``build-llms-full-txt.py --check``
+> [171,317 tokens, 685,270 chars, 15,413 lines],
+> ``build-llms-txt.py --check``, ``check-recipe-schema.py``
+> [100/100 valid], ``build-reference-pages.py --check``,
+> ``check-manifest.py``, ``check-formatter-schema.py``,
+> ``check-formatter-coverage.py``, ``mkdocs build --strict``).**
+
 > **Status (v1.7-prep, 2026-06-01): E5 Phase 2 wave 38 recipes
 > SHIPPED — 3 diversification recipes (97 → 100 total) selected
 > from the post-37d sparse-layer / sparse-source matrix.

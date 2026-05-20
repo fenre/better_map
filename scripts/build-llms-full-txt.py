@@ -1027,20 +1027,33 @@ _KEEP_WORKITEM_BULLETS: frozenset[str] = frozenset(
 )
 
 # Changelog older-versions trim contract — see strip_changelog_old_versions()
-# and the E5 Phase 2 wave 10 ROADMAP block. CHANGELOG.md is the
-# Keep-a-Changelog-formatted release history; by wave 9 the file held
-# 18 version sections (1.6.2 down to 0.1.0) totalling ~19.6k tokens
-# in llms-full.txt — the second-largest single page after roadmap.md.
+# and the E5 Phase 2 wave 10 ROADMAP block (initial, KEEP_VERSIONS=3)
+# and the wave 39 ROADMAP block (tightened, KEEP_VERSIONS=1).
+# CHANGELOG.md is the Keep-a-Changelog-formatted release history; by
+# wave 9 the file held 18 version sections (1.6.2 down to 0.1.0)
+# totalling ~19.6k tokens in llms-full.txt — the second-largest
+# single page after roadmap.md.
+#
 # Each section is a `## [VERSION] - DATE` heading. Most of an LLM's
-# value for changelog content is in the CURRENT release cycle (the
-# top 3 versions tell the agent what the latest behavioural contract
-# is, what just changed, and what's pending). Earlier versions are
-# historical reference that an agent needs only when explicitly
-# investigating a prior release — recoverable via the URL pointer
-# the trim appends. The trim keeps the top _CHANGELOG_KEEP_VERSIONS
-# sections fully and replaces everything below with a one-line
-# pointer + the older-version-titles list (so the agent still knows
-# WHICH older versions exist).
+# value for changelog content is in the CURRENT release (the latest
+# version tells the agent what the current behavioural contract is
+# and what just changed). Earlier versions are historical reference
+# that an agent needs only when explicitly investigating a prior
+# release — recoverable via the URL pointer the trim appends, which
+# also lists the older-version titles + dates so the agent still
+# knows WHICH older versions exist.
+#
+# Wave 39 tightening (3 → 1): post-Wave 38 the WARN headroom dropped
+# to 694 tokens (174,306 / 175,000). Keeping the top 3 versions
+# consumed ~3,580 tokens in the corpus; keeping only the top 1
+# consumes ~581 tokens — a ~2,999-token recovery without breaking
+# any "what just changed?" question because the latest release
+# carries every contract change still in effect. The wave-9-era
+# justification for keeping 3 (the older versions tell the agent
+# "what just changed" across the current release cycle) is no
+# longer load-bearing — by wave 38 the project's release cadence
+# is closer to "v1.6.x patches every few days" and the latest
+# release subsumes the recent ones.
 #
 # The on-disk CHANGELOG.md is unchanged — the trim runs only in
 # the in-memory body before it lands in llms-full.txt. The MkDocs
@@ -1050,7 +1063,7 @@ _CHANGELOG_VERSION_HEADING = re.compile(
     r"^## \[(?P<version>[\d.]+)\] - (?P<date>\d{4}-\d{2}-\d{2})\s*$",
     re.MULTILINE,
 )
-_CHANGELOG_KEEP_VERSIONS = 3
+_CHANGELOG_KEEP_VERSIONS = 1
 
 # Formatter Appendix A trim contract — see strip_formatter_appendix_a() and
 # the E5 Phase 2 wave 15 ROADMAP block. docs/reference/formatter.md is the
