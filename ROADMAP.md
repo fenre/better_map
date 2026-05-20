@@ -1,5 +1,65 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-27): E5 Phase 2 wave 33 token-trim
+> SHIPPED — drop the entire `## 3. Detailed work-items` section from
+> ROADMAP.md in the llms-full.txt corpus pipeline; reclaimed 6,452
+> tokens (168,800 → 162,348, 12,652 WARN headroom).** Pre-wave-33 the
+> ROADMAP page was the single largest unrecipeable contributor to
+> corpus weight: even AFTER the wave-17 per-item body trim compacted
+> each work-item to `Heading + Problem + Accept + Status + Done +
+> URL pointer`, the residual §3 — 7 Theme sections A-G across ~40
+> work-items — still cost ~6.5k rendered tokens (~52% of the
+> post-trim roadmap page weight after status blockquotes,
+> historical subsections, and per-item bodies are already stripped).
+> The wave-32 status block flagged the §6 Gotchas compaction as the
+> highest-ROI next trim with an estimated 3-4k token reclaim; wave
+> 33 pivoted to a higher-ROI lever after profiling the as-shipped
+> corpus and discovering that §6 Gotchas in recipe bodies were
+> already stripped by `strip_recipe_advisory()` (the consolidated
+> trailing pointer covers §5, §6, AND `## Verification status`),
+> leaving the residual §3 work-items as the single largest trimmable
+> block remaining. Implementation: new `_ROADMAP_DETAILED_WORKITEMS_
+> SECTION` regex matches the H2 heading line through the next H2 or
+> `---` separator; new `strip_roadmap_detailed_workitems(body,
+> page_url)` helper replaces the matched block with a one-line
+> pointer ("§3 Detailed work-items (7 Theme sections A-G across ~40
+> items) omitted from llms-full.txt for token-budget headroom; read
+> the full work-item matrix at <URL#3-detailed-work-items>"); call
+> inserted into the roadmap-page pipeline AFTER
+> `strip_roadmap_historical_subsections` and BEFORE
+> `strip_roadmap_workitem_bodies` (the wave-17 work-item-body trim
+> becomes a structural no-op after this trim runs since its Theme
+> regex can no longer find `### Theme [A-G]` headings — kept in
+> pipeline as defence-in-depth in case a future edit ever moves a
+> Theme block out of §3); module docstring extended with the wave-33
+> trim entry. Information loss assessment: ZERO functional loss for
+> the corpus's primary purpose. The milestone-level view in §4
+> Milestone sequencing (kept verbatim, ~1.7k tokens in corpus)
+> already gives an LLM consumer the answer to "what ships in v1.7 /
+> v1.8 / v2.0?" — the level of detail needed for cross-references
+> inside recipes ("addressed in v1.8 — see milestone v1.8") and for
+> release-planning questions. Work-item IDs (A1, B1, …, G7) DO appear
+> in recipe / runbook bodies as cross-references (e.g. "tracked under
+> ROADMAP item E1", "blocked on D1") and in the §4 milestone table
+> (all kept); both surfaces remain in the corpus, and the live
+> ROADMAP page on the MkDocs site keeps the §3 anchor IDs
+> (`#a1-…`, `#g7-…`) usable for click-through. What the corpus
+> loses is the prose body for each work-item (Problem / Accept /
+> Status / Done bullets per item) — recoverable in full by following
+> the pointer URL when an LLM consumer needs that level of detail.
+> The on-disk ROADMAP.md is unchanged — the trim runs
+> only against the in-memory body before it lands in llms-full.txt;
+> the MkDocs site continues to render every theme + work-item for
+> human readers via the unaltered include-markdown directive in
+> `docs/roadmap.md`. The new 12,652-token WARN headroom unlocks ~2 waves
+> of 3-recipe diversification slates at the typical post-wave-32 cost
+> of ~5-6k tokens per wave. All gates green locally
+> (`build-llms-full-txt.py --check`, `build-llms-txt.py --check`,
+> `check-recipe-schema.py`, `build-reference-pages.py --check`,
+> `check-manifest.py`, `check-formatter-schema.py`,
+> `check-formatter-coverage.py`, `mkdocs build --strict`). Subsequent
+> wave 33 recipes will fold in below this block.
+
 > **Status (v1.7-prep, 2026-05-20): E5 Phase 2 wave 32 recipes
 > SHIPPED — 3 new recipes (`thousandeyes/vector-tile-join` +
 > `splunk-stream/extrusion-3d` + `cim-performance/choropleth`),

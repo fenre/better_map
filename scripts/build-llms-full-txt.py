@@ -112,7 +112,16 @@ tokens of pure duplication); the consolidated footer (~290 chars)
 preserves the URL signposting at one location per recipe with zero
 information loss; see ``strip_recipe_advisory`` for the consolidated
 pointer text and ``strip_recipe_walkthroughs`` for the ``del
-page_url`` ABI-compat shim):
+page_url`` ABI-compat shim — and in wave 33 by dropping the entire
+``## 3. Detailed work-items`` section from ``ROADMAP.md`` (7 Theme
+sections A-G × ~40 work-items, ~6.5k rendered tokens in corpus =
+~52% of the post-trim roadmap page weight); the milestone-level
+view in ``## 4. Milestone sequencing`` already gives an LLM consumer
+the answer to "what ships in v1.7 / v1.8 / v2.0?" — the level of
+detail needed for cross-references inside recipes / docs — and no
+recipe or other corpus content cross-links work-item IDs (A1, A2,
+B1, …); the section is replaced with a one-line pointer to the live
+ROADMAP anchor, see ``strip_roadmap_detailed_workitems`` below):
 
   * Per-page warning at **50,000 estimated tokens** — one page should
     not dominate the corpus.
@@ -395,6 +404,43 @@ _ROADMAP_HISTORICAL_SECTION = re.compile(
     r"|7\.\s+Defensible v2\.0 claim"
     r")[^\n]*\n"
     r"(?:(?!^## |^---$).*\n)*",
+    re.MULTILINE,
+)
+
+# Roadmap §3 Detailed work-items trim contract — see
+# strip_roadmap_detailed_workitems() and the E5 Phase 2 wave 33 ROADMAP
+# block. ROADMAP.md's ``## 3. Detailed work-items`` section carries the
+# project's tactical engineering plan as 7 Theme sections (A-G) ×
+# 40 work-items. By wave 32 the section costs ~6.5k rendered tokens
+# in llms-full.txt (~52% of the roadmap page's post-trim weight) even
+# AFTER the wave-17 per-item body trim already compacts each item to
+# Heading + Problem + Accept + pointer. The next single largest trim
+# lever is therefore to drop the entire ``## 3.`` section from corpus.
+#
+# Safety rationale: the milestone-level view in ``## 4. Milestone
+# sequencing`` (kept verbatim in corpus, ~1.7k tokens) already gives
+# an LLM consumer the answer to "what ships in v1.7 / v1.8 / v2.0?"
+# — the level of detail needed for cross-references inside recipes
+# ("addressed in v1.8 — see milestone v1.8 in the roadmap") and for
+# release-planning questions. The work-item IDs (A1, A2, B1, …) are
+# never referenced in any recipe or other corpus content, so dropping
+# them does not break any cross-link in the corpus. The on-disk
+# ROADMAP.md is unchanged — the trim runs only in the in-memory body
+# before it lands in llms-full.txt. The MkDocs site continues to
+# render every theme + work-item for human readers via the unaltered
+# ``{% include-markdown "ROADMAP.md" %}`` include.
+#
+# The regex matches the H2 heading line and everything up to (but not
+# including) the next H2 heading or the section-end ``---`` horizontal
+# rule (whichever comes first). The ``strip_roadmap_workitem_bodies``
+# helper from wave 17 becomes a structural no-op after this trim runs
+# (the Theme regex it depends on can no longer find ``### Theme [A-G]``
+# headings because they live inside §3) — kept in the pipeline as
+# defence-in-depth in case a future edit ever moves a Theme block out
+# of §3.
+_ROADMAP_DETAILED_WORKITEMS_SECTION = re.compile(
+    r"^## 3\.\s+Detailed work-items[^\n]*\n"
+    r"(?:(?!^## )(?!^---$).*\n)*",
     re.MULTILINE,
 )
 # Match a top-level bullet starting with `* **Label:**`; continuation
@@ -1105,6 +1151,38 @@ def strip_roadmap_historical_subsections(body: str) -> tuple[str, int]:
     return cleaned, removed
 
 
+def strip_roadmap_detailed_workitems(
+    body: str, page_url: str
+) -> tuple[str, bool]:
+    """Drop the entire ``## 3. Detailed work-items`` section from ROADMAP.
+
+    See the module-level ``_ROADMAP_DETAILED_WORKITEMS_SECTION`` contract
+    for the full rationale. Returns ``(cleaned_body, dropped)`` where
+    ``dropped`` is ``True`` when the section was found and replaced with
+    a pointer, ``False`` when the page does not contain the section
+    (defensive — the helper is a no-op on already-trimmed ROADMAP bodies
+    and on synthetic test fixtures).
+
+    The section is replaced with a one-line pointer back to the live
+    ROADMAP page so an LLM consumer following the corpus's per-page
+    structure still sees a breadcrumb to the full work-item matrix.
+    Heading and anchor reference match the MkDocs-generated slug
+    (``#3-detailed-work-items``) so the pointer is click-through-valid.
+    """
+    pointer = (
+        "## 3. Detailed work-items\n\n"
+        "_§3 Detailed work-items (7 Theme sections A-G across ~40 items) "
+        "omitted from llms-full.txt for token-budget headroom; read the "
+        f"full work-item matrix at <{page_url}#3-detailed-work-items>._\n\n"
+    )
+
+    def _replace(_match: re.Match[str]) -> str:
+        return pointer
+
+    cleaned, count = _ROADMAP_DETAILED_WORKITEMS_SECTION.subn(_replace, body)
+    return cleaned, count > 0
+
+
 def strip_roadmap_workitem_bodies(
     body: str, page_url: str
 ) -> tuple[str, int]:
@@ -1352,6 +1430,7 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
         if is_roadmap_page(relpath):
             expanded, _blocks = strip_roadmap_status_blocks(expanded)
             expanded, _hist = strip_roadmap_historical_subsections(expanded)
+            expanded, _wi3 = strip_roadmap_detailed_workitems(expanded, url)
             expanded, _items = strip_roadmap_workitem_bodies(expanded, url)
         if is_changelog_page(relpath):
             expanded, _versions = strip_changelog_old_versions(
