@@ -13,6 +13,7 @@
     "lint:bundle-size": "node ../../../../../scripts/check-bundle-size.js",
     "lint:version-consistency": "node ../../../../../scripts/check-version-consistency.js",
     "lint:appinspect": "bash ../../../../../scripts/run-appinspect-local.sh",
+    "lint:appinspect-parity": "python3 ../../../../../scripts/check-rsync-exclude-parity.py",
     "lint:a11y": "node ../../../../../scripts/check-accessibility.js",
     "lint:browser-compat": "node ../../../../../scripts/check-browser-compat.js",
     "test": "vitest run",

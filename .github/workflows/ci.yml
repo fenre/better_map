@@ -480,6 +480,16 @@ jobs:
         working-directory: better_map/appserver/static/visualizations/better_map
         run: npm ci
 
+      - name: Verify rsync --exclude parity across release.yml/ci.yml/local helper
+        # G2-3 — Three workflows (release.yml, this job in ci.yml, and the
+        # dev helper scripts/run-appinspect-local.sh) each have their own
+        # rsync --exclude list. They MUST stay byte-for-byte identical
+        # so a local "PASS" matches a PR "PASS" matches a release "PASS".
+        # The v1.7.1 .npmrc near-miss showed how a one-entry drift can
+        # silently flip the AppInspect result. This gate makes any future
+        # drift a PR-blocking failure with a clear per-file diff.
+        run: python3 scripts/check-rsync-exclude-parity.py
+
       - name: Build webpack production bundle
         # AppInspect must see the bundled visualization.js — it is the
         # artifact that ships, not the src/ tree.
@@ -515,6 +525,7 @@ jobs:
             --exclude='.eslintrc.cjs' \
             --exclude='.eslintignore' \
             --exclude='.npmrc' \
+            --exclude='vitest.config.js' \
             --exclude='harness.json' \
             --exclude='AIR-GAPPED-PMTILES.md' \
             --exclude='build-pmtiles.sh' \
