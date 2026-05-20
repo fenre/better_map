@@ -189,7 +189,37 @@ detail and the per-failure-mode troubleshooting matrix are
 recoverable from the live MkDocs page via the pointer the trim
 retains, AND from ``scripts/check-browser-compat.js`` source which
 has its own per-failure-mode CLI-output documentation in
-code-comment form; see ``strip_compat_matrix_operational`` below):
+code-comment form; see ``strip_compat_matrix_operational`` below)
+— and in wave 37a by dropping the FOUR operational H2 sections
+(``## Verifying a downloaded release`` ≈ 775 tokens of sha256sum /
+cosign verify-blob bash commands + brew install steps + Rekor
+transparency log inspection workflow; ``## Managing CVE waivers``
+≈ 600 tokens of npm-audit-waivers.json schema + hard rules + a
+worked-example walkthrough; ``## Replacing a copyleft transitive
+dep`` ≈ 240 tokens of 4-step escalation procedure; ``## What to do
+when Dependabot opens a PR`` ≈ 240 tokens of CI-status × action
+triage matrix) from ``docs/runbooks/supply-chain.md`` (combined
+~1,855 tokens of operational HOW-DO-I-RUN-IT detail not relevant
+to an LLM consumer understanding "what does Better Map's supply-
+chain posture look like?" or "what evidence does a release ship
+with?"; the kept inventory sections — ``## What ships in a
+release`` (9-artefact release manifest), ``## What the SBOM
+contains`` (CycloneDX 1.6 schema + 186-component scope + per-dep
+field inventory + 4 SBOM consumption recipes), ``## CI gates that
+run on every PR`` (4-row gate matrix with thresholds),
+``## Splunkbase submission`` (5-item evidence package),
+``## Roadmap follow-ups`` (G1/G2/G3 forward tracking) — give an
+LLM consumer a complete first-order answer to the supply-chain
+inventory question without the operational drag; the operational
+HOW-DO-I-RUN-IT detail is recoverable from the live MkDocs page
+via the pointers the trim retains, AND from the script source code
+for ``scripts/check-npm-audit.py`` /
+``scripts/check-license-allowlist.py`` /
+``scripts/check-osv-report.py`` (each carrying its own code-
+comment documentation of the gate's behaviour), AND from the
+``scripts/npm-audit-waivers.json`` inline JSON schema (the
+canonical waiver contract); see ``strip_supply_chain_operational``
+below):
 
   * Per-page warning at **50,000 estimated tokens** — one page should
     not dominate the corpus.
@@ -602,6 +632,69 @@ _ROADMAP_MILESTONE_SEQUENCING_SECTION = re.compile(
 _COMPAT_MATRIX_OPERATIONAL_SECTIONS = re.compile(
     r"^## Running locally[^\n]*\n"
     r"(?:(?!^## Out of scope).*\n)*",
+    re.MULTILINE,
+)
+
+# supply-chain runbook operational-section trim contract — see
+# strip_supply_chain_operational() and the E5 Phase 2 wave 37a ROADMAP
+# block. ``docs/runbooks/supply-chain.md`` is the G1 supply-chain
+# runbook page documented in ROADMAP §3 G1 / §7d. The page interleaves
+# LLM-relevant inventory sections (``## What ships in a release``,
+# ``## What the SBOM contains``, ``## CI gates that run on every PR``,
+# ``## Splunkbase submission — what we hand the reviewer``,
+# ``## Roadmap follow-ups``) with FOUR operational HOW-DO-I-RUN-IT H2
+# sections that an LLM consumer rarely cross-references: (1)
+# ``## Verifying a downloaded release`` — ~775 tokens of sha256sum / 
+# cosign verify-blob bash commands, brew install steps, Rekor inclusion
+# proof inspection workflow; (2) ``## Managing CVE waivers`` — ~600
+# tokens of npm-audit-waivers.json schema, hard rules (90-day expiry,
+# specific-code-path reason, security-reviewer tag), and a worked-
+# example walkthrough; (3) ``## Replacing a copyleft transitive dep``
+# — ~240 tokens of 4-step escalation procedure (upgrade parent → dual-
+# license pick → vendor fork → drop parent); (4) ``## What to do when
+# Dependabot opens a PR`` — ~240 tokens of CI-status × action triage
+# matrix and the 14-day stale-PR closure rule.
+#
+# Safety rationale: the on-disk ``docs/runbooks/supply-chain.md`` is
+# unchanged; the MkDocs site renders the full page (including all four
+# operational H2s) for human readers; the trim runs only in the in-
+# memory writer pipeline of ``build-llms-full-txt.py`` via
+# ``strip_supply_chain_operational()`` (same shape as
+# ``strip_compat_matrix_operational`` from wave 36b — H2-anchored regex
+# with a defensive no-op fallback). The KEPT inventory sections answer
+# the LLM-useful questions: ``## What ships in a release`` lists the
+# 9 release artefacts (.tar.gz, .spl, sha256, cosign bundles, SBOM);
+# ``## What the SBOM contains`` carries the CycloneDX 1.6 schema, the
+# 186-component scope, and the per-dependency field inventory;
+# ``## CI gates that run on every PR`` carries the 4-row gate matrix
+# (npm-audit, license-allowlist, OSV-Scanner, AppInspect) with
+# thresholds; ``## Splunkbase submission`` carries the 5-item evidence
+# package; ``## Roadmap follow-ups`` carries the G1/G2/G3 forward
+# tracking. The operational HOW-DO-I-RUN-IT detail and the per-CVE
+# waiver schema are recoverable from (a) the live MkDocs page via the
+# pointers the trim retains, (b) the script source code for
+# ``scripts/check-npm-audit.py``, ``scripts/check-license-allowlist.py``,
+# ``scripts/check-osv-report.py``, and (c)
+# ``scripts/npm-audit-waivers.json`` inline JSON schema.
+#
+# Two regex constants because the trimmed sections form TWO contiguous
+# blocks in the page layout (not one): Block A is just ``## Verifying
+# a downloaded release`` between the kept ``## What ships in a
+# release`` and ``## What the SBOM contains`` H2s; Block B is the
+# three-H2 contiguous run (``## Managing CVE waivers`` → ``## Replacing
+# a copyleft transitive dep`` → ``## What to do when Dependabot opens
+# a PR``) between the kept ``## CI gates that run on every PR`` and
+# ``## Splunkbase submission`` H2s. Each regex anchors to the next
+# kept H2 as its stop condition (same pattern as
+# ``_COMPAT_MATRIX_OPERATIONAL_SECTIONS``).
+_SUPPLY_CHAIN_OPERATIONAL_VERIFY = re.compile(
+    r"^## Verifying a downloaded release[^\n]*\n"
+    r"(?:(?!^## What the SBOM contains).*\n)*",
+    re.MULTILINE,
+)
+_SUPPLY_CHAIN_OPERATIONAL_WAIVERS = re.compile(
+    r"^## Managing CVE waivers[^\n]*\n"
+    r"(?:(?!^## Splunkbase submission).*\n)*",
     re.MULTILINE,
 )
 
@@ -1072,6 +1165,22 @@ def is_compat_matrix_page(relpath: str) -> bool:
     return relpath == "COMPAT-MATRIX.md"
 
 
+def is_supply_chain_page(relpath: str) -> bool:
+    """True when `docs/<relpath>` is the G1 supply-chain runbook page.
+
+    Only the top-level `docs/runbooks/supply-chain.md` qualifies —
+    this is the G1 supply-chain runbook page documented in ROADMAP §3
+    G1 / §7d. The trim (`strip_supply_chain_operational`) drops the
+    four operational HOW-DO-I-RUN-IT H2 sections (`## Verifying a
+    downloaded release`, `## Managing CVE waivers`, `## Replacing a
+    copyleft transitive dep`, `## What to do when Dependabot opens a
+    PR`) from the corpus while keeping the page's release artefact
+    inventory + SBOM scope + CI gates matrix + Splunkbase submission
+    package + Roadmap follow-ups intact.
+    """
+    return relpath == "runbooks/supply-chain.md"
+
+
 def strip_changelog_old_versions(
     body: str, page_url: str, keep: int = _CHANGELOG_KEEP_VERSIONS
 ) -> tuple[str, int]:
@@ -1481,6 +1590,76 @@ def strip_compat_matrix_operational(
     return cleaned, count > 0
 
 
+def strip_supply_chain_operational(
+    body: str, page_url: str
+) -> tuple[str, bool]:
+    """Drop the four operational H2 sections from supply-chain.md.
+
+    See the module-level ``_SUPPLY_CHAIN_OPERATIONAL_VERIFY`` and
+    ``_SUPPLY_CHAIN_OPERATIONAL_WAIVERS`` contracts for the full
+    rationale. Returns ``(cleaned_body, dropped)`` where ``dropped`` is
+    ``True`` when AT LEAST ONE of the two contiguous section blocks
+    was found and replaced with a pointer, ``False`` when the page
+    contains neither (defensive — the helper is a no-op on already-
+    trimmed supply-chain bodies and on synthetic test fixtures).
+
+    Block A (single H2): ``## Verifying a downloaded release`` is
+    replaced with a one-line pointer; Block B (three contiguous H2s):
+    ``## Managing CVE waivers`` → ``## Replacing a copyleft
+    transitive dep`` → ``## What to do when Dependabot opens a PR``
+    is replaced with a one-line pointer covering all three. The
+    pointer headings match the MkDocs-generated anchors
+    (``#verifying-a-downloaded-release``, ``#managing-cve-waivers``)
+    so each pointer is click-through-valid.
+    """
+    pointer_verify = (
+        "## Verifying a downloaded release\n\n"
+        "_§Verifying a downloaded release (sha256sum verification,"
+        " cosign verify-blob commands for tarball / .spl / SBOM,"
+        " Rekor transparency log inspection workflow) omitted from"
+        " llms-full.txt for token-budget headroom; read the full"
+        " operational walkthrough at"
+        f" <{page_url}#verifying-a-downloaded-release>, or inspect"
+        " the release workflow at"
+        " <https://github.com/fenre/better_map/blob/main/.github/workflows/release.yml>"
+        " for the canonical signing-pipeline definition._\n\n"
+    )
+    pointer_waivers = (
+        "## Managing CVE waivers\n\n"
+        "_§Managing CVE waivers (npm-audit-waivers.json schema,"
+        " 90-day expiry hard rule, specific-code-path reason"
+        " requirement, worked-example walkthrough), §Replacing a"
+        " copyleft transitive dep (4-step escalation procedure:"
+        " upgrade parent → dual-license pick → vendor fork → drop"
+        " parent), and §What to do when Dependabot opens a PR"
+        " (CI-status × action triage matrix, 14-day stale-PR"
+        " closure rule) omitted from llms-full.txt for token-budget"
+        " headroom; read all three sections at"
+        f" <{page_url}#managing-cve-waivers>,"
+        f" <{page_url}#replacing-a-copyleft-transitive-dep>, and"
+        f" <{page_url}#what-to-do-when-dependabot-opens-a-pr>, or"
+        " inspect the gate source at"
+        " <https://github.com/fenre/better_map/blob/main/scripts/check-npm-audit.py>"
+        " and the waiver schema at"
+        " <https://github.com/fenre/better_map/blob/main/scripts/npm-audit-waivers.json>"
+        " for the canonical contract._\n\n"
+    )
+
+    def _replace_verify(_match: re.Match[str]) -> str:
+        return pointer_verify
+
+    def _replace_waivers(_match: re.Match[str]) -> str:
+        return pointer_waivers
+
+    cleaned, count_verify = _SUPPLY_CHAIN_OPERATIONAL_VERIFY.subn(
+        _replace_verify, body
+    )
+    cleaned, count_waivers = _SUPPLY_CHAIN_OPERATIONAL_WAIVERS.subn(
+        _replace_waivers, cleaned
+    )
+    return cleaned, (count_verify + count_waivers) > 0
+
+
 def strip_ci_gates_matrix(
     body: str, page_url: str
 ) -> tuple[str, bool]:
@@ -1773,6 +1952,10 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
             expanded, _matrix = strip_ci_gates_matrix(expanded, url)
         if is_compat_matrix_page(relpath):
             expanded, _compat = strip_compat_matrix_operational(
+                expanded, url
+            )
+        if is_supply_chain_page(relpath):
+            expanded, _supply_chain = strip_supply_chain_operational(
                 expanded, url
             )
         if is_formatter_page(relpath):
