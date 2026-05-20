@@ -22,7 +22,7 @@
  * Enable via the formatter option `showDebugHud=true`.
  */
 
-const HUD_VERSION = 'v1.8.0-alpha';
+const HUD_VERSION = '1.8.0';
 const PATHS_SOURCE_ID = 'better_map_paths_src';
 const PATHS_LAYER_PREFIX = 'better_map_paths_';
 
