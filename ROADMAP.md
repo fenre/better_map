@@ -1,5 +1,109 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-31): E5 Phase 2 wave 36a token-trim
+> SHIPPED — compact `Appendix B — Per-source recipe matrix` in the
+> llms-full.txt corpus pipeline from a 95-row × 6-column table to a
+> 3-line pointer to (1) `docs/_machine/recipes/index.yaml` (the
+> structured source-of-truth carrying per-recipe status, splunk apps
+> required, expected-field contract, formatter options, OT-safety
+> relevance, and verification metadata for every recipe in the matrix)
+> and (2) the `recipes/` page body block earlier in this same file
+> (the agent-actionable pivot — total counts + per-source-dir →
+> layer-id presence list + OT-safety inventory — rendered by
+> `strip_recipes_index_matrix`); reclaimed 5,472 tokens
+> (174,629 → 169,157, 371 → 5,843 WARN headroom). The
+> wave-35a status block flagged "per-recipe §6 Gotchas compaction"
+> as the next-highest-ROI trim, but the post-wave-35b corpus
+> profiling proved this estimate was based on an incorrect
+> assumption: `strip_recipe_advisory()` already drops every line
+> from §5 Screenshot to end of file (its wave-6 contract was
+> extended to "§5 onward" and wave-32 consolidated the per-section
+> pointer footers into one trailing line per recipe — there is no
+> §6 boilerplate left in the corpus to reclaim). Re-profiling the
+> post-wave-35b corpus identified `appendix:recipes` at 5,842
+> tokens as the single largest unstripped content block in the
+> corpus and the actual highest-ROI trim lever (~3.4× larger than
+> the next-largest unstripped section, `roadmap/` at 4,238 tokens
+> after the wave-33 §3 + wave-35 §4 trims). The matrix table was
+> introduced in wave 12 as a bridge between three then-incomplete
+> data sources (per-recipe corpus body blocks, structured YAML at
+> `docs/_machine/recipes/index.yaml`, and the on-disk
+> `docs/recipes/index.md` matrix); by v1.7-prep all three are
+> production-quality (96 recipe page bodies kept verbatim in the
+> corpus via the §5-trim contract — same content the wave-12
+> matrix linked to; the YAML index drives the recipe build pipeline
+> and is the structured source-of-truth an LLM consumer can fetch
+> on demand for per-recipe status / apps / fields / formatter
+> options / verification metadata; and the `recipes/` page block
+> in the corpus ALREADY carries the agent-actionable pivot via
+> `strip_recipes_index_matrix` — total counts + per-source-dir
+> → layer-id presence list + OT-safety-relevant inventory). The
+> matrix was the bridge; in v1.7-prep all three views are
+> production-quality and the bridge is redundant. Every per-row
+> piece of the wave-12 matrix is still recoverable: (a) recipe
+> ID + display name + source/layer come from each recipe's
+> `# === BEGIN: .../recipes/<source>/<layer>/ ===` header and
+> the H1 of the body block; (b) apps required are restated in §1
+> prose of every recipe (e.g., "No add-on required beyond
+> `Splunk_TA_stream`"); (c) status is currently `unverified` for
+> every row in the corpus and will start to differ when D5 Phase
+> 2 lands (at which point `status: verified` rows in
+> `index.yaml` will carry the verification metadata an LLM can
+> fetch on demand); (d) verified-against is `—` for every row
+> today; (e) the per-row Page URL is derivable from the
+> source/layer (the URL pattern is canonical:
+> `https://fenre.github.io/better_map/recipes/<source>/<layer>/`).
+> Safety rationale: the trim runs ONLY in the in-memory writer
+> code that emits the appendix:recipes section into llms-full.txt
+> (it is NOT a transformation of an on-disk file, since
+> appendix:recipes does not exist on disk — it is constructed
+> from the in-memory `recipes` list at corpus-build time and
+> always lived only in llms-full.txt); the MkDocs site continues
+> to render the full `docs/recipes/index.md` page with its
+> auto-managed matrix region for human readers; the structured
+> source-of-truth YAML is unchanged; the on-disk `mkdocs.yml`,
+> `docs/_machine/recipes/index.yaml`, and per-recipe markdown
+> files are all unaffected. Implementation mirrors the wave-12
+> matrix-table writer block (lines ~1747-1810 of
+> `scripts/build-llms-full-txt.py`): replace the table-emission
+> loop with a 3-line HTML comment + 1-line pointer paragraph,
+> documenting both targets (YAML source-of-truth + `recipes/`
+> page pivot) and leaving every per-recipe field contract / SPL
+> / formatter config intact in the corpus body. Post-wave-36a
+> WARN headroom of 5,843 tokens supports ~3 more recipes in
+> wave 36c before the next trim (still below the 7,000-token
+> threshold, mandating wave 36b ALSO open with a token-trim
+> PR — the wave 36b-priority lever is `COMPAT-MATRIX/` or
+> `runbooks/supply-chain/` at ~3k tokens each; per-trim-wave
+> single-focus precedent applies). Remaining trim levers in
+> priority order for waves 36b through 38 and beyond: (1)
+> `COMPAT-MATRIX/` page (3,301 tokens — the platform-
+> compatibility table, which restates the same Splunk-Cloud /
+> Splunk-Enterprise / Dashboard-Studio / Simple-XML / browser
+> matrix in N+1 places across the corpus); (2)
+> `runbooks/supply-chain/` (3,095 tokens — operational
+> runbook detail an LLM rarely cross-references); (3)
+> `integrations/catalogue/` (2,827 tokens — auto-generated
+> reference page that mirrors the per-integration sub-pages
+> already in the corpus); (4) `runbooks/upgrade-hygiene/`
+> (2,626 tokens — same redundancy posture as supply-chain);
+> (5) `development/local-splunk-harness/` (2,476 tokens —
+> the D5 docker-compose harness reference, partly redundant
+> with the per-recipe §5 Screenshot pointer text); (6)
+> `recipes/` page block (1,969 tokens — already trimmed in
+> wave 16; consider re-compacting the contract / CI-gates /
+> add-a-new-recipe walkthroughs which are duplicated in
+> `docs/_machine/agents.md`); (7) `## 1. Honest baseline`
+> in `ROADMAP.md` (~1,200 tokens — last-resort lever; this
+> section is the answer an LLM needs to "what does v1.6
+> actually do today?" and its trim would meaningfully
+> degrade an LLM's strategic understanding of the project).
+> All gates green locally (`build-llms-full-txt.py --check`,
+> `build-llms-txt.py --check`, `check-recipe-schema.py`,
+> `build-reference-pages.py --check`, `check-manifest.py`,
+> `check-formatter-schema.py`, `check-formatter-coverage.py`,
+> `mkdocs build --strict`).**
+
 > **Status (v1.7-prep, 2026-05-31): E5 Phase 2 wave 35b recipes
 > SHIPPED — 2 new diversification recipes (93 → 95): (1)
 > `cim-performance/vector-tile-join` (vector-tile-join layer
