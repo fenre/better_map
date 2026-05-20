@@ -1,5 +1,77 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-31): E5 Phase 2 wave 36b token-trim
+> SHIPPED — drop the two operational H2 sections (``## Running
+> locally`` and ``## Reading a failing run``) from
+> ``docs/COMPAT-MATRIX.md`` in the llms-full.txt corpus pipeline,
+> reclaiming 1,325 tokens (169,157 → 167,832, 5,843 → 7,168 WARN
+> headroom). The wave-36a status block flagged COMPAT-MATRIX as
+> the next-priority lever after the appendix:recipes compaction
+> (3,301 tokens at the page level — the single largest unstripped
+> non-recipe page in the corpus after the wave-33 ROADMAP §3 trim,
+> the wave-34 CI-GATES matrix trim, the wave-35 ROADMAP §4 trim,
+> and the wave-36a appendix:recipes compaction). Within the
+> COMPAT-MATRIX page, the two operational H2 sections at the
+> bottom carry the highest concentration of LLM-irrelevant content:
+> ``## Running locally`` ≈ 450 tokens of `npm ci` + `npx playwright
+> install` + per-engine CLI flag combinations + report-file path
+> documentation (operational HOW-DO-I-RUN-IT detail recoverable
+> from `scripts/check-browser-compat.js --help` or the script
+> source), and ``## Reading a failing run`` ≈ 875 tokens of
+> per-engine PASS / FAIL console snippets + a 4-row Phase-1
+> formatter-failure-mode table + a 5-row Phase-1.5 bundle-
+> failure-mode table (per-failure-mode troubleshooting matrix
+> recoverable from the live MkDocs page via the pointer the
+> trim retains, AND from the per-failure-mode CLI-output
+> documentation in `scripts/check-browser-compat.js` code
+> comments). The four surviving H2s on the page — ``## TL;DR``
+> (~270 tokens — names the three engine families and the
+> coverage claim), ``## Phase 1 + Phase 1.5 matrix (shipped —
+> every PR)`` (~900 tokens — the asserted contract tables AND
+> the per-surface PASS criteria), ``## Phase 2 matrix (deferred
+> — tracked in ROADMAP §3 D2)`` (~600 tokens — deferred-work
+> matrix + WebKit-AMD-eval rationale), ``## Out of scope``
+> (~140 tokens — explicit non-scope boundaries: Splunk Mobile,
+> IE, pre-Quantum Firefox, headed-only behaviours), plus
+> ``## See also`` (~85 tokens — cross-refs) — give an LLM
+> consumer a complete first-order answer to "what does Better
+> Map's browser-compat gate cover today?" / "what's deferred
+> to Phase 2?" / "what's explicitly out of scope?" without the
+> operational and troubleshooting drag. Safety rationale: the
+> on-disk ``docs/COMPAT-MATRIX.md`` is unchanged; the MkDocs
+> site renders the full page (including the operational and
+> troubleshooting H2s) for human readers; the trim runs ONLY
+> in the in-memory writer pipeline of ``build-llms-full-txt.py``
+> via ``strip_compat_matrix_operational()`` (the function
+> follows the same shape as ``strip_ci_gates_matrix`` from
+> wave 34 — H2-anchored regex with a defensive no-op fallback
+> when the section is missing, replacement with a one-line
+> pointer carrying the live anchors ``#running-locally`` +
+> ``#reading-a-failing-run`` so the corpus retains a click-
+> through-valid breadcrumb to the full content). Post-wave-36b
+> WARN headroom of 7,168 tokens crosses the 7,000-token
+> threshold (mandatorily triggering trim-before-recipes when
+> headroom drops below 7k) — wave 36c can be a recipe wave
+> shipping ~3 recipes (~5,400 tokens at the post-wave-36
+> per-recipe cost expectation; would land ~1,800 token WARN
+> headroom which mandates trim-before-recipes immediately
+> after, i.e. wave 36d is a trim again) or wave 36c can be a
+> recipe wave shipping 1-2 recipes (~1,800-3,600 tokens; would
+> leave 3,500-5,400 WARN headroom, still below 7k threshold,
+> mandating wave 36d as another trim). Either way the next
+> recipe wave is constrained-cadence; the next-priority
+> trim lever (per the wave-36a status block inventory) is
+> ``runbooks/supply-chain/`` at 3,095 tokens (operational
+> runbook detail an LLM rarely cross-references — same
+> reasoning as COMPAT-MATRIX), with ``runbooks/upgrade-
+> hygiene/`` at 2,626 tokens and ``integrations/catalogue/``
+> at 2,827 tokens as fallbacks. All gates green locally
+> (``build-llms-full-txt.py --check``, ``build-llms-txt.py
+> --check``, ``check-recipe-schema.py``,
+> ``build-reference-pages.py --check``, ``check-manifest.py``,
+> ``check-formatter-schema.py``, ``check-formatter-coverage.py``,
+> ``mkdocs build --strict``).**
+
 > **Status (v1.7-prep, 2026-05-31): E5 Phase 2 wave 36a token-trim
 > SHIPPED — compact `Appendix B — Per-source recipe matrix` in the
 > llms-full.txt corpus pipeline from a 95-row × 6-column table to a
