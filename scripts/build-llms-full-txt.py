@@ -219,7 +219,32 @@ for ``scripts/check-npm-audit.py`` /
 comment documentation of the gate's behaviour), AND from the
 ``scripts/npm-audit-waivers.json`` inline JSON schema (the
 canonical waiver contract); see ``strip_supply_chain_operational``
-below):
+below) — and in wave 37b by dropping the THREE contiguous
+operational HOW-DO-I-RUN-IT H2 sections (``## Procedure — detect
+orphans`` ≈ 750 tokens of bash walkthrough for `find-orphans.sh`
++ example dump showing 50k orphan files grouped by maximal-orphan-
+directory; ``## Procedure — remove orphans`` ≈ 800 tokens of three
+deletion options including per-file `--delete`, manual `rm -rf`,
+and full app-dir nuke-and-reinstall; ``## Procedure — prevent
+future orphans`` ≈ 175 tokens of 5-step release-acceptance
+integration recipe) from ``docs/runbooks/upgrade-hygiene.md``
+(combined ~1,725 tokens of operational HOW-DO-I-RUN-IT detail not
+relevant to an LLM consumer understanding "what does G3 ship?" or
+"why do orphan files exist?"; the kept sections — ``## Background
+— why orphan files exist`` (carries the bug-class rationale for
+Splunk's update=true REST install accumulating orphan files),
+``## What G3 ships`` (4-row artefact inventory:
+``build-manifest.py`` + ``_better_map_manifest.json`` +
+``check-manifest.py`` CI gate + ``find-orphans.sh`` runbook),
+``## CI integration`` (PR + release-tag gate posture), ``## See
+also`` (cross-references to the 3 G3 scripts + ROADMAP §3 G3
+design rationale) — give an LLM consumer a complete first-order
+answer to the upgrade-hygiene inventory question without the
+operational drag; the operational HOW-DO-I-RUN-IT detail is
+recoverable from the live MkDocs page via the pointer the trim
+retains AND from the ``scripts/find-orphans.sh`` source itself
+(carrying the canonical CLI-flag documentation and SSH invocation
+logic); see ``strip_upgrade_hygiene_procedures`` below):
 
   * Per-page warning at **50,000 estimated tokens** — one page should
     not dominate the corpus.
@@ -695,6 +720,61 @@ _SUPPLY_CHAIN_OPERATIONAL_VERIFY = re.compile(
 _SUPPLY_CHAIN_OPERATIONAL_WAIVERS = re.compile(
     r"^## Managing CVE waivers[^\n]*\n"
     r"(?:(?!^## Splunkbase submission).*\n)*",
+    re.MULTILINE,
+)
+
+# upgrade-hygiene runbook operational-section trim contract — see
+# strip_upgrade_hygiene_procedures() and the E5 Phase 2 wave 37b
+# ROADMAP block. ``docs/runbooks/upgrade-hygiene.md`` is the G3
+# upgrade-hygiene runbook page documented in ROADMAP §3 G3. The page
+# interleaves LLM-relevant inventory sections (``## Background — why
+# orphan files exist``, ``## What G3 ships``, ``## CI integration``,
+# ``## See also``) with THREE contiguous operational HOW-DO-I-RUN-IT
+# H2 sections that an LLM consumer rarely cross-references:
+# (1) ``## Procedure — detect orphans`` — ~750 tokens of bash
+# walkthrough for ``find-orphans.sh`` (SSH invocation, expected
+# output, multi-section example dump showing 50k orphan files
+# grouped by maximal-orphan-directory); (2) ``## Procedure — remove
+# orphans`` — ~800 tokens of three deletion options (per-file
+# ``--delete`` for small sets, manual ``rm -rf`` for large
+# directories, full ``rm -rf /opt/splunk/etc/apps/better_map``
+# nuke-and-reinstall for extreme cases); (3) ``## Procedure —
+# prevent future orphans`` — ~175 tokens of 5-step release-
+# acceptance integration recipe.
+#
+# Safety rationale: the on-disk ``docs/runbooks/upgrade-hygiene.md``
+# is unchanged; the MkDocs site renders the full page (including the
+# three operational procedure H2s) for human readers; the trim runs
+# only in the in-memory writer pipeline of ``build-llms-full-txt.py``
+# via ``strip_upgrade_hygiene_procedures()`` (same shape as
+# ``strip_compat_matrix_operational`` / ``strip_supply_chain_operational``
+# — H2-anchored regex with defensive no-op fallback). The KEPT
+# sections answer the LLM-useful questions: ``## Background — why
+# orphan files exist`` carries the bug-class rationale (why Splunk's
+# ``update=true`` REST install accumulates orphan files); ``## What
+# G3 ships`` carries the 4-row artefact inventory table
+# (build-manifest.py + manifest.json + check-manifest.py CI gate +
+# find-orphans.sh runbook); ``## CI integration`` carries the
+# PR + release-tag gate posture; ``## See also`` carries the
+# cross-references to the 3 G3 scripts + ROADMAP §3 G3 design
+# rationale. The operational HOW-DO-I-RUN-IT detail (the actual
+# bash invocations of ``find-orphans.sh``, the per-file vs
+# directory deletion procedures, the release-acceptance step
+# integration) is recoverable from (a) the live MkDocs page via
+# the pointer the trim retains, and (b) the script source code for
+# ``scripts/find-orphans.sh`` (carrying the canonical CLI flag
+# documentation and SSH invocation logic).
+#
+# One regex (single contiguous block of 3 H2s). The first H2 of the
+# block (``## Procedure — detect orphans``) is the start anchor; the
+# first H2 AFTER the block (``## CI integration``) is the stop
+# anchor. The intermediate H2s (``## Procedure — remove orphans``,
+# ``## Procedure — prevent future orphans``) are matched as content
+# lines of the tempered-greedy-token because they do not match the
+# stop pattern.
+_UPGRADE_HYGIENE_PROCEDURES = re.compile(
+    r"^## Procedure — detect orphans[^\n]*\n"
+    r"(?:(?!^## CI integration).*\n)*",
     re.MULTILINE,
 )
 
@@ -1181,6 +1261,21 @@ def is_supply_chain_page(relpath: str) -> bool:
     return relpath == "runbooks/supply-chain.md"
 
 
+def is_upgrade_hygiene_page(relpath: str) -> bool:
+    """True when `docs/<relpath>` is the G3 upgrade-hygiene runbook page.
+
+    Only the top-level `docs/runbooks/upgrade-hygiene.md` qualifies —
+    this is the G3 orphan-file detection / removal runbook documented
+    in ROADMAP §3 G3. The trim (`strip_upgrade_hygiene_procedures`)
+    drops the three contiguous operational HOW-DO-I-RUN-IT H2 sections
+    (`## Procedure — detect orphans`, `## Procedure — remove orphans`,
+    `## Procedure — prevent future orphans`) from the corpus while
+    keeping the page's Background + What G3 ships + CI integration +
+    See also context intact.
+    """
+    return relpath == "runbooks/upgrade-hygiene.md"
+
+
 def strip_changelog_old_versions(
     body: str, page_url: str, keep: int = _CHANGELOG_KEEP_VERSIONS
 ) -> tuple[str, int]:
@@ -1660,6 +1755,54 @@ def strip_supply_chain_operational(
     return cleaned, (count_verify + count_waivers) > 0
 
 
+def strip_upgrade_hygiene_procedures(
+    body: str, page_url: str
+) -> tuple[str, bool]:
+    """Drop the three operational H2 sections from upgrade-hygiene.md.
+
+    See the module-level ``_UPGRADE_HYGIENE_PROCEDURES`` contract for
+    the full rationale. Returns ``(cleaned_body, dropped)`` where
+    ``dropped`` is ``True`` when the contiguous procedure block was
+    found and replaced with a pointer, ``False`` when the page does
+    not contain the block (defensive — the helper is a no-op on
+    already-trimmed upgrade-hygiene bodies and on synthetic test
+    fixtures).
+
+    The block is replaced with a one-line pointer back to the live
+    upgrade-hygiene page so an LLM consumer following the corpus's
+    per-page structure still sees a breadcrumb to the full operational
+    walkthrough. The pointer headings match the MkDocs-generated
+    anchors (``#procedure-detect-orphans``,
+    ``#procedure-remove-orphans``, ``#procedure-prevent-future-
+    orphans``) so each pointer is click-through-valid.
+    """
+    pointer = (
+        "## Procedure — detect orphans\n\n"
+        "_§Procedure — detect orphans (SSH-based `find-orphans.sh`"
+        " invocation, expected example output showing 50k orphan"
+        " files grouped by maximal-orphan-directory),"
+        " §Procedure — remove orphans (3 deletion options: per-file"
+        " `--delete` for small sets, manual `rm -rf` for large"
+        " directories, full app-dir nuke-and-reinstall for severe"
+        " accumulation), and §Procedure — prevent future orphans"
+        " (5-step release-acceptance integration recipe) omitted"
+        " from llms-full.txt for token-budget headroom; read all"
+        f" three sections at <{page_url}#procedure-detect-orphans>,"
+        f" <{page_url}#procedure-remove-orphans>, and"
+        f" <{page_url}#procedure-prevent-future-orphans>, or inspect"
+        " the runbook executable at"
+        " <https://github.com/fenre/better_map/blob/main/scripts/find-orphans.sh>"
+        " for the canonical CLI-flag documentation and SSH invocation"
+        " logic._\n\n"
+    )
+
+    def _replace(_match: re.Match[str]) -> str:
+        return pointer
+
+    cleaned, count = _UPGRADE_HYGIENE_PROCEDURES.subn(_replace, body)
+    return cleaned, count > 0
+
+
 def strip_ci_gates_matrix(
     body: str, page_url: str
 ) -> tuple[str, bool]:
@@ -1956,6 +2099,10 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
             )
         if is_supply_chain_page(relpath):
             expanded, _supply_chain = strip_supply_chain_operational(
+                expanded, url
+            )
+        if is_upgrade_hygiene_page(relpath):
+            expanded, _upgrade_hygiene = strip_upgrade_hygiene_procedures(
                 expanded, url
             )
         if is_formatter_page(relpath):

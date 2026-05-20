@@ -1,5 +1,71 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-31): E5 Phase 2 wave 37b token-trim
+> SHIPPED — drop the THREE contiguous operational HOW-DO-I-RUN-IT
+> H2 sections (``## Procedure — detect orphans`` ≈ 750 tokens of
+> bash walkthrough for ``find-orphans.sh`` with SSH invocation +
+> 50k-orphan-file example dump grouped by maximal-orphan-directory;
+> ``## Procedure — remove orphans`` ≈ 800 tokens of three deletion
+> options (per-file ``--delete``, manual ``rm -rf``, nuke-and-
+> reinstall); ``## Procedure — prevent future orphans`` ≈ 175 tokens
+> of 5-step release-acceptance integration recipe) from
+> ``docs/runbooks/upgrade-hygiene.md`` in the llms-full.txt corpus
+> pipeline, reclaiming 1,638 tokens (170,720 → 169,082, 4,280 →
+> 5,918 WARN headroom). The wave-37a status block flagged
+> ``runbooks/upgrade-hygiene/`` at 2,626 tokens as the next-priority
+> lever after the supply-chain operational trim (wave 37a); within
+> the upgrade-hygiene page, the three procedure H2s form ONE
+> contiguous block in the page layout (``## Procedure — detect
+> orphans`` → ``## Procedure — remove orphans`` → ``## Procedure —
+> prevent future orphans``, all between ``## What G3 ships`` and
+> ``## CI integration``). The KEPT sections answer the LLM-useful
+> questions: ``## Background — why orphan files exist`` (kept,
+> ~280 tokens — carries the bug-class rationale for Splunk's
+> ``update=true`` REST install accumulating orphan files from
+> previous releases, plus the 4-row list of orphan types and the
+> 4-row list of consequences); ``## What G3 ships`` (kept, ~120
+> tokens — the 4-row artefact inventory: ``build-manifest.py`` +
+> ``_better_map_manifest.json`` + ``check-manifest.py`` PR-
+> blocking CI gate + ``find-orphans.sh`` runbook executable);
+> ``## CI integration`` (kept, ~150 tokens — PR + release-tag
+> gate posture, plus the D5-follow-up flag for end-to-end
+> upgrade-orphan testing); ``## See also`` (kept, ~60 tokens —
+> cross-references to the 3 G3 scripts + ROADMAP §3 G3 design
+> rationale + ROADMAP §1c finding catalogue). Safety rationale:
+> the on-disk ``docs/runbooks/upgrade-hygiene.md`` is unchanged;
+> the MkDocs site renders the full page (including the three
+> procedure H2s) for human readers; the trim runs ONLY in the
+> in-memory writer pipeline of ``build-llms-full-txt.py`` via
+> ``strip_upgrade_hygiene_procedures()`` — the function follows the
+> same shape as ``strip_compat_matrix_operational`` (wave 36b) and
+> ``strip_supply_chain_operational`` (wave 37a): H2-anchored regex
+> with defensive no-op fallback, replacement pointer carrying the
+> live MkDocs anchors (``#procedure-detect-orphans``, ``#procedure-
+> remove-orphans``, ``#procedure-prevent-future-orphans``) so each
+> pointer is click-through-valid, plus a cross-reference to
+> ``scripts/find-orphans.sh`` source for the operational HOW-DO-I-
+> RUN-IT detail an operator running an actual orphan-cleanup needs
+> (CLI flag documentation, SSH invocation logic). Actual reclaim is
+> 1,638 tokens (under the 2,626-token total page weight because the
+> 4 kept H2 sections — Background, What G3 ships, CI integration,
+> See also — together retain ~610 tokens of LLM-relevant content
+> plus the page header / intro / quick-link anchors at top). Post-
+> wave-37b WARN headroom of 5,918 tokens is STILL BELOW the
+> 7,000-token threshold (mandatorily triggering trim-before-recipes
+> when headroom drops below 7k) — wave 37c MUST be another trim
+> wave, next-priority lever per the wave-36a inventory is
+> ``integrations/catalogue/`` at 2,827 tokens (operational
+> integration-catalogue detail an LLM consumer may cross-reference
+> for vendor / sourcetype context — this lever needs careful
+> analysis to identify which subsections are LLM-relevant
+> inventory vs operational HOW-DO-I-CONFIGURE detail), with
+> ``runbooks/index.md`` and other runbook pages as smaller
+> fallbacks. All gates green locally (``build-llms-full-txt.py
+> --check``, ``build-llms-txt.py --check``, ``check-recipe-
+> schema.py`` [97/97 valid], ``build-reference-pages.py --check``,
+> ``check-manifest.py``, ``check-formatter-schema.py``,
+> ``check-formatter-coverage.py``, ``mkdocs build --strict``).**
+
 > **Status (v1.7-prep, 2026-05-31): E5 Phase 2 wave 37a token-trim
 > SHIPPED — drop the FOUR operational HOW-DO-I-RUN-IT H2 sections
 > (``## Verifying a downloaded release`` ≈ 775 tokens of sha256sum /
