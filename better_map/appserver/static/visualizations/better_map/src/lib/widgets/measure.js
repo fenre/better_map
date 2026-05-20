@@ -23,9 +23,22 @@ const LINE_LAYER = 'bm_measure_line';
 const VERTEX_LAYER = 'bm_measure_vertex';
 
 const TOOLBAR_CLASS = 'better_map-measure';
+const TOOLBAR_ROW_CLASS = 'better_map-measure__row';
+const HINT_CLASS = 'better_map-measure__hint';
 const TOOLBAR_BTN_CLASS = 'better_map-measure__btn';
 const TOOLBAR_BTN_ACTIVE_CLASS = 'better_map-measure__btn--active';
 const PANEL_CLASS = 'better_map-measure__panel';
+
+// Same UX pattern as drawTools: an inline hint beneath the buttons
+// telling users that clicking the START button only activates a mode —
+// they then need to click on the map to add vertices. Without this,
+// the button looks broken when only its active highlight changes.
+const HINT_IDLE = 'Click the ruler, then click the map to measure';
+const HINT_START = 'Measure mode: click the map to add the first vertex • Esc to cancel';
+function hintProgress(n) {
+    return 'Measure: ' + n + ' vertex' + (n === 1 ? '' : 'es') +
+        ' — click to add more • Double-click or Enter to finish • Esc to cancel';
+}
 
 /**
  * @param {HTMLElement} parentEl
@@ -44,25 +57,38 @@ export function createMeasureTool(parentEl, opts) {
 
     const toolbar = document.createElement('div');
     toolbar.className = TOOLBAR_CLASS;
-    toolbar.setAttribute('role', 'toolbar');
     toolbar.setAttribute('aria-label', 'Measure tool');
+
+    const buttonRow = document.createElement('div');
+    buttonRow.className = TOOLBAR_ROW_CLASS;
+    buttonRow.setAttribute('role', 'toolbar');
+    buttonRow.setAttribute('aria-label', 'Measure tool');
 
     const startBtn = document.createElement('button');
     startBtn.type = 'button';
     startBtn.className = TOOLBAR_BTN_CLASS;
-    startBtn.setAttribute('aria-label', 'Start measurement');
-    startBtn.setAttribute('title', 'Measure (click to add vertices, dbl-click to finish)');
+    startBtn.setAttribute('aria-label', 'Toggle measure mode — click the map to add vertices, double-click or Enter to finish');
+    startBtn.setAttribute('title', 'Measure — toggle mode, then click the map to add vertices • Double-click or Enter to finish • Esc to cancel');
     startBtn.textContent = '📏';
 
     const clearBtn = document.createElement('button');
     clearBtn.type = 'button';
     clearBtn.className = TOOLBAR_BTN_CLASS;
     clearBtn.setAttribute('aria-label', 'Clear measurement');
-    clearBtn.setAttribute('title', 'Clear');
+    clearBtn.setAttribute('title', 'Clear measurement');
     clearBtn.textContent = '✕';
 
-    toolbar.appendChild(startBtn);
-    toolbar.appendChild(clearBtn);
+    buttonRow.appendChild(startBtn);
+    buttonRow.appendChild(clearBtn);
+    toolbar.appendChild(buttonRow);
+
+    const hint = document.createElement('div');
+    hint.className = HINT_CLASS;
+    hint.setAttribute('role', 'status');
+    hint.setAttribute('aria-live', 'polite');
+    hint.textContent = HINT_IDLE;
+    toolbar.appendChild(hint);
+
     parentEl.appendChild(toolbar);
 
     const panel = document.createElement('div');
@@ -159,6 +185,19 @@ export function createMeasureTool(parentEl, opts) {
         panel.textContent = summary;
     }
 
+    function updateHint() {
+        if (!_enabled) {
+            hint.textContent = '';
+            return;
+        }
+        if (!_active) {
+            hint.textContent = HINT_IDLE;
+            return;
+        }
+        const n = _coords.length;
+        hint.textContent = n === 0 ? HINT_START : hintProgress(n);
+    }
+
     function activate() {
         if (!_enabled) return;
         if (!ensureSource()) {
@@ -174,12 +213,14 @@ export function createMeasureTool(parentEl, opts) {
             _coords = [];
             refresh();
         }
+        updateHint();
     }
 
     function onMapClick(e) {
         if (!_active || !_enabled) return;
         _coords.push([e.lngLat.lng, e.lngLat.lat]);
         refresh();
+        updateHint();
     }
 
     function onMapDoubleClick(e) {
@@ -188,11 +229,13 @@ export function createMeasureTool(parentEl, opts) {
         _active = false;
         startBtn.classList.remove(TOOLBAR_BTN_ACTIVE_CLASS);
         startBtn.setAttribute('aria-pressed', 'false');
+        updateHint();
     }
 
     function clear() {
         _coords = [];
         refresh();
+        updateHint();
     }
 
     function copy() {
@@ -213,6 +256,21 @@ export function createMeasureTool(parentEl, opts) {
         }
     }
 
+    function onKeyDown(e) {
+        if (!_active || !_enabled) return;
+        if (e.key === 'Escape') {
+            _active = false;
+            startBtn.classList.remove(TOOLBAR_BTN_ACTIVE_CLASS);
+            startBtn.setAttribute('aria-pressed', 'false');
+            clear();
+        } else if (e.key === 'Enter') {
+            _active = false;
+            startBtn.classList.remove(TOOLBAR_BTN_ACTIVE_CLASS);
+            startBtn.setAttribute('aria-pressed', 'false');
+            updateHint();
+        }
+    }
+
     startBtn.addEventListener('click', activate);
     clearBtn.addEventListener('click', clear);
     panel.addEventListener('click', copy);
@@ -222,6 +280,7 @@ export function createMeasureTool(parentEl, opts) {
         ensureSource();
         builder.map.on('click', onMapClick);
         builder.map.on('dblclick', onMapDoubleClick);
+        document.addEventListener('keydown', onKeyDown);
     }
     function detach() {
         if (builder && builder.map) {
@@ -230,6 +289,7 @@ export function createMeasureTool(parentEl, opts) {
                 builder.map.off('dblclick', onMapDoubleClick);
             } catch (_e) { /* swallow */ }
         }
+        document.removeEventListener('keydown', onKeyDown);
     }
 
     function setEnabled(enabled) {
@@ -242,6 +302,7 @@ export function createMeasureTool(parentEl, opts) {
             clear();
             panel.style.display = 'none';
         }
+        updateHint();
     }
     function isEnabled() { return _enabled; }
     function reset() {
@@ -250,6 +311,7 @@ export function createMeasureTool(parentEl, opts) {
         startBtn.classList.remove(TOOLBAR_BTN_ACTIVE_CLASS);
         startBtn.setAttribute('aria-pressed', 'false');
         panel.style.display = 'none';
+        updateHint();
     }
     function destroy() {
         detach();

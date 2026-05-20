@@ -4,6 +4,191 @@ All notable changes to Better Map are tracked here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.1] - 2026-05-19
+
+UX patch — top-left toolbar buttons (draw tools + measure tool) were
+clickable but visually inert because their only feedback was the
+active-state highlight on the button itself. First-party feedback from
+a dashboard build: "the buttons on the top left of the maps are
+clickable, but I don't see that anything is happening when I do".
+
+Root cause was a discoverability gap, not a functional bug: the
+buttons are mode toggles (click button → activates a drawing mode,
+then click the map canvas to add vertices), but nothing in the UI
+explained that the next interaction had to happen on the map.
+
+### Changed — Draw-tools toolbar (`better_map-draw`)
+
+- Toolbar is now a flex **column** that stacks a button row on top of
+  an inline status hint (new `.better_map-draw__row` and
+  `.better_map-draw__hint` CSS classes; toolbar widened to
+  `max-width: 220px`).
+- Idle hint: **"Pick a shape, then click the map"**.
+- Per-mode hints update on every activation, every vertex click, and
+  on commit / cancel:
+  - Point: "Point mode: click the map to drop points • Click the
+    tool again or press Esc to stop".
+  - Line / Polygon: "Line mode: click the map to add the first
+    vertex • Esc to cancel" → "Line: N vertices — click to add
+    more • Double-click or Enter to finish • Esc to cancel".
+  - Rectangle: "Rectangle mode: click the map to set the first
+    corner" → "click the opposite corner to finish".
+  - Circle: "Circle mode: click the map to set the center" → "click
+    again to set the radius".
+- Per-button tooltips (`title` + `aria-label`) upgraded from one-word
+  labels ("Point", "Line", "Polygon", "Rectangle", "Circle") to the
+  full workflow ("Draw point — click the map to drop markers (stays
+  in point mode for rapid placement)", etc.).
+- Hint container carries `role="status"` + `aria-live="polite"` so
+  screen readers announce mode changes without stealing focus.
+
+### Changed — Measure-tool toolbar (`better_map-measure`)
+
+- Same column-stack pattern: new `.better_map-measure__row` row +
+  `.better_map-measure__hint` inline hint; toolbar widened to
+  `max-width: 260px`. Result-panel `top` offset adjusted (`88px`
+  desktop, `168px` mobile) so it clears the new hint row.
+- Idle hint: **"Click the ruler, then click the map to measure"**.
+- Active hint: "Measure mode: click the map to add the first
+  vertex • Esc to cancel" → "Measure: N vertices — click to add
+  more • Double-click or Enter to finish • Esc to cancel".
+- Start-button tooltip upgraded to describe the full workflow.
+- Measure tool now listens for **Esc** (cancel) and **Enter**
+  (finish current measurement) on the document while active,
+  matching draw-tools keyboard behaviour. Listeners are added on
+  `activate` and removed on `deactivate` / `clear`.
+
+### Tests
+
+- 182 → 200 vitest cases (+18):
+  - `widgets/__tests__/drawTools.test.js` (NEW, 10 cases): hint
+    element renders with `role="status"` + `aria-live="polite"`,
+    idle hint shown initially, button row wrapped in `.__row`,
+    hint updates on mode activation/deactivation, point and
+    rectangle hints reflect their specific workflow, tooltips
+    describe the full workflow, `clear()` keeps idle hint,
+    `setEnabled(false)` hides the toolbar and resets the hint,
+    `setEnabled(true)` re-shows it.
+  - `widgets/__tests__/measure.test.js` (NEW, 8 cases): hint
+    element ARIA attributes, idle hint, button-row wrapping, hint
+    updates on activate / deactivate / clear, start-button tooltip
+    describes next step, `setEnabled` toggles toolbar + hint state.
+
+### Changed
+
+- `package.json` bumped to `1.7.1`. `app.conf` `[install] build`
+  bumped to `1701`. `[id] version` and `[launcher] version` bumped
+  to `1.7.1`. `debugHud.js HUD_VERSION` bumped to `v1.7.1`.
+
+### Migration
+
+Zero migration required. `v2DrawTools` and `v2Measure` still default
+to `false`; existing dashboards that don't enable them see no visual
+change. Dashboards that do enable them get the inline hints and
+tooltips automatically — no formatter option changes.
+
+## [1.7.0] - 2026-05-19
+
+Three NOC-engagement gaps closed (Tier 1) + three usability features
+shipped (Tier 2) based on first-party feedback from a NOC command-center
+build. Every one of these had a "I worked around this with ugly SPL"
+note attached.
+
+### Added — Tier 1 (Critical NOC-engagement gaps)
+
+- **Selected-feature emphasis decoupled from filtering** (#1).
+  New options: `selectedFeatureToken`, `selectedFeatureField`,
+  `selectedSizeMultiplier`, `selectedHaloColor`, `selectedHaloWidth`,
+  `selectedFlyToOnChange`, `selectedFlyToZoom`. When the named token
+  matches a row's selection-field, that one feature gets a top-layer
+  halo + scaled dot + optional fly-to. No data filtering required —
+  the rest of the markers stay put for spatial context. Replaces the
+  `| eval size = case(... 30 ...)` plus `| where id="$tok$"` workarounds
+  that were collapsing 22-dot maps down to 1.
+- **Inbound camera tokens (`acceptRemoteCamera`)** (#2). The
+  `applyRemoteCamera` function in `crossPanel.js` was defined in v1.4
+  but never called — making `enableCrossPanel` outbound-only. v1.7
+  adds the mirror flag and threads it through `updateView()` so any
+  panel (including the map itself via setToken) can drive the camera
+  via `better_map.camera.lng/lat/zoom`. Custom token names supported
+  via `remoteCameraTokenLng/Lat/Zoom`. Echo loops between paired
+  panels suppressed for 350ms after each inbound jump.
+- **Per-row marker labels** (#3). The label-layer plumbing was 80%
+  built in v1.3 but never surfaced. v1.7 exposes `showLabels`,
+  `labelField`, `labelMinZoom`, `labelColor`, `labelHaloColor`,
+  `labelOffsetY` in the formatter, adds the `label` / `name` / `host`
+  / `display_name` / `tooltip` auto-detect chain to `dataFitness.js`,
+  and lets the operator read site names from across a NOC wall
+  without hovering.
+
+### Added — Tier 2 (Dashboard simplification)
+
+- **`featureDeselected` event on empty-canvas click** (#4). Clicking
+  the ocean now fires a `viz.drilldown` with
+  `data._trigger='featureDeselected'` so the dashboard's drilldown
+  handler can branch on it and reset selection tokens. Combined with
+  Tier 1 #1 this gives the canonical "click marker → emphasise / click
+  away → reset" pattern without needing a visible reset button.
+- **Hover preview popup** (#5). New options `enableHoverPreview` +
+  `hoverHtmlField`. Renders a small, dismissable-on-leave popup on
+  mousemove, distinct from the click popup. Throttled to ~16fps so it
+  doesn't churn the DOM on fast pans. Default OFF — NOC walls don't
+  have mice; security investigation, supply-chain, and RUM dashboards
+  benefit.
+- **`popupAllowInlineStyles` — optional inline-style allowlist** (#6).
+  DOMPurify still strips `style=` by default. With this flag on,
+  popup HTML may carry inline styles from a 13-property safe-list
+  (color, background-color, font-weight, font-size, text-align,
+  padding/padding-*, margin/margin-*, line-height, letter-spacing,
+  font-style, font-variant, text-decoration, border-radius) with
+  unsafe declarations (`url()`, `expression()`, `behavior:`,
+  `position:fixed|absolute|sticky`, `@import`, `@charset`,
+  `javascript:`, `vbscript:`, `data:text`, backslash escapes,
+  `!important` escalation) always rejected. Lets dashboard authors
+  colour severity numbers inline.
+
+### Added — Tier 3 (Nice-to-haves)
+
+- **`closePopupOnDrilldown`** (#9). Suppress the popup flash that
+  briefly appears between a marker click and the dashboard re-render.
+  Default OFF.
+
+### Changed
+
+- `package.json` bumped to `1.7.0`. `app.conf` `[install] build`
+  bumped to `1700`.
+- `crossPanel.broadcastCamera()` now honours a per-instance
+  `_suppressBroadcastUntilMs` flag so inbound camera jumps don't
+  cause their own moveend events to immediately re-broadcast (echo
+  prevention for paired panels).
+- `markers.applySelection()` now resets `lastFlownValue` when value
+  goes null/empty, so `select → clear → select-same-id-again` triggers
+  a fresh fly-to instead of silently no-op'ing.
+
+### Tests
+
+- 159 → 182 vitest cases (+23):
+  - `popupSanitizer.test.js` (95 cases, +25): inline-style allowlist
+    coverage — safe declarations preserved, dangerous CSS attacks
+    rejected even when the property name is safe, flag does not
+    persist across calls, scripts/iframes stay blocked even with
+    inline styles on.
+  - `markers.test.js` (NEW, 23 cases): label-layer reconciliation,
+    selection-layer mount + filter + size + colour, applySelection
+    update path including fly-to idempotence on repeated same-value
+    calls, unmount cleans up selection layers.
+  - `crossPanel.test.js` (NEW, 11 cases): instance applyRemoteCamera
+    threshold semantics, echo suppression window, destroy unhooks
+    listeners, legacy token-bag form still works.
+
+### Migration
+
+All v1.7 features default to OFF/unset so existing dashboards keep
+their v1.6 behaviour byte-for-byte. To adopt selection emphasis, set
+`selectedFeatureToken` + wire a `drilldown.setToken` event handler on
+the panel; to adopt remote camera, set `acceptRemoteCamera=true`; to
+adopt labels, set `showLabels=true`. No SPL changes required.
+
 ## [1.6.2] - 2026-05-16
 
 ### Fixed — v1.6 scrubber + popup-md sub-element CSS shipped (BM-FIX-02)

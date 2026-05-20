@@ -40,6 +40,13 @@ STAGE_DIR="dist-appinspect"
 TARBALL="${STAGE_DIR}/better_map-local.tar.gz"
 REPORT="${STAGE_DIR}/report.json"
 
+# ---------------- parity guard ----------------
+# G2-3 — fail loudly if THIS script's rsync --exclude list has drifted from
+# the release.yml workflow's list. Without this guard, devs can ship a
+# local "PASS" that doesn't match what CI actually packages (see the
+# v1.7.1 .npmrc near-miss for the canonical regression).
+python3 "${REPO_ROOT}/scripts/check-rsync-exclude-parity.py"
+
 # ---------------- venv + appinspect ----------------
 if [ ! -x "${VENV_DIR}/bin/splunk-appinspect" ]; then
     echo "[appinspect-local] creating venv at ${VENV_DIR} ..."
@@ -74,6 +81,8 @@ rsync -a \
     --exclude='webpack.config.js' \
     --exclude='.eslintrc.cjs' \
     --exclude='.eslintignore' \
+    --exclude='.npmrc' \
+    --exclude='vitest.config.js' \
     --exclude='harness.json' \
     --exclude='AIR-GAPPED-PMTILES.md' \
     --exclude='build-pmtiles.sh' \

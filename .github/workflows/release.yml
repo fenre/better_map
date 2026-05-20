@@ -368,6 +368,7 @@ jobs:
             --exclude='.eslintrc.cjs' \
             --exclude='.eslintignore' \
             --exclude='.npmrc' \
+            --exclude='vitest.config.js' \
             --exclude='harness.json' \
             --exclude='AIR-GAPPED-PMTILES.md' \
             --exclude='build-pmtiles.sh' \

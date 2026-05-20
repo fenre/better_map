@@ -33,16 +33,36 @@ const POINT_LAYER = 'bm_draw_pt';
 const VERTEX_LAYER = 'bm_draw_vertex';
 
 const TOOLBAR_CLASS = 'better_map-draw';
+const TOOLBAR_ROW_CLASS = 'better_map-draw__row';
+const HINT_CLASS = 'better_map-draw__hint';
 const TOOL_BTN_CLASS = 'better_map-draw__btn';
 const TOOL_BTN_ACTIVE_CLASS = 'better_map-draw__btn--active';
 
 const TOOLS = [
-    { id: 'point', label: 'Point', icon: '◉' },
-    { id: 'line', label: 'Line', icon: '∕' },
-    { id: 'polygon', label: 'Polygon', icon: '⬠' },
-    { id: 'rectangle', label: 'Rectangle', icon: '▭' },
-    { id: 'circle', label: 'Circle', icon: '○' }
+    { id: 'point',     label: 'Point',     icon: '◉', tip: 'Draw point — click the map to drop markers (stays in point mode for rapid placement)' },
+    { id: 'line',      label: 'Line',      icon: '∕', tip: 'Draw line — click the map for each vertex, double-click or press Enter to finish' },
+    { id: 'polygon',   label: 'Polygon',   icon: '⬠', tip: 'Draw polygon — click the map for each vertex, double-click or press Enter to finish' },
+    { id: 'rectangle', label: 'Rectangle', icon: '▭', tip: 'Draw rectangle — click two opposite corners on the map' },
+    { id: 'circle',    label: 'Circle',    icon: '○', tip: 'Draw circle — click the center, then click again to set the radius' }
 ];
+
+// Inline status text shown beneath the toolbar so dashboard users
+// understand the button is a MODE TOGGLE (it activates a drawing mode);
+// the actual shape is created by clicking on the map. Without this
+// hint, the buttons appear non-functional because the only visible
+// effect of a click is the button's active-state highlight.
+const HINT_IDLE = 'Pick a shape, then click the map';
+const HINT_BY_MODE = {
+    point:     'Point mode: click the map to drop points • Click the tool again or press Esc to stop',
+    line:      { start: 'Line mode: click the map to add the first vertex • Esc to cancel',
+                 progress: function (n) { return 'Line: ' + n + ' vertex' + (n === 1 ? '' : 'es') + ' — click to add more • Double-click or Enter to finish • Esc to cancel'; } },
+    polygon:   { start: 'Polygon mode: click the map to add the first vertex • Esc to cancel',
+                 progress: function (n) { return 'Polygon: ' + n + ' vertex' + (n === 1 ? '' : 'es') + ' — click to add more • Double-click or Enter to finish • Esc to cancel'; } },
+    rectangle: { start: 'Rectangle mode: click the map to set the first corner',
+                 progress: function () { return 'Rectangle: click the opposite corner to finish • Esc to cancel'; } },
+    circle:    { start: 'Circle mode: click the map to set the center',
+                 progress: function () { return 'Circle: click again to set the radius • Esc to cancel'; } }
+};
 
 /**
  * @param {HTMLElement} parentEl
@@ -65,29 +85,47 @@ export function createDrawTools(parentEl, opts) {
 
     const toolbar = document.createElement('div');
     toolbar.className = TOOLBAR_CLASS;
-    toolbar.setAttribute('role', 'toolbar');
     toolbar.setAttribute('aria-label', 'Draw tools');
+
+    // The buttons live in their own flex row so the hint can sit
+    // beneath them without disrupting the horizontal layout.
+    const buttonRow = document.createElement('div');
+    buttonRow.className = TOOLBAR_ROW_CLASS;
+    buttonRow.setAttribute('role', 'toolbar');
+    buttonRow.setAttribute('aria-label', 'Draw tools');
 
     TOOLS.forEach(function (tool) {
         if (allowed.indexOf(tool.id) === -1) return;
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = TOOL_BTN_CLASS;
-        btn.setAttribute('aria-label', 'Draw ' + tool.label);
-        btn.setAttribute('title', tool.label);
+        btn.setAttribute('aria-label', tool.tip);
+        btn.setAttribute('title', tool.tip);
         btn.textContent = tool.icon;
         btn.addEventListener('click', function () { activate(tool.id); });
         _toolButtons[tool.id] = btn;
-        toolbar.appendChild(btn);
+        buttonRow.appendChild(btn);
     });
     const clearBtn = document.createElement('button');
     clearBtn.type = 'button';
     clearBtn.className = TOOL_BTN_CLASS;
-    clearBtn.setAttribute('aria-label', 'Clear drawings');
-    clearBtn.setAttribute('title', 'Clear');
+    clearBtn.setAttribute('aria-label', 'Clear all drawings');
+    clearBtn.setAttribute('title', 'Clear all drawings');
     clearBtn.textContent = '✕';
     clearBtn.addEventListener('click', function () { clear(); });
-    toolbar.appendChild(clearBtn);
+    buttonRow.appendChild(clearBtn);
+
+    toolbar.appendChild(buttonRow);
+
+    // Status hint sits beneath the button row so users can see what
+    // the next interaction step is. aria-live=polite so screen readers
+    // announce mode changes without interrupting other speech.
+    const hint = document.createElement('div');
+    hint.className = HINT_CLASS;
+    hint.setAttribute('role', 'status');
+    hint.setAttribute('aria-live', 'polite');
+    hint.textContent = HINT_IDLE;
+    toolbar.appendChild(hint);
 
     parentEl.appendChild(toolbar);
 
@@ -230,11 +268,13 @@ export function createDrawTools(parentEl, opts) {
             _inProgress = null;
             refresh();
             updateButtonState();
+            updateHint();
             return;
         }
         _mode = mode;
         _inProgress = { coords: [] };
         updateButtonState();
+        updateHint();
         refresh();
     }
 
@@ -251,6 +291,33 @@ export function createDrawTools(parentEl, opts) {
         });
     }
 
+    function updateHint() {
+        if (!_enabled) {
+            hint.textContent = '';
+            return;
+        }
+        if (!_mode) {
+            hint.textContent = HINT_IDLE;
+            return;
+        }
+        const spec = HINT_BY_MODE[_mode];
+        if (!spec) {
+            hint.textContent = HINT_IDLE;
+            return;
+        }
+        // Point mode is a single string (no progress state).
+        if (typeof spec === 'string') {
+            hint.textContent = spec;
+            return;
+        }
+        const n = _inProgress && Array.isArray(_inProgress.coords) ? _inProgress.coords.length : 0;
+        if (n === 0) {
+            hint.textContent = spec.start;
+        } else {
+            hint.textContent = spec.progress(n);
+        }
+    }
+
     function commit(feature) {
         if (!feature) return;
         feature.id = 'bm-draw-' + (_features.length + 1);
@@ -263,6 +330,7 @@ export function createDrawTools(parentEl, opts) {
             updateButtonState();
         }
         refresh();
+        updateHint();
         try {
             const ev = new CustomEvent('bm:draw-finished', { detail: { feature: feature, mode: feature.properties.mode, all: _features.slice() } });
             parentEl.dispatchEvent(ev);
@@ -286,6 +354,7 @@ export function createDrawTools(parentEl, opts) {
             if (_inProgress.coords.length === 0) {
                 _inProgress.coords.push([lng, lat]);
                 refresh();
+                updateHint();
             } else {
                 _inProgress.coords[1] = [lng, lat];
                 const f = previewFeature();
@@ -296,6 +365,7 @@ export function createDrawTools(parentEl, opts) {
         // Line or polygon: accumulate vertices.
         _inProgress.coords.push([lng, lat]);
         refresh();
+        updateHint();
     }
 
     function onMapMove(e) {
@@ -347,6 +417,7 @@ export function createDrawTools(parentEl, opts) {
             _mode = null;
             _inProgress = null;
             updateButtonState();
+            updateHint();
             refresh();
         }
     }
@@ -374,6 +445,7 @@ export function createDrawTools(parentEl, opts) {
         _features = [];
         _inProgress = _mode ? { coords: [] } : null;
         refresh();
+        updateHint();
         try {
             parentEl.dispatchEvent(new CustomEvent('bm:draw-cleared', {}));
         } catch (_e) { /* swallow */ }
@@ -392,6 +464,7 @@ export function createDrawTools(parentEl, opts) {
             updateButtonState();
             refresh();
         }
+        updateHint();
     }
 
     function isEnabled() {
@@ -403,6 +476,7 @@ export function createDrawTools(parentEl, opts) {
         _inProgress = null;
         clear();
         updateButtonState();
+        updateHint();
     }
 
     function destroy() {

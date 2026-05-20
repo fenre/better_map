@@ -204,6 +204,116 @@ display.visualizations.custom.better_map.better_map.enablePopups = <boolean>
   field when a feature is clicked. HTML is filtered through DOMPurify with a
   strict allow-list. Default: true.
 
+display.visualizations.custom.better_map.better_map.popupAllowInlineStyles = <boolean>
+* (v1.7) Permit the `style=` attribute on allowed popup tags so dashboard
+  authors can colour severity numbers inline. Restricted to a CSS allow-list:
+  color, background-color, font-weight, font-size, text-align, padding,
+  margin (plus padding-*/margin-* shorthands), line-height, letter-spacing,
+  font-style, font-variant, text-decoration, border-radius. Dangerous values
+  (url(), expression(), behavior:, position:fixed|absolute|sticky, @import,
+  @charset, javascript:, vbscript:, data:text, backslash escapes) are
+  always rejected. !important is stripped from kept declarations.
+  Default: false.
+
+display.visualizations.custom.better_map.better_map.closePopupOnDrilldown = <boolean>
+* (v1.7) Suppress the popup flash that briefly appears when a feature
+  click also fires a drilldown. Useful when a marker click is configured
+  to change the dashboard (setToken) rather than open a richer view.
+  Default: false (popup + drilldown both fire).
+
+display.visualizations.custom.better_map.better_map.enableHoverPreview = <boolean>
+* (v1.7) Show a small dismissable-on-leave popup on mouseover, distinct
+  from the click popup. Reads from the row field named by
+  `hoverHtmlField` (default `hover`). Useful for "what is this dot"
+  glance views in security investigation, supply-chain, and RUM
+  dashboards. Default: false - NOC walls don't have mice.
+
+display.visualizations.custom.better_map.better_map.hoverHtmlField = <string>
+* (v1.7) Row column whose HTML value populates the hover-preview popup.
+  Sanitised by the same DOMPurify allow-list as the click popup. Use a
+  separate field from `popup` so click vs hover can show different views.
+  Default: hover.
+
+display.visualizations.custom.better_map.better_map.selectedFeatureToken = <string>
+* (v1.7) Name of a dashboard token; when its value matches a row's
+  `selectedFeatureField` value, that row is bumped to a top emphasis
+  layer with a halo + scaled dot + optional fly-to. Leave empty to
+  disable. Pair with a drilldown.setToken handler on the panel so a
+  click flows into the same token. Decouples selection emphasis from
+  data-source filtering - other markers stay visible for spatial
+  context. Default: empty (disabled).
+
+display.visualizations.custom.better_map.better_map.selectedFeatureField = <string>
+* (v1.7) Row column matched against the selection token's value.
+  Default: id.
+
+display.visualizations.custom.better_map.better_map.selectedSizeMultiplier = <number>
+* (v1.7) How much larger the selected marker grows.
+  1 = same size (halo only); 2.5 default; 6 = dominant.
+
+display.visualizations.custom.better_map.better_map.selectedHaloColor = <string>
+* (v1.7) Ring colour around the selected marker (hex / rgb).
+  Default: #22D3EE.
+
+display.visualizations.custom.better_map.better_map.selectedHaloWidth = <number>
+* (v1.7) Halo ring stroke width in pixels. 0 disables the ring (just
+  the scaled dot). Default: 4.
+
+display.visualizations.custom.better_map.better_map.selectedFlyToOnChange = <boolean>
+* (v1.7) Animate the camera to the newly-selected marker's coordinates.
+  Default: true.
+
+display.visualizations.custom.better_map.better_map.selectedFlyToZoom = <number>
+* (v1.7) Target zoom level for the selection fly-to (1 = world,
+  22 = building). Default: 8 (metro-area view).
+
+display.visualizations.custom.better_map.better_map.showLabels = <boolean>
+* (v1.7) Render a text label below each marker so operators can read
+  site names from across a NOC wall without hovering. Combine with
+  `labelMinZoom` to control when labels appear so they don't collide
+  at world zoom. Default: false.
+
+display.visualizations.custom.better_map.better_map.labelField = <string>
+* (v1.7) Row column whose value populates the label. Auto-falls-back
+  to `label`, `name`, then `tooltip` when the chosen field is empty.
+  Default: empty (use the auto-fallback coalesce).
+
+display.visualizations.custom.better_map.better_map.labelMinZoom = <number>
+* (v1.7) Zoom level below which labels are hidden to avoid collisions
+  at world zoom. Default: 3 (continent-or-closer).
+
+display.visualizations.custom.better_map.better_map.labelColor = <string>
+* (v1.7) Label text colour (hex). Default: #E6EEF9.
+
+display.visualizations.custom.better_map.better_map.labelHaloColor = <string>
+* (v1.7) Label outline / halo colour for legibility over busy basemaps.
+  Default: #0B1A2D.
+
+display.visualizations.custom.better_map.better_map.labelOffsetY = <number>
+* (v1.7) Vertical offset of the label below the marker, expressed in
+  text-height multiples (em). Default: 1.1.
+
+display.visualizations.custom.better_map.better_map.acceptRemoteCamera = <boolean>
+* (v1.7) Subscribe to `better_map.camera.lng/lat/zoom` dashboard tokens
+  on inbound and move the camera whenever they change. Mirrors the
+  outbound `enableCrossPanel` toggle so any other panel - including a
+  programmatic setToken or a deep-link form - can drive the camera.
+  Echo loops with a sibling panel are suppressed for ~350ms after each
+  inbound jump. Default: false.
+
+display.visualizations.custom.better_map.better_map.remoteCameraTokenLng = <string>
+* (v1.7) Override for the inbound longitude token name. Default:
+  better_map.camera.lng. Use when multiple Better Map panels on the
+  same dashboard need independent camera channels.
+
+display.visualizations.custom.better_map.better_map.remoteCameraTokenLat = <string>
+* (v1.7) Override for the inbound latitude token name.
+  Default: better_map.camera.lat.
+
+display.visualizations.custom.better_map.better_map.remoteCameraTokenZoom = <string>
+* (v1.7) Override for the inbound zoom token name.
+  Default: better_map.camera.zoom.
+
 display.visualizations.custom.better_map.better_map.showPerfHUD = <boolean>
 * Overlay an FPS / frame-time / layer-count / free-WebGL-slots HUD on top of
   the map for benchmarking. Default: false.

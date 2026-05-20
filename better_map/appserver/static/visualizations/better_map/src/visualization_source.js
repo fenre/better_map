@@ -80,7 +80,7 @@ import * as hexbinLayer from './lib/layers/hexbin.js';
 // SPL result, so the viz showcases its full feature surface on any
 // panel — even a panel whose SPL returns zero rows. See the
 // "Adding a new demo preset" recipe in docs/_machine/agents.md.
-import { isDemoPreset, loadDemoPreset, presetLabel } from './lib/demo/index.js';
+import { isDemoPreset, loadDemoPreset } from './lib/demo/index.js';
 // v1.6 — bundle of every new widget, layer, and Splunk integration.
 // The bundle exposes setEnabled/isEnabled/reset for each item and
 // registers them with the master control panel automatically.
@@ -272,6 +272,27 @@ export default SplunkVisualizationBase.extend({
         var enableDrilldown = parseBool(getOption(config, ns, 'enableDrilldown', 'true'), true);
         var enableCrossPanel = parseBool(getOption(config, ns, 'enableCrossPanel', 'true'), true);
         var enablePopups = parseBool(getOption(config, ns, 'enablePopups', 'true'), true);
+        // v1.7 — Tier 3 #9: suppress popup flash when click is also a drilldown.
+        var closePopupOnDrilldown = parseBool(
+            getOption(config, ns, 'closePopupOnDrilldown', 'false'),
+            false
+        );
+        // v1.7 — Tier 2 #5 (hover preview) + #6 (inline-style allowlist).
+        // Read these here so they can flow into initOpts → enableIntegrations
+        // on first map mount. The same getOption() calls happen later in
+        // updateView() so re-applying the drilldown handler on subsequent
+        // updateView passes picks up dashboard-author changes.
+        var enableHoverPreview = parseBool(
+            getOption(config, ns, 'enableHoverPreview', 'false'),
+            false
+        );
+        var hoverHtmlField = String(
+            getOption(config, ns, 'hoverHtmlField', 'hover') || 'hover'
+        ).trim() || 'hover';
+        var popupAllowInlineStyles = parseBool(
+            getOption(config, ns, 'popupAllowInlineStyles', 'false'),
+            false
+        );
         var showPerfHUD = parseBool(getOption(config, ns, 'showPerfHUD', 'false'), false);
         var showDebugHud = parseBool(getOption(config, ns, 'showDebugHud', 'false'), false);
         var highContrast = parseBool(getOption(config, ns, 'highContrast', 'false'), false);
@@ -385,6 +406,11 @@ export default SplunkVisualizationBase.extend({
                 enableDrilldown: enableDrilldown,
                 enableCrossPanel: enableCrossPanel,
                 enablePopups: enablePopups,
+                // v1.7 — forwarded into enableIntegrations on first mount.
+                popupAllowInlineStyles: popupAllowInlineStyles,
+                enableHoverPreview: enableHoverPreview,
+                hoverHtmlField: hoverHtmlField,
+                closePopupOnDrilldown: closePopupOnDrilldown,
                 labelLanguage: labelLanguage,
                 pitch: isFinite(cameraPitch) ? cameraPitch : 0,
                 bearing: isFinite(cameraBearing) ? cameraBearing : 0
@@ -412,7 +438,14 @@ export default SplunkVisualizationBase.extend({
                     initSelf._builder.enableIntegrations(initSelf, {
                         drilldown: initOpts.enableDrilldown,
                         crossPanel: initOpts.enableCrossPanel,
-                        drilldownOptions: { enablePopups: initOpts.enablePopups }
+                        drilldownOptions: {
+                            enablePopups: initOpts.enablePopups,
+                            // v1.7 — Tier 2 #5 / #6 / new closePopupOnDrilldown
+                            popupAllowInlineStyles: initOpts.popupAllowInlineStyles,
+                            enableHoverPreview: initOpts.enableHoverPreview,
+                            hoverHtmlField: initOpts.hoverHtmlField,
+                            closePopupOnDrilldown: initOpts.closePopupOnDrilldown
+                        }
                     });
                     if (showPerfHUD && !initSelf._perfHUD) {
                         initSelf._perfHUD = createPerfHUD(initSelf.el);
@@ -528,6 +561,133 @@ export default SplunkVisualizationBase.extend({
         var paletteId = String(getOption(config, ns, 'palette', 'viridis')).toLowerCase();
         var markerColor = getOption(config, ns, 'markerColor', '');
         var markerOutline = getOption(config, ns, 'markerOutline', '');
+
+        // ------------------------------------------------------------------
+        // v1.7 — Per-row marker labels (Tier 1 #3)
+        // ------------------------------------------------------------------
+        // The label layer plumbing was half-built in v1.3.x (markers.js
+        // L274 read `label || name || tooltip`) but never surfaced to
+        // dashboard authors. v1.7 finishes it: configurable field, min
+        // zoom (so labels don't collide at world zoom), and themeable
+        // colours so the NOC operator can read site names from across
+        // the room without hovering.
+        var showLabels = parseBool(getOption(config, ns, 'showLabels', 'false'), false);
+        var labelField = String(getOption(config, ns, 'labelField', '') || '').trim();
+        var labelMinZoom = parseFloat(getOption(config, ns, 'labelMinZoom', '3'));
+        var labelColor = String(getOption(config, ns, 'labelColor', '') || '').trim();
+        var labelHaloColor = String(getOption(config, ns, 'labelHaloColor', '') || '').trim();
+        var labelOffsetY = parseFloat(getOption(config, ns, 'labelOffsetY', '1.1'));
+
+        // ------------------------------------------------------------------
+        // v1.7 — Selected-feature emphasis (Tier 1 #1)
+        // ------------------------------------------------------------------
+        // The dashboard sets `selectedFeatureToken` to the NAME of a
+        // dashboard token; whatever value is currently bound to that
+        // token becomes the literal selection value. We resolve the
+        // token from `config` by trying `<token_name>` (Dashboard Studio
+        // automatically inlines token values into the config under
+        // their bare token names) and `selectedFeatureValue` (legacy
+        // direct-field fallback for callers that prefer to bind the
+        // value directly without the token-name indirection).
+        //
+        // selectedFeatureField is the column name in the row data to
+        // match against — defaults to `id` which is what dataFitness
+        // auto-detects.
+        //
+        // selectedEmphasis.* are flattened into top-level options so
+        // they survive Splunk's per-attribute serialization without
+        // requiring nested-object parsing. The OWNING dashboard never
+        // sees the nested shape; it sees flat keys identical to every
+        // other formatter option.
+        var selectedFeatureTokenName = String(
+            getOption(config, ns, 'selectedFeatureToken', '') || ''
+        ).trim();
+        var selectedFeatureField = String(
+            getOption(config, ns, 'selectedFeatureField', 'id') || 'id'
+        ).trim() || 'id';
+        var selectedFeatureValue;
+        if (selectedFeatureTokenName) {
+            // Token-name indirection: the dashboard publishes its
+            // current token value under the bare token name in config.
+            // Empty / undefined means "no selection".
+            var raw = config[selectedFeatureTokenName];
+            if (raw === undefined || raw === null || raw === '' || raw === '*') {
+                selectedFeatureValue = null;
+            } else {
+                selectedFeatureValue = String(raw);
+            }
+        } else {
+            // No token indirection — read a direct value option (or null).
+            var direct = getOption(config, ns, 'selectedFeatureValue', '');
+            if (direct === undefined || direct === null || direct === '' || direct === '*') {
+                selectedFeatureValue = null;
+            } else {
+                selectedFeatureValue = String(direct);
+            }
+        }
+        var selectedSizeMultiplier = parseFloat(
+            getOption(config, ns, 'selectedSizeMultiplier', '2.5')
+        );
+        var selectedHaloColor = String(
+            getOption(config, ns, 'selectedHaloColor', '#22D3EE') || '#22D3EE'
+        );
+        var selectedHaloWidth = parseFloat(
+            getOption(config, ns, 'selectedHaloWidth', '4')
+        );
+        var selectedFlyToOnChange = parseBool(
+            getOption(config, ns, 'selectedFlyToOnChange', 'true'),
+            true
+        );
+        var selectedFlyToZoom = parseFloat(
+            getOption(config, ns, 'selectedFlyToZoom', '8')
+        );
+
+        // ------------------------------------------------------------------
+        // v1.7 — Inbound camera control (Tier 1 #2 — applyRemoteCamera)
+        // ------------------------------------------------------------------
+        // crossPanel.js already defines applyRemoteCamera() which reads
+        // `better_map.camera.lng/lat/zoom` and calls map.jumpTo. We
+        // never invoked it because enableCrossPanel was outbound-only.
+        // The mirror toggle `acceptRemoteCamera` subscribes the map to
+        // those same tokens on incoming so any other panel can drive
+        // the camera by calling setToken('better_map.camera.lat', ...)
+        // etc. Additionally, the dashboard author may bind their own
+        // token names via `remoteCameraTokenLng/Lat/Zoom` and we'll
+        // resolve those off config the same way as selectedFeatureToken.
+        var acceptRemoteCamera = parseBool(
+            getOption(config, ns, 'acceptRemoteCamera', 'false'),
+            false
+        );
+        var remoteCameraTokenLng = String(
+            getOption(config, ns, 'remoteCameraTokenLng', '') || ''
+        ).trim();
+        var remoteCameraTokenLat = String(
+            getOption(config, ns, 'remoteCameraTokenLat', '') || ''
+        ).trim();
+        var remoteCameraTokenZoom = String(
+            getOption(config, ns, 'remoteCameraTokenZoom', '') || ''
+        ).trim();
+
+        // Resolve the actual lng/lat/zoom values. Two paths:
+        //   1. Custom token names: read config[<token-name>] directly
+        //   2. Defaults: the canonical cross-panel token namespace
+        //      (`better_map.camera.lng/lat/zoom`) which crossPanel.js
+        //      already publishes outbound.
+        var remoteCameraLng = NaN;
+        var remoteCameraLat = NaN;
+        var remoteCameraZoom = NaN;
+        if (acceptRemoteCamera) {
+            var lngKey = remoteCameraTokenLng || 'better_map.camera.lng';
+            var latKey = remoteCameraTokenLat || 'better_map.camera.lat';
+            var zoomKey = remoteCameraTokenZoom || 'better_map.camera.zoom';
+            remoteCameraLng = parseFloat(config[lngKey]);
+            remoteCameraLat = parseFloat(config[latKey]);
+            remoteCameraZoom = parseFloat(config[zoomKey]);
+        }
+
+        // Hover preview + inline-style allowlist are read earlier in
+        // updateView() (alongside enablePopups) so they can flow into
+        // the initial enableIntegrations() call. See above.
         var pathColor = getOption(config, ns, 'pathColor', '');
         var pathWidth = parseFloat(getOption(config, ns, 'pathWidth', ''));
         var pathArrows = parseBool(getOption(config, ns, 'pathArrows', 'false'), false);
@@ -605,7 +765,28 @@ export default SplunkVisualizationBase.extend({
             markers: {
                 color: markerColor || undefined,
                 outline: markerOutline || undefined,
-                pulse: pointPulse
+                pulse: pointPulse,
+                // v1.7 — Tier 1 #3 label options
+                showLabels: showLabels,
+                labelField: labelField || undefined,
+                labelMinZoom: isFinite(labelMinZoom) ? labelMinZoom : undefined,
+                labelColor: labelColor || undefined,
+                labelHaloColor: labelHaloColor || undefined,
+                labelOffsetY: isFinite(labelOffsetY) ? labelOffsetY : undefined,
+                // v1.7 — Tier 1 #1 selected-feature emphasis options.
+                // selectedFeatureValue is undefined when the dashboard
+                // hasn't bound a selection token, null when the
+                // dashboard explicitly cleared the selection, or a
+                // string with the current value otherwise.
+                selectedFeatureField: selectedFeatureField,
+                selectedFeatureValue: selectedFeatureValue,
+                selectedSizeMultiplier: isFinite(selectedSizeMultiplier)
+                    ? selectedSizeMultiplier
+                    : undefined,
+                selectedHaloColor: selectedHaloColor || undefined,
+                selectedHaloWidth: isFinite(selectedHaloWidth) ? selectedHaloWidth : undefined,
+                selectedFlyToOnChange: selectedFlyToOnChange,
+                selectedFlyToZoom: isFinite(selectedFlyToZoom) ? selectedFlyToZoom : undefined
             },
             clusters: {
                 color: markerColor || undefined,
@@ -674,6 +855,79 @@ export default SplunkVisualizationBase.extend({
             this._builder.setAutoOrbit(
                 cameraAutoOrbit && isFinite(autoOrbitSpeed) ? autoOrbitSpeed : 0
             );
+        }
+
+        // ------------------------------------------------------------------
+        // v1.7 — Tier 1 #1: drive selection emphasis + fly-to from updateView
+        // ------------------------------------------------------------------
+        // mapBuilder/markers.js have a public applySelection() path that
+        // updates the filter on the existing selection layers AND flies
+        // the camera to the matching feature (when flyToOnChange is on).
+        // applyAnalysis() above ALSO reconciles the selection layers
+        // (via mount → reconcileSelectionLayers) for the case where the
+        // markers layer was just mounted; applySelection here is the
+        // "selection-only re-render" path that runs on every token
+        // change without churning the layer dispatcher.
+        if (
+            this._builder &&
+            typeof this._builder.applyMarkerSelection === 'function'
+        ) {
+            this._builder.applyMarkerSelection(analysis.points, {
+                field: selectedFeatureField,
+                value: selectedFeatureValue,
+                sizeMultiplier: isFinite(selectedSizeMultiplier)
+                    ? selectedSizeMultiplier
+                    : undefined,
+                haloColor: selectedHaloColor || undefined,
+                haloWidth: isFinite(selectedHaloWidth) ? selectedHaloWidth : undefined,
+                flyToOnChange: selectedFlyToOnChange,
+                flyToZoom: isFinite(selectedFlyToZoom) ? selectedFlyToZoom : undefined
+            });
+        }
+
+        // ------------------------------------------------------------------
+        // v1.7 — Tier 1 #2: inbound camera control
+        // ------------------------------------------------------------------
+        // When acceptRemoteCamera is on AND the dashboard has bound
+        // either the canonical tokens (better_map.camera.lng/lat/zoom)
+        // or custom ones via remoteCameraTokenLng/Lat/Zoom, we feed
+        // the values to crossPanel.applyRemoteCamera() which actually
+        // moves the camera. The function is idempotent and bails when
+        // the values match the current view, so it's safe to call on
+        // every updateView pass.
+        if (
+            acceptRemoteCamera &&
+            this._builder &&
+            typeof this._builder.applyRemoteCamera === 'function'
+        ) {
+            // Only call when at least lat AND lng are valid; zoom is
+            // optional and falls back to the current zoom when NaN.
+            if (isFinite(remoteCameraLng) && isFinite(remoteCameraLat)) {
+                this._builder.applyRemoteCamera({
+                    lng: remoteCameraLng,
+                    lat: remoteCameraLat,
+                    zoom: isFinite(remoteCameraZoom) ? remoteCameraZoom : undefined
+                });
+            }
+        }
+
+        // ------------------------------------------------------------------
+        // v1.7 — Re-apply drilldown integrations so option changes take
+        // effect on subsequent updateView passes (not just first mount).
+        // enableIntegrations is idempotent — it detaches + reattaches.
+        // ------------------------------------------------------------------
+        if (this._builder && typeof this._builder.enableIntegrations === 'function') {
+            this._builder.enableIntegrations(this, {
+                drilldown: enableDrilldown,
+                crossPanel: enableCrossPanel,
+                drilldownOptions: {
+                    enablePopups: enablePopups,
+                    popupAllowInlineStyles: popupAllowInlineStyles,
+                    enableHoverPreview: enableHoverPreview,
+                    hoverHtmlField: hoverHtmlField,
+                    closePopupOnDrilldown: closePopupOnDrilldown
+                }
+            });
         }
 
         if (this._debugHud && this._debugHud.recordLayerOpts) {

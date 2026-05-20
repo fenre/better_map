@@ -84,6 +84,7 @@ missing-from-release-gate items now fixed.
 | # | Gate | Source of truth | Catches | Local repro |
 |--:|---|---|---|---|
 | 19 | Splunk AppInspect (cloud + future tags) | `splunk-appinspect` via `scripts/check-appinspect-results.py` | Cloud-vetting failures (35-check baseline) + advance-warning of future-failure checks Splunkbase will start enforcing | `cd better_map/appserver/static/visualizations/better_map && npm run lint:appinspect` |
+| 19a | `rsync --exclude` parity (G2-3) | `scripts/check-rsync-exclude-parity.py` | Drift between the three exclude-lists in `release.yml` (production tarball), `ci.yml` (PR-gate AppInspect), and `scripts/run-appinspect-local.sh` (dev helper). Originally caught the v1.7.1 `.npmrc` near-miss where the local helper silently lagged release.yml by one entry. | `cd better_map/appserver/static/visualizations/better_map && npm run lint:appinspect-parity` |
 
 #### Job: `commitlint`
 
