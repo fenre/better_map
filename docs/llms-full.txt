@@ -4,7 +4,7 @@
 
 This file is the body-inclusive sibling of `llms.txt` and concatenates every page on the Better Map documentation site into a single, LLM-friendly text dump. The short companion index is at <https://fenre.github.io/better_map/llms.txt>. Pages appear in `mkdocs.yml` `nav:` declaration order. Each page block carries a stable `# === ... ===` separator plus the source-of-truth path on disk and the published URL so the same content can be grepped by either dimension.
 
-At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 95 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 97 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
 
 All page URLs resolve to publicly accessible Material-themed HTML on GitHub Pages. The project ships under the MIT licence; the canonical repo is <https://github.com/fenre/better_map>.
 
@@ -1101,7 +1101,7 @@ generated from
 so it cannot drift from the recipe files.
 
 <!-- recipes-matrix trimmed for llms-full.txt token budget (see Wave 16 ROADMAP block); full matrix at <https://fenre.github.io/better_map/recipes/> and source-of-truth YAML at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>; per-recipe details (status, apps, expected-field contract, formatter options) are kept verbatim under the matching `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file -->
-**Total: 95 recipes · 15 source dir(s) · 9 layer type(s).**
+**Total: 97 recipes · 15 source dir(s) · 9 layer type(s).**
 
 Source dirs and the layer ids that already ship for each (any `(source, layer)` not listed below is an open cell in the E5 matrix and is a candidate for the next recipe wave):
 
@@ -1110,8 +1110,8 @@ Source dirs and the layer ids that already ship for each (any `(source, layer)` 
 - `cim-network-traffic`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster, vector-tile-join
 - `cim-performance`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster, vector-tile-join
 - `csv-lookup-geo`: h3, heat, markers, paths, polygons, supercluster, vector-tile-join
-- `cyber-vision`: h3, heat, markers, paths, supercluster
-- `es-risk`: h3, heat, markers, paths, supercluster
+- `cyber-vision`: choropleth, h3, heat, markers, paths, supercluster
+- `es-risk`: h3, heat, markers, paths, supercluster, vector-tile-join
 - `geo-us-states`: choropleth, extrusion-3d
 - `itsi-kpi-base`: choropleth, h3, heat, markers, paths, supercluster
 - `kvstore-latlon`: h3, heat, markers, paths, polygons, supercluster, vector-tile-join
@@ -1121,7 +1121,7 @@ Source dirs and the layer ids that already ship for each (any `(source, layer)` 
 - `splunk-stream`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster
 - `thousandeyes`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster, vector-tile-join
 
-**OT-safety-relevant recipes (11):** `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `cyber-vision/paths`, `cyber-vision/supercluster`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`, `ot-datastreamer/paths`, `ot-datastreamer/supercluster`, `ot-datastreamer/vector-tile-join`.
+**OT-safety-relevant recipes (12):** `cyber-vision/choropleth`, `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `cyber-vision/paths`, `cyber-vision/supercluster`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`, `ot-datastreamer/paths`, `ot-datastreamer/supercluster`, `ot-datastreamer/vector-tile-join`.
 
 The remaining matrix cells from the E5 design — every layer × every
 source pattern — are tracked in
@@ -5905,6 +5905,173 @@ _Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 wal
 
 # === END: https://fenre.github.io/better_map/recipes/csv-lookup-geo/vector-tile-join/ ===
 
+# === BEGIN: https://fenre.github.io/better_map/recipes/cyber-vision/choropleth/ ===
+
+# Recipes / Cisco Cyber Vision (components + vulnerabilities) — choropleth
+
+> Source: `docs/recipes/cyber-vision/choropleth.md`  
+> URL: <https://fenre.github.io/better_map/recipes/cyber-vision/choropleth/>
+
+# Cisco Cyber Vision — US states choropleth
+
+Aggregate the Cisco-Cyber-Vision-discovered OT asset fleet by US
+state (via the operator-maintained `cybervision_sites.csv` lookup
+extended with lat/lon) and render as a **flat-fill choropleth**
+over the bundled `us-states.pmtiles` preset. Per-state colour
+saturation encodes the **count of OT assets with at least one
+high-CVSS vulnerability** (`max_cvss >= 7.0` — the NIST
+"high"-severity threshold). The right shape for **OT-SecOps
+executive briefings** and **US-fleet vulnerability-coverage
+reviews** where the question is "which US states host our most
+exposed OT infrastructure?" — not "which individual PLCs are
+vulnerable" (use [markers](./markers.md) for that), and not
+"where is asset density highest" (use [h3](./h3.md) for that).
+
+The **9th choropleth recipe in the matrix** — joining
+[geo-us-states](../geo-us-states/choropleth.md),
+[cim-network-traffic](../cim-network-traffic/choropleth.md),
+[cim-authentication](../cim-authentication/choropleth.md),
+[cim-alerts](../cim-alerts/choropleth.md),
+[cim-performance](../cim-performance/choropleth.md),
+[thousandeyes](../thousandeyes/choropleth.md),
+[itsi-kpi-base](../itsi-kpi-base/choropleth.md), and
+[splunk-stream](../splunk-stream/choropleth.md). This advances
+the choropleth layer column from 8 cells to 9, and brings the
+cyber-vision source row from 5 cells to 6 (markers, h3, heat,
+supercluster, paths, plus choropleth now). The recipe is the
+**first OT-safety-relevant choropleth in the matrix** — the
+metric being shaded is `safety_related=Y`-marked OT asset
+exposure, with the full
+[`~/.cursor/rules/ot-safety.mdc`](https://github.com/fenre/better_map/blob/main/.cursor/rules/ot-safety.mdc)
+contract applied to the input data (passive-DPI-only collection
+via Cyber Vision, no active probing of the OT zone, read-only
+mirror of the customer SRS for safety-classification annotations).
+
+## 1. Source description
+
+Same **Cisco Cyber Vision** passive-DPI platform as the
+[markers](./markers.md), [h3](./h3.md), [heat](./heat.md),
+[supercluster](./supercluster.md), and [paths](./paths.md)
+companions — see
+[cyber-vision/markers §1](./markers.md#1-source-description)
+for the full platform background, the four sourcetype streams
+(`cisco:cybervision:components` / `:flows` / `:events` /
+`:vulnerabilities`), and the OT-safety boundary (Rule 1: Cyber
+Vision is the reference passive-DPI design; this recipe
+consumes its already-passive metadata stream).
+
+The relevant distinction for THIS recipe: instead of one marker
+per OT asset (markers companion) or one hex per regional density
+bucket (h3 companion), the panel aggregates **per US state**.
+Per-asset vulnerability detection (the `max(cvss_score)` rollup
+from markers) is computed first, then assets are joined against
+the operator-maintained `cybervision_sites.csv` lookup to get
+lat/lon, then Splunk's `geom geo_us_states` point-in-polygon
+command derives the US state from the lat/lon pair, and finally
+aggregated per state.
+
+**Why choropleth for Cyber Vision.** A markers panel shows
+WHICH assets are vulnerable; a heat panel shows aggregate
+density. But neither answers the **executive-distribution
+question**: "across the 50 US states, which ones host our
+most-exposed OT infrastructure?" A choropleth solves this in
+one panel: states with ≥1 vulnerable asset get coloured, states
+with zero are blank. This is the right shape for **OT-SecOps
+patching-priority reviews** ("which plant region needs the next
+PLC firmware refresh?"), **executive incident retros** ("the
+breach pivot was concentrated in our Texas plants — visible as
+the darkest state on the panel"), and **regional compliance
+posture views** (per-state vulnerable-asset count as the proxy
+for "where is the IEC 62443 / NERC CIP exposure highest?").
+
+**Why the bundled `us-states.pmtiles` preset.** Same air-gap
+posture as the
+[cim-performance/choropleth](../cim-performance/choropleth.md)
+and [splunk-stream/choropleth](../splunk-stream/choropleth.md)
+companions: bundled preset, no CDN, no add-on beyond Splunk
+Core's `geo_us_states` lookup, fully air-gap compatible per
+ROADMAP §1a. For tenants with a global OT footprint (multi-
+national manufacturing / energy), pair this with the future
+`cyber-vision/vector-tile-join` recipe (customer-hosted world-
+countries PMTiles + per-country aggregation via the asset's
+plant_country field). For most US-centric tenants the
+50-states-plus-DC view is the operationally-correct resolution
+— OT plants are typically clustered by region rather than
+distributed globally.
+
+**Typical sourcetype / index:** Same as the
+[markers companion §1](./markers.md#1-source-description) —
+`index=cybervision`, sourcetype-prefixed `cisco:cybervision:*`.
+The TA is `TA-cisco-cybervision`. The site lookup is operator-
+maintained (no automated way to derive plant-floor coordinates
+from Cyber Vision metadata) and MUST be extended with `lat` /
+`lon` columns per the
+[markers companion §6 Gotchas](./markers.md#6-gotchas) site
+lookup schema.
+
+**No add-on required beyond `TA-cisco-cybervision`** for the
+Cyber Vision data and Splunk Core's bundled `geo_us_states`
+geometry lookup for the point-in-polygon step. Fully air-gap
+compatible per ROADMAP §1a.
+
+## 2. SPL recipe
+
+```spl
+index=cybervision sourcetype="cisco:cybervision:components" earliest=-24h latest=now
+| dedup asset_id sortby - _time
+| rename asset_id AS id
+| join type=left id [
+    search index=cybervision sourcetype="cisco:cybervision:vulnerabilities" earliest=-24h latest=now
+    | stats max(cvss_score) AS max_cvss BY asset_id
+    | rename asset_id AS id
+  ]
+| fillnull value=0 max_cvss
+| eval is_vulnerable=if(max_cvss >= 7.0, 1, 0)
+| lookup cybervision_sites.csv asset_id AS id OUTPUT lat, lon, safety_related, site_name
+| where isnotnull(lat) AND isnotnull(lon)
+| geom geo_us_states featureIdField="stusps" latitude=lat longitude=lon
+| where isnotnull(featureId)
+| stats sum(is_vulnerable) AS vulnerable_asset_count,
+    count AS total_asset_count,
+    values(state_name) AS state_name
+  BY featureId
+| eval vulnerable_ratio=round(vulnerable_asset_count / total_asset_count, 2)
+| eval value=vulnerable_asset_count
+| rename featureId AS id
+| fields id, state_name, value, vulnerable_asset_count, total_asset_count, vulnerable_ratio
+| sort - value
+```
+
+## 3. Expected fields
+
+| field                    | type    | example     |
+|--------------------------|---------|-------------|
+| id                       | string  | TX          |
+| state_name               | string  | Texas       |
+| value                    | integer | 12          |
+| vulnerable_asset_count   | integer | 12          |
+| total_asset_count        | integer | 47          |
+| vulnerable_ratio         | number  | 0.26        |
+
+All six fields appear in `expected_fields` in the frontmatter
+and are cross-checked by `scripts/check-recipe-schema.py`.
+`value` drives the choropleth shading; the other four flow
+through as feature properties on the joined polygon for popups.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinPreset": "us-states",
+  "enableChoropleth": "true",
+  "palette": "magma"
+}
+```
+
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/cyber-vision/choropleth/>._
+
+# === END: https://fenre.github.io/better_map/recipes/cyber-vision/choropleth/ ===
+
 # === BEGIN: https://fenre.github.io/better_map/recipes/cyber-vision/h3/ ===
 
 # Recipes / Cisco Cyber Vision (components + vulnerabilities) — H3 hexbin
@@ -8258,6 +8425,196 @@ are cross-checked by `scripts/check-recipe-schema.py`.
 _Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/es-risk/supercluster/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/es-risk/vector-tile-join/ ===
+
+# Recipes / ES Risk-Based Alerting (risk index) — vector-tile join (customer PMTiles)
+
+> Source: `docs/recipes/es-risk/vector-tile-join.md`  
+> URL: <https://fenre.github.io/better_map/recipes/es-risk/vector-tile-join/>
+
+# ES Risk-Based Alerting — vector-tile join (customer PMTiles, world countries)
+
+Render the global distribution of ES Risk-Based Alerting (RBA)
+accumulated risk by joining **the `risk` index aggregated to
+entity home country** (via the ES Asset & Identity framework's
+`identities.csv` / `assets.csv` lookups extended with an `ip`
+field, then `iplocation` → `Country` → `iso_country_codes` →
+`iso_a3` chain) against a **customer-hosted world-countries
+PMTiles vector tileset**. The **global companion** to the
+[es-risk/markers](./markers.md) recipe — same RBA scoring
+engine, same A&I-driven entity geocoding, but instead of one
+marker per risky entity, the panel aggregates total accumulated
+risk per country.
+
+The **9th vector-tile-join recipe in the matrix** — joining
+[csv-lookup-geo](../csv-lookup-geo/vector-tile-join.md),
+[kvstore-latlon](../kvstore-latlon/vector-tile-join.md),
+[cim-network-traffic](../cim-network-traffic/vector-tile-join.md),
+[meraki](../meraki/vector-tile-join.md),
+[ot-datastreamer](../ot-datastreamer/vector-tile-join.md),
+[netflow-sflow-ipfix](../netflow-sflow-ipfix/vector-tile-join.md),
+[thousandeyes](../thousandeyes/vector-tile-join.md), and
+[cim-performance](../cim-performance/vector-tile-join.md). This
+advances the vector-tile-join layer column from 8 cells to 9,
+and brings the es-risk source row from 5 cells to 6 (markers,
+h3, heat, supercluster, paths, plus vector-tile-join now). The
+recipe is the canonical **global SecOps executive surface** —
+"which countries are accumulating the most risk this hour?" —
+designed for SOCs whose user base, datacenter footprint, and
+adversary surface all span multiple continents.
+
+## 1. Source description
+
+Same **Risk-Based Alerting (RBA)** data source as the
+[markers](./markers.md), [h3](./h3.md), [heat](./heat.md),
+[supercluster](./supercluster.md), and [paths](./paths.md)
+companions — see
+[es-risk/markers §1](./markers.md#1-source-description) for the
+full RBA platform background, the `risk` index schema, the
+`action.risk = 1` adaptive-response contract, and the ES Asset
+& Identity (A&I) lookup chain.
+
+The relevant distinction for THIS recipe: instead of per-entity
+markers (markers companion) or per-region density bucketing
+(h3 / heat companions), the panel aggregates **per country**.
+Per-entity risk accumulation (the `stats sum(risk_score) BY
+risk_object` rollup from markers) is computed first, then the
+entity is joined against the A&I framework to get an IP address,
+then `iplocation ip` derives the country, then `iso_country_codes`
+maps country name to ISO 3166-1 alpha-3 code for the PMTiles
+join.
+
+**Why use an IP-keyed A&I extension instead of lat/lon.** The
+[markers companion §1](./markers.md#1-source-description)
+documents the canonical A&I extension contract: extend
+`identities.csv` and `assets.csv` with `lat` / `long` columns
+for direct per-entity geocoding. THIS recipe needs a coarser
+resolution (country, not site), and many ES tenants who haven't
+yet populated lat/lon for every user DO already have an `ip`
+field populated on `assets.csv` (the IP of the user's home
+office subnet, the datacenter management IP for hosts). The IP
+chain via `iplocation` is therefore lower-friction than the
+lat/lon chain for tenants whose A&I extension is partial.
+
+For tenants with FULL lat/lon coverage on A&I, an equivalent
+recipe would substitute the `iplocation ip` stage with `lookup
+asset_lookup_by_str src AS risk_object OUTPUT lat AS lat, long
+AS lon` + `geom geo_world_countries featureIdField="iso_a3"
+latitude=lat longitude=lon` — see §6 Gotchas for the
+substitution sketch.
+
+**Why vector-tile-join (custom PMTiles) for ES Risk.** A US-states
+choropleth answers "which US states host the most risky entities"
+— useful for US-centric tenants. But for a global SOC (multi-
+national enterprise / SaaS vendor / managed-security provider),
+the US-only view answers the wrong question; entire continents
+render as the unmatched-grey fallback fill and the executive
+viewer can't tell whether "grey = no risk" or "grey = no
+coverage at all". A world-countries vector-tile-join surfaces
+both questions correctly: shaded countries have accumulated
+risk above the threshold; unshaded countries are operationally
+"no risk above threshold there" (which itself is informative —
+"we have no high-risk entities in LATAM this hour, that's a
+posture validation").
+
+Typical use cases:
+
+- **Global SOC shift handover briefings** — "Where is the
+  accumulated risk concentrated as the EU shift hands off to
+  the US shift? Are EMEA-tagged users carrying more risk than
+  AMER-tagged users right now?"
+- **Multi-regional SecOps incident retros** — "Risk accumulation
+  spiked in Brazil and Argentina during the campaign window;
+  the SOC pivot was correctly regional."
+- **Executive cyber-risk distribution reports** — "Per-country
+  total risk score, suitable for quarterly board reporting where
+  per-jurisdiction risk metrics need geographic context."
+- **Sales-engineering RFP risk-visibility visuals** — "We
+  surface risky-entity behaviour across 60 countries; the heat
+  map shows where our SOC drives the most signal today."
+
+**Typical sourcetype / index:** `` `risk` `` macro (resolves to
+`index=risk`, possibly sharded). The TA app context is
+`SplunkEnterpriseSecuritySuite`; the recipe also requires
+`Splunk_SA_CIM` and an A&I lookup extended with an `ip` field
+(matching the asset / identity to a public IP).
+
+**No add-on required beyond ES** for the `risk` index data,
+Splunk's built-in `iplocation` for the country geocoding, and
+a customer-managed `iso_country_codes` lookup (one-time
+bootstrap from the Natural Earth countries dataset, documented
+in the
+[cim-network-traffic/vector-tile-join §6 Gotchas](../cim-network-traffic/vector-tile-join.md#6-gotchas)
+companion). The PMTiles file is customer-hosted (on the Splunk
+app's own `appserver/static/` folder for air-gapped tenants, or
+on a customer CDN for non-air-gapped). No external API calls.
+Fully air-gap compatible per ROADMAP §1a when the PMTiles file
+is bundled into the app.
+
+## 2. SPL recipe
+
+```spl
+`risk` earliest=-24h latest=now
+| stats sum(risk_score) AS entity_risk,
+    values(annotations.mitre_attack{}) AS techniques_mv
+  BY risk_object, risk_object_type
+| where entity_risk >= 50
+| lookup identity_lookup_expanded identity AS risk_object OUTPUT ip AS identity_ip
+| lookup asset_lookup_by_str src AS risk_object OUTPUT ip AS asset_ip
+| eval entity_ip=coalesce(identity_ip, asset_ip)
+| where isnotnull(entity_ip) AND entity_ip != ""
+| iplocation entity_ip
+| where isnotnull(Country) AND Country != ""
+| stats sum(entity_risk) AS total_risk,
+    count AS risky_entity_count,
+    dc(mvjoin(techniques_mv, ",")) AS distinct_techniques
+  BY Country
+| lookup iso_country_codes country_name AS Country OUTPUT iso_a3 AS id
+| where isnotnull(id) AND id != ""
+| eval value=total_risk
+| rename Country AS country_name
+| fields id, country_name, value, total_risk, risky_entity_count, distinct_techniques
+| sort - value
+```
+
+## 3. Expected fields
+
+| field                | type    | example       |
+|----------------------|---------|---------------|
+| id                   | string  | USA           |
+| country_name         | string  | United States |
+| value                | integer | 847           |
+| total_risk           | integer | 847           |
+| risky_entity_count   | integer | 23            |
+| distinct_techniques  | integer | 11            |
+
+Six fields, all in `expected_fields` in the frontmatter and
+cross-checked by `scripts/check-recipe-schema.py`. `value`
+drives the choropleth shading; `country_name` / `total_risk` /
+`risky_entity_count` / `distinct_techniques` flow through as
+feature properties on the joined polygon for popups (a hover
+over "Germany" reads e.g., "Germany — total risk 412, 8 risky
+entities, 5 distinct MITRE techniques").
+
+The polygon geometry itself is NOT a field — Better Map fetches
+it internally from the PMTiles URL configured in §4.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinUrl": "https://cdn.example.com/tilesets/world-countries.pmtiles",
+  "featureJoinPromoteId": "iso_a3",
+  "featureJoinSourceLayer": "countries",
+  "enableChoropleth": "true",
+  "palette": "magma"
+}
+```
+
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/es-risk/vector-tile-join/>._
+
+# === END: https://fenre.github.io/better_map/recipes/es-risk/vector-tile-join/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/ ===
 
@@ -15176,7 +15533,7 @@ The full per-integration matrix (status, app required, Splunk version min, endpo
 
 <!-- Appendix B matrix trimmed for llms-full.txt token budget (see Wave 36 ROADMAP block); the agent-actionable lookup (per-source-dir layer presence list, total counts, OT-safety inventory) is in the `recipes/` page body block earlier in this same file (rendered by `strip_recipes_index_matrix`); the structured per-recipe metadata (status, apps required, expected-fields contract, formatter options, verified-against) is in `docs/_machine/recipes/index.yaml`; the per-recipe SPL + formatter config + field contract is kept verbatim under each `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file. -->
 
-**95 recipe(s)** indexed at the source of truth: [`docs/_machine/recipes/index.yaml`](https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml) — structured YAML carrying recipe id, source, layer, status, splunk apps required, expected-field contract, formatter options, ot-safety relevance, and verification metadata for every recipe in the matrix. See the `recipes/` page body block earlier in this file for the agent-actionable summary (total counts + per-source-dir layer presence list + OT-safety-relevant recipe inventory). See each `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this file for the per-recipe SPL recipe, expected-fields contract (§3 verbatim), and recommended formatter config (§4 verbatim).
+**97 recipe(s)** indexed at the source of truth: [`docs/_machine/recipes/index.yaml`](https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml) — structured YAML carrying recipe id, source, layer, status, splunk apps required, expected-field contract, formatter options, ot-safety relevance, and verification metadata for every recipe in the matrix. See the `recipes/` page body block earlier in this file for the agent-actionable summary (total counts + per-source-dir layer presence list + OT-safety-relevant recipe inventory). See each `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this file for the per-recipe SPL recipe, expected-fields contract (§3 verbatim), and recommended formatter config (§4 verbatim).
 # === END: appendix:recipes ===
 
 # === BEGIN: appendix:meta ===

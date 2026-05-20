@@ -83,6 +83,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [CSV lookup (geo polygons) → Polygons (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/polygons/): apps required: none.
 - [CSV lookup (geo polygons) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/supercluster/): apps required: none.
 - [CSV lookup (region metrics) → Vector-tile join (customer PMTiles) (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/vector-tile-join/): apps required: none.
+- [Cisco Cyber Vision (components + vulnerabilities) → Choropleth (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/choropleth/): apps required: TA-cisco-cybervision.
 - [Cisco Cyber Vision (components + vulnerabilities) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/h3/): apps required: TA-cisco-cybervision.
 - [Cisco Cyber Vision (components + vulnerabilities) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/heat/): apps required: TA-cisco-cybervision.
 - [Cisco Cyber Vision (components + vulnerabilities) → Markers (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/markers/): apps required: TA-cisco-cybervision.
@@ -93,6 +94,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [ES Risk-Based Alerting (risk index) → Markers (unverified)](https://fenre.github.io/better_map/recipes/es-risk/markers/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM, builtin:iplocation.
 - [ES Risk-Based Alerting (risk index) → Paths (unverified)](https://fenre.github.io/better_map/recipes/es-risk/paths/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM, builtin:iplocation.
 - [ES Risk-Based Alerting (risk index) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/es-risk/supercluster/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM.
+- [ES Risk-Based Alerting (risk index) → Vector-tile join (customer PMTiles) (unverified)](https://fenre.github.io/better_map/recipes/es-risk/vector-tile-join/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM, builtin:iplocation.
 - [US states (built-in geo lookup) → Choropleth (unverified)](https://fenre.github.io/better_map/recipes/geo-us-states/choropleth/): apps required: none.
 - [US states (built-in geo lookup) → 3D extrusion (unverified)](https://fenre.github.io/better_map/recipes/geo-us-states/extrusion-3d/): apps required: none.
 - [ITSI service health (KPI base searches) → Choropleth (unverified)](https://fenre.github.io/better_map/recipes/itsi-kpi-base/choropleth/): apps required: SA-ITOA.

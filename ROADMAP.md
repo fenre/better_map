@@ -1,5 +1,67 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-31): E5 Phase 2 wave 36c recipes
+> SHIPPED — 2 diversification recipes (95 → 97 total) targeting
+> two sparse layer columns (choropleth 8 → 9, vector-tile-join
+> 8 → 9) and two sparse source rows (cyber-vision 5 → 6, es-risk
+> 5 → 6). Per-recipe-cost expectation post-Wave-36 (after the
+> 36a appendix:recipes compaction and 36b COMPAT-MATRIX trim
+> shifted the corpus baseline) is ~2,000 tokens net per recipe;
+> actual: 167,832 → 172,027 = +4,195 net tokens for 2 recipes
+> ≈ 2,098 tokens per recipe (right at the projection). Headroom
+> moves from 7,168 → 2,973 WARN tokens (172,027 / 175,000 WARN
+> / 200,000 HARD-FAIL ceiling), 32,168 → 27,973 HARD-FAIL
+> headroom. Below the 7,000-token trim-cadence threshold, so
+> Wave 37 MUST start with a trim wave (per the autonomous
+> standing rule documented in the wave-36b status block) —
+> next-priority lever per the wave-36a inventory is
+> ``runbooks/supply-chain/`` at 3,095 tokens (operational
+> runbook detail an LLM rarely cross-references, same reasoning
+> as COMPAT-MATRIX), with ``runbooks/upgrade-hygiene/`` at
+> 2,626 tokens and ``integrations/catalogue/`` at 2,827 tokens
+> as fallbacks. Recipe authorial deltas: (1)
+> ``docs/recipes/cyber-vision/choropleth.md`` — first OT-safety-
+> relevant choropleth in the matrix; SPL aggregates Cisco Cyber
+> Vision passive-DPI component inventory by US state via
+> operator-maintained ``cybervision_sites.csv`` site lookup
+> (extended with lat/lon per the markers companion §6 schema)
+> + Splunk Core's bundled ``geom geo_us_states``
+> point-in-polygon; ``value`` is per-state count of OT assets
+> with at least one CVSS-≥-7.0 (NIST "High") vulnerability;
+> palette magma (warm-colour-equates-with-attention). Full
+> ``~/.cursor/rules/ot-safety.mdc`` Rules 1–8 contract applied
+> (passive DPI is the reference design, no active OT-zone
+> probing, safety_related column read-only mirrored from the
+> customer SRS, SOAR scope ends at IT/OT DMZ). (2)
+> ``docs/recipes/es-risk/vector-tile-join.md`` — global SOC
+> executive surface; SPL aggregates the ``risk`` index by
+> entity home country via the ES A&I framework's
+> ``identity_lookup_expanded`` / ``asset_lookup_by_str`` lookups
+> (extended with ``ip`` columns) + ``iplocation`` +
+> ``iso_country_codes`` chain; ``value`` is per-country total
+> accumulated risk score (with shading variants for
+> entity-count and technique-diversity in §4 documentation);
+> companion to the markers / h3 / heat / supercluster / paths
+> es-risk recipes for the global executive-distribution
+> question. Layer-column progression: choropleth advances from
+> 8 cells to 9 (8th choropleth recipe was splunk-stream/
+> choropleth from wave 35b); vector-tile-join advances from 8
+> cells to 9 (8th VTJ recipe was cim-performance/
+> vector-tile-join from wave 35b). Source-row impact:
+> cyber-vision moves from 5 cells to 6 (markers / h3 / heat /
+> supercluster / paths plus choropleth); es-risk moves from 5
+> cells to 6 (markers / h3 / heat / supercluster / paths plus
+> vector-tile-join). Both recipes are ``status: unverified``
+> (no live tenant available for cybervision-with-populated-
+> site-lookup or es-licensed-with-A&I-IP-coverage during this
+> wave); the §Verification status sections in each recipe
+> document the maintainer-reproducible promotion steps. All
+> gates green locally (``build-llms-full-txt.py --check``,
+> ``build-llms-txt.py --check``, ``check-recipe-schema.py``
+> [97 / 97 valid], ``build-reference-pages.py --check``,
+> ``check-manifest.py``, ``check-formatter-schema.py``,
+> ``check-formatter-coverage.py``, ``mkdocs build --strict``).**
+
 > **Status (v1.7-prep, 2026-05-31): E5 Phase 2 wave 36b token-trim
 > SHIPPED — drop the two operational H2 sections (``## Running
 > locally`` and ``## Reading a failing run``) from
