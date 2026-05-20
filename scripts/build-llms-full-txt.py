@@ -132,6 +132,22 @@ gaps + see-also sections that precede the matrix are the LLM-useful
 parts of the gate inventory — "what's enforced, why, and what the
 posture is" — and the per-gate row catalogue is recoverable via the
 live page pointer the trim appends; see ``strip_ci_gates_matrix``
+below — and in wave 35 by dropping the entire ``## 4. Milestone
+sequencing`` section from ``ROADMAP.md`` (three milestone tables —
+v1.7 / v1.8 / v2.0 — each enumerating ~10-12 work-items with theme
+codes, effort estimates, sub-totals, exit-criteria bullets;
+~6.8k chars ≈ ~1.7k rendered tokens, the single largest unstripped
+section in any non-recipe page after the wave-33 §3 trim and the
+wave-34 CI-GATES trim); the ``## 1. Honest baseline`` section
+(kept verbatim, ~1.2k tokens) gives the LLM consumer the answer to
+"what does v1.6 actually do today?", the ``## 2. Strategic themes``
+section (kept, ~420 tokens) frames the planning vocabulary,
+``## 5. What better_map will explicitly NOT become`` (kept, ~480
+tokens) bounds the scope, and the work-item-ID cross-link surface
+(A1, B2, E5, G7, …) is already absent from corpus per the wave-33
+§3 trim — so per-milestone sub-totals + exit criteria are
+operational planning detail that an LLM consumer can fetch on
+demand via the pointer; see ``strip_roadmap_milestone_sequencing``
 below):
 
   * Per-page warning at **50,000 estimated tokens** — one page should
@@ -451,6 +467,51 @@ _ROADMAP_HISTORICAL_SECTION = re.compile(
 # of §3.
 _ROADMAP_DETAILED_WORKITEMS_SECTION = re.compile(
     r"^## 3\.\s+Detailed work-items[^\n]*\n"
+    r"(?:(?!^## )(?!^---$).*\n)*",
+    re.MULTILINE,
+)
+
+# Roadmap §4 Milestone sequencing trim contract — see
+# strip_roadmap_milestone_sequencing() and the E5 Phase 2 wave 35
+# ROADMAP block. ``ROADMAP.md``'s ``## 4. Milestone sequencing``
+# section enumerates THREE successive milestones (v1.7 / v1.8 / v2.0)
+# as markdown tables of (work-item, theme, effort) rows plus
+# milestone-level sub-total / buffer / total lines and a free-prose
+# "Exit criteria" + "What we DO NOT ship in v<N>" trailer per
+# milestone. By wave 34 the section costs ~1.7k rendered tokens
+# in llms-full.txt (the single largest unstripped section in any
+# non-recipe page after the wave-33 §3 strip and the wave-34
+# CI-GATES strip — both of which raised it from #3 to #1 on the
+# roadmap-page-internal trim ROI ranking).
+#
+# Safety rationale: the post-trim roadmap page retains ``## 1.
+# Honest baseline (where v1.6 actually sits)`` (~1.2k tokens), which
+# answers "what does v1.6 actually do today?" with verified
+# per-feature status detail; ``## 2. Strategic themes`` (~420
+# tokens), which names the seven theme letters (A-G) that
+# milestone-table rows reference; ``## 5. What better_map will
+# explicitly NOT become`` (~480 tokens), which bounds scope; and
+# ``## 8. Risk register (top 10)`` (~1.1k tokens), which explains
+# WHY certain milestones look the way they do. These four sections
+# together cover the LLM-useful planning frame ("where are we?
+# what are the directions of travel? what's out of scope? what
+# could go wrong?"). The per-milestone work-item rows in §4 are
+# operational planning detail — sub-totals, dev-day counts, exit
+# criteria — that an LLM consumer can fetch on demand from the
+# live page via the pointer. The work-item IDs in §4 (A1, B2, E5,
+# G7, …) are not cross-referenced anywhere else in corpus because
+# the wave-33 §3 trim already removed every other §3 reference to
+# them, so dropping §4 does not break any cross-link.
+#
+# The regex matches the H2 heading line and everything up to (but
+# not including) the next H2 heading or the section-end ``---``
+# horizontal rule (whichever comes first). The on-disk ROADMAP.md
+# is unchanged — the trim runs only in the in-memory body before it
+# lands in llms-full.txt; the MkDocs site continues to render the
+# full milestone sequencing for human readers via the unaltered
+# ``{% include-markdown "ROADMAP.md" %}`` include.
+_ROADMAP_MILESTONE_SEQUENCING_SECTION = re.compile(
+    r"^## 4\.\s+Milestone sequencing[^\n]*\n"
     r"(?:(?!^## )(?!^---$).*\n)*",
     re.MULTILINE,
 )
@@ -1238,6 +1299,40 @@ def strip_roadmap_detailed_workitems(
     return cleaned, count > 0
 
 
+def strip_roadmap_milestone_sequencing(
+    body: str, page_url: str
+) -> tuple[str, bool]:
+    """Drop the entire ``## 4. Milestone sequencing`` section from ROADMAP.
+
+    See the module-level ``_ROADMAP_MILESTONE_SEQUENCING_SECTION``
+    contract for the full rationale. Returns ``(cleaned_body, dropped)``
+    where ``dropped`` is ``True`` when the section was found and
+    replaced with a pointer, ``False`` when the page does not contain
+    the section (defensive — the helper is a no-op on already-trimmed
+    ROADMAP bodies and on synthetic test fixtures).
+
+    The section is replaced with a one-line pointer back to the live
+    ROADMAP page so an LLM consumer following the corpus's per-page
+    structure still sees a breadcrumb to the full milestone matrix.
+    Heading and anchor reference match the MkDocs-generated slug
+    (``#4-milestone-sequencing``) so the pointer is click-through-valid.
+    """
+    pointer = (
+        "## 4. Milestone sequencing\n\n"
+        "_§4 Milestone sequencing (3 milestone tables — v1.7 / v1.8 / "
+        "v2.0 — each with ~10-12 work-item rows plus sub-total + buffer "
+        "+ exit-criteria + non-goals trailer) omitted from llms-full.txt "
+        "for token-budget headroom; read the full milestone matrix at "
+        f"<{page_url}#4-milestone-sequencing>._\n\n"
+    )
+
+    def _replace(_match: re.Match[str]) -> str:
+        return pointer
+
+    cleaned, count = _ROADMAP_MILESTONE_SEQUENCING_SECTION.subn(_replace, body)
+    return cleaned, count > 0
+
+
 def strip_ci_gates_matrix(
     body: str, page_url: str
 ) -> tuple[str, bool]:
@@ -1520,6 +1615,7 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
             expanded, _blocks = strip_roadmap_status_blocks(expanded)
             expanded, _hist = strip_roadmap_historical_subsections(expanded)
             expanded, _wi3 = strip_roadmap_detailed_workitems(expanded, url)
+            expanded, _wi4 = strip_roadmap_milestone_sequencing(expanded, url)
             expanded, _items = strip_roadmap_workitem_bodies(expanded, url)
         if is_changelog_page(relpath):
             expanded, _versions = strip_changelog_old_versions(
