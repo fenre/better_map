@@ -4,7 +4,7 @@
 
 This file is the body-inclusive sibling of `llms.txt` and concatenates every page on the Better Map documentation site into a single, LLM-friendly text dump. The short companion index is at <https://fenre.github.io/better_map/llms.txt>. Pages appear in `mkdocs.yml` `nav:` declaration order. Each page block carries a stable `# === ... ===` separator plus the source-of-truth path on disk and the published URL so the same content can be grepped by either dimension.
 
-At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 90 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
+At the bottom this file appends two structured appendices (the 8 Splunk integrations matrix and the 93 shipped recipes) so an agent does not need a follow-up fetch into `docs/_machine/` to see the contracts. The 83 formatter options are documented in detail on the [Formatter reference page](https://fenre.github.io/better_map/reference/formatter/) below; the canonical JSON Schema lives at <https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json>.
 
 All page URLs resolve to publicly accessible Material-themed HTML on GitHub Pages. The project ships under the MIT licence; the canonical repo is <https://github.com/fenre/better_map>.
 
@@ -1101,7 +1101,7 @@ generated from
 so it cannot drift from the recipe files.
 
 <!-- recipes-matrix trimmed for llms-full.txt token budget (see Wave 16 ROADMAP block); full matrix at <https://fenre.github.io/better_map/recipes/> and source-of-truth YAML at <https://github.com/fenre/better_map/blob/main/docs/_machine/recipes/index.yaml>; per-recipe details (status, apps, expected-field contract, formatter options) are kept verbatim under the matching `# === BEGIN: .../recipes/<source>/<layer>/ ===` block in this same file -->
-**Total: 90 recipes · 15 source dir(s) · 9 layer type(s).**
+**Total: 93 recipes · 15 source dir(s) · 9 layer type(s).**
 
 Source dirs and the layer ids that already ship for each (any `(source, layer)` not listed below is an open cell in the E5 matrix and is a candidate for the next recipe wave):
 
@@ -1113,13 +1113,13 @@ Source dirs and the layer ids that already ship for each (any `(source, layer)` 
 - `cyber-vision`: h3, heat, markers, paths, supercluster
 - `es-risk`: h3, heat, markers, paths, supercluster
 - `geo-us-states`: choropleth, extrusion-3d
-- `itsi-kpi-base`: h3, heat, markers, paths, supercluster
+- `itsi-kpi-base`: choropleth, h3, heat, markers, paths, supercluster
 - `kvstore-latlon`: h3, heat, markers, paths, polygons, supercluster, vector-tile-join
 - `meraki`: extrusion-3d, h3, heat, markers, supercluster, vector-tile-join
-- `netflow-sflow-ipfix`: h3, heat, markers, paths, supercluster
+- `netflow-sflow-ipfix`: h3, heat, markers, paths, supercluster, vector-tile-join
 - `ot-datastreamer`: h3, heat, markers, paths, supercluster, vector-tile-join
 - `splunk-stream`: extrusion-3d, h3, heat, markers, paths, supercluster
-- `thousandeyes`: choropleth, h3, heat, markers, paths, supercluster, vector-tile-join
+- `thousandeyes`: choropleth, extrusion-3d, h3, heat, markers, paths, supercluster, vector-tile-join
 
 **OT-safety-relevant recipes (11):** `cyber-vision/h3`, `cyber-vision/heat`, `cyber-vision/markers`, `cyber-vision/paths`, `cyber-vision/supercluster`, `ot-datastreamer/h3`, `ot-datastreamer/heat`, `ot-datastreamer/markers`, `ot-datastreamer/paths`, `ot-datastreamer/supercluster`, `ot-datastreamer/vector-tile-join`.
 
@@ -6386,6 +6386,178 @@ _Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 wal
 
 # === END: https://fenre.github.io/better_map/recipes/cyber-vision/supercluster/ ===
 
+# === BEGIN: https://fenre.github.io/better_map/recipes/thousandeyes/extrusion-3d/ ===
+
+# Recipes / Cisco ThousandEyes (agent fleet) — 3D extrusion
+
+> Source: `docs/recipes/thousandeyes/extrusion-3d.md`  
+> URL: <https://fenre.github.io/better_map/recipes/thousandeyes/extrusion-3d/>
+
+# Cisco ThousandEyes (agent fleet) — US states 3D extrusion
+
+The third-dimension companion to the
+[thousandeyes/choropleth](./choropleth.md) recipe — same agent-fleet
+inventory source, same per-state aggregation, same `us-states`
+PMTiles preset, but per-state shading is **augmented by per-state
+vertical extrusion**. Tall states host more enterprise / cloud
+agents; short states host fewer. The right shape for **executive
+DEM-coverage briefings where absolute fleet-size rank matters** —
+the choropleth's colour ramp saturates once 5+ states exceed the
+80th percentile, but extrusion's height has unbounded headroom —
+**capacity-planning reviews** where the visual cliff over a
+CA / VA / TX-agent-dense state pre-attentively communicates "this
+region anchors our DEM coverage", and **CIO regional-investment
+reviews** where the 3D prism over the most-instrumented state is
+itself the executive talking point.
+
+The **8th extrusion-3d recipe in the matrix** — joining
+[geo-us-states](../geo-us-states/extrusion-3d.md),
+[cim-network-traffic](../cim-network-traffic/extrusion-3d.md),
+[cim-authentication](../cim-authentication/extrusion-3d.md),
+[cim-alerts](../cim-alerts/extrusion-3d.md),
+[cim-performance](../cim-performance/extrusion-3d.md),
+[meraki](../meraki/extrusion-3d.md), and
+[splunk-stream](../splunk-stream/extrusion-3d.md). This advances
+the extrusion-3d layer column from 7 cells to 8, and brings the
+thousandeyes source row from 7 cells to 8 (markers, h3, heat,
+supercluster, paths, choropleth, vector-tile-join, plus
+extrusion-3d now) — the **second-most-covered source row in the
+matrix**, with only `cim-network-traffic` (8 cells) ahead.
+
+## 1. Source description
+
+Same **Cisco ThousandEyes App for Splunk** (`ta_cisco_thousandeyes`,
+Splunkbase ID 7719) source as all thousandeyes companions — see
+[thousandeyes/markers §1](./markers.md#1-source-description) for
+the full platform background and the `cisco:thousandeyes:agents`
+sourcetype contract.
+
+The relevant distinction for THIS recipe: the panel renders the
+same per-state agent aggregation as the
+[choropleth companion](./choropleth.md) but encodes the rank as
+**polygon vertical extrusion** in addition to (or instead of)
+colour shading. Same `iplocation agent_ip` → `Region` → USPS code
+mapping as the choropleth (verbatim) — the only differences live
+in the formatter config (§4).
+
+**Why extrusion-3d for ThousandEyes.** A DEM-coverage choropleth
+saturates: once California, Virginia, Texas, New York, and
+Washington all exceed the 80th percentile of agent counts, the
+colour ramp can't distinguish them — they're all "dark viridis".
+Extrusion preserves rank visibility because height has unbounded
+headroom — California with 47 agents is **5x taller** than a
+mid-tier state with 9 agents, and the visual gap is impossible to
+miss even when both states are at the saturated end of the colour
+ramp. Combined with the additive choropleth (height + colour
+encode the same `value` — see §4), the panel becomes double-
+encoded: height for absolute fleet-size rank, colour for the
+ordinal "where is our DEM coverage concentrated".
+
+The use cases this recipe unlocks beyond the choropleth companion:
+
+- **CIO DEM-strategy reviews** — the 3D prism over the
+  most-instrumented state is the focal point of the executive
+  conversation; the colour ramp adds the "is this where our
+  customers actually are" tension.
+- **Sales-engineering coverage RFPs** — the visual cliff over
+  CA / VA / TX vs the long-tail states pre-attentively
+  communicates "broad coverage" without the prospect having to
+  read a state-by-state number table.
+- **Capacity-planning reviews** for ThousandEyes seat purchasing —
+  the height pre-attentively ranks the top 5 instrumented states,
+  supporting "we need 20 more enterprise agents in
+  [under-instrumented mid-tier state]" discussions.
+- **Compliance / coverage-gap reviews** — pairing the height
+  (where we ARE instrumented) with the choropleth COLOUR shaded
+  by `online_ratio` (where instrumentation is HEALTHY) gives a
+  two-channel "complete view": tall + dark = where we have lots
+  of agents that are mostly online; tall + light = lots of
+  agents with high offline rate (worth investigating);
+  short + dark = sparse but healthy; short + light = sparse and
+  unhealthy (high-priority for expansion + remediation).
+
+**Typical sourcetype / index:** `sourcetype="cisco:thousandeyes:agents"`,
+`index=thousandeyes_agents` (defaults; see the markers companion
+for the broader catalogue).
+
+## 2. SPL recipe
+
+```spl
+index=thousandeyes_agents sourcetype="cisco:thousandeyes:agents" earliest=-24h latest=now
+| dedup agent_id sortby - _time
+| where isnotnull(agent_ip)
+| iplocation agent_ip
+| where Country="United States" AND isnotnull(Region)
+| eval is_online=if(is_online="true", 1, 0)
+| stats count AS agent_count,
+    sum(is_online) AS online_count
+  BY Region
+| eval id=upper(case(
+    Region=="California","CA",
+    Region=="New York","NY",
+    Region=="Texas","TX",
+    Region=="Washington","WA",
+    Region=="Illinois","IL",
+    Region=="Florida","FL",
+    Region=="Massachusetts","MA",
+    Region=="Virginia","VA",
+    Region=="Colorado","CO",
+    Region=="Oregon","OR",
+    Region=="Pennsylvania","PA",
+    Region=="New Jersey","NJ",
+    Region=="Georgia","GA",
+    Region=="North Carolina","NC",
+    Region=="Ohio","OH",
+    Region=="Michigan","MI",
+    Region=="Arizona","AZ",
+    Region=="Minnesota","MN",
+    Region=="Indiana","IN",
+    Region=="Tennessee","TN",
+    Region=="District of Columbia","DC",
+    true(),substr(Region,1,2)))
+| eval online_ratio=round(online_count*1.0/agent_count, 2)
+| eval value=agent_count
+| rename Region AS state_name
+| fields id, state_name, value, agent_count, online_count, online_ratio
+| sort - value
+```
+
+## 3. Expected fields
+
+| field         | type    | example     |
+|---------------|---------|-------------|
+| id            | string  | CA          |
+| state_name    | string  | California  |
+| value         | integer | 47          |
+| agent_count   | integer | 47          |
+| online_count  | integer | 44          |
+| online_ratio  | number  | 0.94        |
+
+Six fields, all of which appear in `expected_fields` in the
+frontmatter and are cross-checked by
+`scripts/check-recipe-schema.py`. `value` drives BOTH the
+choropleth shading AND the extrusion height
+(`extrusionHeightField: "value"` in §4). The popup-detail
+`online_count` and `online_ratio` enable the two-channel
+visualization described in §1.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinPreset": "us-states",
+  "enable3DExtrusion": "true",
+  "extrusionHeightField": "value",
+  "extrusionScale": 50000.0,
+  "enableChoropleth": "true",
+  "palette": "viridis"
+}
+```
+
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/thousandeyes/extrusion-3d/>._
+
+# === END: https://fenre.github.io/better_map/recipes/thousandeyes/extrusion-3d/ ===
+
 # === BEGIN: https://fenre.github.io/better_map/recipes/thousandeyes/h3/ ===
 
 # Recipes / Cisco ThousandEyes (agent fleet) — H3 hexbin
@@ -8008,6 +8180,153 @@ h3 layer based on the formatter's `hexbinResolution`.
 _Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/>._
 
 # === END: https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/itsi-kpi-base/choropleth/ ===
+
+# Recipes / ITSI service health (KPI base searches) — choropleth
+
+> Source: `docs/recipes/itsi-kpi-base/choropleth.md`  
+> URL: <https://fenre.github.io/better_map/recipes/itsi-kpi-base/choropleth/>
+
+# ITSI service health — US states choropleth
+
+Aggregate the ITSI service portfolio by US state and render as a
+**flat-fill choropleth** over the bundled `us-states.pmtiles`
+preset, with per-state shading driven by the **average service
+health score** (0-100) across all services geographically attributed
+to each state. The canonical **"where is my business healthy
+right now?"** panel for an SRE leader or CIO — the dark states
+are where service health is degraded, the light states are where
+operations are running normally.
+
+The **7th choropleth recipe in the matrix** — joining
+[geo-us-states](../geo-us-states/choropleth.md),
+[cim-network-traffic](../cim-network-traffic/choropleth.md),
+[cim-authentication](../cim-authentication/choropleth.md),
+[cim-alerts](../cim-alerts/choropleth.md),
+[cim-performance](../cim-performance/choropleth.md), and
+[thousandeyes](../thousandeyes/choropleth.md). This advances the
+choropleth layer column from 6 cells to 7, and brings the
+itsi-kpi-base source row from 5 cells to 6 (markers, h3, heat,
+supercluster, paths, plus choropleth now). It is the **first
+choropleth recipe built on ITSI premium content** — joining the
+ITSI source row that previously only carried point-level layers.
+
+## 1. Source description
+
+Same **Splunk IT Service Intelligence (ITSI)** source as the
+[markers](./markers.md), [h3](./h3.md), [heat](./heat.md),
+[supercluster](./supercluster.md), and [paths](./paths.md)
+companions — see
+[itsi-kpi-base/markers §1](./markers.md#1-source-description) for
+the full discussion of the `itsi_summary` index schema,
+`SHKPI-`-prefixed service-health events, the `itsi_services` KV
+store collection, and the operator-managed `info_lat` / `info_lon`
+custom attributes on each service.
+
+The relevant distinction for THIS recipe: instead of rendering one
+marker per geocoded service (markers companion), the panel
+aggregates services BY US state — using the
+`geom geo_us_states latitude=info_lat longitude=info_lon`
+point-in-polygon path — and renders one polygon fill per state
+coloured by AVERAGE health score across the services attributed to
+that state. A state with five services at health [95, 88, 82, 80,
+75] shades light (avg=84, healthy); a state with five services at
+health [95, 22, 18, 10, 5] shades dark (avg=30, degraded).
+
+**Why choropleth for ITSI service health.** A markers panel shows
+WHERE individual services live and their per-service health colour
+(red/amber/green). But this is the per-service operational view —
+the right shape for the SRE on-call. The leadership view answers
+the regional question instead: "across the 50 US states, where is
+my business healthy this morning and where is it not?" A
+choropleth solves this in one panel: states with majority-healthy
+services shade light, states with one critical service drag the
+state-average down to "dark amber", and states with multiple
+critical services shade outright "dark red". This is the right
+shape for **executive war-room views** (CEO asks "are we
+operational across the country?"), **regional GM dashboards**
+(per-state managers see their territory's health at a glance),
+and **compliance / SLA-aggregated views** (per-state averaging
+gives a per-jurisdiction SLA proxy without joining against the
+SLA contract data directly).
+
+**Why `geom + info_lat/info_lon` and not `iplocation`.** ITSI
+services don't have natural IP attribution — a service is a
+business abstraction (e.g., "Payments — EU region", "Mobile
+Banking — West Coast"), not a network entity. The operator-managed
+`info_lat` / `info_lon` custom attributes on the
+[`itsi_services` KV store collection](https://github.com/fenre/better_map/blob/main/docs/recipes/itsi-kpi-base/markers.md)
+are the canonical source for service location. This recipe assumes
+the operator has populated those attributes per the
+[markers companion §1](./markers.md#1-source-description) — see
+§6 Gotchas for the migration path if `info_lat` / `info_lon` are
+empty across the service portfolio.
+
+**Typical sourcetype / index:** `index=itsi_summary` (the only
+ITSI index this recipe touches). The service KV store lookup is
+either a direct `| inputlookup itsi_services` against the
+collection or the ITSI built-in service-lookup macro
+(`` `itsi_services` ``) if the install exposes it. SA-ITOA is the
+ITSI base app and is required for both the index and the KV store.
+
+## 2. SPL recipe
+
+```spl
+index=itsi_summary kpi_id="SHKPI-*" entity_key="N/A" earliest=-15m latest=now
+| stats latest(alert_value) AS health_score,
+    latest(alert_level) AS alert_level,
+    latest(service_title) AS service_title
+  BY itsi_service_id
+| lookup itsi_services _key AS itsi_service_id OUTPUT info_lat AS lat, info_lon AS lon
+| where isnotnull(lat) AND isnotnull(lon)
+| eval health_score=tonumber(health_score)
+| eval alert_level=tonumber(alert_level)
+| geom geo_us_states featureIdField="stusps" latitude=lat longitude=lon
+| where isnotnull(featureId)
+| stats avg(health_score) AS avg_health_score,
+    count AS service_count,
+    sum(eval(if(alert_level>=4, 1, 0))) AS critical_service_count,
+    values(state_name) AS state_name
+  BY featureId
+| eval avg_health_score=round(avg_health_score, 0)
+| eval value=avg_health_score
+| rename featureId AS id
+| fields id, state_name, value, avg_health_score, service_count, critical_service_count
+| sort value
+```
+
+## 3. Expected fields
+
+| field                  | type    | example     |
+|------------------------|---------|-------------|
+| id                     | string  | CA          |
+| state_name             | string  | California  |
+| value                  | integer | 78          |
+| avg_health_score       | integer | 78          |
+| service_count          | integer | 12          |
+| critical_service_count | integer | 2           |
+
+Six fields, all of which appear in `expected_fields` in the
+frontmatter and are cross-checked by
+`scripts/check-recipe-schema.py`. `value` drives the choropleth
+shading; `state_name` / `service_count` / `critical_service_count`
+flow through as feature properties on the joined polygon for
+popups.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinPreset": "us-states",
+  "enableChoropleth": "true",
+  "palette": "RdYlGn"
+}
+```
+
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/itsi-kpi-base/choropleth/>._
+
+# === END: https://fenre.github.io/better_map/recipes/itsi-kpi-base/choropleth/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/itsi-kpi-base/heat/ ===
 
@@ -10604,6 +10923,150 @@ are cross-checked by `scripts/check-recipe-schema.py`.
 _Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/supercluster/>._
 
 # === END: https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/supercluster/ ===
+
+# === BEGIN: https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/vector-tile-join/ ===
+
+# Recipes / NetFlow / sFlow / IPFIX — vector-tile join
+
+> Source: `docs/recipes/netflow-sflow-ipfix/vector-tile-join.md`  
+> URL: <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/vector-tile-join/>
+
+# NetFlow / sFlow / IPFIX — vector-tile join (customer PMTiles)
+
+Aggregate observed network-flow bytes by destination country and
+render against a **customer-hosted world-countries PMTiles vector
+tileset**. The right shape for **global egress / ingress geography**
+panels — "of the petabytes our network moved this week, which
+countries received them?" — the standard executive view for capacity
+planning, regional-cost allocation, and data-sovereignty / GDPR
+audit reviews.
+
+The **6th vector-tile-join recipe in the matrix** (joining
+[cim-network-traffic/vector-tile-join](../cim-network-traffic/vector-tile-join.md),
+[csv-lookup-geo/vector-tile-join](../csv-lookup-geo/vector-tile-join.md),
+[kvstore-latlon/vector-tile-join](../kvstore-latlon/vector-tile-join.md),
+[thousandeyes/vector-tile-join](../thousandeyes/vector-tile-join.md),
+and [meraki/vector-tile-join](../meraki/vector-tile-join.md)) — and
+the **FIRST flow-data VTJ recipe**, where the metric being shaded is
+**observed byte volume** rather than device inventory
+(meraki / thousandeyes) or per-event-aggregation
+(cim-network-traffic). This advances the vector-tile-join layer
+column from 6 cells to 7, and brings the netflow-sflow-ipfix source
+row from 5 cells to 6 (markers, heat, h3, supercluster, paths, plus
+vector-tile-join now).
+
+## 1. Source description
+
+Same **NetFlow / sFlow / IPFIX flow-record** source as the
+[markers](./markers.md), [heat](./heat.md), [h3](./h3.md),
+[supercluster](./supercluster.md), and [paths](./paths.md)
+companions — see
+[netflow-sflow-ipfix/heat §1](./heat.md#1-source-description) for
+the full Splunk_TA_netflow / nfacctd / sflowtool collection
+background and the per-flow `src_ip` / `dest_ip` / `bytes` /
+`packets` field contract.
+
+The relevant distinction for THIS recipe: the panel renders
+**per-country** byte aggregation rather than per-destination-IP
+density (the markers / heat / h3 / supercluster companions all
+attribute to individual destinations). The aggregation key is the
+country derived from `iplocation dest_ip`; the metric is
+`sum(bytes)` over the time window. Same pattern as the
+[cim-network-traffic/vector-tile-join](../cim-network-traffic/vector-tile-join.md)
+companion's event-source aggregation — flow records are the
+wire-data equivalent of CIM Network Traffic events.
+
+**Why vector-tile-join (world-countries) for flow data.** A NetFlow
+collector typically sees the operator's entire WAN egress — every
+internet-bound TCP / UDP / ICMP flow that crosses a collecting router,
+totalling hundreds of millions to billions of flows per day for a
+large enterprise. The [markers](./markers.md) and
+[supercluster](./supercluster.md) companions show
+WHERE individual destinations are; the [h3](./h3.md) and
+[heat](./heat.md) companions show their density. But the
+**leadership view** — "of the 47 PB we moved last quarter, where did
+it go in absolute terms by country?" — is best expressed as a
+country-coloured choropleth. The shaded continent map answers
+capacity-planning questions ("we're sending 12 PB to AWS us-east-1
+in Virginia; do we need a dedicated direct-connect lane?"),
+cost-allocation questions ("which BU's egress charges are highest
+this quarter, by destination country?"), and compliance questions
+("how much PHI/CHD traffic is leaving the EU jurisdiction?").
+
+The vendor-agnostic pattern: NetFlow v5/v9, sFlow v5, and IPFIX all
+expose source/destination IPs in their flow records; the same SPL
+shape works regardless of which exporter the network gear runs.
+Customers using cloud-native flow logs (`aws:cloudwatchlogs:vpcflow`,
+`azure:nsg:flow`, `gcp:vpc:flow`) get the same panel via the
+[cim-network-traffic/vector-tile-join](../cim-network-traffic/vector-tile-join.md)
+companion (those sourcetypes carry CIM tags and use the
+data-model-accelerated path).
+
+**Typical sourcetype / index:** `sourcetype="cisco:netflow"`,
+`sourcetype="cisco:asa:netflow"`, `sourcetype="sflow"`, or
+`sourcetype="ipfix"` — depending on the exporter and the TA. The
+canonical index is `netflow` for raw flows; if your flows are
+already promoted to CIM, the
+[cim-network-traffic/vector-tile-join](../cim-network-traffic/vector-tile-join.md)
+companion is the right entry point. No add-on required beyond
+`Splunk_TA_netflow` (or equivalent — `Splunk_TA_sflow`,
+`splunk-add-on-for-ipfix`) for parsing and Splunk's built-in
+`iplocation` for country geocoding.
+
+## 2. SPL recipe
+
+```spl
+index=netflow sourcetype="cisco:netflow" earliest=-24h latest=now
+| stats sum(bytes) AS total_bytes,
+    count AS flow_count,
+    dc(src_ip) AS peer_count
+  BY dest_ip
+| iplocation dest_ip
+| where isnotnull(Country) AND Country != ""
+| stats sum(total_bytes) AS total_bytes,
+    sum(flow_count) AS flow_count,
+    sum(peer_count) AS peer_count
+  BY Country
+| lookup iso_country_codes country_name AS Country OUTPUT iso_a3 AS id
+| where isnotnull(id) AND id != ""
+| eval value=total_bytes
+| rename Country AS country_name
+| fields id, country_name, value, total_bytes, flow_count, peer_count
+| sort - value
+```
+
+## 3. Expected fields
+
+| field        | type    | example         |
+|--------------|---------|-----------------|
+| id           | string  | USA             |
+| country_name | string  | United States   |
+| value        | number  | 184320000000    |
+| total_bytes  | number  | 184320000000    |
+| flow_count   | integer | 8472913         |
+| peer_count   | integer | 4112            |
+
+Six fields, all of which appear in `expected_fields` in the
+frontmatter and are cross-checked by
+`scripts/check-recipe-schema.py`. `value` drives the choropleth
+shading; `total_bytes` / `flow_count` / `peer_count` flow through
+as feature properties on the joined polygon for popups.
+
+## 4. Recommended formatter config
+
+```json
+{
+  "featureJoinUrl": "https://cdn.example.com/tilesets/world-countries.pmtiles",
+  "featureJoinPromoteId": "iso_a3",
+  "featureJoinSourceLayer": "countries",
+  "enableChoropleth": "true",
+  "palette": "viridis"
+}
+```
+
+_Per-stage SPL rationale (§2 walkthrough), per-option config rationale (§4 walkthrough), §5 Screenshot, §6 Gotchas, and the trailing Verification status section are omitted from llms-full.txt for token-budget; read them in the full recipe at <https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/vector-tile-join/>._
+
+# === END: https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/vector-tile-join/ ===
 
 # === BEGIN: https://fenre.github.io/better_map/recipes/ot-datastreamer/h3/ ===
 
@@ -14525,7 +14988,7 @@ The full per-integration matrix (status, app required, Splunk version min, endpo
 
 # Appendix B — Per-source recipe matrix
 
-> Source of truth: `docs/_machine/recipes/index.yaml` (90 recipe(s), emission order)
+> Source of truth: `docs/_machine/recipes/index.yaml` (93 recipe(s), emission order)
 
 Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answer 'which recipe matches this data source?' without fetching every recipe page. Recipes carry one of three statuses: `verified` (smoke-tested against a live Splunk tenant with proof in the YAML metadata), `unverified` (the recipe follows the contract but has not yet been smoke-tested), or `deferred` (the recipe is known to be incomplete pending upstream work). The expected-field contract for each recipe lives in §3 of the recipe page (kept verbatim in this file under the matching `# === BEGIN: …/recipes/<source>/<layer>/ ===` block); follow the Page link below to jump to it.
 
@@ -14579,6 +15042,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `es-risk--supercluster` | ES Risk-Based Alerting (risk index) → Supercluster | unverified | `SplunkEnterpriseSecuritySuite`, `Splunk_SA_CIM` | — | [docs/recipes/es-risk/supercluster.md](https://fenre.github.io/better_map/recipes/es-risk/supercluster/) |
 | `geo-us-states--choropleth` | US states (built-in geo lookup) → Choropleth | unverified | — | — | [docs/recipes/geo-us-states/choropleth.md](https://fenre.github.io/better_map/recipes/geo-us-states/choropleth/) |
 | `geo-us-states--extrusion-3d` | US states (built-in geo lookup) → 3D extrusion | unverified | — | — | [docs/recipes/geo-us-states/extrusion-3d.md](https://fenre.github.io/better_map/recipes/geo-us-states/extrusion-3d/) |
+| `itsi-kpi-base--choropleth` | ITSI service health (KPI base searches) → Choropleth | unverified | `SA-ITOA` | — | [docs/recipes/itsi-kpi-base/choropleth.md](https://fenre.github.io/better_map/recipes/itsi-kpi-base/choropleth/) |
 | `itsi-kpi-base--h3` | ITSI service health (KPI base searches) → H3 hexbin | unverified | `SA-ITOA` | — | [docs/recipes/itsi-kpi-base/h3.md](https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/) |
 | `itsi-kpi-base--heat` | ITSI service health (KPI base searches) → Heatmap | unverified | `SA-ITOA` | — | [docs/recipes/itsi-kpi-base/heat.md](https://fenre.github.io/better_map/recipes/itsi-kpi-base/heat/) |
 | `itsi-kpi-base--markers` | ITSI service health (KPI base searches) → Markers | unverified | `SA-ITOA` | — | [docs/recipes/itsi-kpi-base/markers.md](https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/) |
@@ -14602,6 +15066,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `netflow-sflow-ipfix--markers` | NetFlow / sFlow / IPFIX (flow records) → Markers | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/markers.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/markers/) |
 | `netflow-sflow-ipfix--paths` | NetFlow / sFlow / IPFIX (flow records) → Paths | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/paths.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/paths/) |
 | `netflow-sflow-ipfix--supercluster` | NetFlow / sFlow / IPFIX (flow records) → Supercluster | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/supercluster.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/supercluster/) |
+| `netflow-sflow-ipfix--vector-tile-join` | NetFlow / sFlow / IPFIX (flow records) → Vector-tile join (customer PMTiles) | unverified | `Splunk_TA_netflow`, `builtin:iplocation` | — | [docs/recipes/netflow-sflow-ipfix/vector-tile-join.md](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/vector-tile-join/) |
 | `ot-datastreamer--h3` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → H3 hexbin | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/h3.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/h3/) |
 | `ot-datastreamer--heat` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Heatmap | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/heat.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/heat/) |
 | `ot-datastreamer--markers` | OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Markers | unverified | `Splunk_TA_oti` | — | [docs/recipes/ot-datastreamer/markers.md](https://fenre.github.io/better_map/recipes/ot-datastreamer/markers/) |
@@ -14615,6 +15080,7 @@ Each row distils a `docs/recipes/<source>/<layer>.md` page so an agent can answe
 | `splunk-stream--paths` | Splunk Stream (wire data) → Paths | unverified | `Splunk_TA_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/paths.md](https://fenre.github.io/better_map/recipes/splunk-stream/paths/) |
 | `splunk-stream--supercluster` | Splunk Stream (wire data) → Supercluster | unverified | `Splunk_TA_stream`, `splunk_app_stream`, `builtin:iplocation` | — | [docs/recipes/splunk-stream/supercluster.md](https://fenre.github.io/better_map/recipes/splunk-stream/supercluster/) |
 | `thousandeyes--choropleth` | Cisco ThousandEyes (agent fleet) → Choropleth | unverified | `ta_cisco_thousandeyes` | — | [docs/recipes/thousandeyes/choropleth.md](https://fenre.github.io/better_map/recipes/thousandeyes/choropleth/) |
+| `thousandeyes--extrusion-3d` | Cisco ThousandEyes (agent fleet) → 3D extrusion | unverified | `ta_cisco_thousandeyes` | — | [docs/recipes/thousandeyes/extrusion-3d.md](https://fenre.github.io/better_map/recipes/thousandeyes/extrusion-3d/) |
 | `thousandeyes--h3` | Cisco ThousandEyes (agent fleet) → H3 hexbin | unverified | `ta_cisco_thousandeyes` | — | [docs/recipes/thousandeyes/h3.md](https://fenre.github.io/better_map/recipes/thousandeyes/h3/) |
 | `thousandeyes--heat` | Cisco ThousandEyes (agent fleet) → Heatmap | unverified | `ta_cisco_thousandeyes` | — | [docs/recipes/thousandeyes/heat.md](https://fenre.github.io/better_map/recipes/thousandeyes/heat/) |
 | `thousandeyes--markers` | Cisco ThousandEyes (agent fleet) → Markers | unverified | `ta_cisco_thousandeyes` | — | [docs/recipes/thousandeyes/markers.md](https://fenre.github.io/better_map/recipes/thousandeyes/markers/) |

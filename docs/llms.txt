@@ -94,6 +94,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [ES Risk-Based Alerting (risk index) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/es-risk/supercluster/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM.
 - [US states (built-in geo lookup) → Choropleth (unverified)](https://fenre.github.io/better_map/recipes/geo-us-states/choropleth/): apps required: none.
 - [US states (built-in geo lookup) → 3D extrusion (unverified)](https://fenre.github.io/better_map/recipes/geo-us-states/extrusion-3d/): apps required: none.
+- [ITSI service health (KPI base searches) → Choropleth (unverified)](https://fenre.github.io/better_map/recipes/itsi-kpi-base/choropleth/): apps required: SA-ITOA.
 - [ITSI service health (KPI base searches) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/itsi-kpi-base/h3/): apps required: SA-ITOA.
 - [ITSI service health (KPI base searches) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/itsi-kpi-base/heat/): apps required: SA-ITOA.
 - [ITSI service health (KPI base searches) → Markers (unverified)](https://fenre.github.io/better_map/recipes/itsi-kpi-base/markers/): apps required: SA-ITOA.
@@ -117,6 +118,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [NetFlow / sFlow / IPFIX (flow records) → Markers (unverified)](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/markers/): apps required: Splunk_TA_netflow, builtin:iplocation.
 - [NetFlow / sFlow / IPFIX (flow records) → Paths (unverified)](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/paths/): apps required: Splunk_TA_netflow, builtin:iplocation.
 - [NetFlow / sFlow / IPFIX (flow records) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/supercluster/): apps required: Splunk_TA_netflow, builtin:iplocation.
+- [NetFlow / sFlow / IPFIX (flow records) → Vector-tile join (customer PMTiles) (unverified)](https://fenre.github.io/better_map/recipes/netflow-sflow-ipfix/vector-tile-join/): apps required: Splunk_TA_netflow, builtin:iplocation.
 - [OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/ot-datastreamer/h3/): apps required: Splunk_TA_oti.
 - [OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/ot-datastreamer/heat/): apps required: Splunk_TA_oti.
 - [OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) → Markers (unverified)](https://fenre.github.io/better_map/recipes/ot-datastreamer/markers/): apps required: Splunk_TA_oti.
@@ -130,6 +132,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [Splunk Stream (wire data) → Paths (unverified)](https://fenre.github.io/better_map/recipes/splunk-stream/paths/): apps required: Splunk_TA_stream, builtin:iplocation.
 - [Splunk Stream (wire data) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/splunk-stream/supercluster/): apps required: Splunk_TA_stream, splunk_app_stream, builtin:iplocation.
 - [Cisco ThousandEyes (agent fleet) → Choropleth (unverified)](https://fenre.github.io/better_map/recipes/thousandeyes/choropleth/): apps required: ta_cisco_thousandeyes.
+- [Cisco ThousandEyes (agent fleet) → 3D extrusion (unverified)](https://fenre.github.io/better_map/recipes/thousandeyes/extrusion-3d/): apps required: ta_cisco_thousandeyes.
 - [Cisco ThousandEyes (agent fleet) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/thousandeyes/h3/): apps required: ta_cisco_thousandeyes.
 - [Cisco ThousandEyes (agent fleet) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/thousandeyes/heat/): apps required: ta_cisco_thousandeyes.
 - [Cisco ThousandEyes (agent fleet) → Markers (unverified)](https://fenre.github.io/better_map/recipes/thousandeyes/markers/): apps required: ta_cisco_thousandeyes.

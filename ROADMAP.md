@@ -1,5 +1,75 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-05-30): E5 Phase 2 wave 34b recipes
+> SHIPPED — 3 new diversification recipes
+> (`netflow-sflow-ipfix/vector-tile-join`,
+> `thousandeyes/extrusion-3d`,
+> `itsi-kpi-base/choropleth`), bringing total recipe count
+> from 90 → 93.** All three pick the sparse-cell-first
+> diversification algorithm from §4 of the autonomous cadence:
+> (1) `netflow-sflow-ipfix/vector-tile-join` exits the sparse
+> source row (5 → 6 cells) AND fills the joint-sparsest
+> productive layer column (`vector-tile-join` 6 → 7) — the
+> first flow-data VTJ recipe in the matrix, where the metric
+> being shaded is **observed byte volume** rather than device
+> inventory (meraki / thousandeyes) or per-event aggregation
+> (cim-network-traffic); the SPL uses pre-aggregation BY
+> `dest_ip` before `iplocation` to avoid melting the search
+> head on per-flow MaxMind lookups, and aggregates
+> `sum(bytes)` plus `dc(src_ip)` per country for the
+> "where + how-spread" two-dimensional view. (2)
+> `thousandeyes/extrusion-3d` completes the quadruplet on the
+> thousandeyes source row (7 → 8, now joint-second-most-covered
+> source row after cim-network-traffic at 8) AND advances the
+> sparse extrusion-3d layer column (7 → 8); same SPL as the
+> [thousandeyes/choropleth](docs/recipes/thousandeyes/choropleth.md)
+> companion plus a `value_height` / `value` dual-encoding swap
+> in §4 for the canonical "height = total agents, colour =
+> unhealthy fraction" two-channel pattern that the choropleth
+> companion's §4 footnote first hinted at. (3)
+> `itsi-kpi-base/choropleth` exits the sparse itsi-kpi-base
+> source row (5 → 6) AND advances the sparse choropleth layer
+> column (6 → 7); it is the **first choropleth recipe built on
+> ITSI premium content**, aggregating service health scores
+> (`SHKPI-*` events) per US state via `geom geo_us_states`
+> on the operator-managed `info_lat`/`info_lon` service
+> attributes, and uses `palette: "RdYlGn"` (diverging traffic-
+> light semantic) rather than the `viridis` / `magma` defaults
+> the other choropleth recipes use because health-scores are
+> directionally semantic (high = good). All three follow the
+> wave-13 generalised recipe contract (`schema_version: 1` +
+> frontmatter + §1-§6 + `## Verification status` trailer) and
+> pass `check-recipe-schema.py` (93/93). Layer-column
+> progression: `vector-tile-join` 6 → 7, `extrusion-3d` 7 → 8,
+> `choropleth` 6 → 7. Source-row impact: netflow-sflow-ipfix
+> 5 → 6, thousandeyes 7 → 8, itsi-kpi-base 5 → 6. Token cost:
+> +5,445 tokens net (166,309 → 171,754) — net per recipe
+> ~1,815 tokens, with `strip_recipe_advisory()` consolidated
+> footer trim absorbing ~75% of new-recipe footer weight as
+> expected. **WARN headroom drops to 3,246 tokens — well below
+> the 7,000-token threshold the autonomous cadence uses to
+> decide "trim first"** — wave 35 MUST open with a token-trim
+> PR before any new recipes ship. Remaining trim levers in
+> priority order: (1) per-recipe §6 Gotchas compaction —
+> RE-EVALUATE whether `strip_recipe_advisory()` already covers
+> it (the wave-32 footer-consolidation strips §5 screenshots,
+> §6 gotchas, AND `## Verification status` per the wave-33
+> profiling — but the consolidated pointer only fires AFTER §5
+> currently; if the strip is broadened to "from §5 to end of
+> file" the estimated reclaim is ~5k tokens at 93 recipes ×
+> ~50 tokens of pre-pointer §6 boilerplate); (2)
+> reference-pages auto-managed regions re-compaction (last
+> trimmed in wave 16; estimated 1-2k reclaim); (3)
+> `appendix-c-developer-tooling` snippet compaction (estimated
+> 1-2k reclaim). Each lever should ship as its own PR
+> following the established `chore(llms): wave N token-trim
+> — <short-slug>` convention. All gates green locally
+> (`build-llms-full-txt.py --check`, `build-llms-txt.py
+> --check`, `check-recipe-schema.py`,
+> `build-reference-pages.py --check`, `check-manifest.py`,
+> `check-formatter-schema.py`, `check-formatter-coverage.py`,
+> `mkdocs build --strict`).
+
 > **Status (v1.7-prep, 2026-05-29): E5 Phase 2 wave 34a token-trim
 > SHIPPED — drop the entire `## Gate matrix` section from
 > `docs/CI-GATES.md` in the llms-full.txt corpus pipeline; reclaimed
