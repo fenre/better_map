@@ -238,6 +238,7 @@ nav:
       - 'CIM Network Traffic — supercluster': recipes/cim-network-traffic/supercluster.md
       - 'CIM Network Traffic — vector-tile join': recipes/cim-network-traffic/vector-tile-join.md
       - 'CIM Performance (CPU / memory / facilities) — H3 hexbin': recipes/cim-performance/h3.md
+      - 'CIM Performance (CPU / memory / facilities) — choropleth': recipes/cim-performance/choropleth.md
       - 'CIM Performance (CPU / memory / facilities) — heatmap': recipes/cim-performance/heat.md
       - 'CIM Performance (CPU / memory / facilities) — markers': recipes/cim-performance/markers.md
       - 'CIM Performance (CPU / memory / facilities) — paths': recipes/cim-performance/paths.md
@@ -259,6 +260,7 @@ nav:
       - 'Cisco ThousandEyes (agent fleet) — heatmap': recipes/thousandeyes/heat.md
       - 'Cisco ThousandEyes (agent fleet) — markers': recipes/thousandeyes/markers.md
       - 'Cisco ThousandEyes (agent fleet) — supercluster': recipes/thousandeyes/supercluster.md
+      - 'Cisco ThousandEyes (agent fleet) — vector-tile join': recipes/thousandeyes/vector-tile-join.md
       - 'Cisco ThousandEyes (path visualization) — paths': recipes/thousandeyes/paths.md
       - 'ES Risk-Based Alerting (risk index) — H3 hexbin': recipes/es-risk/h3.md
       - 'ES Risk-Based Alerting (risk index) — heatmap': recipes/es-risk/heat.md
@@ -292,6 +294,7 @@ nav:
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — markers': recipes/ot-datastreamer/markers.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — paths': recipes/ot-datastreamer/paths.md
       - 'OT Datastreamer / Edge Hub (Modbus / OPC-UA / BACnet) — supercluster': recipes/ot-datastreamer/supercluster.md
+      - 'Splunk Stream (wire data) — 3D extrusion': recipes/splunk-stream/extrusion-3d.md
       - 'Splunk Stream (wire data) — H3 hexbin': recipes/splunk-stream/h3.md
       - 'Splunk Stream (wire data) — heatmap': recipes/splunk-stream/heat.md
       - 'Splunk Stream (wire data) — markers': recipes/splunk-stream/markers.md
