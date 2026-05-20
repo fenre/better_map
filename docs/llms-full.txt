@@ -14042,56 +14042,7 @@ defining outcome of this PR.
 
 ## Known gaps
 
-| # | Gap | Stakes | Tracking |
-|--:|---|---|---|
-| 1 | Docs gates (recipe schema, llms.txt, llms-full.txt, reference-pages, MkDocs strict) are in `ci.yml` and `docs.yml` but NOT in `release.yml` | LOW — docs are not shipped in the release tarball (`rsync --exclude='docs'`); they live on GitHub Pages, which is gated by `docs.yml` on push-to-main, which precedes every tag. A tag from a non-main commit could theoretically ship with stale docs already on Pages, but the tag itself doesn't change what's on Pages. | Tracked as a `release.yml` follow-up; not in scope for the G2 close-out audit because the docs aren't in the release artefact |
-| 2 | Live dispatch test (D5 Phase 2) is in neither PR gate nor release gate | MEDIUM — would catch "the bundle loads but the data pipeline silently drops events" | ROADMAP §3 D5 Phase 2; blocked on a self-hosted-runner decision |
-| 3 | Cross-OS browser-compat (D2 Phase 2) is Linux-only in PR + release gates | MEDIUM — covers ~99 % of real browsers via the three engine families on Linux, but doesn't catch macOS-Safari-specific or Windows-Edge-specific bugs | ROADMAP §3 D2 Phase 2; same self-hosted-runner blocker as #2 |
-| 4 | `splunk-appinspect` runs locally via `npm run lint:appinspect` but is not on `lint-and-build` job timing budget for the PR gate (lives in its own `appinspect` job) | n/a — by design (parallelism + retry isolation) | working as intended |
-
-## Reading a failing CI run
-
-The two most useful pieces of information when a gate fails:
-
-1. **The step name.** GitHub Actions surfaces it in the run UI and
-   in PR check rollups. Match it against the # column in the tables
-   above to find the gate's source of truth + local-repro command.
-2. **The uploaded artefact.** Every JSON-emitting gate uploads its
-   full report as an artefact (browser-compat, accessibility,
-   AppInspect, OSV-Scanner) with 14-day retention. Download it
-   from the Actions run page, inspect locally — the inline log
-   truncates lists at 5 entries per category.
-
-Per-gate troubleshooting guides:
-
-- **D2 browser-compat** — `docs/COMPAT-MATRIX.md` "Reading a failing
-  run" (separate tables for formatter failures vs bundle AMD failures)
-- **D3 accessibility** — `docs/_machine/agents.md` "Common mistakes"
-  table, D3 row
-- **AppInspect** — `docs/runbooks/appinspect-triage.md`
-- **G1 supply-chain (npm audit, license, OSV)** — `docs/runbooks/supply-chain.md`
-- **G3 manifest drift** — `docs/runbooks/upgrade-hygiene.md`
-- **G8 JS↔CSS contract** — `scripts/lint-js-css-contract.js` header
-  block + `scripts/css-contract-allowlist.json` justifications
-
-## Updating this document
-
-This document is hand-maintained but assertable: a one-page summary
-that lists every gate currently wired into the workflow YAML.
-When you add a gate:
-
-1. Add a step to the relevant workflow file (`ci.yml` and/or
-   `release.yml`).
-2. Add a row to the matrix above with the source of truth, the
-   failure mode, and the local repro.
-3. If the gate adds a release-only contract (SBOM, signature, etc.),
-   add a row to the §2 release matrix too.
-4. Run the PR-gate locally end-to-end before opening the PR (see
-   `docs/_machine/agents.md` §7 pre-commit checklist).
-
-A future Phase-2 cut may auto-generate this matrix from a YAML
-manifest under `docs/_machine/ci-gates.yaml`. Until then, the
-hand-maintained matrix is the contract.
+_§Known gaps (4-row tracking table of CI coverage gaps with stakes + ROADMAP §3 follow-up references), §Reading a failing CI run (operational walkthrough: read step name → match to gate-matrix row → download artefact, plus 6-row per-gate troubleshooting pointer list), and §Updating this document (4-step process walkthrough for adding a new gate) omitted from llms-full.txt for token-budget headroom; read all three sections at <https://fenre.github.io/better_map/CI-GATES/#known-gaps>, <https://fenre.github.io/better_map/CI-GATES/#reading-a-failing-ci-run>, and <https://fenre.github.io/better_map/CI-GATES/#updating-this-document>, or inspect the gate-tracking source of truth at <https://github.com/fenre/better_map/blob/main/ROADMAP.md> (ROADMAP §3 D2 / D5 carry the deferred-gate design rationale authoritatively) and the per-gate runbooks at the §See also cross-references that follow this pointer._
 
 ## See also
 

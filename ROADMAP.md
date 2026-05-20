@@ -1,5 +1,82 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-06-01): E5 Phase 2 wave 37d token-trim
+> SHIPPED — drop the THREE contiguous trailing operational
+> HOW-DO-I-RUN-IT / transient-tracking H2 sections (``## Known
+> gaps`` ≈ 357 tokens of 4-row markdown tracking table for CI
+> coverage gaps with stakes + ROADMAP §3 follow-up references —
+> the LLM-relevant facts already live authoritatively in ROADMAP
+> §3 D2 (Phase 2 cross-OS deferred) / §3 D5 (Phase 2 live dispatch
+> deferred), both blocked on the self-hosted-runner decision;
+> ``## Reading a failing CI run`` ≈ 296 tokens of operational
+> walkthrough (read step name → match to gate-matrix row →
+> download artefact) plus 6-row per-gate troubleshooting pointer
+> list (D2 → ``COMPAT-MATRIX``, D3 → ``_machine/agents.md``,
+> AppInspect → ``appinspect-triage.md``, G1 →
+> ``supply-chain.md``, G3 → ``upgrade-hygiene.md``, G8 →
+> ``lint-js-css-contract.js``); ``## Updating this document`` ≈
+> 189 tokens of 4-step process walkthrough for adding a new gate
+> — duplicates the per-script header blocks and
+> ``docs/_machine/agents.md`` §7 pre-commit checklist) from
+> ``docs/CI-GATES.md`` in the llms-full.txt corpus pipeline,
+> reclaiming 1,472 tokens (169,177 → 167,705, 5,823 → 7,295 WARN
+> headroom — **CLEARS the 7,000-token threshold**, unblocking
+> Wave 38 as the next RECIPE wave). The wave-37c status block
+> flagged ``CI-GATES/`` at 2,118 tokens as a next-priority lever
+> after local-splunk-harness; within the CI-GATES page (already
+> trimmed in wave 34a by dropping ``## Gate matrix`` via
+> ``strip_ci_gates_matrix``), the three trailing H2s form ONE
+> contiguous block in the page layout (``## Known gaps`` →
+> ``## Reading a failing CI run`` → ``## Updating this document``,
+> all between ``## Defense-in-depth posture`` and ``## See also``).
+> The KEPT post-wave-37d sections answer the LLM-useful questions:
+> ``## TL;DR`` (kept verbatim, ~285 tokens — names every workflow
+> + summarises gating philosophy: every PR runs ci.yml, every tag
+> push runs release.yml, etc.); ``## Runtime versions`` (kept,
+> ~80 tokens — Node 22 / Python 3.11 / Splunk 10.2 + 10.3 version
+> pins); ``## Why this document exists`` (kept, ~165 tokens —
+> design rationale for an assertable one-page summary);
+> ``## Defense-in-depth posture`` (kept verbatim, ~285 tokens —
+> explains the layered-redundancy design with the lint-and-build
+> / appinspect / docs-build / commitlint job separation);
+> ``## See also`` (kept, ~95 tokens — cross-references the
+> per-gate runbooks). Safety rationale: the on-disk
+> ``docs/CI-GATES.md`` is unchanged; the MkDocs site renders the
+> full page (including the three trimmed H2s) for human readers;
+> the trim runs ONLY in the in-memory writer pipeline of
+> ``build-llms-full-txt.py`` via
+> ``strip_ci_gates_tracking_and_ops()`` — follows the same shape
+> as ``strip_upgrade_hygiene_procedures`` (wave 37b): single H2-
+> anchored regex (``_CI_GATES_TRACKING_AND_OPS``) with defensive
+> no-op fallback, replacement pointer carrying the live MkDocs
+> anchors (``#known-gaps``, ``#reading-a-failing-ci-run``,
+> ``#updating-this-document``) so each pointer is click-through-
+> valid, plus a cross-reference to ``ROADMAP.md`` (where ROADMAP
+> §3 D2 / D5 carry the deferred-gate design rationale
+> authoritatively) and the per-gate runbooks at the §See also
+> cross-references that follow the pointer. Actual reclaim is
+> 1,472 tokens (above the ~692-token projection because the
+> pointer's net cost is smaller than the wave-37a/37b/37c
+> precedent, and because the trimmed table includes the wave-34a
+> trim's residual table rows — i.e., the wave-34a trim moved the
+> gate-matrix payload to a one-line pointer but left
+> ``## Known gaps`` + ``## Reading a failing CI run`` +
+> ``## Updating this document`` in place; wave 37d completes the
+> CI-GATES second-pass trim). **Post-wave-37d WARN headroom of
+> 7,295 tokens CLEARS the 7,000-token threshold (mandatorily
+> triggering trim-before-recipes when headroom drops below 7k)
+> — wave 38 unblocks the RECIPE cadence.** Wave 38 should pick a
+> 1-3 recipe diversification slate from the post-37d
+> ``docs/_machine/recipes/index.yaml`` profile (currently 97
+> recipes across 16 sources × 10 layer types; sparse layer
+> columns and sparse source rows TBD per the standard
+> diversification algorithm). All gates green locally
+> (``build-llms-full-txt.py --check`` [167,705 tokens],
+> ``build-llms-txt.py --check``, ``check-recipe-schema.py``
+> [97/97 valid], ``build-reference-pages.py --check``,
+> ``check-manifest.py``, ``check-formatter-schema.py``,
+> ``check-formatter-coverage.py``, ``mkdocs build --strict``).**
+
 > **Status (v1.7-prep, 2026-05-31): E5 Phase 2 wave 37c token-trim
 > SHIPPED — drop the TWO non-contiguous operational HOW-DO-I-RUN-IT
 > clusters (Block A — two contiguous H2s: ``## What `bootstrap.sh`
