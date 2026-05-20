@@ -75,7 +75,7 @@ text shown in the Dashboard Studio UI.
 
 _The tables below are auto-generated from [`docs/_machine/formatter-schema.json`](https://github.com/fenre/better_map/blob/main/docs/_machine/formatter-schema.json) by `scripts/build-reference-pages.py`. Do not edit the auto-managed sections by hand — run the script and commit the regenerated file._
 
-All **83 options** live in the same Splunk property namespace: each option's full Splunk path is `display.visualizations.custom.better_map.better_map.<option>`. Dashboard Studio shows the short name (`<option>`) in the formatter UI; the full path appears in the underlying `savedsearches.conf` stanza.
+All **104 options** live in the same Splunk property namespace: each option's full Splunk path is `display.visualizations.custom.better_map.better_map.<option>`. Dashboard Studio shows the short name (`<option>`) in the formatter UI; the full path appears in the underlying `savedsearches.conf` stanza.
 
 ### Tab — Data configurations
 
@@ -96,11 +96,13 @@ All **83 options** live in the same Splunk property namespace: each option's ful
 
 | Option | Type | Default | Enum / range | Description |
 |---|---|---|---|---|
+| `closePopupOnDrilldown`<br>_Suppress popup when drilldown fires_ | boolean | `false` |  | When ON, clicking a feature fires the drilldown but skips the popup — useful when a marker click should change the dashboard rather than open a richer view. The popup briefly flashes on click without this flag. |
 | `enableCrossPanel`<br>_Publish camera state_ | boolean | `true` |  | Broadcasts pan / zoom / pitch / bearing as `better_map.camera.*` dashboard tokens. Other panels can mirror the view. |
 | `enableDrilldown`<br>_Enable drilldown on click_ | boolean | `true` |  | Clicks on a feature publish its properties as `FIELD_VALUE_DRILLDOWN` tokens. |
-| `enableExportShare`<br>_Show export & share toolbar_ | boolean | `true` |  | Adds "PNG" and "Share" buttons in the top-right. PNG downloads `better-map.png`; Share copies a deep-link with the current camera state. |
+| `enableHoverPreview`<br>_Enable hover preview popup_ | boolean | `false` |  | Shows a small, dismissable-on-leave popup on mouseover, distinct from the click popup. Useful for "what is this dot" glance views in security investigation and supply-chain dashboards. Default off — NOC walls don't have mice. |
 | `enablePopups`<br>_Enable popups_ | boolean | `true` |  | Clicks on a feature open a sanitized popup using the `popup`, `tooltip`, or `description` field. HTML is filtered through DOMPurify with a strict allow-list. |
-| `showPerfHUD`<br>_Show performance HUD_ | boolean | `false` |  | Overlay FPS, frame time, layer count, and free WebGL slots in the top-left for benchmarking. Disable in production. |
+| `hoverHtmlField`<br>_Hover popup HTML field_ | string | — |  | Row field whose value populates the hover popup (HTML, sanitised). Defaults to `hover`. Use a separate field from `popup` so click and hover can show different views. |
+| `popupAllowInlineStyles`<br>_Allow inline styles in popups_ | boolean | `false` |  | Permits the `style` attribute on allowed tags so dashboard authors can colour severity numbers inline. Restricted to a CSS allow-list (`color`, `background-color`, `font-weight`, `font-size`, `text-align`, `padding`, `margin`, plus a few related shorthands); dangerous values (`url()`, `expression()`, `position:fixed`, `behavior:`, `@import`, `javascript:`) are always rejected. |
 
 #### Feature join (regions backdrop)
 
@@ -122,6 +124,40 @@ All **83 options** live in the same Splunk property namespace: each option's ful
 | `lonField`<br>_Longitude field name_ | string | — |  | Auto-detected. Override for non-standard column names. |
 | `pathIdField`<br>_Path identifier field_ | string | — |  | Group rows by this field to draw routes. Each group becomes one LineString. |
 | `timeField`<br>_Time field_ | string | — |  | When present, the time scrubber and comet trail are enabled automatically. |
+
+#### Per-row marker labels
+
+| Option | Type | Default | Enum / range | Description |
+|---|---|---|---|---|
+| `labelColor`<br>_Label color_ | string | `#E6EEF9` |  | Foreground text colour. Defaults to off-white for dark themes. |
+| `labelField`<br>_Label field_ | string | — |  | Row column to use for the label text. Auto-falls-back to `label`, `name`, then `tooltip` when the chosen field is empty. |
+| `labelHaloColor`<br>_Label halo color_ | string | `#0B1A2D` |  | Outline / halo around the text for legibility over busy basemaps. Defaults to deep navy. |
+| `labelMinZoom`<br>_Label min zoom_ | number ([0…22], step 0.5) | — |  | Below this zoom level, labels are hidden so they don't collide at world zoom. Default `3` = continent-or-closer. Increase to `5+` for very dense maps. |
+| `labelOffsetY`<br>_Label vertical offset (em)_ | number ([0…3], step 0.1) | — |  | How far below the marker the label sits, measured in text-height multiples. Default `1.1`. Increase if marker size is large and the label feels too tight. |
+| `showLabels`<br>_Show labels_ | boolean | `false` |  | Renders a text label below each marker so operators can read site names from across a NOC wall without hovering. Default off — labels collide at world zoom; set Label min zoom below to control when they appear. |
+
+#### Remote camera control
+
+| Option | Type | Default | Enum / range | Description |
+|---|---|---|---|---|
+| `acceptRemoteCamera`<br>_Accept inbound camera tokens_ | boolean | `false` |  | When ON, the map subscribes to `better_map.camera.lng/lat/zoom` dashboard tokens and moves the camera whenever they change. Use to drive the map from another panel, a deep link, or a programmatic `setToken`. Mirrors the outbound Publish camera state toggle above. |
+| `enableExportShare`<br>_Show export & share toolbar_ | boolean | `true` |  | Adds "PNG" and "Share" buttons in the top-right. PNG downloads `better-map.png`; Share copies a deep-link with the current camera state. |
+| `remoteCameraTokenLat`<br>_Custom latitude token_ | string | — |  | Override the default token name. |
+| `remoteCameraTokenLng`<br>_Custom longitude token_ | string | — |  | Override the default token name. Use if multiple Better Map panels need independent camera channels. |
+| `remoteCameraTokenZoom`<br>_Custom zoom token_ | string | — |  | Override the default token name. |
+| `showPerfHUD`<br>_Show performance HUD_ | boolean | `false` |  | Overlay FPS, frame time, layer count, and free WebGL slots in the top-left for benchmarking. Disable in production. |
+
+#### Selected-feature emphasis
+
+| Option | Type | Default | Enum / range | Description |
+|---|---|---|---|---|
+| `selectedFeatureField`<br>_Selection field_ | string | — |  | Row column to match against the selection token's value. Default `id`. Must match the column the dashboard publishes into the selection token. |
+| `selectedFeatureToken`<br>_Selection token name_ | string | — |  | Name of a dashboard token; when its value matches a row's selection field, that row is bumped to a top emphasis layer with a halo and an optional fly-to. Leave blank to disable. Pair with `drilldown.setToken` on the panel to flow clicks into the same token. |
+| `selectedFlyToOnChange`<br>_Fly-to on selection change_ | boolean | `true` |  | When ON, the camera animates to the newly-selected marker's coordinates. Pairs with `Fly-to zoom` below. Disable for dashboards that want to keep the camera locked at an overview while emphasising selection. |
+| `selectedFlyToZoom`<br>_Fly-to zoom_ | number ([1…22], step 0.5) | — |  | Target zoom level for the fly-to (1 = world, 22 = building). `8` default is a metro-area view. |
+| `selectedHaloColor`<br>_Halo color_ | string | `#22D3EE` |  | Ring colour around the selected marker. Use a vivid accent that contrasts with both the base palette and the marker fill. |
+| `selectedHaloWidth`<br>_Halo stroke width (px)_ | number ([0…16], step 1.0) | — |  | Halo ring thickness. `0` = no ring (just the scaled dot); `4` default; `8+` for very dense maps where the selection needs to "punch through" the surrounding markers. |
+| `selectedSizeMultiplier`<br>_Emphasis size multiplier_ | number ([1…6], step 0.1) | — |  | How much larger the selected marker grows. `1` = same size (halo only); `2.5` default; `6` = dominant. Halo extends slightly beyond the scaled dot regardless. |
 
 ### Tab — Data display
 
