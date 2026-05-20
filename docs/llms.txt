@@ -76,6 +76,7 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [CIM Performance (CPU / memory / facilities) → Paths (unverified)](https://fenre.github.io/better_map/recipes/cim-performance/paths/): apps required: Splunk_SA_CIM.
 - [CIM Performance (CPU / memory / facilities) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/cim-performance/supercluster/): apps required: Splunk_SA_CIM.
 - [CIM Performance (CPU / memory / facilities) → Vector-tile join (customer PMTiles) (unverified)](https://fenre.github.io/better_map/recipes/cim-performance/vector-tile-join/): apps required: Splunk_SA_CIM, builtin:iplocation.
+- [CSV lookup (region metrics) → 3D extrusion (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/extrusion-3d/): apps required: none.
 - [CSV lookup (geo points) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/h3/): apps required: none.
 - [CSV lookup (geo polygons) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/heat/): apps required: none.
 - [CSV lookup (geo polygons) → Markers (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/markers/): apps required: none.
@@ -84,11 +85,13 @@ Each integration also has a machine-readable scaffold under `docs/_machine/integ
 - [CSV lookup (geo polygons) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/supercluster/): apps required: none.
 - [CSV lookup (region metrics) → Vector-tile join (customer PMTiles) (unverified)](https://fenre.github.io/better_map/recipes/csv-lookup-geo/vector-tile-join/): apps required: none.
 - [Cisco Cyber Vision (components + vulnerabilities) → Choropleth (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/choropleth/): apps required: TA-cisco-cybervision.
+- [Cisco Cyber Vision (components + vulnerabilities) → 3D extrusion (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/extrusion-3d/): apps required: TA-cisco-cybervision.
 - [Cisco Cyber Vision (components + vulnerabilities) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/h3/): apps required: TA-cisco-cybervision.
 - [Cisco Cyber Vision (components + vulnerabilities) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/heat/): apps required: TA-cisco-cybervision.
 - [Cisco Cyber Vision (components + vulnerabilities) → Markers (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/markers/): apps required: TA-cisco-cybervision.
 - [Cisco Cyber Vision (components + vulnerabilities) → Paths (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/paths/): apps required: TA-cisco-cybervision.
 - [Cisco Cyber Vision (components + vulnerabilities) → Supercluster (unverified)](https://fenre.github.io/better_map/recipes/cyber-vision/supercluster/): apps required: TA-cisco-cybervision.
+- [ES Risk-Based Alerting (risk index) → Choropleth (unverified)](https://fenre.github.io/better_map/recipes/es-risk/choropleth/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM, builtin:iplocation.
 - [ES Risk-Based Alerting (risk index) → H3 hexbin (unverified)](https://fenre.github.io/better_map/recipes/es-risk/h3/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM.
 - [ES Risk-Based Alerting (risk index) → Heatmap (unverified)](https://fenre.github.io/better_map/recipes/es-risk/heat/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM.
 - [ES Risk-Based Alerting (risk index) → Markers (unverified)](https://fenre.github.io/better_map/recipes/es-risk/markers/): apps required: SplunkEnterpriseSecuritySuite, Splunk_SA_CIM, builtin:iplocation.

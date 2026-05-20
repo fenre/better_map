@@ -1,5 +1,103 @@
 # Better Map — Roadmap to Global-Tier (v2.0 Aspiration)
 
+> **Status (v1.7-prep, 2026-06-01): E5 Phase 2 wave 38 recipes
+> SHIPPED — 3 diversification recipes (97 → 100 total) selected
+> from the post-37d sparse-layer / sparse-source matrix.
+> Slate (each row applies the canonical 3-rule diversification
+> heuristic — pick from a sparse layer column, pick from a sparse
+> source row, prefer completers): (1)
+> ``cyber-vision/extrusion-3d`` — sparse layer (extrusion-3d
+> 8→9 cells, advancing from the 8-cell second-sparsest column
+> after vector-tile-join / choropleth which also sit at 9 each)
+> plus sparse source (cyber-vision 6→7 cells, lifting the OT-
+> safety-relevant cyber-vision row out of the joint-6-cell
+> sparsest source band). The recipe is the **first 3D extrusion
+> in the matrix with ``ot_safety_relevant: true``** — height-
+> encoded vulnerable-OT-asset count per US state, mirroring
+> the wave-36c cyber-vision/choropleth SPL verbatim (the
+> choropleth and extrusion-3d siblings share one SPL by
+> construction; only the formatter JSON diverges per the
+> canonical cim-network-traffic / cim-performance / cim-alerts
+> precedents). Applies the full
+> ``/.cursor/rules/ot-safety.mdc`` contract: passive-DPI
+> input only (Rule 1), read-only SRS mirror for
+> ``safety_related=Y`` (Rule 5), IT-zone-only SOAR scope (Rule
+> 3), no Level-0/1/2 writes (Rule 4). Frontmatter: 6 expected
+> fields (id / state_name / value / vulnerable_asset_count /
+> total_asset_count / vulnerable_ratio), formatter contract is
+> the canonical us-states-magma double-encoded (enableChoropleth
+> + enable3DExtrusion + extrusionHeightField=value +
+> extrusionScale=50000.0 + palette=magma). (2)
+> ``es-risk/choropleth`` — sparse layer (choropleth 9→10 cells)
+> plus sparse source (es-risk 6→7 cells). The US-jurisdictional
+> companion to the wave-36c ``es-risk/vector-tile-join`` recipe
+> — same RBA scoring, same A&I IP coalesce chain
+> (identity_lookup_expanded → asset_lookup_by_str ip field
+> fallback per the wave-13 generalised contract), same MaxMind
+> iplocation geocoder, but instead of per-country aggregation
+> against a customer world-countries PMTiles, this recipe
+> aggregates per US state against the bundled us-states.pmtiles
+> preset. SPL diverges from the VTJ sibling at the
+> ``where Country="United States"`` US-only filter and the
+> 21-state ``eval id=upper(case(Region=...))`` USPS-mapping
+> block (same explicit-case-list-plus-substr-fallback pattern
+> as cim-alerts/choropleth). Use cases: multi-state US-only
+> SOC executive briefings, per-state CCPA/CDPA/CPA/CTDPA/UCPA
+> regulatory-notification readiness reviews, US-incident-retro
+> panels. Frontmatter: 6 expected fields (id / state_name /
+> value / total_risk / risky_entity_count / distinct_techniques),
+> formatter contract is canonical us-states-magma choropleth.
+> (3) ``csv-lookup-geo/extrusion-3d`` — sparse layer
+> (extrusion-3d 8→9 alongside the cyber-vision recipe above —
+> wave 38 advances the extrusion-3d column by TWO cells
+> simultaneously, 8→10 total) plus 7-cell-source completion
+> (csv-lookup-geo 7→8, the SECOND-most-complete row in the
+> matrix after cim-network-traffic / cim-performance at 8 each;
+> only ``polygons`` remains as a gap from the full 9-layer
+> coverage). The "bring your own pre-aggregated CSV" recipe —
+> 4-stage ``| inputlookup state_metrics.csv | rename
+> state_code AS id | fields id, state_name, value | sort -
+> value`` against the bundled us-states.pmtiles preset, with
+> the ``state_metrics.csv`` lookup operator-populated from any
+> BI pipeline / finance warehouse / SLO scoring service / HR
+> headcount system / compliance metric tracker. Frontmatter:
+> 3 expected fields (id / state_name / value), formatter
+> contract is canonical us-states-viridis double-encoded
+> (viridis rather than magma because csv-lookup-geo is
+> intentionally metric-agnostic — operator doesn't know if
+> higher values are "good" or "bad" without the recipe's
+> context). The recipe deliberately stays at the ``|
+> inputlookup`` level to preserve the canonical csv-lookup-geo
+> "data lives elsewhere" pattern; the §6 Gotchas documents a
+> "summary-search join" alternative for tenants whose CSV is
+> itself produced by a daily Splunk summary search. Token
+> cost: 167,705 → 174,306 estimated tokens (+6,601 net, ≈2,200
+> tokens per recipe in line with the wave-36c precedent of
+> ≈2,098/recipe). Wave 38 leaves the WARN headroom at 694
+> tokens (175,000 − 174,306) — UNDER the 7,000-token threshold
+> that mandates trim-before-recipes, so wave 39 will be a
+> token-trim wave. Next-priority trim levers per the post-37d
+> page profile and prior status-block analysis:
+> ``integrations/catalogue/`` at 2,827 tokens (operational
+> integration-catalogue detail; requires careful subsection
+> analysis to separate LLM-relevant inventory from operational
+> HOW-DO-I-CONFIGURE detail), ``COMPAT-MATRIX/`` at 1,976
+> tokens (further compaction beyond wave 36b's operational-
+> trim; remaining sections include the kept browser-engine
+> support matrix + ``## What this matrix guarantees``), or
+> a per-recipe ``## 6. Gotchas`` compaction (currently each
+> recipe carries ~400-800 tokens of gotcha prose; could become
+> a bullet matrix with cross-references — ~3-4k savings
+> system-wide). The §6 gotcha compaction is the highest-ROI
+> next trim per the wave-31-recipes status block design hint.
+> All gates green locally (``build-llms-full-txt.py --check``
+> [174,306 tokens, 697,226 chars, 15,650 lines],
+> ``build-llms-txt.py --check``, ``check-recipe-schema.py``
+> [100/100 valid], ``build-reference-pages.py --check`` [3
+> pages in sync], ``check-manifest.py``,
+> ``check-formatter-schema.py``, ``check-formatter-coverage.py``,
+> ``mkdocs build --strict``).**
+
 > **Status (v1.7-prep, 2026-06-01): E5 Phase 2 wave 37d token-trim
 > SHIPPED — drop the THREE contiguous trailing operational
 > HOW-DO-I-RUN-IT / transient-tracking H2 sections (``## Known

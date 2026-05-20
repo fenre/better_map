@@ -4,7 +4,7 @@
 # Drift gate: python3 scripts/check-recipe-schema.py
 schema_version: 1
 generator: scripts/build-recipe-index.py
-recipe_count: 97
+recipe_count: 100
 recipes:
 - id: cim-alerts--choropleth
   source:
@@ -1750,6 +1750,56 @@ recipes:
   - description: featureJoin layer source (promoteId + source-layer + URL contract)
     path: better_map/appserver/static/visualizations/better_map/src/lib/layers/featureJoin.js
   path: docs/recipes/cim-performance/vector-tile-join.md
+- id: csv-lookup-geo--extrusion-3d
+  source:
+    id: csv-lookup-geo
+    display_name: CSV lookup (region metrics)
+    pattern: splunk-lookup
+  layer:
+    id: extrusion-3d
+    display_name: 3D extrusion
+  status: unverified
+  last_verified_iso8601: '2026-06-01'
+  verified_against: null
+  splunk_apps_required: []
+  expected_fields:
+  - name: id
+    type: string
+    example: CA
+    drives_formatter_option: idField
+  - name: state_name
+    type: string
+    example: California
+  - name: value
+    type: number
+    example: '847.3'
+    drives_formatter_option: extrusionHeightField
+  required_formatter_options:
+  - featureJoinPreset
+  - enable3DExtrusion
+  - extrusionHeightField
+  - extrusionScale
+  - enableChoropleth
+  - palette
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, vector-tile-join layer (customer-PMTiles flat-fill sibling — same | inputlookup input shape, different join target)
+    path: docs/recipes/csv-lookup-geo/vector-tile-join.md
+  - description: Companion recipes — same source, markers / supercluster / polygons / paths / h3 / heat layers
+    path: docs/recipes/csv-lookup-geo/markers.md
+  - description: Pattern reference — extrusion-3d on CIM Performance (sibling US-states preset, additive choropleth+extrusion double-encoding contract)
+    path: docs/recipes/cim-performance/extrusion-3d.md
+  - description: Pattern reference — extrusion-3d on the bundled us-states preset (canonical demo)
+    path: docs/recipes/geo-us-states/extrusion-3d.md
+  - description: Pattern reference — extrusion-3d on CIM Alerts (sibling US-states preset, height-encoded SOC metric)
+    path: docs/recipes/cim-alerts/extrusion-3d.md
+  - description: Splunk lookups skill — CSV lookup configuration
+    path: ~/.cursor/skills/splunk-lookups/SKILL.md
+  - description: Layer reference — extrusion-3d
+    path: docs/reference/layers.md
+  - description: Formatter schema — enable3DExtrusion, extrusionHeightField, extrusionScale
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/csv-lookup-geo/extrusion-3d.md
 - id: csv-lookup-geo--h3
   source:
     id: csv-lookup-geo
@@ -2143,6 +2193,71 @@ recipes:
   - description: Formatter schema — enableChoropleth, featureJoinPreset, palette
     path: docs/_machine/formatter-schema.json
   path: docs/recipes/cyber-vision/choropleth.md
+- id: cyber-vision--extrusion-3d
+  source:
+    id: cyber-vision
+    display_name: Cisco Cyber Vision (components + vulnerabilities)
+    pattern: splunk-vendor-ta
+  layer:
+    id: extrusion-3d
+    display_name: 3D extrusion
+  status: unverified
+  last_verified_iso8601: '2026-06-01'
+  verified_against: null
+  splunk_apps_required:
+  - id: TA-cisco-cybervision
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: TX
+    drives_formatter_option: idField
+  - name: state_name
+    type: string
+    example: Texas
+  - name: value
+    type: integer
+    example: '12'
+    drives_formatter_option: extrusionHeightField
+  - name: vulnerable_asset_count
+    type: integer
+    example: '12'
+  - name: total_asset_count
+    type: integer
+    example: '47'
+  - name: vulnerable_ratio
+    type: number
+    example: '0.26'
+  required_formatter_options:
+  - featureJoinPreset
+  - enable3DExtrusion
+  - extrusionHeightField
+  - extrusionScale
+  - enableChoropleth
+  - palette
+  ot_safety_relevant: true
+  references:
+  - description: Companion recipe — same source, choropleth layer (flat-fill sibling — same SPL, height-free encoding)
+    path: docs/recipes/cyber-vision/choropleth.md
+  - description: Companion recipes — same source, markers / h3 / heat / supercluster / paths layers
+    path: docs/recipes/cyber-vision/markers.md
+  - description: Pattern reference — extrusion-3d on CIM Performance (sibling US-states preset, additive choropleth+extrusion double-encoding)
+    path: docs/recipes/cim-performance/extrusion-3d.md
+  - description: Pattern reference — extrusion-3d on CIM Alerts (sibling US-states preset, height-encoded SOC metric)
+    path: docs/recipes/cim-alerts/extrusion-3d.md
+  - description: Pattern reference — extrusion-3d on the bundled us-states preset (canonical demo)
+    path: docs/recipes/geo-us-states/extrusion-3d.md
+  - description: cisco-products skill — Cisco Cyber Vision sourcetypes, components / flows / events / vulnerabilities
+    path: ~/.cursor/skills/cisco-products/SKILL.md
+  - description: cisco-splunk-integration skill — Cyber Vision passive DPI, API endpoints, integration patterns
+    path: ~/.cursor/skills/cisco-splunk-integration/SKILL.md
+  - description: Cursor rule — ot-safety.mdc (passive DPI is the reference design, Rule 1)
+    path: .cursor/rules/ot-safety.mdc
+  - description: Layer reference — extrusion-3d
+    path: docs/reference/layers.md
+  - description: Formatter schema — enable3DExtrusion, extrusionHeightField, extrusionScale
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/cyber-vision/extrusion-3d.md
 - id: cyber-vision--h3
   source:
     id: cyber-vision
@@ -2455,6 +2570,71 @@ recipes:
   - description: Clusters layer source — supercluster index, clusterMaxZoom=14, clusterRadius=48 (hardcoded)
     path: better_map/appserver/static/visualizations/better_map/src/lib/layers/clusters.js
   path: docs/recipes/cyber-vision/supercluster.md
+- id: es-risk--choropleth
+  source:
+    id: es-risk
+    display_name: ES Risk-Based Alerting (risk index)
+    pattern: splunk-premium-es
+  layer:
+    id: choropleth
+    display_name: Choropleth
+  status: unverified
+  last_verified_iso8601: '2026-06-01'
+  verified_against: null
+  splunk_apps_required:
+  - id: SplunkEnterpriseSecuritySuite
+    optional: false
+  - id: Splunk_SA_CIM
+    optional: false
+  - id: builtin:iplocation
+    optional: false
+  expected_fields:
+  - name: id
+    type: string
+    example: CA
+    drives_formatter_option: idField
+  - name: state_name
+    type: string
+    example: California
+  - name: value
+    type: integer
+    example: '412'
+  - name: total_risk
+    type: integer
+    example: '412'
+  - name: risky_entity_count
+    type: integer
+    example: '14'
+  - name: distinct_techniques
+    type: integer
+    example: '7'
+  required_formatter_options:
+  - featureJoinPreset
+  - enableChoropleth
+  - palette
+  ot_safety_relevant: false
+  references:
+  - description: Companion recipe — same source, vector-tile-join layer (global world-countries sibling — same A&I IP chain, country-resolution variant)
+    path: docs/recipes/es-risk/vector-tile-join.md
+  - description: Companion recipes — same source, markers / h3 / heat / supercluster / paths layers
+    path: docs/recipes/es-risk/markers.md
+  - description: Pattern reference — choropleth on CIM Performance (sibling A&I lookup chain, US-states preset, asset-pressure metric)
+    path: docs/recipes/cim-performance/choropleth.md
+  - description: Pattern reference — choropleth on CIM Alerts (sibling US-states preset, severity-weighted alerting metric)
+    path: docs/recipes/cim-alerts/choropleth.md
+  - description: Pattern reference — choropleth on Cyber Vision (sibling US-states preset, attention-framed OT exposure metric)
+    path: docs/recipes/cyber-vision/choropleth.md
+  - description: splunk-rba skill — Risk-Based Alerting framework (risk index schema, rules, RIRs)
+    path: ~/.cursor/skills/splunk-rba/SKILL.md
+  - description: splunk-enterprise-security skill — Asset & Identity framework, identities.csv / assets.csv schema
+    path: ~/.cursor/skills/splunk-enterprise-security/SKILL.md
+  - description: splunk-mitre-attack skill — annotations.mitre_attack contract
+    path: ~/.cursor/skills/splunk-mitre-attack/SKILL.md
+  - description: Layer reference — choropleth
+    path: docs/reference/layers.md
+  - description: Formatter schema — enableChoropleth, featureJoinPreset, palette
+    path: docs/_machine/formatter-schema.json
+  path: docs/recipes/es-risk/choropleth.md
 - id: es-risk--h3
   source:
     id: es-risk
