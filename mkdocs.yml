@@ -252,6 +252,7 @@ nav:
       - 'CSV lookup (geo points) — supercluster': recipes/csv-lookup-geo/supercluster.md
       - 'CSV lookup (geo polygons) — polygons': recipes/csv-lookup-geo/polygons.md
       - 'CSV lookup (region metrics) — vector-tile join': recipes/csv-lookup-geo/vector-tile-join.md
+      - 'Cisco Cyber Vision (components + vulnerabilities) — choropleth': recipes/cyber-vision/choropleth.md
       - 'Cisco Cyber Vision (components + vulnerabilities) — H3 hexbin': recipes/cyber-vision/h3.md
       - 'Cisco Cyber Vision (components + vulnerabilities) — heatmap': recipes/cyber-vision/heat.md
       - 'Cisco Cyber Vision (components + vulnerabilities) — markers': recipes/cyber-vision/markers.md
@@ -270,6 +271,7 @@ nav:
       - 'ES Risk-Based Alerting (risk index) — markers': recipes/es-risk/markers.md
       - 'ES Risk-Based Alerting (risk index) — paths': recipes/es-risk/paths.md
       - 'ES Risk-Based Alerting (risk index) — supercluster': recipes/es-risk/supercluster.md
+      - 'ES Risk-Based Alerting (risk index) — vector-tile join (customer PMTiles)': recipes/es-risk/vector-tile-join.md
       - 'ITSI service health (KPI base searches) — H3 hexbin': recipes/itsi-kpi-base/h3.md
       - 'ITSI service health (KPI base searches) — choropleth': recipes/itsi-kpi-base/choropleth.md
       - 'ITSI service health (KPI base searches) — heatmap': recipes/itsi-kpi-base/heat.md
