@@ -170,7 +170,26 @@ source-of-truth for status / apps / expected-fields / formatter
 options / OT relevance / verification metadata) and to the
 ``recipes/`` page block (the agent-actionable summary); see the
 inline format-contract block immediately preceding the
-``# === BEGIN: appendix:recipes ===`` write block):
+``# === BEGIN: appendix:recipes ===`` write block) — and in wave
+36b by dropping the two operational H2 sections (``## Running
+locally`` ≈ 450 tokens — npm/Playwright install commands, CLI
+flag combinations, report-file paths; ``## Reading a failing run``
+≈ 875 tokens — per-engine PASS/FAIL console snippets, a 4-row
+Phase-1 failure-mode table, a 5-row Phase-1.5 bundle-failure-mode
+table) from ``docs/COMPAT-MATRIX.md`` (combined ~1,300-1,400 net
+tokens of operational + troubleshooting detail not relevant to an
+LLM consumer understanding "what does the browser-compat gate
+cover?" or "what new content can I add here?"; the ``## TL;DR``,
+``## Phase 1 + Phase 1.5 matrix (shipped — every PR)``, ``## Phase
+2 matrix (deferred — tracked in ROADMAP §3 D2)``, ``## Out of
+scope``, and ``## See also`` H2s are kept verbatim — they carry
+the asserted contract tables, the deferred-work scoping, and the
+explicit non-scope boundaries; the operational HOW-DO-I-RUN-IT
+detail and the per-failure-mode troubleshooting matrix are
+recoverable from the live MkDocs page via the pointer the trim
+retains, AND from ``scripts/check-browser-compat.js`` source which
+has its own per-failure-mode CLI-output documentation in
+code-comment form; see ``strip_compat_matrix_operational`` below):
 
   * Per-page warning at **50,000 estimated tokens** — one page should
     not dominate the corpus.
@@ -535,6 +554,54 @@ _ROADMAP_DETAILED_WORKITEMS_SECTION = re.compile(
 _ROADMAP_MILESTONE_SEQUENCING_SECTION = re.compile(
     r"^## 4\.\s+Milestone sequencing[^\n]*\n"
     r"(?:(?!^## )(?!^---$).*\n)*",
+    re.MULTILINE,
+)
+
+# COMPAT-MATRIX §"Running locally" + §"Reading a failing run" trim
+# contract — see strip_compat_matrix_operational() and the E5 Phase 2
+# wave 36b ROADMAP block. ``docs/COMPAT-MATRIX.md`` documents the
+# browser-engine compatibility gate (``scripts/check-browser-compat.js``)
+# and is one of the larger remaining unstripped pages in the corpus at
+# ~3,300 rendered tokens. The two operational H2 sections at the bottom
+# of the page (``## Running locally`` ≈ 450 tokens — npm/playwright
+# install commands, CLI flag combinations, report-file paths, and
+# ``## Reading a failing run`` ≈ 875 tokens — per-engine PASS/FAIL
+# console snippets, a 4-row Phase-1 failure-mode table, and a 5-row
+# Phase-1.5 bundle-failure-mode table) carry ~1,300-1,400 net tokens
+# of operational and troubleshooting detail not relevant to an LLM
+# consumer understanding "what does the project assert about browser
+# compatibility?" or "what new content can I add here?".
+#
+# Safety rationale: the page's ``## TL;DR`` (kept verbatim, ~270 tokens)
+# names the three engine families (Chromium / Firefox / WebKit) and the
+# coverage claim (~99% of real browsers, every PR, fails CI on
+# regression); the ``## Phase 1 + Phase 1.5 matrix (shipped — every
+# PR)`` H2 (kept verbatim, ~900 tokens) carries the asserted contract
+# tables AND the per-surface PASS criteria; the ``## Phase 2 matrix
+# (deferred — tracked in ROADMAP §3 D2)`` H2 (kept verbatim) carries
+# the deferred-work matrix and the WebKit-only-on-AMD-eval rationale;
+# the ``## Out of scope`` H2 (kept verbatim) carries the explicit
+# non-scope boundaries (Splunk Mobile, IE, pre-Quantum Firefox,
+# headed-only behaviours). An LLM consumer asking "what does Better
+# Map's browser-compat gate cover?" or "what's deferred to Phase 2?"
+# gets a complete first-order answer from those four surviving H2s;
+# the operational HOW-DO-I-RUN-IT detail and the per-failure-mode
+# troubleshooting matrix are recoverable from the live MkDocs page
+# via the see-also pointer the trim retains, AND from
+# ``scripts/check-browser-compat.js`` source itself (which has its
+# own per-failure-mode CLI output documentation in code-comment form).
+# The on-disk ``docs/COMPAT-MATRIX.md`` is unchanged — the trim runs
+# only in the in-memory body before it lands in llms-full.txt.
+#
+# The regex matches the ``## Running locally`` H2 heading line and
+# everything up to (but not including) ``## Out of scope`` (skipping
+# past the intermediate ``## Reading a failing run`` H2 which is also
+# stripped as part of the same operational-detail block). ``Out of
+# scope`` is the next H2 to keep, so the stop condition is anchored
+# to that exact heading text rather than a generic ``^## `` pattern.
+_COMPAT_MATRIX_OPERATIONAL_SECTIONS = re.compile(
+    r"^## Running locally[^\n]*\n"
+    r"(?:(?!^## Out of scope).*\n)*",
     re.MULTILINE,
 )
 
@@ -990,6 +1057,21 @@ def is_ci_gates_page(relpath: str) -> bool:
     return relpath == "CI-GATES.md"
 
 
+def is_compat_matrix_page(relpath: str) -> bool:
+    """True when `docs/<relpath>` is the browser-compat matrix page.
+
+    Only the top-level `docs/COMPAT-MATRIX.md` qualifies — this is the
+    D2 runbook page that documents the cross-browser-engine
+    compatibility gate (`scripts/check-browser-compat.js`). The trim
+    (`strip_compat_matrix_operational`) drops the two operational H2
+    sections (`## Running locally` and `## Reading a failing run`)
+    from the corpus while keeping the page's TL;DR + Phase 1/1.5
+    matrix + Phase 2 deferred matrix + Out-of-scope + See-also
+    context intact.
+    """
+    return relpath == "COMPAT-MATRIX.md"
+
+
 def strip_changelog_old_versions(
     body: str, page_url: str, keep: int = _CHANGELOG_KEEP_VERSIONS
 ) -> tuple[str, int]:
@@ -1355,6 +1437,50 @@ def strip_roadmap_milestone_sequencing(
     return cleaned, count > 0
 
 
+def strip_compat_matrix_operational(
+    body: str, page_url: str
+) -> tuple[str, bool]:
+    """Drop the two operational H2 sections from COMPAT-MATRIX.md.
+
+    See the module-level ``_COMPAT_MATRIX_OPERATIONAL_SECTIONS``
+    contract for the full rationale. Returns ``(cleaned_body, dropped)``
+    where ``dropped`` is ``True`` when the section block was found and
+    replaced with a pointer, ``False`` when the page does not contain
+    the block (defensive — the helper is a no-op on already-trimmed
+    COMPAT-MATRIX bodies and on synthetic test fixtures).
+
+    The block is replaced with a one-line pointer back to the live
+    COMPAT-MATRIX page so an LLM consumer following the corpus's
+    per-page structure still sees a breadcrumb to the full
+    operational + troubleshooting content. The pointer headings
+    (``## Running locally`` + ``## Reading a failing run``) match
+    the MkDocs-generated anchors (``#running-locally`` +
+    ``#reading-a-failing-run``) so each pointer is
+    click-through-valid.
+    """
+    pointer = (
+        "## Running locally\n\n"
+        "_§Running locally (Playwright install + CLI flag reference)"
+        " and §Reading a failing run (per-engine PASS/FAIL console"
+        " snippets + 4-row Phase-1 failure-mode table + 5-row"
+        " Phase-1.5 bundle-failure-mode table) omitted from"
+        " llms-full.txt for token-budget headroom; read both"
+        f" sections at <{page_url}#running-locally> and"
+        f" <{page_url}#reading-a-failing-run>, or inspect"
+        " `scripts/check-browser-compat.js` source for"
+        " equivalent code-comment documentation of the gate's"
+        " behaviour._\n\n"
+    )
+
+    def _replace(_match: re.Match[str]) -> str:
+        return pointer
+
+    cleaned, count = _COMPAT_MATRIX_OPERATIONAL_SECTIONS.subn(
+        _replace, body
+    )
+    return cleaned, count > 0
+
+
 def strip_ci_gates_matrix(
     body: str, page_url: str
 ) -> tuple[str, bool]:
@@ -1645,6 +1771,10 @@ def render(site_url: str, site_desc: str) -> tuple[str, dict[str, int]]:
             )
         if is_ci_gates_page(relpath):
             expanded, _matrix = strip_ci_gates_matrix(expanded, url)
+        if is_compat_matrix_page(relpath):
+            expanded, _compat = strip_compat_matrix_operational(
+                expanded, url
+            )
         if is_formatter_page(relpath):
             expanded, _trimmed = strip_formatter_appendix_a(expanded, url)
         if is_recipes_index_page(relpath):
