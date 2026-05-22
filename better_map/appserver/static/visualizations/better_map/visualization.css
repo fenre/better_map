@@ -95,6 +95,36 @@
     background: rgba(255, 255, 255, 0.12);
 }
 
+/*
+ * v1.8.0 — pushBanner stacking badge. When more than one error envelope
+ * is active, the highest-severity one wins the single banner slot and a
+ * small "+N more" pill renders next to the close button. The badge
+ * inherits the banner's text colour and uses a translucent backdrop so
+ * it works on both the fatal and warning palette without per-severity
+ * styling.
+ */
+.better_map-viz .better_map-error__badge {
+    margin-left: 8px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.12);
+    color: inherit;
+    flex: 0 0 auto;
+}
+
+/*
+ * v1.8.0 — debug-HUD Errors-tab row. The HUD body sets borderTop /
+ * marginTop / paddingTop inline; this rule exists to satisfy the
+ * G8 JS↔CSS contract and to let future polish (badge counters,
+ * scope-grouped colour coding) hang off a real class hook.
+ */
+.better_map-viz .better_map-debug-hud__errors {
+    /* HUD inline styles own the visuals; this rule is the class hook. */
+    display: block;
+}
+
 .better_map-viz .better_map-perf-hud {
     position: absolute;
     top: 12px;

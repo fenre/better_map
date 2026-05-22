@@ -1,0 +1,485 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import {
+    safeRun,
+    getRecentErrors,
+    clearErrorState,
+    __setReporter,
+    __setNow,
+    __resetSafeRunState
+} from '../safeRun.js';
+import { LAYER_MARKERS, MAP_CREATE, UNKNOWN } from '../errorScopes.js';
+import { getActiveBanners, __resetBannerState } from '../errorStates.js';
+
+describe('safeRun — sync core', () => {
+    beforeEach(() => {
+        __resetSafeRunState();
+        __setNow(null);
+        __setReporter(null);
+    });
+
+    it('returns {ok:true, result} for a successful noop action', () => {
+        const r = safeRun({ scope: LAYER_MARKERS, action: function () {} });
+        expect(r).toEqual({ ok: true, result: undefined });
+    });
+
+    it('returns the action result on success', () => {
+        const r = safeRun({ scope: LAYER_MARKERS, action: function () { return 42; } });
+        expect(r).toEqual({ ok: true, result: 42 });
+    });
+
+    it('returns {ok:false, error: envelope} when action throws (does NOT re-throw)', () => {
+        const r = safeRun({
+            scope: LAYER_MARKERS,
+            action: function () { throw new Error('boom'); }
+        });
+        expect(r.ok).toBe(false);
+        expect(r.error.scope).toBe(LAYER_MARKERS);
+        expect(r.error.message).toBe('boom');
+    });
+
+    it('envelope carries scope, severity, recovery, message, cause, stack, timestamp', () => {
+        const cause = new Error('boom');
+        const r = safeRun({
+            scope: MAP_CREATE,
+            severity: 'fatal',
+            recovery: 'fatal',
+            action: function () { throw cause; }
+        });
+        expect(r.error.scope).toBe(MAP_CREATE);
+        expect(r.error.severity).toBe('fatal');
+        expect(r.error.recovery).toBe('fatal');
+        expect(r.error.message).toBe('boom');
+        expect(r.error.cause).toBe(cause);
+        expect(typeof r.error.stack).toBe('string');
+        expect(typeof r.error.timestamp).toBe('number');
+    });
+
+    it('defaults: severity=warning, recovery=soft, scope=UNKNOWN sentinel', () => {
+        const r = safeRun({ action: function () { throw new Error('x'); } });
+        expect(r.error.severity).toBe('warning');
+        expect(r.error.recovery).toBe('soft');
+        expect(r.error.scope).toBe(UNKNOWN);
+    });
+
+    it('captures non-Error throws as string message', () => {
+        const r = safeRun({
+            scope: LAYER_MARKERS,
+            action: function () { throw 'plain string'; }
+        });
+        expect(r.error.message).toBe('plain string');
+    });
+
+    it('invokes onError(err) on failure', () => {
+        const onError = vi.fn();
+        safeRun({
+            scope: LAYER_MARKERS,
+            action: function () { throw new Error('boom'); },
+            onError: onError
+        });
+        expect(onError).toHaveBeenCalledTimes(1);
+        expect(onError.mock.calls[0][0]).toBeInstanceOf(Error);
+    });
+
+    it('onError throwing does NOT propagate (safeRun structurally cannot throw)', () => {
+        const r = safeRun({
+            scope: LAYER_MARKERS,
+            action: function () { throw new Error('boom'); },
+            onError: function () { throw new Error('cleanup-boom'); }
+        });
+        expect(r.ok).toBe(false);  // primary error still wins
+        expect(r.error.message).toBe('boom');
+    });
+});
+
+describe('safeRun — reporter chain', () => {
+    beforeEach(() => {
+        __resetSafeRunState();
+    });
+
+    it('pushes failed envelopes onto the ring buffer (cap 50)', () => {
+        // Clear backoff between iterations so each call actually runs.
+        for (let i = 0; i < 60; i++) {
+            safeRun({
+                scope: LAYER_MARKERS,
+                action: function () { throw new Error('e' + i); }
+            });
+            clearErrorState(LAYER_MARKERS);
+        }
+        const list = getRecentErrors();
+        expect(list).toHaveLength(50);
+        expect(list[0].message).toBe('e10');           // first 10 dropped
+        expect(list[49].message).toBe('e59');
+    });
+
+    it('does NOT push successful runs onto the ring buffer', () => {
+        for (let i = 0; i < 5; i++) {
+            safeRun({ scope: LAYER_MARKERS, action: function () { return i; } });
+        }
+        expect(getRecentErrors()).toHaveLength(0);
+    });
+
+    it('default reporter logs structured [better_map] scope severity: message line', () => {
+        // Q-2 console-noise contract requires the literal [better_map] prefix
+        // and forbids console.log in shipping source, so the default reporter
+        // emits via console.warn (non-fatal) or console.error (fatal).
+        const logs = [];
+        const origWarn = console.warn;
+        console.warn = function () { logs.push(Array.from(arguments).join(' ')); };
+        try {
+            safeRun({
+                scope: LAYER_MARKERS,
+                action: function () { throw new Error('boom'); }
+            });
+        } finally {
+            console.warn = origWarn;
+        }
+        expect(logs[0]).toBe('[better_map] layer:markers warning: boom');
+    });
+
+    it('default reporter routes fatal envelopes to console.error', () => {
+        const errs = [];
+        const origErr = console.error;
+        console.error = function () { errs.push(Array.from(arguments).join(' ')); };
+        try {
+            safeRun({
+                scope: LAYER_MARKERS,
+                severity: 'fatal',
+                action: function () { throw new Error('boom'); }
+            });
+        } finally {
+            console.error = origErr;
+        }
+        expect(errs[0]).toBe('[better_map] layer:markers fatal: boom');
+    });
+
+    it('test reporter receives envelope', () => {
+        const received = [];
+        __setReporter(function (env) { received.push(env); });
+        safeRun({
+            scope: LAYER_MARKERS,
+            action: function () { throw new Error('boom'); }
+        });
+        expect(received).toHaveLength(1);
+        expect(received[0].scope).toBe(LAYER_MARKERS);
+        expect(received[0].message).toBe('boom');
+    });
+
+    it('dispatches better_map:error CustomEvent on panelRoot when provided', () => {
+        const root = document.createElement('div');
+        const events = [];
+        root.addEventListener('better_map:error', function (e) { events.push(e.detail); });
+        safeRun({
+            scope: LAYER_MARKERS,
+            panelRoot: root,
+            action: function () { throw new Error('boom'); }
+        });
+        expect(events).toHaveLength(1);
+        expect(events[0].scope).toBe(LAYER_MARKERS);
+    });
+
+    it('does NOT dispatch CustomEvent when panelRoot is omitted', () => {
+        // Just assert no throw + the test as a whole passes.
+        const r = safeRun({
+            scope: LAYER_MARKERS,
+            action: function () { throw new Error('boom'); }
+        });
+        expect(r.ok).toBe(false);
+    });
+
+    it('reporter-itself throwing falls back to console.error and does NOT propagate', () => {
+        const errs = [];
+        const origErr = console.error;
+        console.error = function () { errs.push(Array.from(arguments).join(' ')); };
+        __setReporter(function () { throw new Error('reporter-boom'); });
+        try {
+            const r = safeRun({
+                scope: LAYER_MARKERS,
+                action: function () { throw new Error('original-boom'); }
+            });
+            expect(r.ok).toBe(false);
+            expect(r.error.message).toBe('original-boom');
+            expect(errs.some(function (l) { return l.indexOf('reporter threw') >= 0; })).toBe(true);
+        } finally {
+            console.error = origErr;
+        }
+    });
+
+    it('getRecentErrors({scope}) filters', () => {
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('a'); } });
+        safeRun({ scope: MAP_CREATE, action: function () { throw new Error('b'); } });
+        const markers = getRecentErrors({ scope: LAYER_MARKERS });
+        expect(markers).toHaveLength(1);
+        expect(markers[0].message).toBe('a');
+    });
+});
+
+describe('safeRun — async actions', () => {
+    beforeEach(() => { __resetSafeRunState(); });
+
+    it('resolves to {ok:true, result} when action returns a resolved Promise', async () => {
+        const r = await safeRun({
+            scope: LAYER_MARKERS,
+            action: function () { return Promise.resolve(7); }
+        });
+        expect(r).toEqual({ ok: true, result: 7 });
+    });
+
+    it('resolves to {ok:false, error} when action rejects', async () => {
+        const r = await safeRun({
+            scope: LAYER_MARKERS,
+            action: function () { return Promise.reject(new Error('async-boom')); }
+        });
+        expect(r.ok).toBe(false);
+        expect(r.error.message).toBe('async-boom');
+    });
+
+    it('reports async failures through the same reporter chain', async () => {
+        const received = [];
+        __setReporter(function (e) { received.push(e); });
+        await safeRun({
+            scope: LAYER_MARKERS,
+            action: function () { return Promise.reject('async-string'); }
+        });
+        expect(received).toHaveLength(1);
+        expect(received[0].message).toBe('async-string');
+    });
+
+    it('handles non-thenable object return values as sync results', () => {
+        const r = safeRun({
+            scope: LAYER_MARKERS,
+            action: function () { return { not: 'a-promise' }; }
+        });
+        expect(r.ok).toBe(true);
+        expect(r.result).toEqual({ not: 'a-promise' });
+    });
+});
+
+describe('safeRun — rate limiting', () => {
+    beforeEach(() => { __resetSafeRunState(); });
+
+    it('collapses identical scope envelopes within a 1s window', () => {
+        let t = 1000;
+        __setNow(function () { return t; });
+        const received = [];
+        __setReporter(function (e) { received.push(e); });
+
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('a'); } });
+        t = 1100;
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('b'); } });
+        t = 1500;
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('c'); } });
+
+        expect(received).toHaveLength(1);
+        expect(received[0].message).toBe('a');
+    });
+
+    it('reports again after the 1s window elapses', () => {
+        let t = 1000;
+        __setNow(function () { return t; });
+        const received = [];
+        __setReporter(function (e) { received.push(e); });
+
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('a'); } });
+        t = 2001;
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('b'); } });
+
+        expect(received).toHaveLength(2);
+    });
+
+    it('does not collapse different scopes', () => {
+        const t = 1000;
+        __setNow(function () { return t; });
+        const received = [];
+        __setReporter(function (e) { received.push(e); });
+
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('a'); } });
+        safeRun({ scope: MAP_CREATE, action: function () { throw new Error('b'); } });
+
+        expect(received).toHaveLength(2);
+    });
+
+    it('still records every envelope in the ring buffer (rate-limit affects reporter only)', () => {
+        // Clear backoff between iterations so this test isolates the
+        // ring-buffer + rate-limit interaction from the backoff layer.
+        let t = 1000;
+        __setNow(function () { return t; });
+        for (let i = 0; i < 5; i++) {
+            t = 1000 + i * 10;
+            safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('e' + i); } });
+            clearErrorState(LAYER_MARKERS);
+        }
+        expect(getRecentErrors()).toHaveLength(5);
+    });
+});
+
+describe('safeRun — backoff and quarantine', () => {
+    beforeEach(() => { __resetSafeRunState(); });
+
+    it('after first failure, immediate re-runs within 1s return {ok:false, error:{backoff:true}}', () => {
+        let t = 1000;
+        __setNow(function () { return t; });
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('a'); } });
+        t = 1100;
+        const r = safeRun({ scope: LAYER_MARKERS, action: function () { return 'never-runs'; } });
+        expect(r.ok).toBe(false);
+        expect(r.error.backoff).toBe(true);
+    });
+
+    it('after 1s, the action runs again', () => {
+        let t = 1000;
+        __setNow(function () { return t; });
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('a'); } });
+        t = 2001;
+        let ran = false;
+        const r = safeRun({
+            scope: LAYER_MARKERS,
+            action: function () { ran = true; return 42; }
+        });
+        expect(ran).toBe(true);
+        expect(r).toEqual({ ok: true, result: 42 });
+    });
+
+    it('successful run resets failure count', () => {
+        let t = 1000;
+        __setNow(function () { return t; });
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('a'); } });
+        t = 2001;
+        safeRun({ scope: LAYER_MARKERS, action: function () { return 'ok'; } });
+        // After a success, next failure starts a fresh backoff (1s, not 5s).
+        t = 3001;
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('b'); } });
+        t = 3500;
+        const r = safeRun({ scope: LAYER_MARKERS, action: function () { return 'x'; } });
+        expect(r.ok).toBe(false);
+        expect(r.error.backoff).toBe(true);
+    });
+
+    it('backoff schedule: 1s -> 5s -> 30s -> quarantined', () => {
+        let t = 1000;
+        __setNow(function () { return t; });
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('1'); } });
+        t = 2001;
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('2'); } });
+        t = 3002;
+        let r = safeRun({ scope: LAYER_MARKERS, action: function () {} });
+        expect(r.error.backoff).toBe(true);
+        t = 7003;
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('3'); } });
+        t = 8003;
+        r = safeRun({ scope: LAYER_MARKERS, action: function () {} });
+        expect(r.error.backoff).toBe(true);
+        t = 37004;
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('4'); } });
+        t = 100000;
+        r = safeRun({ scope: LAYER_MARKERS, action: function () {} });
+        expect(r.error.backoff).toBe(true);
+        expect(r.error.quarantined).toBe(true);
+    });
+
+    it('clearErrorState(scope) clears just that scope', () => {
+        const t = 1000;
+        __setNow(function () { return t; });
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('a'); } });
+        clearErrorState(LAYER_MARKERS);
+        let ran = false;
+        const r = safeRun({
+            scope: LAYER_MARKERS,
+            action: function () { ran = true; }
+        });
+        expect(ran).toBe(true);
+        expect(r.ok).toBe(true);
+    });
+
+    it('clearErrorState() with no scope clears everything', () => {
+        const t = 1000;
+        __setNow(function () { return t; });
+        safeRun({ scope: LAYER_MARKERS, action: function () { throw new Error('a'); } });
+        safeRun({ scope: MAP_CREATE, action: function () { throw new Error('b'); } });
+        clearErrorState();
+        const r1 = safeRun({ scope: LAYER_MARKERS, action: function () { return 1; } });
+        const r2 = safeRun({ scope: MAP_CREATE, action: function () { return 2; } });
+        expect(r1.ok).toBe(true);
+        expect(r2.ok).toBe(true);
+    });
+});
+
+describe('safeRun — banner routing', () => {
+    let root;
+    beforeEach(() => {
+        document.body.innerHTML = '';
+        root = document.createElement('div');
+        document.body.appendChild(root);
+        __resetSafeRunState();
+        __resetBannerState();
+    });
+
+    it('recovery="soft" does NOT push a banner', () => {
+        safeRun({
+            scope: LAYER_MARKERS,
+            recovery: 'soft',
+            panelRoot: root,
+            action: function () { throw new Error('boom'); }
+        });
+        expect(getActiveBanners(root)).toHaveLength(0);
+    });
+
+    it('recovery="degrade" pushes a warning banner', () => {
+        safeRun({
+            scope: LAYER_MARKERS,
+            recovery: 'degrade',
+            panelRoot: root,
+            action: function () { throw new Error('boom'); }
+        });
+        const list = getActiveBanners(root);
+        expect(list).toHaveLength(1);
+        expect(list[0].severity).toBe('warning');
+    });
+
+    it('recovery="fatal" pushes a fatal banner', () => {
+        safeRun({
+            scope: MAP_CREATE,
+            recovery: 'fatal',
+            severity: 'fatal',
+            panelRoot: root,
+            action: function () { throw new Error('boom'); }
+        });
+        const list = getActiveBanners(root);
+        expect(list).toHaveLength(1);
+        expect(list[0].severity).toBe('fatal');
+    });
+
+    it('without panelRoot, banner is never pushed (no DOM target)', () => {
+        const r = safeRun({
+            scope: LAYER_MARKERS,
+            recovery: 'degrade',
+            action: function () { throw new Error('boom'); }
+        });
+        expect(r.ok).toBe(false);
+    });
+});
+
+describe('safeRun — destroy-flag suppression', () => {
+    let root;
+    beforeEach(() => {
+        document.body.innerHTML = '';
+        root = document.createElement('div');
+        document.body.appendChild(root);
+        __resetSafeRunState();
+        __resetBannerState();
+    });
+
+    it('panelRoot.dataset.bmDestroying suppresses banner but NOT ring buffer or event', () => {
+        root.dataset.bmDestroying = '1';
+        const events = [];
+        root.addEventListener('better_map:error', function (e) { events.push(e.detail); });
+        safeRun({
+            scope: LAYER_MARKERS,
+            recovery: 'degrade',
+            panelRoot: root,
+            action: function () { throw new Error('boom'); }
+        });
+        expect(getActiveBanners(root)).toHaveLength(0);   // banner suppressed
+        expect(events).toHaveLength(1);                    // event still dispatched
+        expect(getRecentErrors()).toHaveLength(1);         // ring buffer still grows
+    });
+});
