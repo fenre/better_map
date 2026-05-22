@@ -1,6 +1,7 @@
 # Phase B — Lifecycle Wrapping + MapLibre Error Bridge + whenReady()
 
-> **Status:** in-progress (autonomous session, May 2026)
+> **Status:** complete (autonomous session, May 2026)
+> **Branch:** `feat/v1.8.0-phase-b`
 > **Builds on:** [`2026-05-19-phase-a-error-boundary-foundation.md`](./2026-05-19-phase-a-error-boundary-foundation.md)
 > **Excluded from MkDocs build** via `mkdocs.yml#exclude_docs: superpowers/**`
 
