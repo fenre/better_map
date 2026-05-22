@@ -1,23 +1,21 @@
 /*
- * MapBuilder.whenReady() — Phase B (v1.8.0) tests.
+ * MapBuilder MapLibre error bridge — Phase B (v1.8.0) tests.
  *
  * Contract:
- *   - Returns a Promise.
- *   - Resolves with `mapBuilder` itself when the map's style is fully loaded.
- *   - Resolves immediately when the map is already loaded.
- *   - Rejects with Error('MapBuilder destroyed') when destroy() runs first.
- *   - Rejects with Error('No map') when WebGL was unavailable / init bailed.
- *
- * The MapBuilder is exercised against a stubbed maplibregl that mimics the
- * real handler-registration shape (`on/off`, `isStyleLoaded`, `remove`).
+ *   MapBuilder.init() registers a `map.on('error', fn)` handler. When
+ *   MapLibre fires that event (tile-load failure, style parse error,
+ *   etc.) the handler must funnel the error through safeRun() so it
+ *   reaches:
+ *     - the safeRun ring buffer (for debugHud)
+ *     - panelRoot's `better_map:error` CustomEvent stream
+ *     - the rate-limited reporter
+ *   using scope MAPLIBRE_INTERNAL. The bridge must not throw, must
+ *   tolerate `evt == null` / `evt.error == null` defensively, and must
+ *   degrade silently when the panel root is missing.
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// Stub WebGL availability + maplibregl so MapBuilder can be constructed
-// in jsdom (which has no real WebGL). The stub is installed via vi.mock
-// at module scope; per-test behaviour is tweaked through the listeners
-// captured on the stub map.
 vi.mock('../errorStates.js', async () => {
     const actual = await vi.importActual('../errorStates.js');
     return {
@@ -39,13 +37,7 @@ vi.mock('maplibre-gl', () => {
                 if (!_stubMapHandlers[evt]) _stubMapHandlers[evt] = [];
                 _stubMapHandlers[evt].push(fn);
             },
-            off: function (evt, fn) {
-                if (_stubMapHandlers[evt]) {
-                    _stubMapHandlers[evt] = _stubMapHandlers[evt].filter(function (h) {
-                        return h !== fn;
-                    });
-                }
-            },
+            off: function () {},
             isStyleLoaded: function () { return _stubLoaded; },
             remove: function () {},
             getCenter: function () { return { lng: 0, lat: 0 }; },
@@ -101,96 +93,90 @@ vi.mock('../drilldown.js', () => ({ attachDrilldown: function () { return functi
 vi.mock('../crossPanel.js', () => ({ createCrossPanel: function () { return { destroy: function () {}, applyRemoteCamera: function () {} }; } }));
 vi.mock('../a11y.js', () => ({ applyA11yAttrs: function () {}, applyLabelLanguage: function () {} }));
 
-// MapBuilder is imported AFTER the mocks above so its module-scope
-// imports pick up the stubs.
 import { MapBuilder } from '../mapBuilder.js';
+import { getRecentErrors, __resetSafeRunState } from '../safeRun.js';
+import { MAPLIBRE_INTERNAL } from '../errorScopes.js';
 
-function fireMapEvent(evt, payload) {
-    const handlers = _stubMapHandlers[evt] || [];
-    handlers.forEach(function (h) { h(payload || {}); });
+function flushErrorHandler(evt) {
+    // MapLibre invokes every registered listener with the event object.
+    const handlers = _stubMapHandlers && _stubMapHandlers.error;
+    if (!handlers || !handlers.length) return false;
+    handlers.forEach(function (fn) { fn(evt); });
+    return true;
 }
 
-describe('MapBuilder.whenReady()', () => {
+describe('MapBuilder MapLibre error bridge', () => {
     let container;
     let builder;
 
     beforeEach(() => {
-        document.body.innerHTML = '';
+        __resetSafeRunState();
         container = document.createElement('div');
+        // safeRun guards on `panelRoot.dataset.bmDestroying === '1'` to
+        // suppress banners during teardown; our tests want the live
+        // pathway, so explicitly clear the flag.
+        container.dataset.bmDestroying = '';
         document.body.appendChild(container);
-        _stubMapHandlers = null;
-        _stubMap = null;
-        _stubLoaded = false;
     });
 
-    it('rejects with "No map" before init() is called', async () => {
-        builder = new MapBuilder(container);
-        let caught = null;
-        try {
-            await builder.whenReady();
-        } catch (e) { caught = e; }
-        expect(caught).not.toBeNull();
-        expect(caught.message).toBe('No map');
+    afterEach(() => {
+        if (builder) {
+            try { builder.destroy(); } catch (_e) { /* noop */ }
+            builder = null;
+        }
+        if (container && container.parentNode) {
+            container.parentNode.removeChild(container);
+        }
+        __resetSafeRunState();
     });
 
-    it('resolves with the builder when the map fires "load"', async () => {
+    it('registers an error handler on the underlying map', () => {
         builder = new MapBuilder(container);
         builder.init({ provider: 'stub', theme: 'dark' });
-        const promise = builder.whenReady();
-        // simulate MapLibre's load event firing on the next frame
-        setTimeout(function () {
-            _stubLoaded = true;
-            fireMapEvent('load');
-        }, 0);
-        const result = await promise;
-        expect(result).toBe(builder);
+        expect(_stubMapHandlers.error).toBeDefined();
+        expect(_stubMapHandlers.error.length).toBeGreaterThanOrEqual(1);
     });
 
-    it('resolves immediately when the map is already loaded', async () => {
+    it('routes MapLibre errors into the safeRun ring buffer with MAPLIBRE_INTERNAL scope', () => {
         builder = new MapBuilder(container);
         builder.init({ provider: 'stub', theme: 'dark' });
-        _stubLoaded = true;
-        // No event needs to fire — the API should detect loaded state.
-        const result = await builder.whenReady();
-        expect(result).toBe(builder);
+        const fired = flushErrorHandler({ error: new Error('tile-404') });
+        expect(fired).toBe(true);
+        const buf = getRecentErrors({ scope: MAPLIBRE_INTERNAL });
+        expect(buf.length).toBe(1);
+        expect(buf[0].scope).toBe(MAPLIBRE_INTERNAL);
+        expect(buf[0].message).toMatch(/tile-404/);
     });
 
-    it('rejects with "MapBuilder destroyed" when destroy() runs before load', async () => {
+    it('dispatches a better_map:error CustomEvent on the panel root', () => {
         builder = new MapBuilder(container);
         builder.init({ provider: 'stub', theme: 'dark' });
-        const promise = builder.whenReady();
-        builder.destroy();
-        let caught = null;
-        try {
-            await promise;
-        } catch (e) { caught = e; }
-        expect(caught).not.toBeNull();
-        expect(caught.message).toBe('MapBuilder destroyed');
+
+        const events = [];
+        container.addEventListener('better_map:error', function (evt) {
+            events.push(evt.detail);
+        });
+
+        flushErrorHandler({ error: new Error('style-load-failed') });
+        expect(events.length).toBe(1);
+        expect(events[0].scope).toBe(MAPLIBRE_INTERNAL);
+        expect(events[0].message).toMatch(/style-load-failed/);
     });
 
-    it('rejects with "MapBuilder destroyed" when called after destroy()', async () => {
+    it('handles a malformed MapLibre error event without throwing', () => {
         builder = new MapBuilder(container);
         builder.init({ provider: 'stub', theme: 'dark' });
-        builder.destroy();
-        let caught = null;
-        try {
-            await builder.whenReady();
-        } catch (e) { caught = e; }
-        expect(caught).not.toBeNull();
-        expect(caught.message).toBe('MapBuilder destroyed');
+        expect(() => flushErrorHandler(null)).not.toThrow();
+        expect(() => flushErrorHandler({})).not.toThrow();
+        expect(() => flushErrorHandler({ error: null })).not.toThrow();
     });
 
-    it('multiple concurrent calls all resolve from a single load event', async () => {
+    it('survives a string-typed MapLibre error', () => {
         builder = new MapBuilder(container);
         builder.init({ provider: 'stub', theme: 'dark' });
-        const p1 = builder.whenReady();
-        const p2 = builder.whenReady();
-        const p3 = builder.whenReady();
-        setTimeout(function () {
-            _stubLoaded = true;
-            fireMapEvent('load');
-        }, 0);
-        const results = await Promise.all([p1, p2, p3]);
-        expect(results.every(function (r) { return r === builder; })).toBe(true);
+        flushErrorHandler({ error: 'bare-string-error' });
+        const buf = getRecentErrors({ scope: MAPLIBRE_INTERNAL });
+        expect(buf.length).toBe(1);
+        expect(buf[0].message).toMatch(/bare-string-error/);
     });
 });

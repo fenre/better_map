@@ -34,6 +34,8 @@ import { Protocol as PMTilesProtocol } from 'pmtiles';
 import { resolveStyle, DEFAULT_PROVIDER } from './styles.js';
 import { applyAttribution } from './attribution.js';
 import { isWebGLAvailable, renderErrorBanner, clearErrorBanner } from './errorStates.js';
+import { safeRun } from './safeRun.js';
+import { MAPLIBRE_INTERNAL } from './errorScopes.js';
 import { reconcile, applyLayerNameFilter, setLayerVisibility } from './layers/index.js';
 import * as markersLayer from './layers/markers.js';
 import * as clustersLayer from './layers/clusters.js';
@@ -436,11 +438,48 @@ export class MapBuilder {
             self._flushAfterStyleQueue();
         });
         this._map.on('error', function (evt) {
-            // MapLibre's 'error' event fires for tile fetches as well as
-            // fatal style errors. Log without spamming Splunk's UI.
-            if (evt && evt.error && typeof console !== 'undefined' && console.warn) {
-                console.warn('[better_map] MapLibre error:', evt.error);
-            }
+            // v1.8.0 (Phase B) — funnel MapLibre's own error stream
+            // (tile-load failures, sprite/style fetch errors, GL ctx
+            // loss, etc.) through safeRun so it hits the ring buffer,
+            // the rate-limited reporter, the panelRoot
+            // `better_map:error` event channel, and (for degrade /
+            // fatal cases) the banner stack. Wrapping in safeRun() lets
+            // us reuse the per-scope back-off / quarantine policy:
+            // tile-storms get rate-limited automatically rather than
+            // drowning the console.
+            safeRun({
+                scope: MAPLIBRE_INTERNAL,
+                severity: 'warning',
+                recovery: 'soft',
+                panelRoot: self._container,
+                rateLimitKey: MAPLIBRE_INTERNAL,
+                action: function () {
+                    // The MapLibre 'error' event ALREADY happened — we
+                    // re-throw inside `action` so safeRun() funnels it
+                    // through the full envelope/report/dispatch path.
+                    // Filter out the noise cases first:
+                    //   - the event itself is null / not an object
+                    //   - the event carries no .error AND no useful keys
+                    if (!evt || typeof evt !== 'object') {
+                        return;
+                    }
+                    let payload = null;
+                    if (evt.error != null) {
+                        payload = evt.error;
+                    } else if (Object.keys(evt).length > 0) {
+                        payload = evt;
+                    }
+                    if (payload == null) {
+                        // Defensively swallow blank events so we don't
+                        // spam the ring buffer with empty envelopes.
+                        return;
+                    }
+                    if (typeof payload === 'string') {
+                        throw new Error(payload);
+                    }
+                    throw payload;
+                }
+            });
         });
 
         return this._map;
