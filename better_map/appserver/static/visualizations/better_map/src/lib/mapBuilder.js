@@ -229,6 +229,54 @@ export class MapBuilder {
         // contributed by a layer/animation module via `registerFancyAction`.
         // The control panel iterates this map to build its rows.
         this._fancyActions = new Map();
+
+        // v1.8.0 (Phase B) — pending whenReady() resolvers. Multiple
+        // callers may await whenReady() before the first 'load' fires;
+        // we store them all and fire them as a batch when the load
+        // event arrives, OR reject them as a batch when destroy() runs
+        // before the load. The slot is GC'd once drained so a future
+        // whenReady() call after `_destroyed` rejects synchronously.
+        this._readyResolvers = [];
+    }
+
+    /**
+     * v1.8.0 (Phase B) — public lifecycle handle.
+     *
+     * Returns a Promise that resolves with this MapBuilder once the
+     * underlying MapLibre map has fired its initial `load` event
+     * (`_map.isStyleLoaded() === true`). Useful for callers that want
+     * to add a custom source/layer ASAP without poking at internals.
+     *
+     * Resolution rules:
+     *   - already loaded                 → resolves on next microtask
+     *   - init() never ran / WebGL miss  → rejects with Error('No map')
+     *   - destroy() runs before load     → rejects with Error('MapBuilder destroyed')
+     *   - called after destroy()         → rejects synchronously
+     */
+    whenReady() {
+        const self = this;
+        if (this._destroyed) {
+            return Promise.reject(new Error('MapBuilder destroyed'));
+        }
+        if (!this._map) {
+            return Promise.reject(new Error('No map'));
+        }
+        if (this._map.isStyleLoaded && this._map.isStyleLoaded()) {
+            return Promise.resolve(this);
+        }
+        return new Promise(function (resolve, reject) {
+            self._readyResolvers.push({ resolve: resolve, reject: reject });
+        });
+    }
+
+    _drainReadyResolvers(action, payload) {
+        const list = this._readyResolvers;
+        this._readyResolvers = [];
+        for (let i = 0; i < list.length; i++) {
+            try {
+                list[i][action](payload);
+            } catch (_e) { /* per-resolver failure is never fatal */ }
+        }
     }
 
     /**
@@ -369,6 +417,9 @@ export class MapBuilder {
         const self = this;
         this._map.on('load', function () {
             self._flushAfterStyleQueue();
+            // v1.8.0 — drain any pending whenReady() awaiters now
+            // that the map has fired its initial load.
+            self._drainReadyResolvers('resolve', self);
         });
         this._map.on('style.load', function () {
             // setStyle() with diff: true strips our custom sources/layers.
@@ -958,6 +1009,11 @@ export class MapBuilder {
     destroy() {
         this._destroyed = true;
         this._afterStyleQueue.length = 0;
+        // v1.8.0 — reject any pending whenReady() promises so callers
+        // that are waiting on the (now-cancelled) load event don't
+        // hang forever. Drain happens BEFORE _map.remove() so that
+        // resolvers don't accidentally observe an inconsistent map.
+        this._drainReadyResolvers('reject', new Error('MapBuilder destroyed'));
         // v1.5.2 — clear the fancy-action registry so torn-down layer
         // modules' reset() callbacks (which capture closures over the
         // dying map) can't be invoked by a stale controlPanel that
