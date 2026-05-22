@@ -190,6 +190,17 @@ not_in_nav: |
   _machine/**
   _includes/**
 
+# Skip agent-internal planning artefacts entirely. `docs/superpowers/`
+# holds plan + spec markdown used by autonomous coding sessions; those
+# files are tracked in git for traceability but are not user docs and
+# they sometimes contain pymdownx/pygments-incompatible nesting (e.g.
+# a code block illustrating a code block with a `title=` directive that
+# pymdownx-highlight passes to pygments as `filename=None` in 1.6.x).
+# Excluding them at the source-tree level is cleaner than papering over
+# the pygments NoneType crash with per-file frontmatter.
+exclude_docs: |
+  superpowers/**
+
 # Watch additional files when running `mkdocs serve` so edits to the
 # included root-level docs (README, CHANGELOG, ROADMAP) trigger a
 # rebuild without manually touching a `docs/` page.

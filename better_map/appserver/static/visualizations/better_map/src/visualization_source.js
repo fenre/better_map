@@ -47,6 +47,13 @@ import { createThemeWatcher } from './lib/theme.js';
 import { analyze } from './lib/dataFitness.js';
 import { DEFAULT_PROVIDER } from './lib/styles.js';
 import { renderErrorBanner } from './lib/errorStates.js';
+import { safeRun } from './lib/safeRun.js';
+import {
+    LIFECYCLE_FORMAT_DATA,
+    LIFECYCLE_UPDATE_VIEW,
+    LIFECYCLE_REFLOW,
+    LIFECYCLE_DESTROY
+} from './lib/errorScopes.js';
 import { createLayerControl } from './lib/layerControl.js';
 import { createScrubber } from './lib/time/scrubber.js';
 import { VIRIDIS, RDYLBU, SET3, CYBER, SYNTHWAVE, TACTICAL } from './lib/palettes.js';
@@ -170,6 +177,28 @@ export default SplunkVisualizationBase.extend({
     },
 
     formatData: function (data, config) {
+        // v1.8.0 (Phase B) — safeRun boundary around the Splunk SDK
+        // `formatData` callback. The actual logic lives in
+        // `_formatDataImpl`. If the impl throws, safeRun routes the
+        // envelope (ring buffer, rate-limited reporter, panel-root
+        // `better_map:error` event, banner for degrade severity) and
+        // we degrade to the cached last-good shape so the SDK never
+        // sees an exception.
+        var self = this;
+        var r = safeRun({
+            scope: LIFECYCLE_FORMAT_DATA,
+            severity: 'warning',
+            recovery: 'degrade',
+            panelRoot: this.el,
+            action: function () { return self._formatDataImpl(data, config); }
+        });
+        if (r.ok) {
+            return r.result;
+        }
+        return this._lastGoodData || { rows: [], fields: [] };
+    },
+
+    _formatDataImpl: function (data, config) {
         // v1.7 — demo preset interception. Runs BEFORE the empty-data
         // fallback so the viz can render demo data on any panel,
         // including one whose SPL returns zero rows (the "Drop the
@@ -209,6 +238,23 @@ export default SplunkVisualizationBase.extend({
     },
 
     updateView: function (data, config) {
+        // v1.8.0 (Phase B) — safeRun boundary around the Splunk SDK
+        // `updateView` callback. Any throw inside the impl (data
+        // analysis, MapBuilder spin-up, widget wiring) is captured
+        // by safeRun: the envelope reaches the ring buffer + banner,
+        // and the SDK sees a clean return so the next data tick can
+        // still recover.
+        var self = this;
+        safeRun({
+            scope: LIFECYCLE_UPDATE_VIEW,
+            severity: 'warning',
+            recovery: 'degrade',
+            panelRoot: this.el,
+            action: function () { return self._updateViewImpl(data, config); }
+        });
+    },
+
+    _updateViewImpl: function (data, config) {
         if (!data && this._lastGoodData) {
             data = this._lastGoodData;
         }
@@ -1294,6 +1340,21 @@ export default SplunkVisualizationBase.extend({
     },
 
     reflow: function () {
+        // v1.8.0 (Phase B) — safeRun boundary around the Splunk SDK
+        // `reflow` callback. `resize()` reaches deep into MapLibre's
+        // canvas dimension math; if WebGL is in a weird state the
+        // throw must NOT propagate out of the viz.
+        var self = this;
+        safeRun({
+            scope: LIFECYCLE_REFLOW,
+            severity: 'warning',
+            recovery: 'soft',
+            panelRoot: this.el,
+            action: function () { return self._reflowImpl(); }
+        });
+    },
+
+    _reflowImpl: function () {
         if (this._builder) {
             this._builder.resize();
         }
@@ -1301,6 +1362,33 @@ export default SplunkVisualizationBase.extend({
     },
 
     destroy: function () {
+        // v1.8.0 (Phase B) — set bmDestroying BEFORE the safeRun call so
+        // any banner pushes during teardown (e.g. a sub-module's destroy
+        // throwing) are suppressed. The flag is read by safeRun itself
+        // in `_handleFailure` to skip banner routing.
+        if (this.el && this.el.dataset) {
+            this.el.dataset.bmDestroying = '1';
+        }
+        var self = this;
+        safeRun({
+            scope: LIFECYCLE_DESTROY,
+            severity: 'warning',
+            recovery: 'soft',
+            panelRoot: this.el,
+            action: function () { return self._destroyImpl(); }
+        });
+        // Splunk's prototype destroy MUST run regardless of the impl
+        // outcome so the framework can unsubscribe from data updates,
+        // clean up DOM references, and detach the viz. Wrap it in a
+        // local try so a throw in the base class can't escape either.
+        try {
+            SplunkVisualizationBase.prototype.destroy.apply(this, arguments);
+        } catch (_baseDestroyErr) {
+            // We are shutting down — there is nothing left to do.
+        }
+    },
+
+    _destroyImpl: function () {
         if (this._cancelVisibilityWatch) {
             this._cancelVisibilityWatch();
             this._cancelVisibilityWatch = null;
@@ -1359,7 +1447,6 @@ export default SplunkVisualizationBase.extend({
         }
         this._lastAnalysis = null;
         this._lastGoodData = null;
-        SplunkVisualizationBase.prototype.destroy.apply(this, arguments);
     }
 });
 

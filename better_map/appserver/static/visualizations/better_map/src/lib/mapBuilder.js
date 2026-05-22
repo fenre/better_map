@@ -34,6 +34,8 @@ import { Protocol as PMTilesProtocol } from 'pmtiles';
 import { resolveStyle, DEFAULT_PROVIDER } from './styles.js';
 import { applyAttribution } from './attribution.js';
 import { isWebGLAvailable, renderErrorBanner, clearErrorBanner } from './errorStates.js';
+import { safeRun } from './safeRun.js';
+import { MAPLIBRE_INTERNAL } from './errorScopes.js';
 import { reconcile, applyLayerNameFilter, setLayerVisibility } from './layers/index.js';
 import * as markersLayer from './layers/markers.js';
 import * as clustersLayer from './layers/clusters.js';
@@ -229,6 +231,54 @@ export class MapBuilder {
         // contributed by a layer/animation module via `registerFancyAction`.
         // The control panel iterates this map to build its rows.
         this._fancyActions = new Map();
+
+        // v1.8.0 (Phase B) — pending whenReady() resolvers. Multiple
+        // callers may await whenReady() before the first 'load' fires;
+        // we store them all and fire them as a batch when the load
+        // event arrives, OR reject them as a batch when destroy() runs
+        // before the load. The slot is GC'd once drained so a future
+        // whenReady() call after `_destroyed` rejects synchronously.
+        this._readyResolvers = [];
+    }
+
+    /**
+     * v1.8.0 (Phase B) — public lifecycle handle.
+     *
+     * Returns a Promise that resolves with this MapBuilder once the
+     * underlying MapLibre map has fired its initial `load` event
+     * (`_map.isStyleLoaded() === true`). Useful for callers that want
+     * to add a custom source/layer ASAP without poking at internals.
+     *
+     * Resolution rules:
+     *   - already loaded                 → resolves on next microtask
+     *   - init() never ran / WebGL miss  → rejects with Error('No map')
+     *   - destroy() runs before load     → rejects with Error('MapBuilder destroyed')
+     *   - called after destroy()         → rejects synchronously
+     */
+    whenReady() {
+        const self = this;
+        if (this._destroyed) {
+            return Promise.reject(new Error('MapBuilder destroyed'));
+        }
+        if (!this._map) {
+            return Promise.reject(new Error('No map'));
+        }
+        if (this._map.isStyleLoaded && this._map.isStyleLoaded()) {
+            return Promise.resolve(this);
+        }
+        return new Promise(function (resolve, reject) {
+            self._readyResolvers.push({ resolve: resolve, reject: reject });
+        });
+    }
+
+    _drainReadyResolvers(action, payload) {
+        const list = this._readyResolvers;
+        this._readyResolvers = [];
+        for (let i = 0; i < list.length; i++) {
+            try {
+                list[i][action](payload);
+            } catch (_e) { /* per-resolver failure is never fatal */ }
+        }
     }
 
     /**
@@ -369,6 +419,9 @@ export class MapBuilder {
         const self = this;
         this._map.on('load', function () {
             self._flushAfterStyleQueue();
+            // v1.8.0 — drain any pending whenReady() awaiters now
+            // that the map has fired its initial load.
+            self._drainReadyResolvers('resolve', self);
         });
         this._map.on('style.load', function () {
             // setStyle() with diff: true strips our custom sources/layers.
@@ -385,11 +438,48 @@ export class MapBuilder {
             self._flushAfterStyleQueue();
         });
         this._map.on('error', function (evt) {
-            // MapLibre's 'error' event fires for tile fetches as well as
-            // fatal style errors. Log without spamming Splunk's UI.
-            if (evt && evt.error && typeof console !== 'undefined' && console.warn) {
-                console.warn('[better_map] MapLibre error:', evt.error);
-            }
+            // v1.8.0 (Phase B) — funnel MapLibre's own error stream
+            // (tile-load failures, sprite/style fetch errors, GL ctx
+            // loss, etc.) through safeRun so it hits the ring buffer,
+            // the rate-limited reporter, the panelRoot
+            // `better_map:error` event channel, and (for degrade /
+            // fatal cases) the banner stack. Wrapping in safeRun() lets
+            // us reuse the per-scope back-off / quarantine policy:
+            // tile-storms get rate-limited automatically rather than
+            // drowning the console.
+            safeRun({
+                scope: MAPLIBRE_INTERNAL,
+                severity: 'warning',
+                recovery: 'soft',
+                panelRoot: self._container,
+                rateLimitKey: MAPLIBRE_INTERNAL,
+                action: function () {
+                    // The MapLibre 'error' event ALREADY happened — we
+                    // re-throw inside `action` so safeRun() funnels it
+                    // through the full envelope/report/dispatch path.
+                    // Filter out the noise cases first:
+                    //   - the event itself is null / not an object
+                    //   - the event carries no .error AND no useful keys
+                    if (!evt || typeof evt !== 'object') {
+                        return;
+                    }
+                    let payload = null;
+                    if (evt.error != null) {
+                        payload = evt.error;
+                    } else if (Object.keys(evt).length > 0) {
+                        payload = evt;
+                    }
+                    if (payload == null) {
+                        // Defensively swallow blank events so we don't
+                        // spam the ring buffer with empty envelopes.
+                        return;
+                    }
+                    if (typeof payload === 'string') {
+                        throw new Error(payload);
+                    }
+                    throw payload;
+                }
+            });
         });
 
         return this._map;
@@ -958,6 +1048,11 @@ export class MapBuilder {
     destroy() {
         this._destroyed = true;
         this._afterStyleQueue.length = 0;
+        // v1.8.0 — reject any pending whenReady() promises so callers
+        // that are waiting on the (now-cancelled) load event don't
+        // hang forever. Drain happens BEFORE _map.remove() so that
+        // resolvers don't accidentally observe an inconsistent map.
+        this._drainReadyResolvers('reject', new Error('MapBuilder destroyed'));
         // v1.5.2 — clear the fancy-action registry so torn-down layer
         // modules' reset() callbacks (which capture closures over the
         // dying map) can't be invoked by a stale controlPanel that
