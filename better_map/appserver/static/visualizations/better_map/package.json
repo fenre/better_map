@@ -19,7 +19,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "format": "prettier --write \"src/**/*.{js,css,json}\""
+    "format": "prettier --write \"src/**/*.{js,css,json}\"",
+    "regen:docs": "python3 ../../../../../scripts/build-formatter-schema.py && python3 ../../../../../scripts/build-reference-pages.py && python3 ../../../../../scripts/build-llms-txt.py && python3 ../../../../../scripts/build-llms-full-txt.py && python3 ../../../../../scripts/build-manifest.py",
+    "regen:check": "python3 ../../../../../scripts/check-formatter-schema.py && python3 ../../../../../scripts/check-formatter-coverage.py && python3 ../../../../../scripts/build-reference-pages.py --check && python3 ../../../../../scripts/build-llms-txt.py --check && python3 ../../../../../scripts/build-llms-full-txt.py --check && python3 ../../../../../scripts/check-manifest.py"
   },
   "dependencies": {
     "@tmcw/togeojson": "^7.1.2",
