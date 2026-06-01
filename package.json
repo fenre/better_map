@@ -10,8 +10,8 @@
     "commitlint:last": "commitlint --from HEAD~1 --to HEAD"
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.0.1",
-    "@commitlint/config-conventional": "^21.0.1",
+    "@commitlint/cli": "^21.0.2",
+    "@commitlint/config-conventional": "^21.0.2",
     "husky": "^9.1.6"
   },
   "engines": {
